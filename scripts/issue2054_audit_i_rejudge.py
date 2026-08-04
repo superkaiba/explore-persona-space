@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from collections import defaultdict
 from dataclasses import is_dataclass
@@ -34,6 +35,13 @@ from explore_persona_space.orchestrate.env import load_dotenv
 PARENT_STORY_MIN_TURNS = 4
 TRANSPORT_CATEGORIES = {"RESULT_RATE_LIMITED", "RESULT_TRANSPORT"}
 BUCKETS = ("judge_pass_but_below_floor", "judge_fail", "judge_malformed", "transport_loss", "other")
+# Parent #1345 on-policy variants carry the arm slug in the judge_results filename:
+# `judge_results_paired_<arm>.jsonl` where <arm> ∈ {op_instruct, op_pretrained}
+# for variants ending in `_op` / `_op_base` respectively. Judge rows carry
+# metadata only (verdict, conv_id, error category); the actual story TEXT and
+# question live in `raw_stories_paired_<arm>.jsonl` (+ any `_retry*` siblings)
+# and MUST be joined by `conv_id` before re-judging (see task #2054 defect 2).
+_JUDGE_FILE_PAT = re.compile(r"^judge_results_paired_(?P<arm>[a-z0-9_]+)\.jsonl$", re.IGNORECASE)
 
 _REJUDGE_RUBRIC = (
     "You are grading a multi-turn STORY continuation for narrative coherence.\n"
@@ -150,25 +158,47 @@ def _dry_run() -> int:
     return 0
 
 
-def _discover_digest_files(api, repo: str, prefix: str) -> dict[str, list[str]]:
-    variant_files: dict[str, list[str]] = {}
+def _discover_digest_files(
+    api, repo: str, prefix: str
+) -> dict[str, list[tuple[str, str, list[str]]]]:
+    """Enumerate per-variant (arm, judge_path, raw_story_paths) triples.
+
+    Restricted to ON-POLICY variants — those whose name ends in ``_op`` or
+    ``_op_base`` (audit_i's scope, brief). For each such variant, discovers every
+    ``judge_results_paired_<arm>.jsonl`` file and pairs it with the matching
+    ``raw_stories_paired_<arm>.jsonl`` primary + ``_retry*`` siblings.
+    """
+    variant_files: dict[str, list[tuple[str, str, list[str]]]] = {}
     for entry in api.list_repo_tree(
         repo_id=repo, path_in_repo=prefix, repo_type="dataset", recursive=False
     ):
         if type(entry).__name__ != "RepoFolder":
             continue
         variant = entry.path.rsplit("/", 1)[-1]
+        if not (variant.endswith("_op") or variant.endswith("_op_base")):
+            continue
         files = [
-            e.path
+            e
             for e in api.list_repo_tree(
                 repo_id=repo, path_in_repo=entry.path, repo_type="dataset", recursive=True
             )
             if type(e).__name__ == "RepoFile"
-            and Path(e.path).name.startswith("judge_results_")
-            and e.path.endswith(".jsonl")
         ]
-        if files:
-            variant_files[variant] = sorted(files)
+        # Index by basename for arm/retry lookup.
+        by_base: dict[str, str] = {f.path.rsplit("/", 1)[-1]: f.path for f in files}
+        triples: list[tuple[str, str, list[str]]] = []
+        for base_name, judge_path in sorted(by_base.items()):
+            m = _JUDGE_FILE_PAT.match(base_name)
+            if not m:
+                continue
+            arm = m.group("arm")
+            raw_names = [f"raw_stories_paired_{arm}.jsonl"]
+            for suffix in ("_retry", "_retry2", "_retry3", "_retry4", "_retry5"):
+                raw_names.append(f"raw_stories_paired_{arm}{suffix}.jsonl")
+            raw_paths = [by_base[n] for n in raw_names if n in by_base]
+            triples.append((arm, judge_path, raw_paths))
+        if triples:
+            variant_files[variant] = triples
     return variant_files
 
 
@@ -239,15 +269,36 @@ def run_audit(args) -> int:
     per_variant: dict[str, dict] = {}
     rejudge_rows: list[tuple[str, dict]] = []
 
-    for variant, files in sorted(variant_files.items()):
+    for variant, triples in sorted(variant_files.items()):
         v_stats = {
             "n": 0,
             "by_reject_reason": dict.fromkeys(BUCKETS, 0),
             "recoverable_at_min_turns_1": 0,
             "recoverable_after_rejudge": 0,
         }
-        for path in files:
-            local = hf_hub_download(repo_id=args.parent_repo, repo_type="dataset", filename=path)
+        for arm, judge_path, raw_paths in triples:
+            # Build the conv_id -> raw_row index (primary + retry*, last-write-wins;
+            # retries carry the rewritten attempt for the same conv_id).
+            raw_by_conv: dict[str, dict] = {}
+            for rp in raw_paths:
+                local_raw = hf_hub_download(
+                    repo_id=args.parent_repo, repo_type="dataset", filename=rp
+                )
+                with open(local_raw, encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            r = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        cid = r.get("conv_id")
+                        if cid is not None:
+                            raw_by_conv[cid] = r
+            local = hf_hub_download(
+                repo_id=args.parent_repo, repo_type="dataset", filename=judge_path
+            )
             with open(local, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
@@ -265,7 +316,27 @@ def run_audit(args) -> int:
                         n_recoverable_fast += 1
                         v_stats["recoverable_at_min_turns_1"] += 1
                     elif bucket in {"judge_fail", "judge_malformed"}:
-                        rejudge_rows.append((variant, row))
+                        # JOIN parent-#1345 judge row to its raw_stories row by conv_id;
+                        # the judge row carries only metadata (verdict, conv_id, error
+                        # category) — the story TEXT + question live in raw_stories
+                        # and are what the re-judge rubric needs (task #2054 defect 2).
+                        cid = row.get("conv_id")
+                        raw = raw_by_conv.get(cid) if cid is not None else None
+                        if raw is None:
+                            continue
+                        story = raw.get("story") or raw.get("text") or raw.get("completion") or ""
+                        question = raw.get("question") or raw.get("prompt") or ""
+                        if not story:
+                            continue
+                        # Enrich the judge row with the joined text; _rejudge_rejects
+                        # reads `story`/`completion`/`raw_text` for answer and
+                        # `question`/`prompt` for the rubric prompt.
+                        enriched = dict(row)
+                        enriched["story"] = story
+                        if question:
+                            enriched["question"] = question
+                        enriched["_arm"] = arm
+                        rejudge_rows.append((variant, enriched))
         per_variant[variant] = v_stats
 
     if n_rejects_scanned == 0:
