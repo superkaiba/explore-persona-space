@@ -67,7 +67,6 @@ For paper figures (NeurIPS / ICML / ICLR — narrow column, dense, camera-ready)
 from __future__ import annotations
 
 import json
-import subprocess
 import warnings
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -1084,21 +1083,17 @@ def _extract_fig_text(fig: plt.Figure) -> dict[str, object] | None:
 
 
 def _git_commit_hash() -> str:
-    """Return the current git commit short hash, or ``"uncommitted"`` on failure."""
-    try:
-        out = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=5,
-        )
-    except (FileNotFoundError, subprocess.SubprocessError):
-        return "uncommitted"
-    if out.returncode != 0:
-        return "uncommitted"
-    sha = out.stdout.strip()
-    return sha if sha else "uncommitted"
+    """DEPRECATED shim — delegates to `orchestrate.provenance._git_short_sha`.
+
+    Kept for the one external importer in
+    `experiments/leave_one_out_505/analyze_expanded.py` (per-issue script,
+    out of this round's rewrite scope). New code calls
+    `orchestrate.provenance.git_provenance()` and reads `commit_sha`
+    (or uses `commit_string()` for the `<sha>+dirty` legible form).
+    """
+    from explore_persona_space.orchestrate.provenance import _git_short_sha
+
+    return _git_short_sha()
 
 
 def savefig_paper(
@@ -1182,7 +1177,14 @@ def savefig_paper(
     target = out_dir / stem
     target.parent.mkdir(parents=True, exist_ok=True)
 
-    commit = _git_commit_hash()
+    from explore_persona_space.orchestrate.provenance import (
+        as_metadata_dict,
+        commit_string,
+        git_provenance,
+    )
+
+    prov = git_provenance()
+    commit = commit_string(prov)  # `<sha>` or `<sha>+dirty` — for non-JSON channels
     written: dict[str, Path] = {}
 
     for fmt in formats:
@@ -1210,6 +1212,7 @@ def savefig_paper(
     fig_size = fig.get_size_inches().tolist()
     meta: dict[str, object] = {
         "commit": commit,
+        **as_metadata_dict(prov),
         "created": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "figsize": [float(fig_size[0]), float(fig_size[1])],
     }
