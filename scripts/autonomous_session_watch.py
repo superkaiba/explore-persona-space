@@ -1813,6 +1813,34 @@ _BOOT_DEATH_CAP_NOTE_SENTINEL = "[autonomous_session_watch:boot-death-cap-exhaus
 # the day-keyed counter self-expires at the UTC day roll anyway.
 BOOT_DEATH_STATE_PREFIX = "boot-death-"
 
+# #2058 no-progress-respawn lane sentinels. Substring stamped into the fire
+# marker posted by :func:`no_progress_respawn_pass` when it detects a session
+# that is heartbeating but making no durable progress (fingerprint unchanged
+# across N consecutive ticks) and force-respawns it. MUST be a member of
+# :data:`_WATCHER_NOTE_SENTINELS` — a fire marker that counted as non-watcher
+# activity would refresh the tick's progress-fingerprint / staleness clocks
+# and mask the very wedge this lane exists to catch.
+_NO_PROGRESS_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:no-progress-respawn]"
+
+# Substring stamped into the one-time cap-exhausted marker posted when
+# ``respawns_today >= EPM_NO_PROGRESS_RESPAWNS_PER_DAY``. Same LOUD posture
+# as :data:`_BOOT_DEATH_CAP_NOTE_SENTINEL`: the cap moment is the day's
+# highest-value alert (a wedged session with no more auto-respawns needs
+# manual escalation).
+_NO_PROGRESS_RESPAWN_CAP_NOTE_SENTINEL = (
+    "[autonomous_session_watch:no-progress-respawn-cap-exhausted]"
+)
+
+# Filename prefix for the per-issue no-progress-respawn day-cap state file at
+# ``~/.eps-autonomous/no-progress-<N>.json``. The TICK (scripts/tick_triage.py)
+# owns ``fingerprint`` / ``streak`` / ``issue`` / ``ts``; the watcher pass
+# owns ``respawns_today`` / ``respawn_day`` / ``stop_pending_sid`` /
+# ``stop_pending_ts`` / ``cap_exhausted_day`` / ``episode_id``. Both writers
+# round-trip unknown keys via ``read_no_progress_state`` +
+# ``write_no_progress_state`` in tick_triage. Reaped by the generalized GC
+# at ``TERMINAL_FOR_GC`` (`completed`/`archived`) ONLY — never mid-episode.
+NO_PROGRESS_STATE_PREFIX = "no-progress-"
+
 # Boot-death lane constants (#1267; grounding in the task plan §11):
 # - window = 2x RESPAWN_SPAWN_GRACE_S (3 cron ticks): dead transcripts
 #   freeze ~7 s post-spawn while the healthy #1251 re-dispatch had 49
@@ -1957,6 +1985,12 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _URGENT_WF_PARK_NOTE_SENTINEL,
         _BOOT_DEATH_STOP_NOTE_SENTINEL,
         _BOOT_DEATH_CAP_NOTE_SENTINEL,
+        # #2058 no-progress-respawn lane. Both markers MUST live in this set
+        # so their own posts don't refresh the tick's progress-fingerprint
+        # staleness clocks — the very anti-liveness contract that makes this
+        # detector work.
+        _NO_PROGRESS_RESPAWN_NOTE_SENTINEL,
+        _NO_PROGRESS_RESPAWN_CAP_NOTE_SENTINEL,
         # Posted by spawn_session.py (not the watcher) when a duplicate --auto
         # dispatch was suppressed at registration (#843 M2) — same contract:
         # a suppression note is bookkeeping, never real progress.
@@ -22459,6 +22493,13 @@ _GC_TARGETS: tuple[tuple[str, str], ...] = (
     # day roll anyway. The sidecar `boot-death-events.jsonl` is outside the
     # `*.json` glob by suffix.
     (BOOT_DEATH_STATE_PREFIX, ""),
+    # No-progress-respawn day-cap state (== NO_PROGRESS_STATE_PREFIX,
+    # task #2058). Same TERMINAL_FOR_GC-only posture as boot-death /
+    # capacity-retry / stale-blocked: reaping a live episode's state
+    # mid-run would reset respawns_today every tick and the daily cap
+    # could never bind. The sidecar `no-progress-respawn-events.jsonl`
+    # is outside the `*.json` glob by suffix.
+    (NO_PROGRESS_STATE_PREFIX, ""),
     # Campaign watchdog state (== CAMPAIGN_WATCH_STATE_PREFIX, defined in the
     # campaign-pass section below; literal here because module-level tuples
     # evaluate top-to-bottom). Primary reaping is the campaign pass itself at
