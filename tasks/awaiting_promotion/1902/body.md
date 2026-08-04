@@ -2,8 +2,7 @@
 title: SFT rewrites the OLMo-2 context→answer activation map; DPO mostly preserves
   it and RLVR leaves it essentially unchanged (MODERATE confidence)
 kind: experiment
-tags:
-- keep-running
+tags: []
 created_at: '2026-07-30T23:52:28Z'
 has_clean_result: true
 origin_prompt: 'Devise a plan for this: ## Motivation - We have found that our context
