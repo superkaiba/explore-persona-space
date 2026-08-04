@@ -1,1 +1,2 @@
 {"ts": "2026-08-04T04:44:57Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-08-04T04:47:26Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "mode=autonomous-skipped; created_new=none; relates_to=[]; reason=no existing open_questions.md anchor fits the SAE-feature per-stage predictability question — this is a distinct new direction. A future interactive /issue 2061 re-invocation can draft a new question at the 0c-link gate."}
