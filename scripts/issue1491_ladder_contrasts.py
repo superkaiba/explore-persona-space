@@ -269,9 +269,13 @@ def _confound_status(fits: dict) -> dict:
     NOTE (issue-1491): `issue1491_ladder_fits.py`'s own module docstring defers
     BOTH (a) the full n-ladder and (b) the random-projection d=896 control from
     the Unit-3 cut, and its result dict emits neither key — so on this cut the
-    status is `sample-efficiency-confounded` by construction. Detection is by
-    PRESENCE (fail toward confounded), so it flips to `controls-present`
-    automatically once a later round emits them; it never silently upgrades.
+    status is `sample-efficiency-confounded` by construction.
+
+    Detection fails toward confounded, and PRESENCE ALONE NEVER PRODUCES A
+    CLEAN VERDICT: once a later round emits the control keys the status becomes
+    `controls-present-sign-stability-unchecked`, not `controls-present`, because
+    the Δ/ΔΓ sign-stability check plan §4 actually requires is not implemented
+    here. Promoting past that string requires implementing that check.
     """
     present: dict[str, bool] = {}
     for control, keys in _CONFOUND_CONTROLS.items():
@@ -756,12 +760,18 @@ def main() -> int:
     # verdict (see _confound_status). Attached to both contrasts AND surfaced
     # top-level so no consumer can read a verdict without it.
     confound = _confound_status(fits)
-    if confound["status"] != "controls-present":
-        logger.warning(
-            "[contrasts] d-confound protections INCOMPLETE %s — registered verdicts "
-            "are reported as sample-efficiency-confounded, NOT as a scale effect",
-            confound["controls_present"],
-        )
+    # Always true by construction now (a clean "controls-present" is
+    # unreachable — see _confound_status), so warn on the ACTUAL status rather
+    # than asserting the confounded one: with all control keys present the
+    # status is controls-present-sign-stability-unchecked, and claiming
+    # "reported as sample-efficiency-confounded" there would misdescribe the
+    # JSON the run actually emits.
+    logger.warning(
+        "[contrasts] d-confound status=%s %s — a registered verdict is NOT readable "
+        "as a scale effect until the plan §4 sign-stability check runs",
+        confound["status"],
+        confound["controls_present"],
+    )
     for _c in (delta_primary, delta_gamma):
         if isinstance(_c, dict) and _c.get("available"):
             _c["confound_status"] = confound["status"]

@@ -348,6 +348,7 @@ def _tokenizer_identity_assert() -> dict:
     templates: set[str] = set()
     vocab_hashes: set[str] = set()
     merges_hashes: set[str] = set()
+    tokenizer_json_hashes: set[str] = set()
     tokenizer_config_hashes: dict[str, str] = {}
     for model_id in QWEN_LADDER:
         cfg_local = _fetch(model_id, "tokenizer_config.json")
@@ -377,12 +378,29 @@ def _tokenizer_identity_assert() -> dict:
             merges_bytes = fh.read()
         merges_hash = hashlib.sha256(merges_bytes).hexdigest()
         merges_hashes.add(merges_hash)
+        # FAST-TOKENIZER FILE — the one AutoTokenizer actually loads.
+        #
+        # vocab.json + merges.txt are the SLOW-tokenizer inputs. `_make_token_len_fn`
+        # builds its length function via AutoTokenizer, which for Qwen2 resolves the
+        # fast tokenizer from tokenizer.json — so a tokenizer.json divergence
+        # (added tokens, normalizer, pre-tokenizer settings) changes real
+        # segmentation while passing a gate that only hashed the slow files. Same
+        # class as the merges.txt gap this gate already had to close.
+        # Probed live across all six ladder repos before asserting: a single
+        # shared hash (c0382117ea329cdf...), so the assert covers what it claims
+        # without false-firing.
+        tokjson_local = _fetch(model_id, "tokenizer.json")
+        with open(tokjson_local, "rb") as fh:
+            tokjson_bytes = fh.read()
+        tokjson_hash = hashlib.sha256(tokjson_bytes).hexdigest()
+        tokenizer_json_hashes.add(tokjson_hash)
         per_model.append(
             {
                 "model_id": model_id,
                 "tokenizer_config_sha256": cfg_sha,
                 "vocab_sha256": vocab_hash,
                 "merges_sha256": merges_hash,
+                "tokenizer_json_sha256": tokjson_hash,
             }
         )
     assert len(templates) == 1, (
@@ -397,11 +415,18 @@ def _tokenizer_identity_assert() -> dict:
         "differently, so neither the shared over-length token budget nor the "
         "single-tokenizer context filter is valid across these scales."
     )
+    assert len(tokenizer_json_hashes) == 1, (
+        f"fast-tokenizer mismatch across ladder — {len(tokenizer_json_hashes)} distinct "
+        "tokenizer.json. This is the file AutoTokenizer actually loads, so a "
+        "divergence here changes real segmentation even when the slow-tokenizer "
+        "files (vocab.json + merges.txt) match."
+    )
     chat_template = templates.pop()
     return {
         "chat_template_sha256": hashlib.sha256(chat_template.encode("utf-8")).hexdigest(),
         "vocab_sha256": next(iter(vocab_hashes)),
         "merges_sha256": next(iter(merges_hashes)),
+        "tokenizer_json_sha256": next(iter(tokenizer_json_hashes)),
         "per_model": per_model,
         "tokenizer_config_hashes": tokenizer_config_hashes,
     }
@@ -648,7 +673,13 @@ def build_manifest(out_dir: Path, *, smoke: bool = False, dry_run: bool = False)
     # tierB is a subset of train_25k; propagate the skip mask.
     train_kept_ids = {r["ladder_local_id"] for r in train_kept}
     tierb_kept = [
-        {**r, "split": "tierB_3600"} for i, r in enumerate(tierb_3600) if i in train_kept_ids
+        # Carry ladder_local_id like every other split — a consumer keying on it
+        # (the capture driver's ci mapping does) would KeyError on tierB alone.
+        # `i` IS the correct local id here: the skip-mask join directly below
+        # matches this same enumerate index against train's ladder_local_id set.
+        {**r, "split": "tierB_3600", "ladder_local_id": i}
+        for i, r in enumerate(tierb_3600)
+        if i in train_kept_ids
     ]
 
     # 7. Write jsonl files.
@@ -747,6 +778,7 @@ def _remote_manifest_meta() -> dict | None:
     from huggingface_hub.errors import (  # type: ignore
         EntryNotFoundError,
         HfHubHTTPError,
+        LocalEntryNotFoundError,
         RepositoryNotFoundError,
     )
 
@@ -764,6 +796,16 @@ def _remote_manifest_meta() -> dict | None:
             ),
             what=f"hf_hub_download({MANIFEST_META_NAME})",
         )
+    except LocalEntryNotFoundError:
+        # MUST precede the EntryNotFoundError branch — it is a SUBCLASS of it.
+        # LocalEntryNotFoundError is the transient/offline class (no cached copy
+        # AND the Hub was unreachable); retry_transient re-raises it once the
+        # budget exhausts. Falling through to `return None` would report a
+        # sustained transport outage as "nothing published", which SKIPS the
+        # drift refusal below — the precise fail-open that refusal exists to
+        # prevent (an in-place re-upload replacing the pinned contexts every
+        # scale is captured against).
+        raise
     except EntryNotFoundError:
         return None
     except RepositoryNotFoundError:
