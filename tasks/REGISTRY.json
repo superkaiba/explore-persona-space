@@ -7708,8 +7708,8 @@
     "1996": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1996",
-      "status": "proposed",
+      "path": "tasks/planning/1996",
+      "status": "planning",
       "title": "workflow-fix: Step 6d.2 tick-source comments omit quiet-wait"
     },
     "1997": {
