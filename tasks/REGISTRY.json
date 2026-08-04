@@ -8305,8 +8305,8 @@
     "2073": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2073",
-      "status": "planning",
+      "path": "tasks/approved/2073",
+      "status": "approved",
       "title": "workflow-fix: pin CLAUDE_CODE_AUTO_COMPACT_WINDOW in project settings + document the reduced-window thrash diagnostic"
     },
     "208": {
