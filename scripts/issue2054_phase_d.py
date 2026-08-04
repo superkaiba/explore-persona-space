@@ -14,8 +14,19 @@ Cell (c) — "answer authored STORY, presented CHAT" — is produced by invoking
 this driver with `--form chat` (plan §4 Phase D; the chat render re-frames the
 story-authored answer through the chat template, prose dropped). `--form` is
 REQUIRED with no default so a caller can never silently fall back to a story
-form. Match on conv_id (v4's shared conv_id draw is the pairing key). Cells
-whose conv_id is not in the shared fold map are skipped and reported.
+form; the dispatch router pins `--form chat` for the phase_d cell (c) wire.
+
+Match on conv_id (v4's shared conv_id draw is the pairing key), CANONIZED
+across the two key spaces the join crosses: phase_a scaffolds inherit
+`conv_id = scaffold_id = f"stripped_{story_id}"` from the parent stripper
+(`issue1345_strip_scaffolds.strip_file` -> `issue2054_phase_a` setdefault),
+while the parent's paired_op story rows key on the bare `story_id` (`s...`).
+Both sides — and the shared fold map's membership check — normalize through
+`_canon_conv_id` (strip the stripper's `stripped_` prefix), so the join
+resolves on production artifacts. Cells whose conv_id is not in the shared
+fold map are skipped and reported; the fold map itself is REQUIRED unless
+`--no-fold-filter` opts out explicitly (a missing map fails loud, never a
+silently-disabled membership check).
 
 Plan §12 assumption #7 (SLOT_SENTINEL literal escape): before splicing, SCAN
 each parent answer for the literal string `<<<ANSWER>>>`. On any hit, escape
@@ -118,19 +129,32 @@ def _char_name_from_variant(op_variant: str) -> str:
     return _CHAR_NAME_FROM_VARIANT.get(_base_variant_for(op_variant), "ARIA")
 
 
-def _load_shared_fold_map() -> set[str] | None:
-    """Load conv_id membership of the shared fold map, if it exists."""
-    fold_path = _REPO_ROOT / "eval_results/issue_2054/shared_fold_map.json"
-    if not fold_path.is_file():
-        return None
-    try:
-        payload = json.loads(fold_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return None
-    fold_of = payload.get("fold_of") or {}
-    if not isinstance(fold_of, dict):
-        return None
-    return {str(k) for k in fold_of}
+def _canon_conv_id(conv_id: str) -> str:
+    """Map a conv id into the PARENT-story key space (the phase_d join key).
+
+    Production scaffold conv_ids read `stripped_<story_id>` (the parent
+    stripper emits `scaffold_id = f"stripped_{sid}"`, `issue1345_strip_
+    scaffolds.strip_file`; phase_a then sets `conv_id = scaffold_id`), while
+    the parent paired_op story rows key on the bare `story_id`. Strip the
+    stripper's prefix; a bare parent id passes through unchanged.
+    """
+    return conv_id.removeprefix("stripped_")
+
+
+def _load_shared_fold_map(fold_map_path: Path) -> set[str]:
+    """Load conv_id membership of the shared fold map, in CANONICAL key space.
+
+    Fail-loud: a missing or malformed fold map raises / errors at the caller
+    (the only sanctioned opt-out is the explicit `--no-fold-filter` flag) —
+    never a silently-disabled membership check. Keys canonize through
+    `_canon_conv_id` so the committed scaffold-space keys (`stripped_s...`)
+    and bare parent-space keys both resolve.
+    """
+    payload = json.loads(fold_map_path.read_text(encoding="utf-8"))
+    fold_of = payload.get("fold_of")
+    if not isinstance(fold_of, dict) or not fold_of:
+        raise ValueError(f"fold map {fold_map_path} has no non-empty 'fold_of' dict")
+    return {_canon_conv_id(str(k)) for k in fold_of}
 
 
 def _list_parent_story_files(api, variant: str) -> list[str]:
@@ -209,7 +233,8 @@ def _escape_slot_sentinel(answer: str) -> tuple[str, int]:
 
 
 def _index_parent_answers(story_files: list[str], char_name: str) -> dict[str, str]:
-    """Read every paired_op file, extract `story[a_start:a_end]`, key on conv_id."""
+    """Read every paired_op file, extract `story[a_start:a_end]`, key on the
+    CANONICAL conv id (`_canon_conv_id` — parent-story key space)."""
     answers_by_conv: dict[str, str] = {}
     n_rows_seen = 0
     n_op_extract_ok = 0
@@ -228,7 +253,7 @@ def _index_parent_answers(story_files: list[str], char_name: str) -> dict[str, s
             if answer is None:
                 continue
             n_op_extract_ok += 1
-            answers_by_conv[str(conv_id)] = answer
+            answers_by_conv[_canon_conv_id(str(conv_id))] = answer
     _log(
         f"parent parse: seen={n_rows_seen} op_ok={n_op_extract_ok} unique_conv={len(answers_by_conv)}"
     )
@@ -323,10 +348,15 @@ def _process_variant(
             conv_id = str(row.get("conv_id") or row.get("scaffold_id") or "")
             if not conv_id:
                 continue
-            if fold_conv_ids is not None and conv_id not in fold_conv_ids:
+            # Canonical (parent-space) key drives BOTH the fold-membership
+            # check and the parent-answer join; the emitted row keeps the raw
+            # scaffold conv_id (cross-cell conv matching with phase_b/c uses
+            # the scaffold key space) plus `parent_conv_id` for provenance.
+            conv_key = _canon_conv_id(conv_id)
+            if fold_conv_ids is not None and conv_key not in fold_conv_ids:
                 n_out_of_fold += 1
                 continue
-            answer = answers_by_conv.get(conv_id)
+            answer = answers_by_conv.get(conv_key)
             if not answer:
                 n_no_answer += 1
                 continue
@@ -338,9 +368,23 @@ def _process_variant(
             spliced = _splice_one(row, escaped, char_name, variant, form)
             if spliced is None:
                 continue
+            spliced["parent_conv_id"] = conv_key
             f.write(json.dumps(spliced, ensure_ascii=False) + "\n")
             n_out += 1
     os.replace(tmp, out_path)
+
+    if n_in > 0 and answers_by_conv and n_out == 0:
+        # Zero-join diagnostic: name sample keys from BOTH sides so a future
+        # key-space drift (the C5 class) is diagnosable from the log alone.
+        scaffold_keys = [
+            _canon_conv_id(str(r.get("conv_id") or r.get("scaffold_id") or ""))
+            for r in scaffolds[:3]
+        ]
+        parent_keys = list(answers_by_conv)[:3]
+        _log(
+            f"variant={variant} ZERO-JOIN diagnostic: scaffold conv keys "
+            f"(canonical) sample={scaffold_keys} parent keys sample={parent_keys}"
+        )
 
     _log(
         f"variant={variant} spliced={n_out}/{n_in} "
@@ -415,11 +459,16 @@ def run_phase(args: argparse.Namespace) -> int:
         fold_conv_ids = None
         _log("shared fold map filter disabled by --no-fold-filter")
     else:
-        fold_conv_ids = _load_shared_fold_map()
-        if fold_conv_ids is not None:
-            _log(f"shared fold map loaded: {len(fold_conv_ids)} conv_ids")
-        else:
-            _log("shared fold map absent; conv_id membership check disabled")
+        fold_map_path = Path(args.fold_map).resolve()
+        if not fold_map_path.is_file():
+            print(
+                f"ERROR: shared fold map not found: {fold_map_path} "
+                "(run phase_a first, or pass --no-fold-filter for a smoke)",
+                file=sys.stderr,
+            )
+            return 1
+        fold_conv_ids = _load_shared_fold_map(fold_map_path)
+        _log(f"shared fold map loaded: {len(fold_conv_ids)} conv_ids (canonical key space)")
 
     per_variant_reports: list[dict] = []
     out_paths: dict[str, Path] = {}
@@ -452,6 +501,7 @@ def run_phase(args: argparse.Namespace) -> int:
     digest = {
         "phase": "phase_d",
         "form": args.form,
+        "fold_map": None if args.no_fold_filter else str(Path(args.fold_map).resolve()),
         "target_conv_ids": args.target_conv_ids,
         "variants": variants,
         "per_variant": [
@@ -490,6 +540,15 @@ def main() -> int:
     )
     p.add_argument("--target-conv-ids", type=int, default=8_000)
     p.add_argument("--output-dir", default="data/issue_2054/cell_c/")
+    p.add_argument(
+        "--fold-map",
+        default=str(_REPO_ROOT / "eval_results/issue_2054/shared_fold_map.json"),
+        help=(
+            "shared fold map JSON from phase_a (fold_of keys define conv_id "
+            "membership; keys canonize through _canon_conv_id). REQUIRED to "
+            "exist unless --no-fold-filter is passed"
+        ),
+    )
     p.add_argument("--seed", type=int, default=137)
     p.add_argument(
         "--variants",
