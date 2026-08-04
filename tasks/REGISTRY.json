@@ -7792,8 +7792,8 @@
     "2005": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2005",
-      "status": "planning",
+      "path": "tasks/approved/2005",
+      "status": "approved",
       "title": "daily-fix: Step 9c gate \u2014 detached first attempt, end the tu"
     },
     "2006": {
