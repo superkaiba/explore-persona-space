@@ -7785,8 +7785,8 @@
     "2004": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2004",
-      "status": "proposed",
+      "path": "tasks/planning/2004",
+      "status": "planning",
       "title": "daily-fix: teammate report channel + deliverable content pro"
     },
     "2005": {
