@@ -1517,6 +1517,36 @@ AGENT_TOOLS_MENTION_EXCEPTIONS: dict[tuple[str, str], str] = {
         "historical examples of the retired auto-spawn pattern and a "
         "grep-target example"
     ),
+    ("critic-lean.md", "WebFetch"): (
+        "lean twin (#2062): the body's `no WebSearch/WebFetch` line NEGATES "
+        "the tool — descriptive-not-instructive; the lean drops WebFetch by "
+        "design (fixed-overhead reduction is the whole point of the twin)"
+    ),
+    ("critic-lean.md", "WebSearch"): (
+        "lean twin (#2062): the body's `no WebSearch/WebFetch` line NEGATES "
+        "the tool — descriptive-not-instructive; the lean drops WebSearch by "
+        "design (fixed-overhead reduction is the whole point of the twin)"
+    ),
+    ("critic-lean.md", "mcp__arxiv"): (
+        "lean twin (#2062): the body's `(no mcp__arxiv, no mcp__arxiv-latex)` "
+        "line NEGATES the tool — descriptive-not-instructive; the lean drops "
+        "MCP tools by design (fixed-overhead reduction is the whole point)"
+    ),
+    ("critic-lean.md", "mcp__arxiv-latex"): (
+        "lean twin (#2062): the body's `(no mcp__arxiv, no mcp__arxiv-latex)` "
+        "line NEGATES the tool — descriptive-not-instructive; the lean drops "
+        "MCP tools by design (fixed-overhead reduction is the whole point)"
+    ),
+    ("planner-lean.md", "WebFetch"): (
+        "lean twin (#2062): the body's `no WebSearch/WebFetch` line NEGATES "
+        "the tool — descriptive-not-instructive; the lean drops WebFetch by "
+        "design (fixed-overhead reduction is the whole point of the twin)"
+    ),
+    ("planner-lean.md", "WebSearch"): (
+        "lean twin (#2062): the body's `no WebSearch/WebFetch` line NEGATES "
+        "the tool — descriptive-not-instructive; the lean drops WebSearch by "
+        "design (fixed-overhead reduction is the whole point of the twin)"
+    ),
 }
 
 # Spec-BODY tool-mention extractor vocabulary (the #840 plan §4.3 "widened

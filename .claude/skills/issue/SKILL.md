@@ -3044,7 +3044,15 @@ single-reviewer decision:
    `epm:failure v1` (`failure_class: infra`, reason:
    reviewer no durable verdict after bounded re-spawn), set
    `status:blocked`, PushNotification, CRON-TEARDOWN. NEVER adopt a
-   unilateral decision from the surviving reviewer.
+   unilateral decision from the surviving reviewer. (When the fallback is
+   inline composition rather than a Codex twin's decision — sanctioned only
+   for a workflow-fix task fixing this very thrash mode, or the refusal
+   rung (c) sibling — post one `epm:progress` note with the FIXED leading
+   token `[epm-inline-fallback] role=<role> round=<n> reason=<one-line>`
+   (single line, greppable; mirrors the `[long-phase-heartbeat]` /
+   `followup-parked-by-cap` / `merge-hold-candidate` durable-marker
+   convention). This makes the pipeline's collapsed adversarial-review
+   independence visible on the dashboard + /daily sweep, #2062.)
 
 **Autocompact-thrash respawn recipe (refines item 4's "first diagnose
 the death" for ANY thrash-killed subagent — reviewer/critic per item 4,
@@ -3065,7 +3073,20 @@ model as a thrash fix (#1090 forensics, events.jsonl L247: "transcript
 forensics show NO oversized tool result (max 15KB line): the thrash is
 FIXED-OVERHEAD pressure on the subagent window, not read indiscipline";
 "read-bounded brief did not help"; "both default-model spawns today
-compacted successfully; 3/6 sonnet spawns thrashed"). Multi-unit splits
+compacted successfully; 3/6 sonnet spawns thrashed"). And (iii) when the
+DEFAULT-model micro-scoped respawn ITSELF thrashes, escalate ONCE (same
+`v<n>`, no counter increment; the lean twin inherits the same
+one-bounded-respawn budget as item 4 above) to the role's LEAN TWIN
+(`.claude/agents/<role>-lean.md`, or `~/.claude/agents/analyzer-lean.md`)
+with the same micro-scoped brief — the twin drops MCP schemas + `skills:`
+declarations and reads the full sibling spec by reference, cutting
+fixed-overhead ~138K tokens (#2062). Available for: `analyzer`, `planner`
+(also covers the `planner`-typed fact-checker spawn at
+`.claude/skills/adversarial-planner/SKILL.md:867`), `critic`,
+`experiment-implementer`, `code-reviewer`, `consistency-checker`. If the
+lean-twin respawn ALSO ends with no durable verdict, fall through to
+item 4's fail-loud terminal — never an unbounded lean-twin retry loop.
+Multi-unit splits
 apply to roles whose deliverable DECOMPOSES (an implementer or
 fact-checker build); a single-verdict reviewer/critic re-spawn stays
 ONE spawn, micro-scoped by brief. Per-subagent model pins remain
