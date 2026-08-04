@@ -7778,8 +7778,8 @@
     "2003": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2003",
-      "status": "proposed",
+      "path": "tasks/planning/2003",
+      "status": "planning",
       "title": "daily-fix: trigger-dense first-spawn pre-qualification by ta"
     },
     "2004": {
