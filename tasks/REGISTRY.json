@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2058,
+  "highest_id": 2059,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8195,6 +8195,13 @@
       "path": "tasks/planning/2058",
       "status": "planning",
       "title": "workflow-fix: no-progress tick wedge \u2014 heartbeats read HEALTHY, stale-redrive reuses exhausted context"
+    },
+    "2059": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2059",
+      "status": "proposed",
+      "title": "Invert auto lane order: RunPod primary (GPU+CPU), fellows next"
     },
     "207": {
       "has_clean_result": true,
