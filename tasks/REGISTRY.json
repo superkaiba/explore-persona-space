@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2073,
+  "highest_id": 2074,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8308,6 +8308,13 @@
       "path": "tasks/completed/2073",
       "status": "completed",
       "title": "workflow-fix: pin CLAUDE_CODE_AUTO_COMPACT_WINDOW in project settings + document the reduced-window thrash diagnostic"
+    },
+    "2074": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2074",
+      "status": "proposed",
+      "title": "workflow-fix: split code-review into per-commit sub-verdicts for large rounds"
     },
     "208": {
       "has_clean_result": false,
