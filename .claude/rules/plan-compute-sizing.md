@@ -697,3 +697,44 @@ DECOUPLING of mixed-min-width arms into separate provisions was
 considered and rejected: wide coupling wins when capacity exists — one
 provision, shared setup — so the split is a stall-time remedy, not the
 default dispatch shape.)
+
+
+**Teammate / mid-session box dispatches — the compute-character duty binds
+outside plan §9 too.** Any multi-hour (>~1h projected) box/leg dispatched
+by a teammate, orchestrator, or subagent OUTSIDE a plan §9 row —
+mid-session scope-extension addenda included — carries the SAME
+pre-launch statement as a §9 row: a MEASURED 1-cell pilot wall basis at
+PRODUCTION shape (or a cited prior-issue MEASURED figure for the SAME
+kernel + shape), a measured / ×2-presumed RSS basis keyed to the
+LARGEST cell/lane, and a self-set fence ≥2× the pilot-extrapolated wall
+(measured per-cell wall × remaining cells / parallelism — the p90-style
+×2 dispersion default). Mechanics are UNCHANGED and NOT DUPLICATED —
+they live at § Per-cell fit phases (the measured-pilot recipe + fence
+sizing) and § CPU-phase RAM/RSS routing (the LARGEST-CELL keying + the
+≥~16 GB VM-routing bar). This section only widens the BINDING SURFACE
+set: (a) plan §9 rows are bound by their own §-scoped wording, (b) the
+CLAUDE.md § "User-chat inline free analysis" carve-out block binds
+user-chat inline runs, and (c) this section binds the residual class —
+teammate/orchestrator/subagent mid-session box dispatches, exactly the
+#1739 failure channel. PER-BEHAVIOR-BOXES BY DEFAULT — serial-chaining
+independent behaviors on one box when each behavior's leg projects
+>~2h wall is a REVISE-shape default violation: WALL BUDGET IS MAX, NOT
+SUM. Split by default (per-behavior boxes / per-behavior dispatches),
+not by opt-in. Sibling of `.claude/rules/experiment-guidelines.md`
+guideline 2's shardable-axis duty — guideline 2 governs GPU width
+WITHIN a provisioned phase (saturate-or-downsize); this ban governs
+box-LEVEL parallelism across INDEPENDENT behaviors (behaviors are the
+shardable axis at the box grain, exactly as GPUs are at the phase
+grain). Incident #1739 (2026-08-01 daily sweep entry C3; miners 1, 3,
+8): tierbb ~10h wall estimated-not-measured on one transfer; R5
+syco/hallu ~9.2h vs a 4h budget and ~25 GPU-h vs ~5–15 estimated
+("per-cell estimate was too optimistic"); corehall's measured pilot
+projected 8.494h vs plan 2.7h (~3.1× low; rc=7 fence fired correctly
+where the pilot was actually run); 5/10 new-arm GCE boxes rc=137
+OOM-killed in the PILOT phase (whitening fits at n=18793, d=3584 —
+no measured RSS basis existed for the pilot's peak); three independent
+behaviors serial-chained on one box, split only after ~3h+. Sibling
+surface (interactive): CLAUDE.md § "User-chat inline free analysis"
+compute-character block — user-directed inline runs carry the same
+duty for the same reason (both surfaces skip the planner+critic
+stack, where §9's own binding lives).
