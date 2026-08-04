@@ -29256,7 +29256,10 @@ def _gate_push_message(issue: int, status: str, events: list[dict], gate_parked:
     if status == "awaiting_promotion":
         msg = f"{head} · clean-result ready — open to promote"
     elif status == "plan_pending" and gate_parked:
-        msg = f"{head} parked at plan_pending — plan-gate park (no GPU-hour estimate); open to approve"
+        msg = (
+            f"{head} parked at plan_pending — plan-gate park "
+            "(no GPU-hour estimate); open to approve"
+        )
     else:  # blocked
         reason = ""
         for row in reversed(events):
