@@ -12289,7 +12289,8 @@ def test_check26_repo_unresolved_is_noop_pass(monkeypatch):
 # inline figure URL, not the caption.
 
 _CHECK28_NAME = (
-    "figure text opaque config codes (slug / @L-pin / H-code / slot-family / P-M candidate tokens)"
+    "figure text opaque config codes "
+    "(slug / @L-pin / H-code / slot-family / P-M candidate / letter-arrow tokens)"
 )
 
 
@@ -12465,6 +12466,35 @@ def test_check28_opaque_code_tokens_classifier():
     assert fn("figures/issue_1900/P7.png") == []  # whole-string path skip
     assert fn("source: figures/issue_1900/P7.png") == []  # path word in prose
     assert verify_task_body._CANDIDATE_CODE_RE.search("figures/issue_1900/P7.png")
+    # Letter-arrow transition class (#1902): the incident shapes and their
+    # documented spelling variants. AC-1 positives.
+    assert fn("B->S_single") == ["B->S_single"]
+    assert fn("S->D_multi") == ["S->D_multi"]
+    assert fn("D->R_single") == ["D->R_single"]
+    assert fn("D->R_multi") == ["D->R_multi"]
+    assert fn("S→D_multi") == ["S→D_multi"]  # unicode arrow
+    assert fn("A -> B_foo") == ["A -> B_foo"]  # spaces around ASCII arrow
+    assert fn("A→B_foo") == ["A→B_foo"]  # no-space unicode with suffix
+    # AC-3 negative pins — the tightened regex REQUIRES a `_[a-z]+` snake
+    # suffix on the RHS, so legitimate legend syntax stays unflagged.
+    assert fn("H->O") == []  # chemistry reactant→product, no snake suffix
+    assert fn("A->B") == []  # bare state-machine label, no snake suffix
+    assert fn("X -> Y") == []  # HMM/Markov transition, no snake suffix
+    assert fn("Fe->Fe2+") == []  # multi-char labels, single-`[A-Z]` boundary
+    assert fn("A->b_foo") == []  # lowercase RHS pre-suffix, single-`[A-Z]`
+    # AC-2 length-1 exact-list lock (per critic Concern #3): pins the
+    # current `_SNAKE_TOKEN_RE` suppression (`S_single` has 1 underscore
+    # and 0 digits → snake arm does not flag) against any future
+    # loosening that would introduce a dedup collision. The letter-arrow
+    # arm catches the WHOLE token including the `B->` prefix.
+    assert fn("B->S_single") == ["B->S_single"]
+    # AC-4 path exemption for the letter-arrow class: the raw regex
+    # genuinely matches inside the path word (non-vacuity assert), so the
+    # `[]` result is produced by the per-word path exemption, not the
+    # regex boundary.
+    assert fn("figures/issue_1902/A->B_x.png") == []  # whole-string path skip
+    assert fn("source: figures/issue_1902/A->B_x.png") == []  # path word in prose
+    assert verify_task_body._LETTER_ARROW_RE.search("figures/issue_1902/A->B_x.png")
     # Known-good: none of these yield any token.
     for good in (
         "house: librarian",
@@ -12617,6 +12647,57 @@ def test_check28_hypothesis_and_slot_family_in_text_block_warns(tmp_path, monkey
     res = verify_task_body.check_figure_label_codes(body)
     assert res.passed and res.is_warn, res.render()
     assert "H3" in res.detail and "f16" in res.detail
+
+
+def test_check28_letter_arrow_in_text_block_warns(tmp_path, monkeypatch):
+    """The #1902 live repro: a sidecar `text.axes[0].title` carrying the
+    verbatim incident string `B->S_single` (the shape that passed the
+    five existing classes on `clusters_delta_qc_scatter.png` — no @L-pin,
+    no matching snake, no H-code, no slot-family, no P-M candidate) —
+    WARNs through the `meta["text"]` walk."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-04T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"title": "B->S_single"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "B->S_single" in res.detail
+
+
+def test_check28_letter_arrow_path_word_exempted(tmp_path, monkeypatch):
+    """AC-5(ii): a sidecar carries the letter-arrow token as a TITLE
+    (WARN) AND a `source:` path-shaped word containing an in-path
+    letter-arrow token. Only the title token appears in the WARN detail;
+    the path-word token is exempted by `_only_in_path_words` — mirrors
+    the H-code / slot-family / candidate classes' incumbent walker
+    coverage."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-04T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": ["source: figures/issue_1902/A->B_x.png"],
+                "axes": [{"title": "B->S_single"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "B->S_single" in res.detail
+    # Path-word token is exempted — it does not appear in the WARN detail.
+    assert "A->B_x" not in res.detail
 
 
 def test_check28_hypothesis_and_slot_family_classifier():
