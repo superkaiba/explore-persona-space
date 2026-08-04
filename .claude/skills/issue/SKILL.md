@@ -9953,23 +9953,46 @@ suite directly and posts an `epm:test-verdict` event with the result.
       empty-diff NOTE described above. (A code-change task with NO worktree
       runs both from the repo root; the empty-diff NOTE is then expected and
       benign.)
-   b. Run the printed command as a BACKGROUND Bash invocation
-      (`run_in_background=true`) from the SAME worktree cwd (paths are
-      repo-relative), with the junit flags + log/rc-file tail appended and a
-      pre-run `rm -f` of all three gate files (a killed run must leave NO
-      junit — pytest writes it only at session exit; a stale file from a
-      prior round must never be re-read). BACKGROUND IS REQUIRED, NOT
-      OPTIONAL: the selection always contains the 61-file (2026-07-24)
-      workflow-invariant set incl. `tests/test_workflow_lint.py` (median
-      ~13 min alone, max ~30 min; whole gate median ~18 min, max ~38 min of
-      test time plus collection overhead — 330 junit runs measured
-      2026-07-13..24, #1646), so the
-      gate can NEVER fit the 600s foreground Bash tool cap. The
+   b. Run the printed command as a DETACHED background invocation (the
+      same setsid + pid/log/rc-file breadcrumb shape prescribed at
+      § Detached VM-side long compute phases above): the selection always
+      contains the 61-file (2026-07-24) workflow-invariant set incl.
+      `tests/test_workflow_lint.py` (median ~13 min alone, max ~30 min;
+      whole gate median ~18 min, max ~38 min of test time plus collection
+      overhead — 330 junit runs measured 2026-07-13..24, #1646), so the
+      gate projected wall STRUCTURALLY exceeds the 600s bg-Bash tool cap
+      (`run_in_background=true` calls carry the same 600 000 ms Bash-tool
+      ceiling as foreground) — a bg-Bash inline `timeout ... uv run
+      pytest ... > log; echo $? > rc-file` chain is harness-killed at the
+      cap BEFORE the `echo $?` writes, producing the "exit 144, rc file
+      missing" signature (#1893's ~26-min gate killed at ~95%). Only the
+      DETACHED launcher (setsid + `< /dev/null` decoupling) survives past
+      the tool cap: the launcher bg-Bash exits in seconds after capturing
+      the pid, and the detached pytest writes its rc file at its OWN exit
+      from a session that is no longer the launcher's kill domain. The
       crash-fix-rounds ~510s foreground `timeout` bound
-      (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch) applies to
-      FOREGROUND smokes ONLY — wrapping this gate in any ≤600s bound is the
-      #991/#996/#906 kill class (exit 143 at 480-540s). The ONLY wedge bound
-      is the selector-printed `timeout --kill-after=60s <T>s` prefix.
+      (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch) applies
+      to FOREGROUND smokes ONLY. The ONE remaining pre-run action inside
+      the outer bg-Bash call is the `rm -f` of all three gate files (a
+      killed run must leave NO junit — pytest writes it only at session
+      exit; a stale file from a prior round must never be re-read).
+
+      After launching, END THE TURN. Wait via the Monitor until-loop keyed
+      on the single-flight probe (documented below as the sanctioned
+      resume signal — the same shape the current SKILL.md prescribes as
+      the "bg-handle-lost" fallback), OR the `/issue-tick <N>` backstop
+      cron re-wake. Repeated `TaskOutput(block=true, timeout=600000)`
+      calls to poll a detached background job are the banned sleep-chain
+      shape (#1984: ×3, ~31-min held turn). The `TaskOutput` tool is for
+      reading a subagent's transcript, not for busy-waiting on a detached
+      pytest.
+
+      Small mapped-test subsets whose PROJECTED wall is < 10 min (verified
+      from the selector's `recommended-timeout-s=<T>` stderr line — T < 600
+      AND the workflow-invariant set EXCLUDED from the selection — a case
+      the current selector does not produce because the invariant set is
+      always bundled) MAY use the prior bg-Bash inline shape. Everything
+      else takes the detached recipe below.
 
       **Single-flight probe (#1606) — run before EVERY gate (re)launch, Step
       9c AND Step 10d alike.** Probe for a live gate with the self-excluding
@@ -10076,13 +10099,58 @@ suite directly and posts an `epm:test-verdict` event with the result.
       fi
       rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N> \
             /tmp/step9c-pytest-issue-<N>.log   # MANDATORY before EVERY gate pytest invocation
-      # ONE background Bash call (run_in_background=true) — the selector-printed
-      # command verbatim, with the junit + log + rc-file tail appended:
-      timeout --kill-after=60s <T>s uv run pytest <files> --continue-on-collection-errors -v --tb=short \
+      # Persist BASETEMP path for the completion-read to reap (S9C_BASETEMP
+      # is a shell var local to this bg-Bash call; the completion-read runs
+      # in a separate call, so we save the path where it can find it):
+      [ -n "${S9C_BASETEMP:-}" ] && echo "$S9C_BASETEMP" > /tmp/step9c-basetemp-issue-<N>.path
+      # DETACHED launcher — the § Harvest self-harvest chaining shape
+      # (SKILL.md § Detached VM-side long compute phases): the workload +
+      # rc-write are ONE bash -c unit, and setsid+nohup + the outer
+      # redirection bind to THAT unit; the trailing `&` backgrounds it;
+      # `$!` captures ITS pid. NEVER splice a top-level
+      # `; echo $? > rc & echo $!` after `2>&1` — that parses as three
+      # commands where pytest runs FOREGROUND inside the $( ) capture, so
+      # the outer bg-Bash STILL dies at the 600s tool cap (the exact
+      # failure this recipe exists to fix; the § Harvest NEVER-splice
+      # rule).
+      # ONE background Bash call (run_in_background=true) captures ITS pid;
+      # the launcher bg-Bash exits in seconds and the detached pytest lives
+      # in its own session decoupled from the launcher's kill domain:
+      PYTEST_PID=$(bash -c "setsid nohup bash -c 'timeout --kill-after=60s <T>s \
+        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
+        uv run pytest <files> --continue-on-collection-errors -v --tb=short \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
-        ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} \
-        > /tmp/step9c-pytest-issue-<N>.log 2>&1; echo $? > /tmp/step9c-rc-issue-<N>
-      [ -n "${S9C_BASETEMP:-}" ] && rm -rf "$S9C_BASETEMP" || true
+        ${S9C_BASETEMP:+--basetemp=\$S9C_BASETEMP/p} ; echo \$? > /tmp/step9c-rc-issue-<N>' \
+        < /dev/null > /tmp/step9c-pytest-issue-<N>.log 2>&1 & echo \$!")
+      # Identity verify (bracketed pgrep on mismatch — the § Detached
+      # VM-side long compute phases identity check):
+      ps -p "$PYTEST_PID" -o args= | head -1
+      # earlyoom-protect via session-wide choom (children inherit; #1315
+      # observed choom on the launch pid NOT sticking to the python3 child
+      # `uv run` forks moments later — a child forked before the parent's
+      # adjustment lands inherits nothing, and pytest under earlyoom's
+      # `--prefer '(^|/)(pytest|python3?)'` is the designated victim class).
+      # ONE bounded retry per § Detached VM-side long compute phases:
+      bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
+        && GATE_CHOOM=ok \
+        || GATE_CHOOM=failed
+      if [ "$GATE_CHOOM" = "failed" ]; then
+        # Wait for the real python3 child to fork, then re-sweep the
+        # session. Poll ≤30s for the child; then one retry — the
+        # § Detached recipe's canonical bounded shape.
+        for _ in $(seq 1 30); do
+          if pgrep -s "$PYTEST_PID" -a 2>/dev/null | grep -qE 'python3?'; then break; fi
+          sleep 1
+        done
+        bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
+          && GATE_CHOOM=ok \
+          || { GATE_CHOOM=failed; echo "[warn] session choom re-sweep failed — gate detached pytest is earlyoom-UNPROTECTED (choom=failed)" >&2; }
+      fi
+      # Detached breadcrumb — the same shape as § Detached VM-side long
+      # compute phases: pid + log + rc + harvest (§ Harvest contract — junit
+      # xml is the durable output the compare consumes) + choom (post-retry
+      # final state):
+      echo "[step9c] gate detached pid=$PYTEST_PID log=/tmp/step9c-pytest-issue-<N>.log rc=/tmp/step9c-rc-issue-<N> harvest=/tmp/step9c-junit-issue-<N>.xml choom=$GATE_CHOOM"
       ```
       When the background call completes (the harness notifies), read the
       verdict in a fresh foreground call — the rc FILE replaces the former
@@ -10106,6 +10174,13 @@ suite directly and posts an `epm:test-verdict` event with the result.
           echo "FATAL: pytest collected 0 tests — test-verdict gate did NOT run. Treating as FAIL." >&2
           # -> post epm:test-verdict v1 as FAIL; do NOT record PASS on exit 0.
         fi
+      fi
+      # BASETEMP cleanup (moved from same-call to completion-read, since
+      # the launcher bg-Bash no longer runs to pytest completion):
+      if [ -f /tmp/step9c-basetemp-issue-<N>.path ]; then
+        BT=$(cat /tmp/step9c-basetemp-issue-<N>.path)
+        [ -n "$BT" ] && rm -rf "$BT"
+        rm -f /tmp/step9c-basetemp-issue-<N>.path
       fi
       ```
       Record pass/fail + ALL selector stderr lines (the provenance
@@ -10141,16 +10216,16 @@ suite directly and posts an `epm:test-verdict` event with the result.
       the tool's Exit line.
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
       `## Test scope` H2 names `full`, run the FULL suite instead — from the
-      SAME issue-worktree cwd, in the SAME background + rc-file pattern as 1b
-      — including 1b's **Single-flight probe (#1606)** (the self-excluding
-      helper, `--issue <N>` form) —
-      (a 60m run is 6x the foreground tool cap):
+      SAME issue-worktree cwd, using the SAME DETACHED launcher recipe as
+      1b (`run_in_background=true` on the outer launcher; setsid +
+      pid/log/rc-file breadcrumbs; the `< /dev/null` decoupling is what
+      survives past the 600s bg-Bash tool cap — 1b's rationale applies,
+      do not restate it here; END THE TURN after launching per 1b's
+      end-the-turn line) — including 1b's **Single-flight probe (#1606)**
+      (the self-excluding helper, `--issue <N>` form) — (a 60m run is 6x
+      the foreground tool cap):
       ```bash
       cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
-      # earlyoom-protect the gate (#1045; fail-open — see the 1b preamble): self-choom, children inherit.
-      sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && GATE_CHOOM=ok \
-        || { GATE_CHOOM=failed; echo "[warn] choom failed — gate pytest is earlyoom-UNPROTECTED (choom=failed)" >&2; }
-      echo "[step9c] gate earlyoom protection choom=$GATE_CHOOM"
       # Route gate fixture temp writes onto the data disk (#1408; #1363: / at 100% killed the
       # gate). Short --basetemp keeps AF_UNIX socket paths under the 108-byte cap. Falls back
       # silently (no TMPDIR export) on pods/GCE with no data disk.
@@ -10161,12 +10236,34 @@ suite directly and posts an `epm:test-verdict` event with the result.
       fi
       rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N> \
             /tmp/step9c-pytest-issue-<N>.log
-      # ONE background Bash call (run_in_background=true):
-      timeout --kill-after=60s 60m uv run pytest tests/ -q --continue-on-collection-errors \
+      # Persist BASETEMP path for the completion-read (see 1b):
+      [ -n "${S9C_BASETEMP:-}" ] && echo "$S9C_BASETEMP" > /tmp/step9c-basetemp-issue-<N>.path
+      # DETACHED launcher — same § Harvest self-harvest chaining shape as
+      # 1b; workload + rc-write are ONE inner bash -c unit:
+      PYTEST_PID=$(bash -c "setsid nohup bash -c 'timeout --kill-after=60s 60m \
+        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
+        uv run pytest tests/ -q --continue-on-collection-errors \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
-        ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} \
-        > /tmp/step9c-pytest-issue-<N>.log 2>&1; echo $? > /tmp/step9c-rc-issue-<N>
-      [ -n "${S9C_BASETEMP:-}" ] && rm -rf "$S9C_BASETEMP" || true
+        ${S9C_BASETEMP:+--basetemp=\$S9C_BASETEMP/p} ; echo \$? > /tmp/step9c-rc-issue-<N>' \
+        < /dev/null > /tmp/step9c-pytest-issue-<N>.log 2>&1 & echo \$!")
+      # Identity verify (see 1b for the bracketed pgrep recovery form):
+      ps -p "$PYTEST_PID" -o args= | head -1
+      # earlyoom-protect via session-wide choom + ONE bounded retry — same
+      # shape as 1b (§ Detached VM-side long compute phases; #1315):
+      bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
+        && GATE_CHOOM=ok \
+        || GATE_CHOOM=failed
+      if [ "$GATE_CHOOM" = "failed" ]; then
+        for _ in $(seq 1 30); do
+          if pgrep -s "$PYTEST_PID" -a 2>/dev/null | grep -qE 'python3?'; then break; fi
+          sleep 1
+        done
+        bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
+          && GATE_CHOOM=ok \
+          || { GATE_CHOOM=failed; echo "[warn] session choom re-sweep failed — gate detached pytest is earlyoom-UNPROTECTED (choom=failed)" >&2; }
+      fi
+      # Detached breadcrumb — same shape as 1b:
+      echo "[step9c] gate detached pid=$PYTEST_PID log=/tmp/step9c-pytest-issue-<N>.log rc=/tmp/step9c-rc-issue-<N> harvest=/tmp/step9c-junit-issue-<N>.xml choom=$GATE_CHOOM"
       ```
       (NO `-x` / `--maxfail` — with the step-1d compare deciding the verdict,
       an early-exit on the first known-red main failure would leave the rest
@@ -10216,20 +10313,25 @@ suite directly and posts an `epm:test-verdict` event with the result.
       re-proving red main was pre-existing). Runs AFTER the final pytest
       invocation of step 1 (touched scope, or the 1c full-scope override —
       compare gates the junit of whichever actually ran) AND after 1b's
-      foreground verdict read. Run compare as a BACKGROUND Bash invocation
-      (`run_in_background=true`) from the SAME worktree cwd, in the SAME
-      background + rc-file pattern as 1b. BACKGROUND IS REQUIRED, NOT
-      OPTIONAL: `--run-pristine` (always passed here) may run up to
-      `--max-pristine-files` (5) single-file pristine oracle runs, each
-      bounded by `derive_pristine_timeout_s` at 600–4950s (#1129/#1646:
+      foreground verdict read. Run compare as a DETACHED background
+      invocation (`run_in_background=true` on the outer launcher) from
+      the SAME worktree cwd, using the SAME setsid + pid/log/rc-file
+      breadcrumb shape as 1b (1b's rationale applies — the 600s bg-Bash
+      tool cap kills an inline `timeout ... ; echo $? > rc` chain BEFORE
+      the rc-write, hence the detached recipe; END THE TURN after
+      launching per 1b's end-the-turn line). `--run-pristine`
+      (always passed here) may run up to `--max-pristine-files` (5)
+      single-file pristine oracle runs, each bounded by
+      `derive_pristine_timeout_s` at 600–4950s (#1129/#1646:
       tests/test_workflow_lint.py alone derives 4950s), so a healthy
-      compare can NEVER be guaranteed to fit the 600s foreground Bash tool
-      cap — a foreground call converts a classifiable in-process exit 2
-      into a tool-layer kill with COMPARE_OUT lost (#1129/#1098). Compare
-      stays a SEPARATE background call, NOT folded into the 1b gate call:
-      1b's foreground verdict read and the zero-collected guard run
-      between them, and a folded call would burn up to ~2 h of
-      pristine runs on a run those guards fail in seconds.
+      compare has a structural ceiling of ~7500s and STRUCTURALLY exceeds
+      the 600s bg-Bash tool cap — the detached shape is what keeps a
+      classifiable in-process exit 2 from converting to a tool-layer kill
+      with COMPARE_OUT lost (#1129/#1098). Compare stays a SEPARATE
+      background call, NOT folded into the 1b gate call: 1b's foreground
+      verdict read and the zero-collected guard run between them, and a
+      folded call would burn up to ~2 h of pristine runs on a run those
+      guards fail in seconds.
 
       **Single-flight probe (#1606)** first, per the 1b statement:
       `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --issue <N>`
@@ -10246,14 +10348,6 @@ suite directly and posts an `epm:test-verdict` event with the result.
       anyway with the `[gate-fleet]` cap-expired line (fail-open).
       ```bash
       cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
-      # earlyoom-protect the compare (#1045; FAIL-OPEN — never block the verdict on
-      # a choom failure): its pristine pytest children are the same earlyoom-preferred
-      # long python work as the 1b gate; oom_score_adj inherits across fork/exec
-      # (probe-verified; start_new_session does NOT reset it), so self-choom BEFORE
-      # launch covers the whole compare tree incl. the pristine pytest children.
-      sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && COMPARE_CHOOM=ok \
-        || { COMPARE_CHOOM=failed; echo "[warn] choom failed — compare pristine runs are earlyoom-UNPROTECTED (choom=failed)" >&2; }
-      echo "[step9c] compare earlyoom protection choom=$COMPARE_CHOOM"
       # MANDATORY stale-file rm — the compare triplet ONLY (NEVER 1b's
       # junit/rc/log files: compare consumes them):
       rm -f /tmp/step9c-compare-issue-<N>.json /tmp/step9c-compare-issue-<N>.rc \
@@ -10268,12 +10362,45 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # so ceiling = 4950s (workflow-lint derived) + 4 × 600s floor + 120s
       # scratch + ruff/parse overhead ≈ 7500s; 10800s keeps ~1.4x margin and
       # only ever fires on a genuine wedge (#1129 generous bias, figures #1646;
-      # re-derive if SLOW_TESTS gains entries/values or max-pristine-files changes):
-      timeout --kill-after=60s 10800s uv run python scripts/step9c_baseline.py compare \
-        --junitxml /tmp/step9c-junit-issue-<N>.xml --pytest-rc "$PYTEST_RC" \
+      # re-derive if SLOW_TESTS gains entries/values or max-pristine-files changes).
+      # DETACHED launcher — same § Harvest self-harvest chaining shape as 1b;
+      # workload + rc-write are ONE inner bash -c unit bound to setsid+nohup
+      # (§ Harvest NEVER-splice rule). $PYTEST_RC (integer) is expanded by the
+      # outer double-quoted shell before setsid runs; \$? is deferred to the
+      # inner shell so it captures the compare exit at THAT unit's exit. The
+      # inner block preserves compare's stdout/stderr separation (JSON payload
+      # on stdout, WARN/timeout diagnostics on stderr) via its own file
+      # redirections; the outer bg-Bash redirection points at /dev/null since
+      # every real output has an in-workload destination:
+      COMPARE_PID=$(bash -c "setsid nohup bash -c 'timeout --kill-after=60s 10800s \
+        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
+        uv run python scripts/step9c_baseline.py compare \
+        --junitxml /tmp/step9c-junit-issue-<N>.xml --pytest-rc $PYTEST_RC \
         --run-pristine --json \
-        > /tmp/step9c-compare-issue-<N>.json 2> /tmp/step9c-compare-issue-<N>.err
-      echo $? > /tmp/step9c-compare-issue-<N>.rc
+        > /tmp/step9c-compare-issue-<N>.json 2> /tmp/step9c-compare-issue-<N>.err ; \
+        echo \$? > /tmp/step9c-compare-issue-<N>.rc' \
+        < /dev/null > /dev/null 2>&1 & echo \$!")
+      # Identity verify (see 1b for bracketed pgrep recovery form):
+      ps -p "$COMPARE_PID" -o args= | head -1
+      # earlyoom-protect via session-wide choom + ONE bounded retry — same
+      # shape as 1b; the pristine pytest children are the same earlyoom
+      # `--prefer` designated-victim class (#1315):
+      bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$COMPARE_PID" >/dev/null \
+        && COMPARE_CHOOM=ok \
+        || COMPARE_CHOOM=failed
+      if [ "$COMPARE_CHOOM" = "failed" ]; then
+        for _ in $(seq 1 30); do
+          if pgrep -s "$COMPARE_PID" -a 2>/dev/null | grep -qE 'python3?'; then break; fi
+          sleep 1
+        done
+        bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$COMPARE_PID" >/dev/null \
+          && COMPARE_CHOOM=ok \
+          || { COMPARE_CHOOM=failed; echo "[warn] session choom re-sweep failed — compare pristine runs are earlyoom-UNPROTECTED (choom=failed)" >&2; }
+      fi
+      # Detached breadcrumb — pid + log (compare writes structured output
+      # itself; the launcher log is /dev/null and the harvest path is the
+      # JSON, per § Harvest contract):
+      echo "[step9c] compare detached pid=$COMPARE_PID log=/tmp/step9c-compare-issue-<N>.err rc=/tmp/step9c-compare-issue-<N>.rc harvest=/tmp/step9c-compare-issue-<N>.json choom=$COMPARE_CHOOM"
       ```
       (stdout and stderr are SEPARATED — unlike 1b's merged log — because
       stdout is the JSON payload the verdict parses; stderr carries WARN /
@@ -11718,12 +11845,21 @@ tests BEFORE anything lands:
   both). The two leg pairs + TG legs total ~9-12+ min on an IDLE VM, but
   **30-40 min under typical fleet load (3+ concurrent gates)** — measured
   2026-07-26: #1690 32 min, #1694 37 min, #1711 ~30 min. Size any
-  wall-time-derived fence off the LOADED range, not the idle one. So the
-  executable block below can NEVER fit the 600s foreground Bash tool cap — run it as
-  ONE BACKGROUND Bash call (`run_in_background=true`) with the per-leg
-  `timeout` wedge bounds shown (the #991/#996 kill class: wrapping it in
-  any ≤600s foreground bound, or running it foreground, SIGKILLs the
-  whole gate shell mid-lint — #1245), then read the verdict in a FRESH
+  wall-time-derived fence off the LOADED range, not the idle one.
+  Projected wall STRUCTURALLY exceeds the 600s bg-Bash tool cap
+  (`run_in_background=true` calls carry the same 600 000 ms ceiling as
+  foreground), so the executable block below launches DETACHED using the
+  same setsid + pid/log/rc-file breadcrumb shape as Step 9c 1b (see the
+  1b rationale — a bg-Bash inline chain is harness-killed at the cap
+  BEFORE the rc-write, the #991/#996/#1245/#1893 kill class; only the
+  detached shape survives past the cap). The outer bg-Bash launches the
+  detached unit, captures the pid, and exits in seconds; the inner
+  workload runs in its own session decoupled from the launcher's kill
+  domain and writes its rc file at its OWN exit. After launching, END
+  THE TURN — wait via the Monitor until-loop keyed on the single-flight
+  probe below, or the `/issue-tick <N>` backstop cron re-wake; repeated
+  `TaskOutput(block=true, timeout=600000)` polls of the detached job are
+  the banned sleep-chain shape (#1984). Read the verdict in a FRESH
   foreground call from the FILE (completion-read below).
 
   **Single-flight probe (#1606) — before (re)launching this gate, including
@@ -11747,21 +11883,76 @@ tests BEFORE anything lands:
 
   ```bash
   # EXECUTABLE gate — forms (i) safe case and (ii) recovery share this block
-  # ONE BACKGROUND Bash call (run_in_background=true) — see the bullet above.
-  # verbatim (gated = the gate-tree lint copy on the LANDING tree —
-  # origin/main + the branch's own-diff payload; baseline = the SAME copy on
-  # the payload-free landing base, the tree before the overlay). Form
-  # (iii) inlines the SAME trigger/normalize/subtract/verdict steps around its
-  # checkout — see the surgical block. The verdict is PERSISTED to a file
-  # because fenced bash blocks are separate shell invocations: the binding
-  # sites consume the FILE, never a shell variable.
+  # DETACHED launcher — the whole gate workload below (baseline lint legs,
+  # payload overlay, gated lint legs, TG mapped-invariant legs, subtract,
+  # verdict, sha-bind) runs as ONE detached unit via the § Harvest
+  # self-harvest chaining shape (§ Detached VM-side long compute phases):
+  # the workload is written to /tmp/issue-<N>-lint-gate.sh (a heredoc file
+  # because the workload contains many awk/sed single-quoted blocks that an
+  # inner `bash -c '...'` string would need escape-heavy quoting to
+  # survive), then setsid-nohup-launched from within an outer `bash -c`
+  # wrapper — the outer bg-Bash call (run_in_background=true) captures
+  # `$!` as the workload pid (`PYTEST_PID` below); the trailing
+  # `echo $? > /tmp/step9c-lint-rc-issue-<N>` at the END of the script
+  # binds the script's exit into the SAME unit (rc-write inside the
+  # session-decoupled unit, not spliced after the outer bg-Bash), so the
+  # 600s bg-Bash tool cap can NEVER kill the workload — the launcher
+  # bg-Bash exits in seconds after capturing the pid, and the detached
+  # workload writes its rc + verdict at its OWN exit from a session outside
+  # the launcher's kill domain. NEVER splice a top-level `; echo $? > rc &
+  # echo $!` after `2>&1` — that parses as three commands where the gate
+  # workload runs FOREGROUND inside the $( ) capture, so the outer bg-Bash
+  # STILL dies at the 600s tool cap (§ Harvest NEVER-splice rule; the exact
+  # #991/#996/#1245/#1893 failure this recipe exists to fix). The
+  # `harvest=/tmp/issue-<N>-lint-verdict.txt` breadcrumb names the durable
+  # verdict path the § Successor / re-entry rule probes.
+  #
+  # Canonical launcher shape (the outer bg-Bash body — the workload verbatim
+  # below is the script this launches):
+  #   LINT_GATE_SCRIPT=/tmp/issue-<N>-lint-gate.sh
+  #   cat > "$LINT_GATE_SCRIPT" <<'LINT_GATE_EOF'
+  #   #!/usr/bin/env bash
+  #   # ... [the workload body verbatim from `# earlyoom-protect the gate`
+  #   #     down to and incl. `cat /tmp/issue-<N>-lint-verdict.txt`] ...
+  #   echo $? > /tmp/step9c-lint-rc-issue-<N>
+  #   LINT_GATE_EOF
+  #   chmod +x "$LINT_GATE_SCRIPT"
+  #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
+  #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
+  #     bash '$LINT_GATE_SCRIPT' < /dev/null > /tmp/issue-<N>-lint-gate.log 2>&1 & echo \$!")
+  #   ps -p "$PYTEST_PID" -o args= | head -1
+  #   bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
+  #     && LINT_GATE_CHOOM=ok || LINT_GATE_CHOOM=failed
+  #   # ONE bounded retry on failed sweep (§ Detached VM-side long compute
+  #   # phases; #1315 — a python3 child forked after the launch pid's choom
+  #   # applies inherits nothing until the sweep is re-run):
+  #   if [ "$LINT_GATE_CHOOM" = "failed" ]; then
+  #     for _ in $(seq 1 30); do
+  #       if pgrep -s "$PYTEST_PID" -a 2>/dev/null | grep -qE 'python3?'; then break; fi
+  #       sleep 1
+  #     done
+  #     bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
+  #       && LINT_GATE_CHOOM=ok \
+  #       || { LINT_GATE_CHOOM=failed; echo "[warn] session choom re-sweep failed — lint gate is earlyoom-UNPROTECTED (choom=failed)" >&2; }
+  #   fi
+  #   echo "[step10d] lint-gate detached pid=$PYTEST_PID log=/tmp/issue-<N>-lint-gate.log rc=/tmp/step9c-lint-rc-issue-<N> harvest=/tmp/issue-<N>-lint-verdict.txt choom=$LINT_GATE_CHOOM"
+  #
+  # (The workload verbatim body below runs inside that detached unit. The
+  # verdict is PERSISTED to a file because fenced bash blocks are separate
+  # shell invocations: the binding sites consume the FILE, never a shell
+  # variable. Form (iii) inlines the SAME trigger/normalize/subtract/verdict
+  # steps around its checkout — see the surgical block.)
   # earlyoom-protect the gate (#1045 recipe, #1211; FAIL-OPEN — a choom failure
   # never blocks the gate and never touches the verdict logic): the lint legs
   # (~4.5-6 min python each) + the mapped pytest legs match this VM's earlyoom
   # --prefer regex (+300 badness) — the designated victim under fleet memory
   # pressure (#1143: the first gate run died mid-lint, verdict `crash`; the
-  # choom-protected re-run passed). Self-choom the gate shell: every child
-  # forked after this line inherits adj=-600.
+  # choom-protected re-run passed). The detached workload self-chooms via
+  # `sudo -n choom -n -600 -p $$` below, and the outer launcher additionally
+  # sweeps the workload's session with `pgrep -s $PYTEST_PID | xargs choom`
+  # (session-wide; children inherit; ONE bounded retry per § Detached
+  # VM-side long compute phases): every child forked after this line
+  # inherits adj=-600.
   sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && LINT_GATE_CHOOM=ok \
     || { LINT_GATE_CHOOM=failed; echo "[warn] choom failed — lint gate is earlyoom-UNPROTECTED (choom=failed)" >&2; }
   echo "[step10d] lint-gate earlyoom protection choom=$LINT_GATE_CHOOM"
@@ -13790,10 +13981,63 @@ Decision tree:
   cd "$REPO_ROOT"
   # earlyoom-protect the gate — form (iii) (#1045 recipe, #1211; FAIL-OPEN,
   # see the shared gate block above): the preamble sits BEFORE the BASELINE
-  # legs (they run before the checkout); this whole gate-and-land sequence is
-  # ONE BACKGROUND Bash invocation (run_in_background=true — its two lint
-  # leg pairs total ~9-12+ min and can NEVER fit the 600s foreground Bash
-  # tool cap, #1245), so every child inherits adj=-600.
+  # legs (they run before the checkout); this whole gate-and-land sequence
+  # runs DETACHED via the same setsid + pid/log/rc-file breadcrumb shape as
+  # Step 9c 1b and Step 10d forms (i)/(ii) — its two lint leg pairs total
+  # ~9-12+ min and STRUCTURALLY exceed the 600s bg-Bash tool cap
+  # (run_in_background=true carries the same 600 000 ms ceiling as
+  # foreground, so an inline chain would be harness-killed at the cap
+  # BEFORE the rc-write; the outer bg-Bash launches the detached unit and
+  # exits in seconds). Sequenced checkout/commit/push remains bg-Bash-inline
+  # in the launcher body (the sequence itself is < 5 min; the LINT PHASES
+  # are what push it over the cap). END THE TURN after launching — wait
+  # via the Monitor until-loop keyed on the single-flight probe above, or
+  # the `/issue-tick <N>` cron re-wake; never repeated
+  # `TaskOutput(block=true, timeout=600000)` polls (#1984). The workload
+  # verbatim below is written to /tmp/issue-<N>-surgical-gate.sh (heredoc
+  # file — the awk/sed single-quoted blocks below would need escape-heavy
+  # quoting inside an inner `bash -c '...'` string) and setsid-nohup-
+  # launched from within an outer `bash -c` wrapper so `$!` captures the
+  # workload pid (`PYTEST_PID` below); the workload's final line is
+  # `echo $? > /tmp/step9c-surgical-rc-issue-<N>` — rc-write inside the
+  # SAME session-decoupled unit (§ Harvest self-harvest chaining), NEVER
+  # spliced after `2>&1` on the outer bg-Bash line (§ Harvest NEVER-splice
+  # rule — that parses as three commands, workload runs FOREGROUND inside
+  # the $( ) capture, and the outer bg-Bash STILL dies at the 600s cap).
+  # The `harvest=/tmp/issue-<N>-surgical-outcome.txt` breadcrumb names the
+  # durable outcome path the § Successor / re-entry rule probes. Every
+  # child forked inside the detached session inherits adj=-600 via the
+  # self-choom below.
+  #
+  # Canonical launcher shape (the outer bg-Bash body — the workload verbatim
+  # below is the script this launches):
+  #   SURGICAL_SCRIPT=/tmp/issue-<N>-surgical-gate.sh
+  #   cat > "$SURGICAL_SCRIPT" <<'SURGICAL_EOF'
+  #   #!/usr/bin/env bash
+  #   # ... [the workload body verbatim from `sudo -n choom -n -600 -p $$` down
+  #   #     to and incl. the terminal arms that write /tmp/issue-<N>-surgical-
+  #   #     outcome.txt] ...
+  #   echo $? > /tmp/step9c-surgical-rc-issue-<N>
+  #   SURGICAL_EOF
+  #   chmod +x "$SURGICAL_SCRIPT"
+  #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
+  #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
+  #     bash '$SURGICAL_SCRIPT' < /dev/null > /tmp/issue-<N>-surgical-gate.log 2>&1 & echo \$!")
+  #   ps -p "$PYTEST_PID" -o args= | head -1
+  #   bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
+  #     && LINT_GATE_CHOOM=ok || LINT_GATE_CHOOM=failed
+  #   # ONE bounded retry on failed sweep (§ Detached VM-side long compute
+  #   # phases; #1315):
+  #   if [ "$LINT_GATE_CHOOM" = "failed" ]; then
+  #     for _ in $(seq 1 30); do
+  #       if pgrep -s "$PYTEST_PID" -a 2>/dev/null | grep -qE 'python3?'; then break; fi
+  #       sleep 1
+  #     done
+  #     bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
+  #       && LINT_GATE_CHOOM=ok \
+  #       || { LINT_GATE_CHOOM=failed; echo "[warn] session choom re-sweep failed — surgical gate is earlyoom-UNPROTECTED (choom=failed)" >&2; }
+  #   fi
+  #   echo "[step10d] surgical-gate detached pid=$PYTEST_PID log=/tmp/issue-<N>-surgical-gate.log rc=/tmp/step9c-surgical-rc-issue-<N> harvest=/tmp/issue-<N>-surgical-outcome.txt choom=$LINT_GATE_CHOOM"
   sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && LINT_GATE_CHOOM=ok \
     || { LINT_GATE_CHOOM=failed; echo "[warn] choom failed — lint gate is earlyoom-UNPROTECTED (choom=failed)" >&2; }
   echo "[step10d] lint-gate earlyoom protection choom=$LINT_GATE_CHOOM"
