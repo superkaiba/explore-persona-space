@@ -1,19 +1,34 @@
 {
-  "commit": "5f10e1b1+dirty",
-  "git_commit": "5f10e1b1",
+  "commit": "f63c50f8+dirty",
+  "git_commit": "f63c50f8",
   "git_dirty": true,
   "git_dirty_paths": [
     "eval_results/issue_1482/context_extremes/category_r2_by_arm.json",
+    "eval_results/issue_1739/result2_methods/result2_points.json",
+    "figures/issue_1482/concordance/writeup_concordance_matched.pdf",
+    "figures/issue_1482/concordance/writeup_concordance_pooled.pdf",
+    "figures/issue_1482/concordance/writeup_concordance_tails.pdf",
+    "figures/issue_1482/concordance/writeup_concordance_tails.png",
     "figures/issue_1482/context_category_by_arm.meta.json",
     "figures/issue_1482/context_category_by_arm.pdf",
     "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1739/result2_methods/result2_methods_bare_query.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_bare_query.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_bare_query.png",
+    "figures/issue_1739/result2_methods/result2_methods_context.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_context.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_context.png",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.png",
+    "scripts/issue1482_concordance_writeup_figs.py",
     "scripts/issue1482_context_category_by_arm.py",
     "scripts/issue1739_result1_spread_fig_v2.py",
     "scripts/issue1739_result2_method_fig.py",
     "scripts/issue1739_result2_method_fig_v2.py",
     "tasks/planning/1995/plans/v2.md"
   ],
-  "created": "2026-08-04T17:21:18Z",
+  "created": "2026-08-04T17:25:06Z",
   "figsize": [
     19.0,
     8.6
@@ -58,6 +73,20 @@
       "x": -0.358333,
       "Spearman rho, prediction vs judged behavior expression": 0.665015,
       "error": 0.013591500000000034,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.641667,
+      "Spearman rho, prediction vs judged behavior expression": 0.060318,
+      "error": 0.04098,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.641667,
+      "Spearman rho, prediction vs judged behavior expression": 0.346775,
+      "error": 0.0759705,
       "_kind": "bar",
       "_group": 1
     },
@@ -258,6 +287,20 @@
       "_group": 7
     },
     {
+      "x": 0.928333,
+      "Spearman rho, prediction vs judged behavior expression": 0.067896,
+      "error": 0.040757,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.928333,
+      "Spearman rho, prediction vs judged behavior expression": 0.307784,
+      "error": 0.07284900000000001,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
       "x": 2.928333,
       "Spearman rho, prediction vs judged behavior expression": 0.129537,
       "error": 0.047914,
@@ -275,6 +318,20 @@
       "x": -0.023889,
       "Spearman rho, prediction vs judged behavior expression": 0.70146,
       "error": 0.013636499999999996,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.976111,
+      "Spearman rho, prediction vs judged behavior expression": 0.053046,
+      "error": 0.04471,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.976111,
+      "Spearman rho, prediction vs judged behavior expression": 0.255715,
+      "error": 0.0793895,
       "_kind": "bar",
       "_group": 8
     },
@@ -506,6 +563,20 @@
       "x": 0.310556,
       "Spearman rho, prediction vs judged behavior expression": 0.713816,
       "error": 0.012973999999999986,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.310556,
+      "Spearman rho, prediction vs judged behavior expression": 0.067767,
+      "error": 0.041091,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.310556,
+      "Spearman rho, prediction vs judged behavior expression": 0.301542,
+      "error": 0.07479749999999999,
       "_kind": "bar",
       "_group": 15
     },
@@ -1491,7 +1562,7 @@
     }
   ],
   "n_series": 54,
-  "total_points": 210,
+  "total_points": 218,
   "text": {
     "suptitle": "Input state: context (prefix + query) -> answer",
     "fig_texts": [

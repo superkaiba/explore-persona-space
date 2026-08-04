@@ -1,22 +1,37 @@
 {
-  "commit": "5f10e1b1+dirty",
-  "git_commit": "5f10e1b1",
+  "commit": "f63c50f8+dirty",
+  "git_commit": "f63c50f8",
   "git_dirty": true,
   "git_dirty_paths": [
     "eval_results/issue_1482/context_extremes/category_r2_by_arm.json",
+    "eval_results/issue_1739/result2_methods/result2_points.json",
+    "figures/issue_1482/concordance/writeup_concordance_matched.pdf",
+    "figures/issue_1482/concordance/writeup_concordance_pooled.pdf",
+    "figures/issue_1482/concordance/writeup_concordance_tails.pdf",
+    "figures/issue_1482/concordance/writeup_concordance_tails.png",
     "figures/issue_1482/context_category_by_arm.meta.json",
     "figures/issue_1482/context_category_by_arm.pdf",
     "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1739/result2_methods/result2_methods_bare_query.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_bare_query.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_bare_query.png",
+    "figures/issue_1739/result2_methods/result2_methods_context.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_context.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_context.png",
     "figures/issue_1739/result2_methods/result2_methods_context_simple.meta.json",
     "figures/issue_1739/result2_methods/result2_methods_context_simple.pdf",
     "figures/issue_1739/result2_methods/result2_methods_context_simple.png",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.png",
+    "scripts/issue1482_concordance_writeup_figs.py",
     "scripts/issue1482_context_category_by_arm.py",
     "scripts/issue1739_result1_spread_fig_v2.py",
     "scripts/issue1739_result2_method_fig.py",
     "scripts/issue1739_result2_method_fig_v2.py",
     "tasks/planning/1995/plans/v2.md"
   ],
-  "created": "2026-08-04T17:21:23Z",
+  "created": "2026-08-04T17:25:12Z",
   "figsize": [
     19.0,
     8.6
@@ -61,6 +76,20 @@
       "x": -0.358333,
       "Spearman rho, prediction vs judged behavior expression": 0.494127,
       "error": 0.01829249999999999,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.641667,
+      "Spearman rho, prediction vs judged behavior expression": -0.018206,
+      "error": 0.0383685,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.641667,
+      "Spearman rho, prediction vs judged behavior expression": -0.01109,
+      "error": 0.0833275,
       "_kind": "bar",
       "_group": 1
     },
@@ -233,6 +262,20 @@
       "_group": 7
     },
     {
+      "x": 0.928333,
+      "Spearman rho, prediction vs judged behavior expression": 0.009163,
+      "error": 0.0362525,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.928333,
+      "Spearman rho, prediction vs judged behavior expression": -0.001735,
+      "error": 0.081569,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
       "x": 2.928333,
       "Spearman rho, prediction vs judged behavior expression": 0.049392,
       "error": 0.04918,
@@ -250,6 +293,20 @@
       "x": -0.023889,
       "Spearman rho, prediction vs judged behavior expression": 0.559179,
       "error": 0.017100999999999977,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.976111,
+      "Spearman rho, prediction vs judged behavior expression": 0.003767,
+      "error": 0.034386,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.976111,
+      "Spearman rho, prediction vs judged behavior expression": -0.024284,
+      "error": 0.0797225,
       "_kind": "bar",
       "_group": 8
     },
@@ -467,6 +524,20 @@
       "x": 0.310556,
       "Spearman rho, prediction vs judged behavior expression": 0.468368,
       "error": 0.01949100000000001,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.310556,
+      "Spearman rho, prediction vs judged behavior expression": 0.009353,
+      "error": 0.0367185,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.310556,
+      "Spearman rho, prediction vs judged behavior expression": -0.001509,
+      "error": 0.08215800000000001,
       "_kind": "bar",
       "_group": 15
     },
@@ -1403,7 +1474,7 @@
     }
   ],
   "n_series": 52,
-  "total_points": 197,
+  "total_points": 205,
   "text": {
     "suptitle": "Input state: prefix-end state -> answer",
     "fig_texts": [

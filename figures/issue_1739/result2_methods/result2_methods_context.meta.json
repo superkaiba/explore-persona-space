@@ -1,37 +1,24 @@
 {
-  "commit": "107a8b16+dirty",
-  "git_commit": "107a8b16",
+  "commit": "f63c50f8+dirty",
+  "git_commit": "f63c50f8",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_1739/result2_methods/result2_points.json",
+    "eval_results/issue_1482/context_extremes/category_r2_by_arm.json",
+    "figures/issue_1482/concordance/writeup_concordance_matched.pdf",
+    "figures/issue_1482/concordance/writeup_concordance_pooled.pdf",
+    "figures/issue_1482/concordance/writeup_concordance_tails.pdf",
+    "figures/issue_1482/concordance/writeup_concordance_tails.png",
     "figures/issue_1482/context_category_by_arm.meta.json",
     "figures/issue_1482/context_category_by_arm.pdf",
     "figures/issue_1482/context_category_by_arm.png",
-    "figures/issue_1739/result2_methods/result2_methods_bare_query.meta.json",
-    "figures/issue_1739/result2_methods/result2_methods_bare_query.pdf",
-    "figures/issue_1739/result2_methods/result2_methods_bare_query.png",
-    "figures/issue_1739/result2_methods/result2_methods_bare_query_simple.meta.json",
-    "figures/issue_1739/result2_methods/result2_methods_bare_query_simple.pdf",
-    "figures/issue_1739/result2_methods/result2_methods_bare_query_simple.png",
-    "figures/issue_1739/result2_methods/result2_methods_context.meta.json",
-    "figures/issue_1739/result2_methods/result2_methods_context.pdf",
-    "figures/issue_1739/result2_methods/result2_methods_context.png",
-    "figures/issue_1739/result2_methods/result2_methods_context_simple.meta.json",
-    "figures/issue_1739/result2_methods/result2_methods_context_simple.pdf",
-    "figures/issue_1739/result2_methods/result2_methods_context_simple.png",
-    "figures/issue_1739/result2_methods/result2_methods_prefix_end.meta.json",
-    "figures/issue_1739/result2_methods/result2_methods_prefix_end.pdf",
-    "figures/issue_1739/result2_methods/result2_methods_prefix_end.png",
-    "figures/issue_1739/result2_methods/result2_methods_prefix_end_simple.meta.json",
-    "figures/issue_1739/result2_methods/result2_methods_prefix_end_simple.pdf",
-    "figures/issue_1739/result2_methods/result2_methods_prefix_end_simple.png",
+    "scripts/issue1482_concordance_writeup_figs.py",
     "scripts/issue1482_context_category_by_arm.py",
     "scripts/issue1739_result1_spread_fig_v2.py",
     "scripts/issue1739_result2_method_fig.py",
     "scripts/issue1739_result2_method_fig_v2.py",
     "tasks/planning/1995/plans/v2.md"
   ],
-  "created": "2026-08-04T17:18:31Z",
+  "created": "2026-08-04T17:24:44Z",
   "figsize": [
     17.0,
     9.0
@@ -116,14 +103,14 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.06776719550426992,
       "error": 0.04869220415786983,
       "_kind": "errorbar",
       "_group": 2
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.30154156100218626,
       "error": 0.0762138393684865,
       "_kind": "errorbar",
       "_group": 2
@@ -256,14 +243,14 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.060318283438333946,
       "error": 0.04869220415786983,
       "_kind": "errorbar",
       "_group": 6
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.34677496663616864,
       "error": 0.0762138393684865,
       "_kind": "errorbar",
       "_group": 6
@@ -466,14 +453,14 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.06789568871757093,
       "error": 0.04869220415786983,
       "_kind": "errorbar",
       "_group": 12
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.30778391923363374,
       "error": 0.0762138393684865,
       "_kind": "errorbar",
       "_group": 12
@@ -501,14 +488,14 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.05304595106075997,
       "error": 0.04869220415786983,
       "_kind": "errorbar",
       "_group": 13
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.2557154195166852,
       "error": 0.0762138393684865,
       "_kind": "errorbar",
       "_group": 13
@@ -855,13 +842,13 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.06776719550426992,
       "_kind": "line",
       "_group": 24
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.30154156100218626,
       "_kind": "line",
       "_group": 24
     },
@@ -885,13 +872,13 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.026398614726560368,
       "_kind": "line",
       "_group": 25
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.2236980658539074,
       "_kind": "line",
       "_group": 25
     },
@@ -915,13 +902,13 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.10858053752277708,
       "_kind": "line",
       "_group": 26
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.3732925352688795,
       "_kind": "line",
       "_group": 26
     },
@@ -1215,13 +1202,13 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.060318283438333946,
       "_kind": "line",
       "_group": 36
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.34677496663616864,
       "_kind": "line",
       "_group": 36
     },
@@ -1245,13 +1232,13 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.018355341486109795,
       "_kind": "line",
       "_group": 37
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.26678443525093726,
       "_kind": "line",
       "_group": 37
     },
@@ -1275,13 +1262,13 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.10031505657716308,
       "_kind": "line",
       "_group": 38
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.4187252641598035,
       "_kind": "line",
       "_group": 38
     },
@@ -1755,13 +1742,13 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.06789568871757093,
       "_kind": "line",
       "_group": 54
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.30778391923363374,
       "_kind": "line",
       "_group": 54
     },
@@ -1785,13 +1772,13 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.025429345058346695,
       "_kind": "line",
       "_group": 55
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.23089518147064567,
       "_kind": "line",
       "_group": 55
     },
@@ -1815,13 +1802,13 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.10694324754406594,
       "_kind": "line",
       "_group": 56
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.37659286926316693,
       "_kind": "line",
       "_group": 56
     },
@@ -1845,13 +1832,13 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.05304595106075997,
       "_kind": "line",
       "_group": 57
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.2557154195166852,
       "_kind": "line",
       "_group": 57
     },
@@ -1875,13 +1862,13 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.006340218352592762,
       "_kind": "line",
       "_group": 58
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.17318355550649236,
       "_kind": "line",
       "_group": 58
     },
@@ -1905,13 +1892,13 @@
     },
     {
       "x": 1.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.09575988468315258,
       "_kind": "line",
       "_group": 59
     },
     {
       "x": 2.0,
-      "Spearman rho, prediction vs judged behavior expression": null,
+      "Spearman rho, prediction vs judged behavior expression": 0.33196314200060145,
       "_kind": "line",
       "_group": 59
     },
