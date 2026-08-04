@@ -77,6 +77,7 @@ DEFAULT_DATA_ROOT = REPO_ROOT / "data" / "issue_1689" / "real_u2_capture"
 def upload_data_root(
     *,
     data_root: Path,
+    # UPLOAD_PREFIX_EXEMPT: per-issue upload script — HF_PREFIX is the plan §6.5 destination for issue #1689's real-u2-capture round only; no child issue reuses this script (a follow-up would file its own scripts/issue<M>_*_upload.py per project naming convention). The #1005 clobber shape does not apply.
     hf_prefix: str = HF_PREFIX,
     smoke: bool = False,
 ) -> dict:
@@ -131,6 +132,7 @@ def upload_data_root(
     # (`.claude/rules/upload-policy.md` § many-files 504-storm).
     # retry_transient handles 429 / 5xx / connection / timeout with
     # Retry-After-honoring backoff (default EPM_HF_RETRY_BUDGET_S=1800s).
+    # HUB_DIR_FILECOUNT_EXEMPT: 21-file whole-tree upload (12 activation stores at L19 + corpus/haiku_u2 raw completions + capture manifest); vastly below the 10k-file Hub dir cap and validated live at revision 068694e11b (Step 8 upload-verifier PASS on 21 files, 2026-08-04T01:29Z).
     retry_transient(
         lambda: api.upload_folder(
             folder_path=str(data_root),
@@ -184,6 +186,7 @@ def main() -> int:
         default=DEFAULT_DATA_ROOT,
         help="Local data tree to upload (mirrors the dispatcher's DATA_ROOT).",
     )
+    # UPLOAD_PREFIX_EXEMPT: per-issue upload script — HF_PREFIX is the plan §6.5 destination for issue #1689's real-u2-capture round only; no child issue reuses this script (a follow-up files its own scripts/issue<M>_*_upload.py per project naming convention). The #1005 clobber shape does not apply.
     ap.add_argument(
         "--hf-prefix",
         default=HF_PREFIX,
@@ -221,4 +224,4 @@ if __name__ == "__main__":
     rc = main()
     sys.stdout.flush()
     sys.stderr.flush()
-    sys.exit(rc if isinstance(rc, int) else 0)
+    os._exit(rc if isinstance(rc, int) else 0)

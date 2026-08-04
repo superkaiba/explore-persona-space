@@ -10,7 +10,17 @@ Two figures:
 
 from __future__ import annotations
 
+
+# Call load_dotenv() at module top BEFORE importing heavy libs (matplotlib/numpy)
+# so orchestrate.env's thread-cap setdefaults land in-process before those libs
+# freeze their pools. Required by tests/test_shared_vm_thread_caps.py.
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
 import json
+import os
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -238,12 +248,16 @@ def fig15_lattice(cells):
     plt.close(fig)
 
 
-def main():
+def main() -> int:
     cells = load_cells()
     fig14_hero(cells)
     fig15_lattice(cells)
     print(f"Wrote fig14 + fig15 under figures/{OUT_DIR}/")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    rc = main()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(rc if isinstance(rc, int) else 0)
