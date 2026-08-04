@@ -93,6 +93,7 @@
 - [Purge/reap only after the LAST consumer](feedback_incremental_reap_last_consumer.md) — enumerate every reader (#1489, #1776)
 - [Off-pod phase file-reads vs upload manifest](feedback_offpod_phase_upload_manifest_seam.md) — off-pod phase reads must be in the upload (#1482)
 - [Companion-stat drop-class semantics](feedback_companion_stat_drop_class_semantics.md) — zero split-half floors at early positions (#1415)
+- [Tie-density gradient fakes a per-bin effect](feedback_tie_density_resolution_gradient_fakes_an_effect.md) — point-mass covariate: bound with the Spearman tie ceiling; sd points the wrong way (#1482)
 - [Subsample re-admission filter](feedback_subsample_readmission_filter.md) — re-apply the producer's admission filter (#1738)
 - [Reused-module + cross-script wiring contract](feedback_reused_module_hf_prefix_contract.md) — audit flags AND every arg/ns field vs the (#1776)
 - [out-arg FILE-vs-DIR kind](feedback_out_arg_file_vs_dir_kind.md) — a file path passed as an out-dir arg (#1776)
