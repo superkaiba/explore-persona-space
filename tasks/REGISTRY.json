@@ -8135,8 +8135,8 @@
     "2050": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2050",
-      "status": "reviewing",
+      "path": "tasks/completed/2050",
+      "status": "completed",
       "title": "workflow-fix: pgrep without -f under-matches argv, reads live process as dead"
     },
     "2051": {
