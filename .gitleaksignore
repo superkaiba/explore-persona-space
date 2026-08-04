@@ -59,3 +59,6 @@ eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:4
 eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:50236
 eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:123715
 eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:399403
+# map963k_ridge map-key string literal (task #1739 labeled readouts) — not a secret
+scripts/issue1739_map963k_labeled_readout.py:generic-api-key:375
+scripts/issue1739_map963k_labeled_readout.py:generic-api-key:485
