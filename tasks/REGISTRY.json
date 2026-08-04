@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2062,
+  "highest_id": 2063,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8224,6 +8224,13 @@
       "path": "tasks/proposed/2062",
       "status": "proposed",
       "title": "workflow-fix: lean-context subagent twins \u2014 thrash ladder ha"
+    },
+    "2063": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2063",
+      "status": "proposed",
+      "title": "daily-fix: judge max_tokens pins sit below the raised rule-2"
     },
     "207": {
       "has_clean_result": true,
