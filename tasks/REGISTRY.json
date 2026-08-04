@@ -7729,8 +7729,8 @@
     "1999": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1999",
-      "status": "running",
+      "path": "tasks/reviewing/1999",
+      "status": "reviewing",
       "title": "daily-fix: HF fan-out pre-stage rule + FLEX preemption escal"
     },
     "2": {
