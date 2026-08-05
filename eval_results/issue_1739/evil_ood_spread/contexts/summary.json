@@ -1,0 +1,47 @@
+{
+  "corpus_counts": {
+    "mhj": 200,
+    "tomgibbs": 200,
+    "pair": 200
+  },
+  "per_corpus": {
+    "mhj": {
+      "n_pre_dedup": 200,
+      "n_removed_train_near_dup": 0,
+      "n_kept": 200,
+      "n_multi_turn": 200,
+      "n_single_turn": 0,
+      "turns_min": 2,
+      "turns_max": 28,
+      "arms": [
+        "n/a"
+      ]
+    },
+    "tomgibbs": {
+      "n_pre_dedup": 200,
+      "n_removed_train_near_dup": 0,
+      "n_kept": 200,
+      "n_multi_turn": 200,
+      "n_single_turn": 0,
+      "turns_min": 12,
+      "turns_max": 26,
+      "arms": [
+        "multi_turn"
+      ]
+    },
+    "pair": {
+      "n_pre_dedup": 200,
+      "n_removed_train_near_dup": 0,
+      "n_kept": 200,
+      "n_multi_turn": 0,
+      "n_single_turn": 200,
+      "turns_min": 1,
+      "turns_max": 1,
+      "arms": [
+        "n/a"
+      ]
+    }
+  },
+  "dedup_mode": "train-rollouts n_ctx=10617 n_8gram=463381 coverage>0.7",
+  "smoke": false
+}
