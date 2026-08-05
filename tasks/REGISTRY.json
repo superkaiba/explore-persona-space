@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2102,
+  "highest_id": 2103,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8541,6 +8541,13 @@
       "path": "tasks/proposed/2102",
       "status": "proposed",
       "title": "workflow-fix: workflow.yaml wf-fix prose vs 8 daily-doc pins (main-red)"
+    },
+    "2103": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2103",
+      "status": "proposed",
+      "title": "workflow-fix: verify pinned one-off installs resolve + dist-name != import-name"
     },
     "212": {
       "has_clean_result": true,
