@@ -24,7 +24,12 @@ import json
 import sys
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# Before any heavy import, so the shared-VM thread caps (#847) bind in-process.
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 SLUGS = ["scale05", "scale15", "scale3", "scale7_refit", "scale14", "scale32"]
 PAIRS = [

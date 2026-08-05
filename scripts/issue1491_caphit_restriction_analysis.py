@@ -100,6 +100,7 @@ def _list_raw_names(prefix: str) -> list[str]:
     return hub.retry_transient(
         lambda: sorted(
             f.path.rsplit("/", 1)[-1]
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient by this function
             for f in HfApi().list_repo_tree(
                 C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
             )
@@ -230,6 +231,7 @@ def phase_b_restriction(
     committed: dict,
     scratch: Path,
     preds_dir: Path,
+    percontext_dir: Path,
 ) -> dict:
     dev = torch.device("cpu")
     t0 = time.time()
@@ -330,7 +332,9 @@ def phase_b_restriction(
         np.linalg.norm(pred_te, axis=1) * np.linalg.norm(y_te, axis=1) + 1e-30
     )
     se_row = ((y_te - pred_te) ** 2).sum(axis=1)
-    csv_dir = preds_dir.parent / "percontext"
+    # Durable, committed home (under eval_results/) — these per-context rows are the
+    # low-level data behind every aggregate plot, so they must not land in gitignored data/.
+    csv_dir = percontext_dir
     csv_dir.mkdir(parents=True, exist_ok=True)
     with open(csv_dir / f"{slug}_percontext.csv", "w") as fh:
         fh.write("ci,cosine_pred_target,sq_err,cap_hit\n")
@@ -408,7 +412,14 @@ def main() -> int:
         a = phase_a_caphit(slug, hf_prefix, scratch, spot_picks)
         spot_rows.extend(a["spot_rows"])
         b = phase_b_restriction(
-            slug, hf_prefix, layer, a["masks"], committed, scratch, args.preds_dir
+            slug,
+            hf_prefix,
+            layer,
+            a["masks"],
+            committed,
+            scratch,
+            args.preds_dir,
+            args.out_dir / "percontext",
         )
 
         rec = {

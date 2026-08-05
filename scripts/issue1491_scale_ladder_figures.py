@@ -17,10 +17,15 @@ import csv
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# Before any heavy import, so the shared-VM thread caps (#847) bind in-process.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_blog,
     savefig_paper,
     set_paper_style,
@@ -56,12 +61,12 @@ COL = {
 GRAY = "#9a9a9a"
 
 
-def _load(ladder_dir: Path):
+def _load(ladder_dir: Path, percontext_dir: Path):
     fits, digests, percontext = {}, {}, {}
     for slug in SLUGS:
         fits[slug] = json.loads((ladder_dir / f"fits_{slug}.json").read_text())
         digests[slug] = json.loads((ladder_dir / f"caphit_restriction_{slug}.json").read_text())
-        rows = list(csv.DictReader(open(ladder_dir / "percontext" / f"{slug}_percontext.csv")))
+        rows = list(csv.DictReader(open(percontext_dir / f"{slug}_percontext.csv")))
         percontext[slug] = {
             "ci": np.array([int(r["ci"]) for r in rows]),
             "cos": np.array([float(r["cosine_pred_target"]) for r in rows]),
@@ -167,7 +172,8 @@ def fig_hero_points(percontext, out):
     ax.set_xticks(range(len(SLUGS)))
     ax.set_xticklabels([LABELS[s] for s in SLUGS])
     ax.set_xlabel("model size (Qwen2.5-Instruct, parameters)")
-    ax.set_ylabel("per-context cosine(predicted, actual answer vector)")
+    # Kept short: a longer label overflows the axes height and renders clipped.
+    ax.set_ylabel("cosine(predicted, actual answer)")
     ax.set_title(
         "per-context fit quality behind each aggregate R² (dark diamond = median)", loc="left"
     )
@@ -196,7 +202,10 @@ def fig_depth_pair(fits, digests, percontext, out):
     ax.set_xticks(xs)
     ax.set_xticklabels(names)
     ax.set_ylabel("held-out test R² (variance-weighted)")
-    ax.set_ylim(0.5, 0.8)
+    # Bars start at zero: a truncated baseline visually exaggerates the 14B-vs-32B
+    # gap, and this pair is a headline result. The paired scatter (right panel)
+    # carries the per-context resolution a zoomed axis would have supplied.
+    ax.set_ylim(0.0, 0.8)
     ax.set_title("same width (5120 dims), more depth", loc="left")
     ax.legend(fontsize=8)
 
@@ -358,7 +367,8 @@ def fig_floors_retrieval(fits, out):
     ax.axhline(0.001, color=GRAY, linestyle=":", linewidth=1.0)
     ax.plot([], [], color=GRAY, linestyle=":", linewidth=1.0, label="chance (1 of 1,000)")
     _xticks(ax)
-    ax.set_ylabel("retrieval accuracy@1 among 1,000 test answers (cosine)")
+    # Kept short (was clipping); pool size stays in the label since chance = 1/1,000.
+    ax.set_ylabel("retrieval acc@1 (cosine; pool = 1,000)")
     ax.set_title("does the prediction find the right answer vector?", loc="left")
     ax.set_ylim(0, 0.9)
     ax.legend(fontsize=8)
@@ -370,9 +380,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ladder-dir", type=Path, required=True)
     ap.add_argument("--out", type=Path, default=Path("figures"))
+    # Defaults to <ladder-dir>/percontext — the durable committed home for the
+    # per-context CSVs (data/ is gitignored, so a data/ copy is not reproducible).
+    ap.add_argument("--percontext-dir", type=Path, default=None)
     args = ap.parse_args()
+    percontext_dir = args.percontext_dir or (args.ladder_dir / "percontext")
     set_paper_style("blog")
-    fits, digests, percontext = _load(args.ladder_dir)
+    fits, digests, percontext = _load(args.ladder_dir, percontext_dir)
     fig_hero(fits, digests, args.out)
     fig_hero_points(percontext, args.out)
     fig_depth_pair(fits, digests, percontext, args.out)
