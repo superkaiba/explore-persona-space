@@ -264,7 +264,29 @@ def attrib_re_for(char_name: str) -> re.Pattern[str]:
         "ANSWER_ATTRIB_RE pattern no longer carries the character name exactly once — "
         "attrib_re_for needs updating"
     )
-    return re.compile(pattern.replace(base_name, re.escape(char_name)))
+    # The NAME token accepts the GIVEN spelling OR its ALL-CAPS form; the rest
+    # of the pattern keeps the parent's exact semantics.
+    #
+    # WHY: the parent's own character name is ALL-CAPS ("ARIA") and generators
+    # echo that convention inconsistently. #2054's char_helios stories label the
+    # speaker "HELIOS replied:" while char_wren/dana/vex came out title-case, so
+    # a case-SENSITIVE \bHelios\b found ZERO turns and strip_story rejected
+    # 2,175/2,187 rows as `no_parsed_turns` (vs 4/2,159 for wren). Measured on
+    # the real parent files, this alternation recovers char_helios 12 -> 2,179
+    # of 2,187 and leaves wren/dana/vex/assistant byte-identical.
+    #
+    # NOT a blanket `(?i:...)`: several lattice names are ordinary English words
+    # ("Vex", "Wren"), and a fully case-insensitive token would attribute a
+    # narrator clause ("...to vex her, he said, \"...\"") to the character. The
+    # two-form alternation covers every casing convention actually observed
+    # while keeping the lowercase word non-matching.
+    #
+    # `(?:...)` is NON-capturing, so group numbering — and the caller's
+    # `m.end(1)` opening-quote re-alignment in strip_story — are unaffected.
+    esc = re.escape(char_name)
+    esc_upper = re.escape(char_name.upper())
+    name_alt = esc if esc_upper == esc else f"(?:{esc}|{esc_upper})"
+    return re.compile(pattern.replace(base_name, name_alt))
 
 
 def parse_story_turns_for(text: str, char_name: str) -> list[dict]:
