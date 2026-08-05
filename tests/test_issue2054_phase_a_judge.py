@@ -255,8 +255,17 @@ def _write_manifest_fixture(root: Path) -> Path:
             "source_hash": "sha:eeeeeeeeeeeeeeee",
         },
         {  # over token budget under the fake tokenizer (one word per token)
-            "messages": [{"role": "user", "content": "w " * 3000}],
+            # Kept UNDER QUESTION_MAX_CHARS on purpose: since the r5 supply fix
+            # the char bound is 400, so a 6,000-char row would be dropped by
+            # char_bounds first and the token branch would go unexercised.
+            "messages": [
+                {"role": "user", "content": "why does one two three four five six seven eight nine"}
+            ],
             "source_hash": "sha:ffffffffffffffff",
+        },
+        {  # r5 supply fix: MULTILINE questions verbatim-keep at 1.3-3.0%
+            "messages": [{"role": "user", "content": "Fix this snippet:\n\n  x = 1\n  print(x)"}],
+            "source_hash": "sha:9999999999999999",
         },
     ]
     for i, rows in enumerate((rows0, rows1)):
@@ -266,8 +275,13 @@ def _write_manifest_fixture(root: Path) -> Path:
     return mdir
 
 
-def test_question_draw_deterministic_filtered(tmp_path):
+def test_question_draw_deterministic_filtered(tmp_path, monkeypatch):
     mdir = _write_manifest_fixture(tmp_path)
+    # The fake tokenizer is one token per whitespace word, and the r5 supply
+    # fix caps questions at 400 chars — so the token branch is only reachable
+    # with a small budget. 8 admits all three valid fixture questions (7/8/7
+    # words) and drops the 10-word over-budget row.
+    monkeypatch.setattr(phase_a, "QUESTION_MAX_TOKENS", 8)
     kwargs = dict(
         staging_dir=tmp_path / "unused",
         manifest_dir=mdir,
@@ -280,7 +294,9 @@ def test_question_draw_deterministic_filtered(tmp_path):
     assert len(drawn1) == 3
     assert rec1["counters"]["dupe_question"] == 1
     assert rec1["counters"]["char_bounds"] == 1
+    assert rec1["counters"]["multiline"] == 1
     assert rec1["counters"]["over_token_budget"] == 1
+    assert all("\n" not in r["question"] for r in drawn1)
     for r in drawn1:
         assert r["conv_id"] == r["qid"]
         assert r["conv_id"].startswith("mt_") and "__" not in r["conv_id"]

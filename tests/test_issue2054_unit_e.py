@@ -217,6 +217,7 @@ def test_phase_a_prejudge_staleness_raises_on_content_drift(tmp_path):
     args = _ns(
         seed=137,
         target_conv_ids=8000,
+        gen_draw_n=None,
         gen_model="instruct",
         gen_mock=False,
         no_generate=False,
@@ -237,12 +238,13 @@ def test_phase_a_prejudge_staleness_raises_on_cross_regime_seed(tmp_path):
     gen_args = _ns(
         seed=137,
         target_conv_ids=8000,
+        gen_draw_n=None,
         gen_model="instruct",
         gen_mock=False,
         no_generate=False,
     )
     phase_a._write_prejudge_sidecars({v: pj}, gen_args, {v: 1})
-    judge_args = _ns(seed=42, target_conv_ids=8000)
+    judge_args = _ns(seed=42, target_conv_ids=8000, gen_draw_n=None)
     with pytest.raises(RuntimeError, match="seed"):
         phase_a._verify_prejudge_staleness(out_dir, [v], judge_args)
 
@@ -549,7 +551,12 @@ def test_gen_stage_resumed_still_uploads_prejudge(monkeypatch):
         pj.parent.mkdir(parents=True, exist_ok=True)
         pj.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
         sidecar_args = SimpleNamespace(
-            seed=137, target_conv_ids=50, gen_model="instruct", gen_mock=False, no_generate=False
+            seed=137,
+            target_conv_ids=50,
+            gen_draw_n=None,
+            gen_model="instruct",
+            gen_mock=False,
+            no_generate=False,
         )
         phase_a._write_prejudge_sidecars({variant: pj}, sidecar_args, {variant: len(rows)})
         gen_dir = out_dir / variant / "gen"

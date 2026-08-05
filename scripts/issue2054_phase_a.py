@@ -94,7 +94,30 @@ TASK_PREFIX = "issue2054_lattice"
 # multi-turn conversations, 55 JSONL parts, ~455 MB — a bounded fetch).
 QUESTION_MANIFEST_PREFIX = "issue1738_multiturn/sampling_manifest"
 QUESTION_MIN_CHARS = 16
-QUESTION_MAX_CHARS = 8000
+# Scaffold-admissibility bounds, MEASURED on the 2026-08-05 production gen
+# output (34,335 generated scaffolds across the 5 variants; the plan-req-6
+# verbatim-question filter is what selects on them):
+#
+#   filter                 min per-variant verbatim-keep   corpus kept
+#   none  (max_chars=8000)              26.9%                100.0%
+#   single-line                         34.2%                 77.9%
+#   single-line + <400                  36.0%                 72.6%   <- chosen
+#   single-line + <200                  37.6%                 66.0%
+#
+# A MULTILINE question keeps at 1.3-3.0%, and an >=800-char question at
+# 1.1-2.8% — the generator paraphrases/truncates them, so `question in
+# scaffold_text` fails and the row is rejected DOWNSTREAM, after its
+# generation compute is already spent. Admitting them cost ~74% of the first
+# production draw (char_helios: generator kept 6,837, only 2,031 survived
+# verbatim admission) and left every variant 6-12% short of kill gate 4.
+# Filtering here makes that selection EXPLICIT and cheap instead of implicit
+# and paid-for. <400 (not <200) keeps 72.6% of the corpus — the narrowest
+# distributional cut that clears the yield need.
+#
+# SCOPE CAVEAT (carry into the clean-result): the eval distribution is now
+# single-line real-user questions under 400 chars, not the full corpus.
+QUESTION_MAX_CHARS = 400
+QUESTION_SINGLE_LINE = True
 # Prompt-budget cap for the generator render (gen MAX_MODEL_LEN 4096 −
 # SCAFFOLD_MAX_NEW_TOKENS 1024 − ~500 tokens of scaffold-prompt overhead,
 # with margin). Over-budget questions are DROPPED, never truncated (#952).
@@ -351,9 +374,20 @@ def _recover_scaffolds_from_hf(variants: list[str], api) -> dict[str, list[dict]
             except Exception as exc:  # noqa: BLE001
                 _log(f"variant={variant} strip {path_in_repo} FAILED: {exc}")
                 continue
+            # Reject-reason breakdown, not just kept/total: a `kept=12/2187`
+            # recovery is only diagnosable from WHICH reason absorbed the rest
+            # (`no_parsed_turns` = the strip parser found zero attributed turns
+            # — the char-name / casing class, #2054's char_helios bug). Without
+            # it the shortfall reads as a data-shape property of the parent.
+            rejects = {
+                k: v
+                for k, v in sorted(counts.items())
+                if k not in ("total", "kept", "multi_turn_kept_tail") and v
+            }
             _log(
                 f"variant={variant} file={Path(path_in_repo).name} "
                 f"kept={counts.get('kept', 0)}/{counts.get('total', 0)}"
+                + (f" rejects={rejects}" if rejects else "")
             )
             variant_out.extend(rows)
         # Each recovered scaffold keeps conv_id == scaffold_id
@@ -433,6 +467,7 @@ def _draw_shared_questions(
         "scanned": 0,
         "no_user_turn": 0,
         "char_bounds": 0,
+        "multiline": 0,
         "sentinel_in_question": 0,
         "dupe_question": 0,
         "dupe_conv_id": 0,
@@ -458,6 +493,9 @@ def _draw_shared_questions(
                     continue
                 if not (QUESTION_MIN_CHARS <= len(q) <= QUESTION_MAX_CHARS):
                     counters["char_bounds"] += 1
+                    continue
+                if QUESTION_SINGLE_LINE and "\n" in q:
+                    counters["multiline"] += 1
                     continue
                 if sc.SLOT_SENTINEL in q:
                     counters["sentinel_in_question"] += 1
@@ -506,6 +544,7 @@ def _draw_shared_questions(
         "filters": {
             "min_chars": QUESTION_MIN_CHARS,
             "max_chars": QUESTION_MAX_CHARS,
+            "single_line": QUESTION_SINGLE_LINE,
             "max_tokens": QUESTION_MAX_TOKENS,
             "tokenizer": QUESTION_TOKENIZER_ID,
         },
@@ -523,6 +562,7 @@ def _question_pool_fingerprint(n: int, seed: int, revision: str | None) -> str:
             "revision": revision,
             "min_chars": QUESTION_MIN_CHARS,
             "max_chars": QUESTION_MAX_CHARS,
+            "single_line": QUESTION_SINGLE_LINE,
             "max_tokens": QUESTION_MAX_TOKENS,
             "manifest_prefix": QUESTION_MANIFEST_PREFIX,
         },
@@ -1072,6 +1112,8 @@ def _gen_regime(variant: str, args) -> dict:
         "variant": variant,
         "seed": int(args.seed),
         "target_conv_ids": int(args.target_conv_ids),
+        # Output-affecting: it sets the shared draw size directly (#722-r3 rule).
+        "gen_draw_n": None if args.gen_draw_n is None else int(args.gen_draw_n),
         "gen_model": str(args.gen_model),
         "gen_mock": bool(args.gen_mock),
         "no_generate": bool(args.no_generate),
@@ -1140,6 +1182,7 @@ def _verify_prejudge_staleness(out_dir: Path, variants: list[str], args) -> None
         for key, want in (
             ("seed", int(args.seed)),
             ("target_conv_ids", int(args.target_conv_ids)),
+            ("gen_draw_n", None if args.gen_draw_n is None else int(args.gen_draw_n)),
         ):
             if rec_regime.get(key) != want:
                 raise RuntimeError(
@@ -1232,11 +1275,32 @@ def run_phase(args: argparse.Namespace) -> int:
             _log(f"recovered {n_total_recovered} scaffolds across {len(variant_rows)} variants")
 
             shared_recovered = _shared_recovered_intersection(variant_rows)
-            n_gen = max(0, args.target_conv_ids - len(shared_recovered))
-            _log(
-                f"shared recovered intersection={len(shared_recovered)} "
-                f"-> shared generation draw n={n_gen}"
-            )
+            # DEFAULT sizing: top the shared recovered pool up to
+            # --target-conv-ids. That arithmetic sizes the CROSS-variant
+            # intersection, but kill gate 4 intersects WITHIN one (character,
+            # model) comparison group (`issue2054_fits._comparison_group_key`),
+            # so the binding quantity is each variant's OWN admitted pool. When
+            # per-variant recovery far exceeds the 5-way intersection (measured
+            # 2026-08-05: ~2,155/variant recovered vs 1,055 shared), the default
+            # UNDER-draws for the gate. `--gen-draw-n` sets the shared draw
+            # directly; the operator grounds it on the measured verbatim-keep
+            # rate (see QUESTION_MAX_CHARS) and records the arithmetic at
+            # dispatch. The draw stays SHARED across variants either way, so
+            # plan req 1 is untouched.
+            if args.gen_draw_n is not None:
+                n_gen = max(0, int(args.gen_draw_n))
+                _log(
+                    f"shared recovered intersection={len(shared_recovered)}; "
+                    f"shared generation draw n={n_gen} (--gen-draw-n override; "
+                    f"target_conv_ids arithmetic would have given "
+                    f"{max(0, args.target_conv_ids - len(shared_recovered))})"
+                )
+            else:
+                n_gen = max(0, args.target_conv_ids - len(shared_recovered))
+                _log(
+                    f"shared recovered intersection={len(shared_recovered)} "
+                    f"-> shared generation draw n={n_gen}"
+                )
             if args.pilot or args.no_generate or n_gen == 0:
                 _log(
                     f"generation SKIPPED (pilot={args.pilot} no_generate={args.no_generate} "
@@ -1470,6 +1534,17 @@ def run_phase(args: argparse.Namespace) -> int:
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--target-conv-ids", type=int, default=8_000)
+    p.add_argument(
+        "--gen-draw-n",
+        type=int,
+        default=None,
+        help=(
+            "size the SHARED generation draw directly, bypassing the "
+            "target-conv-ids minus shared-recovered arithmetic (which sizes the "
+            "cross-variant intersection, not the per-(character,model) pool kill "
+            "gate 4 actually reads). Ground it on the measured verbatim-keep rate."
+        ),
+    )
     p.add_argument(
         "--output-dir",
         default="data/issue_2054/scaffolds",
