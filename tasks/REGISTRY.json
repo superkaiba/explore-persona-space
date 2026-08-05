@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2076,
+  "highest_id": 2077,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8329,6 +8329,13 @@
       "path": "tasks/proposed/2076",
       "status": "proposed",
       "title": "Clear the api-dispatch-routing lint FAIL on scripts/issue1482_blind_read_api.py (route through api_dispatch or add the documented waiver)"
+    },
+    "2077": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2077",
+      "status": "proposed",
+      "title": "workflow-fix: wall-clock heartbeat duty for subagents owning detached work"
     },
     "208": {
       "has_clean_result": false,
