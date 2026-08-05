@@ -149,6 +149,35 @@ GEN_TEMP = 1.0
 GEN_TOP_P = 0.95
 GEN_SEED_DEFAULT = 42  # seed 43/44 rides ceiling_draw_{43,44} split arg
 
+# Decoding-regime identity tags (greedy replication round, epm:progress v63).
+# The tag is part of the resume/wave identity: it rides every raw-completions
+# payload AND a per-stage-prefix marker file, so a greedy run can NEVER
+# silently resume from / salvage / join temperature-1.0 chunks (or vice
+# versa) — the exact hazard the salvage path's "never regenerate" contract
+# warns about (a cross-regime reuse is invisible to the per-row prompt
+# assert, which checks prompts, not responses).
+SAMPLING_MODE_PARENT = "temp1.0_top_p0.95"  # the parent recipe (GEN_TEMP/GEN_TOP_P)
+SAMPLING_MODE_GREEDY = "greedy_temp0"
+SAMPLING_MARKER_NAME = "sampling_mode.json"
+
+
+def _resolve_sampling(greedy: bool) -> dict:
+    """Resolve the run's decoding config + its identity tag.
+
+    DEFAULT (greedy=False) is byte-identical to the parent recipe (the
+    GEN_TEMP/GEN_TOP_P module constants). GREEDY (temperature 0) is the
+    deterministic replication round: top_p is inert under greedy sampling and
+    pinned to 1.0 for a clean identity tag. The split seed keeps threading
+    into the engine + SamplingParams unchanged (inert under greedy), so the
+    ceiling_draw_43/44 splits still execute as two INDEPENDENT generate
+    passes — under greedy the two-draw ceiling MEASURES vLLM
+    continuous-batching nondeterminism (expected ~1.0, never assumed).
+    """
+    if greedy:
+        return {"mode": SAMPLING_MODE_GREEDY, "temperature": 0.0, "top_p": 1.0}
+    return {"mode": SAMPLING_MODE_PARENT, "temperature": GEN_TEMP, "top_p": GEN_TOP_P}
+
+
 # Assistant turn-end tail appended after the response in the teacher-forced
 # capture input (parent parity: COL.capture_answer_vector's v_x span is
 # prompt_len:full_len of the full chat render, which ends with this tail).
@@ -287,39 +316,54 @@ def _render_prompt(tok, prompt: str) -> str:
     )
 
 
-def _sampling_params(gen_seed: int):
+def _sampling_params(gen_seed: int, sampling: dict):
     """#779 pass-B sampling recipe with the SPLIT's seed threaded (never the
-    parent's hardcoded seed=42 — ceiling draws ride 43/44)."""
+    parent's hardcoded seed=42 — ceiling draws ride 43/44) and the run's
+    decoding config (``_resolve_sampling``) threaded (greedy round)."""
     from vllm import SamplingParams
 
     sp = SamplingParams(
-        n=1, temperature=GEN_TEMP, top_p=GEN_TOP_P, max_tokens=GEN_MAX_TOKENS, seed=int(gen_seed)
+        n=1,
+        temperature=float(sampling["temperature"]),
+        top_p=float(sampling["top_p"]),
+        max_tokens=GEN_MAX_TOKENS,
+        seed=int(gen_seed),
     )
     assert sp.seed == int(gen_seed), ("realized sampling seed drift", sp.seed, gen_seed)
+    assert sp.temperature == float(sampling["temperature"]), (
+        "realized temperature drift",
+        sp.temperature,
+        sampling,
+    )
     return sp
 
 
-def _generate_seeded(llm, tok, prompts, gen_seed: int) -> tuple[list[str], list[str]]:
-    """1 rollout per prompt with the #779 pass-B recipe (vLLM, chunked), the
-    split's generation seed threaded into SamplingParams.
+def _generate_seeded(
+    llm, tok, prompts, gen_seed: int, sampling: dict
+) -> tuple[list[str], list[str]]:
+    """1 rollout per prompt with the resolved decoding config (vLLM, chunked),
+    the split's generation seed threaded into SamplingParams.
 
     Returns ``(responses, finish_reasons)`` — ``finish_reason == 'length'``
     rows are cap-hits (CLAUDE.md cap-hit accounting). CPU-smoke path
     (llm is None) returns fixed stub responses through the SAME downstream
-    capture code, finish_reason 'stop'."""
-    if llm is None:  # --device cpu smoke: capture-path structural check only
-        return (
-            ["This is a short stub response for the CPU capture smoke."] * len(prompts),
-            ["stop"] * len(prompts),
-        )
-    sp = _sampling_params(gen_seed)
+    capture code, finish_reason 'stop' — the SamplingParams construction +
+    realized-sampling log below still run for REAL on that path, so the CPU
+    smoke observes the realized temperature (greedy-engaged evidence)."""
+    sp = _sampling_params(gen_seed, sampling)
     logger.info(
-        "[ladder] generation: realized sampling seed=%s temp=%s top_p=%s max_tokens=%s",
+        "[ladder] generation: realized sampling mode=%s seed=%s temp=%s top_p=%s max_tokens=%s",
+        sampling["mode"],
         sp.seed,
         sp.temperature,
         sp.top_p,
         sp.max_tokens,
     )
+    if llm is None:  # --device cpu smoke: capture-path structural check only
+        return (
+            ["This is a short stub response for the CPU capture smoke."] * len(prompts),
+            ["stop"] * len(prompts),
+        )
     prompt_texts = [_render_prompt(tok, p) for p in prompts]
     texts: list[str] = []
     finish: list[str] = []
@@ -972,12 +1016,21 @@ def _assert_raw_payload_matches(
     expect_seed: int,
     expect_shard_index: int,
     expect_chunk: int,
+    expect_sampling_mode: str,
 ) -> None:
     """Wave-alignment asserts shared by the capture-side join and the
     gen-resume salvage path: the consumer must iterate the SAME manifest
     slice under the SAME --num-shards/--shard-index/--shard-size arithmetic
-    as the gen run that wrote this chunk, and the SAME split seed — a
-    mismatch would silently mispair responses with contexts."""
+    as the gen run that wrote this chunk, the SAME split seed, and the SAME
+    decoding regime — a mismatch would silently mispair responses with
+    contexts (or, for the regime, feed one regime's text into the other's
+    captures/salvage: the greedy-vs-temperature-1.0 corruption hazard).
+
+    LEGACY chunks (no ``sampling_mode`` key) uniquely map to
+    ``SAMPLING_MODE_PARENT``: every chunk this driver wrote before the greedy
+    round was produced under the hardcoded parent constants (GEN_TEMP=1.0 /
+    GEN_TOP_P=0.95 — no CLI override existed), so the missing-key default is
+    exact, and a greedy run still fails LOUD against any legacy chunk."""
     assert int(payload["shard_index"]) == expect_shard_index, (
         "gen/capture shard mismatch",
         raw_name,
@@ -1002,6 +1055,15 @@ def _assert_raw_payload_matches(
         payload["seed"],
         expect_seed,
     )
+    payload_mode = str(payload.get("sampling_mode", SAMPLING_MODE_PARENT))
+    assert payload_mode == expect_sampling_mode, (
+        "gen/capture SAMPLING-MODE mismatch — refusing to join/salvage/resume across "
+        "decoding regimes (a temperature-1.0 chunk must never feed a greedy run, and "
+        "vice versa; use a fresh --hf-prefix + --out-dir per regime)",
+        raw_name,
+        payload_mode,
+        expect_sampling_mode,
+    )
 
 
 def _load_local_raw_salvage(
@@ -1012,6 +1074,7 @@ def _load_local_raw_salvage(
     expect_seed: int,
     expect_shard_index: int,
     expect_chunk: int,
+    expect_sampling_mode: str,
 ) -> dict | None:
     """Return the LOCAL gen raw-chunk payload for salvage, or None if absent.
 
@@ -1037,6 +1100,7 @@ def _load_local_raw_salvage(
         expect_seed=expect_seed,
         expect_shard_index=expect_shard_index,
         expect_chunk=expect_chunk,
+        expect_sampling_mode=expect_sampling_mode,
     )
     return payload
 
@@ -1052,6 +1116,7 @@ def _load_persisted_gen_chunk(
     expect_seed: int,
     expect_shard_index: int,
     expect_chunk: int,
+    expect_sampling_mode: str,
     allow_local_only: bool = False,
 ) -> dict[int, dict]:
     """Load ONE gen-wave raw-completions chunk for ``phase_split_capture``.
@@ -1122,10 +1187,163 @@ def _load_persisted_gen_chunk(
         expect_seed=expect_seed,
         expect_shard_index=expect_shard_index,
         expect_chunk=expect_chunk,
+        expect_sampling_mode=expect_sampling_mode,
     )
     rows = {int(r["ci"]): r for r in payload["rows"]}
     assert len(rows) == len(payload["rows"]), f"{raw_name}: duplicate ci in gen rows"
     return rows
+
+
+def _download_hub_sampling_mode(stage_prefix: str, cache_dir: Path) -> str | None:
+    """Read the stage-prefix sampling marker off the Hub, or None if absent.
+
+    A ``LocalEntryNotFoundError`` (a 429 storm masking as a 404 — #1092/#1402
+    class) is re-raised after ``retry_transient`` exhausts: "could not
+    determine" must NEVER read as "absent" (order matters — it SUBCLASSES
+    ``EntryNotFoundError``). A genuine response-bearing 404 means the marker
+    was never uploaded (fresh or legacy prefix)."""
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.errors import LocalEntryNotFoundError
+
+    try:
+        p = hub.retry_transient(
+            lambda: hf_hub_download(
+                repo_id=LADDER_HF_REPO,
+                filename=f"{stage_prefix}/{SAMPLING_MARKER_NAME}",
+                repo_type="dataset",
+                cache_dir=str(cache_dir),
+            ),
+            what=f"hf_hub_download {stage_prefix}/{SAMPLING_MARKER_NAME}",
+        )
+    except RepositoryNotFoundError:
+        raise  # typo'd repo id stays loud
+    except LocalEntryNotFoundError:
+        raise  # transport-masked miss: unknown, NOT absent (fail-safe loud)
+    except EntryNotFoundError:
+        return None
+    except HfHubHTTPError as e:
+        status = getattr(getattr(e, "response", None), "status_code", None)
+        if status == 404:
+            return None
+        raise
+    with open(p, encoding="utf-8") as fh:
+        return str(json.load(fh).get("sampling_mode", SAMPLING_MODE_PARENT))
+
+
+def _upload_sampling_marker(stage_prefix: str, payload: dict) -> None:
+    """Upload the per-stage-prefix sampling marker (one tiny non-LFS JSON;
+    single file, single commit — never a per-file loop)."""
+    api = _hf_api()
+    data = json.dumps(payload, indent=2, sort_keys=True).encode("utf-8")
+    hub.retry_transient(
+        lambda: api.upload_file(
+            path_or_fileobj=data,  # bytes: retry-safe (a BytesIO would drain on attempt 1)
+            path_in_repo=f"{stage_prefix}/{SAMPLING_MARKER_NAME}",
+            repo_id=LADDER_HF_REPO,
+            repo_type="dataset",
+            commit_message=(
+                f"issue1491: sampling marker {payload['sampling_mode']} @ {stage_prefix}"
+            ),
+        ),
+        what=f"upload sampling marker {stage_prefix}/{SAMPLING_MARKER_NAME}",
+    )
+
+
+def _enforce_sampling_identity(
+    stage_prefix: str,
+    scratch: Path,
+    cache_dir: Path,
+    sampling: dict,
+    *,
+    done_pt: set[str],
+    done_raw: set[str],
+    no_upload: bool,
+    shard_index: int,
+) -> None:
+    """Refuse to mix decoding regimes at the (stage_prefix, scratch) grain.
+
+    The chunk-level resume predicate (``done_pt``/``done_raw``) skips work by
+    FILENAME without ever reading a payload, so the payload-level
+    ``sampling_mode`` asserts alone cannot stop a greedy run from silently
+    "resuming" (skipping) a temperature-1.0 prefix — this guard pins the
+    regime at the prefix grain BEFORE any chunk decision. Three sources, all
+    fail-loud on mismatch:
+
+    1. LOCAL marker (``scratch/sampling_mode.json``, written below) — covers
+       the salvage scratch even in ``--no-upload`` mode.
+    2. LOCAL legacy inference — chunk files present with NO marker predate
+       the greedy round, so they are uniquely parent-mode (the hardcoded
+       constants were the only recipe that ever wrote them).
+    3. HUB marker (``{stage_prefix}/sampling_mode.json``) + hub legacy
+       inference (chunks on the Hub with no marker ⇒ parent-mode). Shard 0
+       uploads the marker when absent (fresh prefix, or parent-mode legacy
+       backfill) — one writer avoids an 8-way concurrent-commit race; the
+       narrow first-seconds window where a sibling pod checks before shard
+       0's upload fails toward REFUSE (loud), never silent reuse.
+    """
+    mode = str(sampling["mode"])
+    marker_payload = {
+        "sampling_mode": mode,
+        "temperature": float(sampling["temperature"]),
+        "top_p": float(sampling["top_p"]),
+        "gen_max_tokens": GEN_MAX_TOKENS,
+        "written_by": "issue1491_ladder_generate_capture",
+    }
+    local_marker = scratch / SAMPLING_MARKER_NAME
+    if local_marker.exists():
+        with open(local_marker, encoding="utf-8") as fh:
+            local_mode = str(json.load(fh).get("sampling_mode", SAMPLING_MODE_PARENT))
+        if local_mode != mode:
+            raise RuntimeError(
+                f"SAMPLING-MODE mismatch (local scratch): {scratch} was written under "
+                f"'{local_mode}' but this run is '{mode}'. Refusing to resume/salvage "
+                "across decoding regimes — use a fresh --out-dir (and --hf-prefix) for "
+                "the new regime."
+            )
+    else:
+        has_local_chunks = any(scratch.glob("shard*_chunk*.json")) or any(
+            scratch.glob("shard*_chunk*.pt")
+        )
+        if has_local_chunks and mode != SAMPLING_MODE_PARENT:
+            raise RuntimeError(
+                f"SAMPLING-MODE mismatch (legacy local scratch): {scratch} holds chunk "
+                "files but no sampling marker — it predates the greedy round, so its "
+                f"chunks are temperature-1.0 ('{SAMPLING_MODE_PARENT}') by construction. "
+                f"Refusing to run '{mode}' over it — use a fresh --out-dir + --hf-prefix."
+            )
+    hub_mode: str | None = None
+    if not no_upload:
+        hub_mode = _download_hub_sampling_mode(stage_prefix, cache_dir)
+        if hub_mode is not None and hub_mode != mode:
+            raise RuntimeError(
+                f"SAMPLING-MODE mismatch (Hub): {stage_prefix} is pinned to '{hub_mode}' "
+                f"but this run is '{mode}'. Refusing to resume into / publish over a "
+                "different decoding regime — use a fresh --hf-prefix."
+            )
+        if hub_mode is None and (done_pt or done_raw) and mode != SAMPLING_MODE_PARENT:
+            raise RuntimeError(
+                f"SAMPLING-MODE mismatch (legacy Hub prefix): {stage_prefix} already holds "
+                f"{len(done_pt)} .pt / {len(done_raw)} raw chunks but no sampling marker — "
+                "they predate the greedy round, so they are temperature-1.0 "
+                f"('{SAMPLING_MODE_PARENT}') by construction. Refusing to run '{mode}' "
+                "into this prefix — use a fresh --hf-prefix."
+            )
+        if hub_mode is None and shard_index == 0:
+            _upload_sampling_marker(stage_prefix, marker_payload)
+            logger.info(
+                "[ladder] sampling-identity: uploaded marker mode=%s -> %s/%s",
+                mode,
+                stage_prefix,
+                SAMPLING_MARKER_NAME,
+            )
+    if not local_marker.exists():
+        C.write_json_atomic(local_marker, marker_payload)
+    logger.info(
+        "[ladder] sampling-identity OK: mode=%s stage_prefix=%s hub_marker=%s",
+        mode,
+        stage_prefix,
+        hub_mode if hub_mode is not None else "absent-or-local-only",
+    )
 
 
 def run_capture(args) -> int:
@@ -1142,8 +1360,10 @@ def run_capture(args) -> int:
     layers = _resolve_layers_arg(args.layers)
     h_dim = _resolve_h_dim(args.model, args.h_dim)
     manifest_key, gen_seed = SPLIT_TO_MANIFEST[args.split]
+    sampling = _resolve_sampling(bool(getattr(args, "greedy", False)))
     logger.info(
-        "[ladder] model=%s split=%s (manifest=%s, seed=%d) layers=%s H=%d shard=%d/%d hf_prefix=%s",
+        "[ladder] model=%s split=%s (manifest=%s, seed=%d) layers=%s H=%d shard=%d/%d "
+        "hf_prefix=%s sampling=%s (temp=%s top_p=%s)",
         args.model,
         args.split,
         manifest_key,
@@ -1153,6 +1373,9 @@ def run_capture(args) -> int:
         args.shard_index,
         args.num_shards,
         args.hf_prefix,
+        sampling["mode"],
+        sampling["temperature"],
+        sampling["top_p"],
     )
 
     # 1. Read the ladder manifest split.
@@ -1180,6 +1403,20 @@ def run_capture(args) -> int:
     # 2. Resume — chunks whose .pt AND raw json are already on the Hub are skipped.
     done_pt = _remote_index(stage_prefix, "final_token_capture")
     done_raw = _remote_index(stage_prefix, "raw_completions")
+
+    # 2b. Decoding-regime identity guard — BEFORE any chunk decision: the
+    # filename-keyed resume above would otherwise silently "resume" (skip)
+    # another regime's chunks without ever reading a payload.
+    _enforce_sampling_identity(
+        stage_prefix,
+        scratch,
+        cache_dir,
+        sampling,
+        done_pt=done_pt,
+        done_raw=done_raw,
+        no_upload=args.no_upload,
+        shard_index=args.shard_index,
+    )
 
     # 3. Load models. Capture mode governs which we hold at once.
     C.phase("load_model")
@@ -1260,6 +1497,7 @@ def run_capture(args) -> int:
                 expect_seed=gen_seed,
                 expect_shard_index=args.shard_index,
                 expect_chunk=0,
+                expect_sampling_mode=sampling["mode"],
                 allow_local_only=args.no_upload,
             )
             probe_missing = [c for c in probe_cis if c not in probe_map]
@@ -1273,7 +1511,9 @@ def run_capture(args) -> int:
             # Generate responses for probe rows (small — safe). llm None (CPU
             # smoke) returns stub responses through the same path, so the
             # probe exercises the REAL capture code on CPU too.
-            probe_responses, _probe_finish = _generate_seeded(llm, tok, probe_prompts, gen_seed)
+            probe_responses, _probe_finish = _generate_seeded(
+                llm, tok, probe_prompts, gen_seed, sampling
+            )
         gate_pass, gate_reason = _batched_capture_parity_gate(
             hf,
             tok,
@@ -1457,6 +1697,7 @@ def run_capture(args) -> int:
                     expect_seed=gen_seed,
                     expect_shard_index=args.shard_index,
                     expect_chunk=ci_idx,
+                    expect_sampling_mode=sampling["mode"],
                     allow_local_only=args.no_upload,
                 )
                 missing = [c for c in kept_cis if c not in raw_map]
@@ -1514,6 +1755,7 @@ def run_capture(args) -> int:
                         expect_seed=gen_seed,
                         expect_shard_index=args.shard_index,
                         expect_chunk=ci_idx,
+                        expect_sampling_mode=sampling["mode"],
                     )
                 if salvaged is not None:
                     sal_rows = {int(r["ci"]): r for r in salvaged["rows"]}
@@ -1553,7 +1795,9 @@ def run_capture(args) -> int:
                     # Generate responses (split-seeded; llm None on the CPU
                     # smoke path returns stub responses through the same
                     # capture code).
-                    responses, finish_reasons = _generate_seeded(llm, tok, kept_prompts, gen_seed)
+                    responses, finish_reasons = _generate_seeded(
+                        llm, tok, kept_prompts, gen_seed, sampling
+                    )
                     n_cap_hit = sum(1 for f in finish_reasons if f == "length")
                     cap_hit_total += n_cap_hit
                     gen_total += len(responses)
@@ -1571,6 +1815,9 @@ def run_capture(args) -> int:
                             "seed": gen_seed,
                             "sampling_seed": gen_seed,
                             "engine_seed": gen_seed,
+                            "sampling_mode": sampling["mode"],
+                            "temperature": sampling["temperature"],
+                            "top_p": sampling["top_p"],
                             "gen_max_tokens": GEN_MAX_TOKENS,
                             "n_cap_hit": n_cap_hit,
                             "rows": [
@@ -1794,6 +2041,18 @@ def _parse_args() -> argparse.Namespace:
                 os.path.expanduser("~/data/issue_1491/ladder_generate_capture"),
             )
         ),
+    )
+    ap.add_argument(
+        "--greedy",
+        action="store_true",
+        help="GREEDY decoding (temperature 0; top_p pinned 1.0) — the deterministic "
+        "replication round. DEFAULT (flag absent) keeps the parent recipe "
+        "(temp 1.0, top_p 0.95) byte-identical. The sampling mode is part of the "
+        "resume/wave identity: a greedy run REFUSES to resume from / salvage / join "
+        "temperature-1.0 chunks and vice versa — use a fresh --hf-prefix + --out-dir "
+        "per regime. The split seed still threads (inert under greedy), so "
+        "ceiling_draw_43/44 stay two independent generate passes measuring vLLM "
+        "continuous-batching nondeterminism.",
     )
     ap.add_argument(
         "--no-upload",

@@ -65,8 +65,10 @@ import torch  # noqa: E402
 # copies (Unit 1 Deliverable A port-source decision; no vendoring).
 import issue779_common as C  # noqa: E402
 import issue779_ffc_n1m_fits as F  # noqa: E402
+from issue1491_ladder_manifest import LADDER_HF_REPO  # noqa: E402
 
 from explore_persona_space.analysis import mapping_baselines as MB  # noqa: E402
+from explore_persona_space.orchestrate import hub  # noqa: E402
 
 logger = logging.getLogger("issue1491_ladder_fits")
 
@@ -491,6 +493,36 @@ def _wc_transfer(
 # ---------------------------------------------------------------------------
 
 
+def _read_sampling_mode_marker(hf_prefix: str, cache_dir: Path) -> str | None:
+    """Best-effort decoding-regime provenance for the fits JSON.
+
+    Reads ``{hf_prefix}/test_1000/sampling_mode.json`` — written by the
+    generate/capture driver at run start (greedy round). ``None`` means the
+    prefix predates the marker (the parent temperature-1.0 run) — legacy
+    prefixes are uniquely parent-recipe (temp 1.0 / top_p 0.95) by
+    construction, so ``None`` is itself informative provenance, never an
+    error. A typo'd repo id (RepositoryNotFoundError) stays loud."""
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError
+
+    try:
+        p = hub.retry_transient(
+            lambda: hf_hub_download(
+                repo_id=LADDER_HF_REPO,
+                filename=f"{hf_prefix}/test_1000/sampling_mode.json",
+                repo_type="dataset",
+                cache_dir=str(cache_dir),
+            ),
+            what=f"hf_hub_download {hf_prefix}/test_1000/sampling_mode.json",
+        )
+    except RepositoryNotFoundError:
+        raise
+    except EntryNotFoundError:
+        return None
+    with open(p, encoding="utf-8") as fh:
+        return str(json.load(fh).get("sampling_mode", "temp1.0_top_p0.95"))
+
+
 def run_primary_cell(scale_key: str, hf_prefix: str, args) -> dict:
     """Run plan §4.3 primary cell for ONE scale (all 5 predictors at n=25k,
     primary layer = middle entry of the scale's layer list).
@@ -503,6 +535,16 @@ def run_primary_cell(scale_key: str, hf_prefix: str, args) -> dict:
     slug = scale["slug"]
     cache_dir = args.out_dir / ".cache" / slug
     cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # Decoding-regime provenance (greedy round): read the driver-written
+    # sampling marker EARLY (fail-fast on a config/network fault, not after
+    # hours of fits); None == pre-marker legacy prefix == parent temp-1.0 run.
+    sampling_mode = _read_sampling_mode_marker(hf_prefix, cache_dir)
+    logger.info(
+        "[ladder-fits] provenance: hf_prefix=%s sampling_mode=%s",
+        hf_prefix,
+        sampling_mode or "legacy-pre-marker (parent temp1.0/top_p0.95)",
+    )
 
     logger.info(
         "[ladder-fits] primary cell scale=%s (%s) primary_layer=%d h_dim=%d",
@@ -752,6 +794,8 @@ def run_primary_cell(scale_key: str, hf_prefix: str, args) -> dict:
         "scale_key": scale_key,
         "slug": slug,
         "model": scale["model"],
+        "hf_prefix": hf_prefix,
+        "sampling_mode": sampling_mode,  # None == legacy pre-marker (parent temp-1.0 recipe)
         "primary_layer_index": int(primary_layer),
         "layers": list(scale["layers"]),
         "h_dim": int(scale["h_dim"]),

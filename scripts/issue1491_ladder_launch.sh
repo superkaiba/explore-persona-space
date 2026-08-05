@@ -20,6 +20,11 @@
 # Ladder-specific vs the parent (#779) launcher:
 #   * --scale {0.5B, 1.5B, 3B, 7B, 14B, 32B}: resolves --model + --layers +
 #     --hf-prefix; plan §4.2 depth-fraction-mapped layers per scale.
+#   * --greedy: GREEDY decoding replication round (driver --greedy, temp 0):
+#     switches HF prefix to issue1491_scale_ladder_greedy/<slug>, appends
+#     `_greedy` to the out-dir, and tags log/pid names `-greedy` so the
+#     parent temperature-1.0 artifacts are never touched (the driver's
+#     sampling-identity guard fails loud if they would be).
 #   * --split <name> | --all-splits: one of {train_25k, val_400, test_1000,
 #     wc_test_1k, tierB_3600, ceiling_draw_43, ceiling_draw_44}, or the ordered
 #     sweep default (train_25k, then val/test, then wc_test, then ceiling draws).
@@ -108,12 +113,14 @@ SHARD_OFFSET=0
 GPUS_PER_POD=""
 SHARD_SIZE="${EPM_LADDER_SHARD_SIZE:-500}"
 FIRST_CHUNK_SELF_GATE=0
+GREEDY=0
 DRY_RUN=0
 EXTRA_ARGS=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --scale) SCALE="$2"; shift 2 ;;
+    --greedy) GREEDY=1; shift ;;
     --split) SPLIT="$2"; shift 2 ;;
     --all-splits) ALL_SPLITS=1; shift ;;
     --capture-mode) CAPTURE_MODE="$2"; shift 2 ;;
@@ -151,6 +158,19 @@ case "$SCALE" in
     ;;
 esac
 HF_PREFIX="issue1491_scale_ladder/$SCALE_SLUG"
+SAMPLING_MODE="temp1.0_top_p0.95"
+GREEDY_TAG=""
+if [ "$GREEDY" -eq 1 ]; then
+  # GREEDY replication round: FRESH HF prefix + out-dir + log names so the
+  # parent's committed temperature-1.0 artifacts can never be overwritten
+  # (the driver's sampling-identity guard — prefix marker + per-payload
+  # sampling_mode asserts — is the fail-loud backstop, not the only line).
+  HF_PREFIX="issue1491_scale_ladder_greedy/$SCALE_SLUG"
+  SAMPLING_MODE="greedy_temp0"
+  GREEDY_TAG="-greedy"
+  GREEDY_OUT_DIR="${EPM_LADDER_OUT_DIR:-$HOME/data/issue_1491/ladder_generate_capture}"
+  GREEDY_OUT_DIR="${GREEDY_OUT_DIR%/}_greedy"
+fi
 
 # ---- Split resolution ------------------------------------------------------
 
@@ -245,6 +265,7 @@ fi
 
 echo "== issue1491 ladder launch =="
 echo "  scale=$SCALE  model=$MODEL  layers=$LAYERS  hf_prefix=$HF_PREFIX"
+echo "  sampling=$SAMPLING_MODE (greedy=$GREEDY)"
 echo "  splits=${SPLITS_TO_RUN[*]}  capture_mode=$CAPTURE_MODE  batch=$CAPTURE_BATCH_SIZE"
 echo "  num_shards=$NUM_SHARDS  shard_offset=$SHARD_OFFSET  gpus_per_pod=$GPUS_PER_POD  shard_size=$SHARD_SIZE"
 echo "  ENV: EPM_VLLM_ENFORCE_EAGER=$EPM_VLLM_ENFORCE_EAGER EPM_VLLM_DISABLE_PREFIX_CACHING=$EPM_VLLM_DISABLE_PREFIX_CACHING"
@@ -255,6 +276,9 @@ echo "  log_dir=$LOG_DIR"
 DRIVER_EXTRAS=()
 if [ "$FIRST_CHUNK_SELF_GATE" -eq 1 ]; then
   DRIVER_EXTRAS+=(--first-chunk-self-gate)
+fi
+if [ "$GREEDY" -eq 1 ]; then
+  DRIVER_EXTRAS+=(--greedy --out-dir "$GREEDY_OUT_DIR")
 fi
 [ ${#EXTRA_ARGS[@]} -gt 0 ] && DRIVER_EXTRAS+=("${EXTRA_ARGS[@]}")
 
@@ -312,8 +336,8 @@ for split_name in "${SPLITS_TO_RUN[@]}"; do
     # CVD pin = the PHYSICAL device id from the derivation above (== g on
     # non-SLURM lanes); shard arithmetic stays on the LOCAL index g.
     dev="${GPU_IDS[$g]}"
-    log="$LOG_DIR/issue-1491-${SCALE_SLUG}-${split_name}-shard${gidx}.log"
-    pidf="$LOG_DIR/issue-1491-${SCALE_SLUG}-${split_name}-shard${gidx}.pid"
+    log="$LOG_DIR/issue-1491-${SCALE_SLUG}${GREEDY_TAG}-${split_name}-shard${gidx}.log"
+    pidf="$LOG_DIR/issue-1491-${SCALE_SLUG}${GREEDY_TAG}-${split_name}-shard${gidx}.pid"
     cmd=(
       uv run python "$DRIVER"
         --model "$MODEL"
