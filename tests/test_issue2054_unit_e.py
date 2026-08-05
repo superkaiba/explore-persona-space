@@ -512,3 +512,337 @@ def test_null_draws_default_is_plan_pinned_100():
     dispatch = (_REPO_ROOT / "scripts" / "issue2054_dispatch.sh").read_text(encoding="utf-8")
     assert "--n-null-draws 100" in dispatch
     assert "--n-null-draws 200" not in dispatch
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Round 3 — C-R2-1 (gen-resume upload bypass) + M-R2-1 (ladder fleet sizing)
+
+import shutil  # noqa: E402
+import tempfile  # noqa: E402
+from types import SimpleNamespace  # noqa: E402
+
+import issue2054_pilot as pilot  # noqa: E402
+
+_ASSISTANT = "conversation_paired_stories_assistant"
+_INSTRUCT = "qwen2.5-7b-instruct"
+_BASE = "qwen2.5-7b"
+
+
+def _vartmp_dir(prefix: str) -> Path:
+    """A NON-/tmp scratch dir: phase_a/ladder read `str(out_dir).startswith("/tmp/")`
+    as the smoke guard, so exercising the PRODUCTION upload/enumeration path
+    needs an out-root outside /tmp (pytest tmp_path lives under /tmp)."""
+    return Path(tempfile.mkdtemp(prefix=prefix, dir="/var/tmp"))
+
+
+def test_gen_stage_resumed_still_uploads_prejudge(monkeypatch):
+    """C-R2-1 (fails-pre-fix): a crash AT the fail-loud gen upload leaves valid
+    done-sidecars, so the standard crash-recovery re-run RESUMES — and MUST
+    re-attempt the upload (idempotent bulk commit). The pre-fix resumed branch
+    skipped it on the false premise "prior gen leg already uploaded", printing
+    [phase=done] with the prejudge pools never on HF (the #521 class)."""
+    out_dir = _vartmp_dir("i2054_c_r2_1_")
+    try:
+        variant = "char_helios"
+        rows = [{"conv_id": f"stripped_s{i}", "scaffold_text": f"scene {i}"} for i in range(3)]
+        pj = phase_a._prejudge_path(out_dir, variant)
+        pj.parent.mkdir(parents=True, exist_ok=True)
+        pj.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+        sidecar_args = SimpleNamespace(
+            seed=137, target_conv_ids=50, gen_model="instruct", gen_mock=False, no_generate=False
+        )
+        phase_a._write_prejudge_sidecars({variant: pj}, sidecar_args, {variant: len(rows)})
+        gen_dir = out_dir / variant / "gen"
+        gen_dir.mkdir(parents=True, exist_ok=True)
+        (gen_dir / "gen_raw.jsonl").write_text("{}\n", encoding="utf-8")
+
+        with mock.patch.object(phase_a, "_upload_scaffold_files", autospec=True) as upload:
+            monkeypatch.setattr(
+                sys,
+                "argv",
+                [
+                    "issue2054_phase_a.py",
+                    "--stage",
+                    "gen",
+                    "--output-dir",
+                    str(out_dir),
+                    "--variants",
+                    variant,
+                    "--target-conv-ids",
+                    "50",
+                    "--seed",
+                    "137",
+                ],
+            )
+            with pytest.raises(SystemExit) as ei:
+                phase_a.main()
+        assert ei.value.code == 0
+        assert upload.call_count == 1, "resumed gen leg must re-attempt the fail-loud upload"
+        (_call_out_dir, files), kwargs = upload.call_args
+        assert kwargs == {"fail_loud": True}
+        uploaded = {str(f) for f in files}
+        assert str(pj) in uploaded, "prejudge pool must ride the resumed re-upload"
+        assert str(resume.sidecar_path(pj)) in uploaded, (
+            "the judge leg's staleness-anchor sidecar must ride the resumed re-upload"
+        )
+        assert str(gen_dir / "gen_raw.jsonl") in uploaded
+    finally:
+        shutil.rmtree(out_dir, ignore_errors=True)
+
+
+def _cell(variant, condition, form, model):
+    return (variant, condition, form, model, None)
+
+
+def test_pair_class_predicates_cover_plan6_and_reject_unregistered():
+    a_chat = _cell(_ASSISTANT, "inserted", "chat", _INSTRUCT)
+    a_bare = _cell(_ASSISTANT, "inserted", "bare_text", _INSTRUCT)
+    helios_b = _cell("char_helios", "inserted", "bare_label", _INSTRUCT)
+    wren_b = _cell("char_wren", "inserted", "bare_label", _INSTRUCT)
+    helios_d = _cell("char_helios_op", "on_policy", "bare_label", _INSTRUCT)
+    helios_c = _cell("char_helios_op", "cell_c", "chat", _INSTRUCT)
+    a_chat_base = _cell(_ASSISTANT, "inserted", "chat", _BASE)
+
+    assert ladder._pair_class(a_chat, a_bare) == "cross_framing"
+    assert ladder._pair_class(helios_b, wren_b) == "cross_character"
+    # 2x2 (plan §4 Block 3): same (character, model) group, and the assistant
+    # chat x inserted anchor (a) pairs with every group's (b)/(c)/(d).
+    assert ladder._pair_class(helios_b, helios_d) == "twobytwo"
+    assert ladder._pair_class(helios_d, helios_c) == "twobytwo"
+    assert ladder._pair_class(a_chat, helios_c) == "twobytwo"
+    assert ladder._pair_class(helios_b, a_chat) == "twobytwo"
+    assert ladder._pair_class(a_chat, a_chat_base) == "cross_model"
+    # No §6 read consumes these:
+    # cross-variant AND cross-form AND cross-condition at once
+    assert ladder._pair_class(a_bare, helios_d) is None
+    # on-policy cross-framing is NOT a framing read (§4 interpretive split)
+    helios_d_chat = _cell("char_helios_op", "on_policy", "chat", _INSTRUCT)
+    assert ladder._pair_class(helios_d, helios_d_chat) == "twobytwo"  # same group still pairs
+    wren_d = _cell("char_wren_op", "on_policy", "bare_label", _INSTRUCT)
+    a_bare_vs_wren_d = ladder._pair_class(a_bare, wren_d)
+    assert a_bare_vs_wren_d is None, "bare-text assistant is not the 2x2 (a) anchor"
+
+
+def test_enumerate_ordered_pairs_plan6_is_a_restricted_subset():
+    """M-R2-1(a): the production enumeration restricts to §6 classes; 'all'
+    reproduces the full ordered product (explicit opt-in)."""
+    cells = []
+    story_forms = ("bare_label", "attrib_quoted", "bare_paragraph")
+    for model in (_INSTRUCT, _BASE):
+        for form in ("chat", "bare_text", *story_forms):
+            cells.append(_cell(_ASSISTANT, "inserted", form, model))
+        for char in ("char_helios", "char_wren", "char_dana", "char_vex"):
+            for form in story_forms:
+                cells.append(_cell(char, "inserted", form, model))
+                cells.append(_cell(f"{char}_op", "on_policy", form, model))
+            cells.append(_cell(f"{char}_op", "cell_c", "chat", model))
+    full = [(s, t) for s in cells for t in cells if s != t]
+    restricted = ladder._enumerate_ordered_pairs(cells, smoke=False)
+    unrestricted = ladder._enumerate_ordered_pairs(cells, smoke=False, pair_classes=("all",))
+    assert len(unrestricted) == len(full) == len(cells) * (len(cells) - 1)
+    assert 0 < len(restricted) < 0.5 * len(full), (len(restricted), len(full))
+    assert set(restricted) <= set(full)
+    for s, t in restricted:
+        assert ladder._pair_class(s, t) in ladder.PLAN6_PAIR_CLASSES
+
+
+def test_fleet_projection_writes_fields_and_enforces_fence(tmp_path, capsys):
+    """M-R2-1(b): the pilot report carries the pilot->fleet projection (the
+    reviewer's mechanizable check) and an armed over-budget projection raises
+    the designed halt; unarmed (fits) it only WARNs."""
+    report = tmp_path / "pilot_gate_report.json"
+    logged: list[str] = []
+    out = pilot.fleet_projection_update(
+        report,
+        {"phase": "x", "wall_seconds": 2.0},
+        wall_seconds=2.0,
+        n_fleet_units=10,
+        fold_k=5,
+        log=logged.append,
+        max_fleet_wall_hours=1.0,
+        units_basis="pending (pair, arm) units",
+    )
+    assert out["projected_fleet_wall_seconds"] == 100.0
+    assert out["fence_floor_seconds"] == 200.0
+    on_disk = json.loads(report.read_text(encoding="utf-8"))
+    for key in (
+        "projected_fleet_wall_seconds",
+        "fence_floor_seconds",
+        "n_fleet_units",
+        "fold_k",
+        "max_fleet_wall_hours",
+    ):
+        assert key in on_disk, key
+    # Armed fence: over-budget RAISES (report still written first).
+    with pytest.raises(pilot.FleetWallExceeded):
+        pilot.fleet_projection_update(
+            report,
+            {"phase": "x"},
+            wall_seconds=3600.0,
+            n_fleet_units=100,
+            fold_k=5,
+            log=logged.append,
+            max_fleet_wall_hours=12.0,
+        )
+    assert json.loads(report.read_text(encoding="utf-8"))["projected_fleet_wall_seconds"] > 0
+    # Unarmed (fits): the same over-budget projection only WARNs.
+    pilot.fleet_projection_update(
+        report,
+        {"phase": "x"},
+        wall_seconds=3600.0,
+        n_fleet_units=100,
+        fold_k=5,
+        log=logged.append,
+        max_fleet_wall_hours=None,
+    )
+    assert any(m.startswith("WARN ") for m in logged)
+
+
+def _write_ladder_fixture(root: Path, rng, cells, n=12, d=6):
+    """Canonical-layout activation .npz per cell + shared fold map + fits dir."""
+    acts_dir = root / "acts"
+    conv_ids = np.array([f"c{i}" for i in range(n)])
+    for variant, condition, form, model, _p in cells:
+        key = forms.cell_key(variant, condition, form, model)
+        cell_path = acts_dir / variant / f"{key}.npz"
+        cell_path.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(
+            cell_path,
+            conv_id=conv_ids,
+            v_C=rng.normal(size=(n, d)).astype(np.float32),
+            v_A=rng.normal(size=(n, d)).astype(np.float32),
+            v_P=rng.normal(size=(n, d)).astype(np.float32),
+            v_P_present=np.ones(n, dtype=bool),
+        )
+    fold_map = {
+        "fold_of": {f"c{i}": i % 5 for i in range(n)},
+        "k": 5,
+        "seed": 137,
+        "n_conv_ids": n,
+    }
+    fm_path = root / "shared_fold_map.json"
+    fm_path.write_text(json.dumps(fold_map), encoding="utf-8")
+    fits_dir = root / "fits"
+    fits_dir.mkdir(exist_ok=True)
+    return acts_dir, fm_path, fits_dir
+
+
+def test_ladder_run_phase_restricts_pairs_projects_and_resumes(monkeypatch):
+    """M-R2-1 end-to-end on the PRODUCTION path (non-/tmp out-root, no dry-run):
+    restricted enumeration, projection in report + digest, and a full re-run
+    resumes with 0 pending units (pilot gate skipped — #1586 pending-aware)."""
+    root = _vartmp_dir("i2054_m_r2_1_")
+    try:
+        rng = np.random.default_rng(0)
+        cells = [
+            _cell(_ASSISTANT, "inserted", "chat", _INSTRUCT),
+            _cell(_ASSISTANT, "inserted", "bare_text", _INSTRUCT),
+            _cell("char_helios", "inserted", "bare_label", _INSTRUCT),
+            _cell("char_wren", "inserted", "bare_label", _INSTRUCT),
+        ]
+        acts_dir, fm_path, fits_dir = _write_ladder_fixture(root, rng, cells)
+        out_dir = root / "ladder_out"
+        argv = [
+            "issue2054_ladder.py",
+            "--activations-dir",
+            str(acts_dir),
+            "--fits-dir",
+            str(fits_dir),
+            "--fold-map",
+            str(fm_path),
+            "--output-dir",
+            str(out_dir),
+            "--seed",
+            "137",
+            "--bootstrap-draws",
+            "8",
+            "--skip-upload",
+            "--variants",
+            f"{_ASSISTANT},char_helios,char_wren",
+            "--models",
+            _INSTRUCT,
+        ]
+        monkeypatch.setattr(sys, "argv", argv)
+        with pytest.raises(SystemExit) as ei:
+            ladder.main()
+        assert ei.value.code == 0
+        digest = json.loads((out_dir / "ladder_digest.json").read_text(encoding="utf-8"))
+        # 4 cells -> full product 12; §6 classes: 2 cross_framing +
+        # 2 cross_character + 4 twobytwo (anchor <-> helios/wren) = 8.
+        assert digest["n_full_ordered_product"] == 12
+        assert digest["n_pairs_enumerated"] == 8
+        assert digest["pair_class_counts"] == {
+            "cross_framing": 2,
+            "cross_character": 2,
+            "twobytwo": 4,
+        }
+        assert digest["n_units_pending"] == 16  # 8 pairs x 2 arms
+        assert digest["projected_fleet_wall_seconds"] is not None
+        report = json.loads((out_dir / "pilot_gate_report.json").read_text(encoding="utf-8"))
+        assert report["n_fleet_units"] == 16
+        assert report["fold_k"] == 5
+        # Both fields round independently to 0.1 s of the RAW projection, so
+        # compare with the matching absolute tolerance (was a 1-in-N flake).
+        assert report["fence_floor_seconds"] == pytest.approx(
+            2 * report["projected_fleet_wall_seconds"], abs=0.11
+        )
+        # Full re-run: everything resumes; the pilot gate skips on 0 pending.
+        with pytest.raises(SystemExit) as ei2:
+            ladder.main()
+        assert ei2.value.code == 0
+        digest2 = json.loads((out_dir / "ladder_digest.json").read_text(encoding="utf-8"))
+        assert digest2["n_units_pending"] == 0
+        assert digest2["n_units_resumed"] == 16
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_ladder_fence_exits_7_designed_halt(monkeypatch):
+    """An over-budget projection is a DESIGNED halt: main() returns 7 and the
+    report artifact carries the projection (#1415 artifact-routed rc)."""
+    root = _vartmp_dir("i2054_fence_")
+    try:
+        rng = np.random.default_rng(1)
+        cells = [
+            _cell(_ASSISTANT, "inserted", "chat", _INSTRUCT),
+            _cell(_ASSISTANT, "inserted", "bare_text", _INSTRUCT),
+        ]
+        acts_dir, fm_path, fits_dir = _write_ladder_fixture(root, rng, cells)
+        out_dir = root / "ladder_out"
+        argv = [
+            "issue2054_ladder.py",
+            "--activations-dir",
+            str(acts_dir),
+            "--fits-dir",
+            str(fits_dir),
+            "--fold-map",
+            str(fm_path),
+            "--output-dir",
+            str(out_dir),
+            "--bootstrap-draws",
+            "8",
+            "--skip-upload",
+            "--max-fleet-wall-hours",
+            "0.0000001",
+            "--variants",
+            _ASSISTANT,
+            "--models",
+            _INSTRUCT,
+        ]
+        monkeypatch.setattr(sys, "argv", argv)
+        rc = ladder.main()
+        assert rc == 7
+        report = json.loads((out_dir / "pilot_gate_report.json").read_text(encoding="utf-8"))
+        assert report["projected_fleet_wall_seconds"] > 0
+        assert not list(out_dir.glob("rung_*.json")), "fence must halt BEFORE the fleet loop"
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_recover_scaffolds_unknown_variant_fails_loud():
+    """r2 Minor 1: the recovery path's silent `"ARIA"` char-name default is
+    replaced by the phase_b/c/d twins' fail-loud raise — an unmapped
+    --variants entry must never strip under the wrong name (kept=0 class).
+    The raise fires BEFORE any HF listing (no network in this test)."""
+    with pytest.raises(ValueError, match="cannot resolve character name"):
+        phase_a._recover_scaffolds_from_hf(["char_new_unmapped"], api=None)

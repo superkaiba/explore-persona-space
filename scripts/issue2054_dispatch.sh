@@ -213,6 +213,16 @@ build_cmd() {
       # Per-conversation bootstrap CI over the equalized-down intersection
       # (statistics-critic concern #2). --dry-run / --pilot skip HF + run 1
       # fold / self-transfer on the smoke fixture.
+      #
+      # M-R2-1: the production pair set RESTRICTS to the plan-§6 comparison
+      # classes (cross_framing / cross_character / twobytwo / cross_model —
+      # the driver default; pass --pair-classes all only as a deliberate
+      # opt-in), and the auto pilot gate extrapolates its measured 1-unit
+      # wall to the PENDING fleet: a projection over --max-fleet-wall-hours
+      # (default 12 h) exits 7 — a DESIGNED halt with the projection in
+      # pilot_gate_report.json (route on the artifact, not the bare rc).
+      # Any dispatcher-armed timeout around this phase must be sized
+      # >= the report's fence_floor_seconds (2x the projection).
       CMD=(
         uv run python scripts/issue2054_ladder.py
         --activations-dir data/issue_2054/activations/

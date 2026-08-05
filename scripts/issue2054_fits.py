@@ -46,8 +46,10 @@ Kill-gate outcomes (v7→v8 statistics-critic Must-Fix, plan §4/§7):
   equalize-down at n<4480 pushes n_train=0.8·n below d=3,584 and re-enters
   the estimator-degenerate regime.
 - **Kill gate 5** — (b) vs (d) answer-length KS D > 0.30 OR mean-ratio outside
-  [0.25, 4.0] within a (character, model) pair: refuses to fit and reports;
-  length-stratified refit is not tractable at the row count.
+  [0.25, 4.0] within a (character, model) pair: EMITS the fit and FLAGS the
+  gate outcome (emit-and-flag, like gate 4 — the analyzer/user pauses on a
+  fired gate before shipping the headline); length-stratified refit is not
+  tractable at the row count.
 
 Emits `[phase=fits]` log lines terminating in `[phase=done]` on graceful
 completion. Uploads per-cell fit JSONs (`{cell_key}.json`) to HF
@@ -85,6 +87,7 @@ import numpy as np  # noqa: E402
 
 import issue2054_forms as forms  # noqa: E402
 import issue2054_resume as resume  # noqa: E402
+from issue2054_pilot import fleet_projection_update as _fleet_projection_update  # noqa: E402
 from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
     identity_bias_predict,
     knn_retrieval,
@@ -164,11 +167,9 @@ PILOT_RSS_ROUTE_OFF_VM_GIB = 16.0
 
 def _base_character(variant: str) -> str:
     """Map an on-policy variant to its base character (`char_X_op[_base]` ->
-    `char_X`); non-op variants pass through."""
-    for tail in ("_op_base", "_op"):
-        if variant.endswith(tail):
-            return variant[: -len(tail)]
-    return variant
+    `char_X`); delegates to the shared `forms.base_character` (M-R2-1: the
+    ladder's pair-class predicates use the SAME mapping — one source)."""
+    return forms.base_character(variant)
 
 
 def _comparison_group_key(variant: str, model: str) -> tuple[str, str]:
@@ -1038,12 +1039,33 @@ def _run_fits_pilot_gate(
     import resource
 
     report_path = output_dir / "pilot_gate_report.json"
+    # Fleet-shape figures for the M-R2-1 pilot->fleet projection: one unit =
+    # one (cell, arm); the pilot measures ONE fold, production runs k folds.
+    n_fleet_units = len(activations_by_cell) * max(1, len(args.arms))
+    fold_k = int(fold_map["k"])
     if report_path.is_file() and not args.overwrite:
         try:
             with report_path.open(encoding="utf-8") as f:
                 prior = json.load(f)
-            if prior.get("n_null_draws") == int(args.n_null_draws):
+            # Measurement-affecting knobs (r2 Minor 5: single-knob compare
+            # reused a stale pilot across changed arm/seed/draw regimes).
+            prior_matches = (
+                prior.get("n_null_draws") == int(args.n_null_draws)
+                and prior.get("bootstrap_draws") == int(args.bootstrap_draws)
+                and prior.get("arm") == args.arms[0]
+                and prior.get("seed") == int(args.seed)
+            )
+            if prior_matches:
                 _log(f"pilot gate: prior report matches ({_rel(report_path)}); skipping")
+                _fleet_projection_update(
+                    report_path,
+                    prior,
+                    wall_seconds=float(prior.get("wall_seconds", 0.0)),
+                    n_fleet_units=n_fleet_units,
+                    fold_k=fold_k,
+                    log=_log,
+                    units_basis="total cells x arms (resume not modeled)",
+                )
                 return
         except (OSError, json.JSONDecodeError):
             pass
@@ -1075,6 +1097,7 @@ def _run_fits_pilot_gate(
         "phase": "fits-pilot-gate",
         "cell": forms.cell_key(*pilot_key),
         "arm": args.arms[0],
+        "seed": int(args.seed),
         "n_null_draws": int(args.n_null_draws),
         "bootstrap_draws": int(args.bootstrap_draws),
         "wall_seconds": round(wall, 3),
@@ -1083,7 +1106,15 @@ def _run_fits_pilot_gate(
         "status": pilot_report.get("status"),
         "utc": datetime.now(tz=timezone.utc).isoformat(),
     }
-    _write_json(report_path, payload)
+    _fleet_projection_update(
+        report_path,
+        payload,
+        wall_seconds=wall,
+        n_fleet_units=n_fleet_units,
+        fold_k=fold_k,
+        log=_log,
+        units_basis="total cells x arms (resume not modeled)",
+    )
     _log(f"pilot gate: wall={wall:.1f}s peak_rss={peak_rss_gib:.2f} GiB -> {_rel(report_path)}")
     if peak_rss_gib >= PILOT_RSS_ROUTE_OFF_VM_GIB:
         _log(
@@ -1467,6 +1498,11 @@ def run_phase(args: argparse.Namespace) -> int:
     # Digest.
     digest = {
         "phase": "fits",
+        # Plan §6.5 path-shape deviation, recorded per review r2 Minor 9(b):
+        # per-cell fits land FLAT at `<output-dir>/{cell_key}.json`, not the
+        # plan's `fits/{cell}/within_cell_ceiling.json` (naming-only; carry
+        # into the Repro card).
+        "deliverable_path_shape": "flat {cell_key}.json (plan §6.5 names fits/{cell}/within_cell_ceiling.json — naming-only deviation)",
         "variants": list(args.variants),
         "conditions": list(args.conditions),
         "forms": list(args.forms),
