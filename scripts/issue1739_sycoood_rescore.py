@@ -718,7 +718,14 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
         if not rb_path.exists():
             _log(f"  rb not found: {rb_path} — skipping regime {regime}")
             continue
-        rb_raw = np.load(rb_path)["rb"].astype(np.float64)  # (Ly, d) fp16 stored
+        rb_raw = np.load(rb_path)["rb"].astype(np.float64)  # (N_LAYERS, d) fp16 stored
+        # SMOKE/PRODUCTION SHAPE PARITY: the smoke restricts `layers` to a slice
+        # (2 of 28) while the stored rb always carries ALL layers, so the einsum
+        # below broadcast-fails under --smoke only (production is byte-identical
+        # because the slice is then the full range). Index rb by the SELECTED
+        # layers rather than assuming the full stack.
+        if rb_raw.shape[0] != len(layers):
+            rb_raw = rb_raw[np.asarray(layers, dtype=int)]
         rb_w = np.einsum("ld,lde->le", rb_raw, wh.w)  # whitened (Ly, d)
 
         # --- whiten eval table for this variant ---
