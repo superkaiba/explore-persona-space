@@ -175,8 +175,20 @@ def phase_new(args) -> dict:
 
 
 def phase_dv(args) -> dict:
-    """Merge train-grid DV rows with the syco-OOD judge wave's DV rows."""
-    base = json.loads(Path(args.base_dv).read_text())
+    """Merge train-grid DV rows with the syco-OOD judge wave's DV rows.
+
+    CROSS-MACHINE SEAM (#1482/#1773): ``--base-dv`` is a git-TRACKED file that a
+    SPARSE checkout (every fresh pod clone) does not materialize — fail loud
+    naming the one-line remedy rather than a bare FileNotFoundError.
+    """
+    base_path = Path(args.base_dv)
+    if not base_path.is_file():
+        raise SystemExit(
+            f"[dv] base DV missing at {base_path} — it is git-TRACKED but excluded by "
+            "this checkout's sparse cone. Remedy: git -C <repo> sparse-checkout add "
+            "eval_results/issue_1739/dv_dataset eval_results/issue_1739/sycophancy"
+        )
+    base = json.loads(base_path.read_text())
     new = json.loads(Path(args.new_dv).read_text())
     base_rows = base["rows"]
     new_rows = new["rows"]
