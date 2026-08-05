@@ -584,6 +584,23 @@ def _ridge_folds_arg(args: argparse.Namespace) -> tuple[int, ...] | None:
     return None if getattr(args, "ridge_folds", "discarded-skip") == "all" else (0,)
 
 
+def _csv_set(raw: str | None) -> set[str] | None:
+    """Parse a comma-separated filter into a set; None/empty means 'no filter'."""
+    if not raw:
+        return None
+    vals = {v.strip() for v in str(raw).split(",") if v.strip()}
+    return vals or None
+
+
+def _preds_filename(behavior: str, rung: str) -> str:
+    """Per-rung preds filename (the legacy hhrt/toxicchat names are preserved)."""
+    fname_map = {
+        "hhrt": f"{behavior}_hh_rlhf_preds.jsonl",
+        "toxicchat": f"{behavior}_toxicchat_preds.jsonl",
+    }
+    return fname_map.get(rung, f"{behavior}_{rung}_preds.jsonl")
+
+
 def _rescore_behavior(args: argparse.Namespace) -> dict:
     """Score one behavior's OOD eval rungs with all16 arms.
 
@@ -688,16 +705,34 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
     rb_indep, rb_dep = arms.partition_transfer_roster(all16)
     _log(f"rb_indep={rb_indep}, rb_dep={rb_dep}")
 
-    # per-rung aggregation
+    # per-rung aggregation.
+    # MEMORY CONTRACT (#1739 OOM, rc=137): pred rows are STREAMED to disk per
+    # unit, never buffered across units — buffering ~35k rows/unit x 270 units
+    # grew RSS ~1 GB/unit and SIGKILLed the 251 GB box at ~unit 40. Metric rows
+    # are small (54/unit) but are ALSO appended per unit so a crash keeps them
+    # (code-style.md "Checkpoint per phase", intra-phase grain).
     all_rows: list[dict] = []
     perm_null_records: list[dict] = []
-    preds_rows_by_rung: dict[str, list[dict]] = {r: [] for r in OOD_RUNGS}
+    preds_counts: dict[str, int] = {r: 0 for r in OOD_RUNGS}
+    preds_dir.mkdir(parents=True, exist_ok=True)
+    _preds_fh = {
+        r: open(preds_dir / _preds_filename(behavior, r), "w", encoding="utf-8") for r in OOD_RUNGS
+    }
+    _metric_rows_path = out_dir / "metric_rows.jsonl"
+    _metric_rows_path.parent.mkdir(parents=True, exist_ok=True)
+    _metric_fh = open(_metric_rows_path, "w", encoding="utf-8")
 
     dv_ev = np.asarray(tbl_ev.dv, dtype=np.float64)
     rungs_ev = [str(r) for r in tbl_ev.row_rungs]
     groups_ev = [str(g) for g in tbl_ev.groups]
 
+    want_variants = _csv_set(getattr(args, "variants", None))
+    want_regimes = _csv_set(getattr(args, "regimes", None))
     for (variant, regime), group_cells in sorted(groups_by_vr.items()):
+        if want_variants and variant not in want_variants:
+            continue
+        if want_regimes and regime not in want_regimes:
+            continue
         _log(f"--- variant={variant} regime={regime} ({len(group_cells)} cells) ---")
 
         # --- fit whitening + the context->answer map from the U-pool ---
@@ -854,7 +889,10 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
                 all16=all16,
             )
             for row in metric_rows:
-                all_rows.append({**provenance, **row})
+                rec = {**provenance, **row}
+                all_rows.append(rec)
+                _metric_fh.write(json.dumps(rec) + "\n")
+            _metric_fh.flush()
 
             for rung, null_dict in perm_nulls.items():
                 perm_null_records.append({**provenance, "rung": rung, **null_dict})
@@ -871,30 +909,31 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
             )
             for row in preds:
                 rung = row.get("rung", "unknown")
-                if rung in preds_rows_by_rung:
-                    preds_rows_by_rung[rung].append(row)
+                fh = _preds_fh.get(rung)
+                if fh is not None:
+                    fh.write(json.dumps(row) + "\n")
+                    preds_counts[rung] += 1
+            for fh in _preds_fh.values():
+                fh.flush()
+            del preds
 
             elapsed = time.time() - t0
             _log(
                 f"  unit {ui + 1}/{len(units_seen)} done "
                 f"({len(metric_rows)} metric rows, "
-                f"{sum(len(v) for v in preds_rows_by_rung.values())} pred rows, "
+                f"{sum(preds_counts.values())} pred rows, "
                 f"{elapsed:.1f}s)"
             )
 
-    # --- write per-rung JSONL ---
+    # --- close the streamed JSONL handles (rows were written per unit) ---
+    for fh in _preds_fh.values():
+        fh.close()
+    _metric_fh.close()
     rung_paths: dict[str, Path] = {}
     for rung in OOD_RUNGS:
-        fname_map = {
-            "hhrt": f"{behavior}_hh_rlhf_preds.jsonl",
-            "toxicchat": f"{behavior}_toxicchat_preds.jsonl",
-        }
-        fname = fname_map.get(rung, f"{behavior}_{rung}_preds.jsonl")
-        dest = preds_dir / fname
-        rows_r = preds_rows_by_rung.get(rung, [])
-        arms.write_preds_jsonl(dest, rows_r)
+        dest = preds_dir / _preds_filename(behavior, rung)
         rung_paths[rung] = dest
-        _log(f"preds/{rung}: {len(rows_r)} rows -> {dest}")
+        _log(f"preds/{rung}: {preds_counts[rung]} rows -> {dest}")
 
     # --- write metrics summary JSON ---
     summary = {
@@ -936,6 +975,17 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="preds-rung roster override: comma list, or 'auto' = the eval table's "
         "realized rungs; default = OOD_RUNGS_BY_BEHAVIOR",
+    )
+    ap.add_argument(
+        "--variants",
+        default=None,
+        help="comma list of variants to run (default: all). Lets one grid be "
+        "SHARDED across processes with separate --out-dir roots.",
+    )
+    ap.add_argument(
+        "--regimes",
+        default=None,
+        help="comma list of regimes to run (default: all); shards with --variants.",
     )
     ap.add_argument("--n-boot", type=int, default=N_BOOT_DEFAULT)
     ap.add_argument("--n-perm", type=int, default=N_PERM_DEFAULT)
