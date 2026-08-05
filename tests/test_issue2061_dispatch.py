@@ -499,3 +499,50 @@ def test_parity_gate_call_sites_install_sparsify_pinned_and_fail_loud():
     assert sbody.index("ensure_sparsify") < sbody.index("--smoke-only"), (
         "sparsify install must come BEFORE the --smoke-only parity gate"
     )
+
+
+# Capture-generation stem partition (plan v7 amendment). The two generations'
+# corpus stems are DISJOINT, which is why a v1 stem in a registered-generation
+# consumer fails loud rather than silently mis-bucketing.
+V1_ONLY_STEMS = frozenset({"gsm8k_test1319", "gsm8k_train5k", "lmsys5k"})
+V2_STEMS = frozenset({"gsm8k_train_full", "if11k", "lmsys23k", "math7500", "sft11k", "uf11k"})
+
+
+def test_smoke_default_cell_is_a_registered_generation_stem():
+    """The smoke's default corpus must exist in the REGISTERED generation.
+
+    Regression pin for a real pre-launch defect: the smoke default was
+    `gsm8k_test1319`, a v1-ONLY stem chosen when enumeration still covered all
+    55 turnstores. Once the v7 grid pinned the registered generation to v2,
+    `resolve_turnstore_tree()` raised FileNotFoundError on it and the smoke
+    died at its first turnstore resolution -- on the pod, after provision +
+    bootstrap.
+
+    The round-4 generation-pin acceptance test checked enumeration COUNTS
+    (35 stores / 7 combos) and passed, because counts say nothing about
+    whether a given consumer's cell resolves. This asserts the consumer side.
+    """
+    m = re.search(r'CP="\$\{ISSUE2061_SMOKE_CORPUS:-([a-z0-9_]+)\}"', DISPATCH)
+    assert m, "could not find the smoke default corpus in the dispatcher"
+    corpus = m.group(1)
+
+    assert corpus not in V1_ONLY_STEMS, (
+        f"smoke default corpus {corpus!r} is a v1-ONLY stem; it cannot resolve "
+        f"under the registered v2 generation and the smoke will die at its "
+        f"first turnstore resolution"
+    )
+    assert corpus in V2_STEMS, (
+        f"smoke default corpus {corpus!r} is not a known registered (v2) stem"
+    )
+
+    # The render must be one the chosen stem actually carries. Only lmsys23k
+    # carries `naturalistic`; every other v2 stem is chat-only.
+    rm = re.search(r'RD="\$\{ISSUE2061_SMOKE_RENDER:-([a-z]+)\}"', DISPATCH)
+    assert rm, "could not find the smoke default render in the dispatcher"
+    render = rm.group(1)
+    if render == "naturalistic":
+        assert corpus == "lmsys23k", (
+            f"render 'naturalistic' is only carried by lmsys23k, not {corpus!r}"
+        )
+    else:
+        assert render == "chat", f"unexpected smoke render {render!r}"

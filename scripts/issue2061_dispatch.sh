@@ -327,7 +327,14 @@ run_smoke() {
   # NEVER the canonical eval_results/figures trees.
   local SMOKE_ROOT="${ISSUE2061_SMOKE_ROOT:-/tmp/issue-2061-smoke}"
   local SA="${ISSUE2061_SMOKE_STAGE_A:-base}" SB="${ISSUE2061_SMOKE_STAGE_B:-sft}"
-  local RD="${ISSUE2061_SMOKE_RENDER:-chat}" CP="${ISSUE2061_SMOKE_CORPUS:-gsm8k_test1319}"
+  # CORPUS must be a stem of the REGISTERED capture generation (v2). The old
+  # default `gsm8k_test1319` is a v1-ONLY stem: once the v7 grid restricted the
+  # registered generation to v2, resolve_turnstore_tree() raises
+  # FileNotFoundError on it and the smoke dies at its first turnstore
+  # resolution. `gsm8k_train_full` is the smallest REGISTERED v2 cell
+  # (n_tr 5,978) and the smallest cell plan §9's P3 pilot names, so the smoke
+  # and the pilot exercise the same small end of the grid.
+  local RD="${ISSUE2061_SMOKE_RENDER:-chat}" CP="${ISSUE2061_SMOKE_CORPUS:-gsm8k_train_full}"
   local DRAWS="${ISSUE2061_SMOKE_DRAWS:-4}"
   local enc="$SMOKE_ROOT/sae_encoded" r2="$SMOKE_ROOT/per_feature_r2"
   local null="$SMOKE_ROOT/null" fit="$SMOKE_ROOT/fitness" figs="$SMOKE_ROOT/figures"

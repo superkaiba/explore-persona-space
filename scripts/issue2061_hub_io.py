@@ -27,7 +27,7 @@ Usage:
     uv run python scripts/issue2061_hub_io.py stage --what per-feature-r2 \
         --root data/issue_2061/hf_dl
     uv run python scripts/issue2061_hub_io.py stage-turnstore --stage base \
-        --render chat --corpus gsm8k_test1319 --root data/issue_2061/hf_dl/turnstores
+        --render chat --corpus gsm8k_train_full --root data/issue_2061/hf_dl/turnstores
     uv run python scripts/issue2061_hub_io.py sentinel --kind epm:smoke-result \
         --note '{"phase": "smoke", "ok": true}'
     uv run python scripts/issue2061_hub_io.py p3-combos --r2-dir eval_results/issue_2061/per_feature_r2
