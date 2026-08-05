@@ -123,6 +123,21 @@ _POD_LIFECYCLE_TAIL_MAX_LINE_CHARS = 400
 #: tests/test_dispatch_issue_cli.py::test_exit_still_waiting_matches_pod_lifecycle.
 EXIT_STILL_WAITING = 75
 
+#: pod_lifecycle.py's stopped-pod same-name collision refusal (#1997): a
+#: same-named STOPPED (EXITED) pod exists and the provision REFUSED to mint a
+#: duplicate-named pod (whose name-keyed pods.conf / pods_ephemeral.json rows
+#: would hijack the stopped pod's — the #1739 4-duplicate incident). NOTHING
+#: was provisioned, NOTHING bills; recovery is a HUMAN action (resume /
+#: approved terminate / --name-suffix / --allow-stopped-duplicate), so the
+#: router terminal rung raises the typed, NON-watcher-re-drivable
+#: ``RunPodStoppedPodCollisionError`` on this code instead of the re-drivable
+#: ``no_compute_available`` terminal. Mirrored (not imported) from
+#: ``scripts/pod_lifecycle.py::EXIT_STOPPED_POD_COLLISION`` — this module's
+#: imports stay ``base``-only by documented convention (see EXIT_STILL_WAITING
+#: above). Parity pinned by
+#: tests/test_dispatch_issue_cli.py::test_exit_stopped_pod_collision_matches_pod_lifecycle.
+EXIT_STOPPED_POD_COLLISION = 76
+
 
 class PodLifecycleProcessError(subprocess.CalledProcessError):
     """``CalledProcessError`` whose ``str()`` carries the child's stderr tail.
@@ -358,7 +373,12 @@ class RunPodWorkloadStartError(RuntimeError):
     surfaces it as a ``reason: runpod_workload_start_failed`` failure JSON
     + exit 2 — a requested execution that did not start NEVER returns ok.
     The pod is left RUNNING for SSH diagnosis (the RunPod-as-diagnosis-lane
-    doctrine, ``.claude/rules/compute-backend-failover.md``).
+    doctrine, ``.claude/rules/compute-backend-failover.md``). The window is
+    BOUNDED (#1997): the autonomous-session watcher's diagnosis-window arm
+    reversibly STOPS (never terminates) the pod after
+    ``EPS_RUNPOD_DIAGNOSIS_TTL_HOURS`` (default 6h) once no ``keep-running``
+    tag and no live owner remain — volume + ``/workspace`` logs preserved;
+    ``pod.py resume --issue <N>`` re-opens a fresh window.
     """
 
     def __init__(self, message: str, *, handle: RunHandle | None = None) -> None:
@@ -389,7 +409,9 @@ class RunPodProvisionBranchMismatchError(RunPodWorkloadStartError):
     into a partial-handle failure — the pod exists and BILLS, so the
     failover / diagnostics contract is identical to any other workload-start
     failure. The pod is left RUNNING for SSH diagnosis (the
-    RunPod-as-diagnosis-lane doctrine).
+    RunPod-as-diagnosis-lane doctrine; the window is bounded by the
+    watcher's #1997 diagnosis-window arm — see
+    :class:`RunPodWorkloadStartError`).
     """
 
 

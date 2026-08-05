@@ -1476,6 +1476,17 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # an undersized pod. GCP machine selection is unchanged (by intent);
         # inert on SLURM lanes.
         extra["min_ram_gb"] = int(args.min_ram_gb)
+    if getattr(args, "no_runpod_fallback", False):
+        # Deferrable-dispatch knob (#1997): read at the TOP of
+        # router._runpod_terminal_rung, which declines the paid RunPod
+        # fallback pre-flock/pre-API and mints the standard re-drivable
+        # no_compute_available terminal instead. Threaded like --min-ram-gb
+        # (omit-when-absent, the #934 discipline: a False-valued key would
+        # flip canonicalize_spec output and every live lease spec-hash).
+        # main()'s parse-time guard rejects the flag alongside an explicit
+        # --backend runpod pin; the explicit-pin path (_override_runpod)
+        # never reaches the rung and ignores the key by construction.
+        extra["no_runpod_fallback"] = True
     if getattr(args, "env_pin", None):
         # #1669: launch env pins (WANDB_PROJECT et al.) — persisted into the
         # handle sidecar so the failover reconstructors
@@ -2723,6 +2734,20 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     launch.add_argument(
+        "--no-runpod-fallback",
+        action="store_true",
+        help=(
+            "Decline the paid RunPod terminal fallback for this dispatch "
+            "(#1997): when every free lane is exhausted, fail typed "
+            "no_compute_available (watcher-re-drivable once a lane frees — "
+            "the re-driven launch re-carries this flag from the plan's launch "
+            "command) instead of spending RunPod money. Governs the FALLBACK "
+            "rung only — router._runpod_terminal_rung declines at the top, "
+            "pre-flock/pre-API; contradictory with an explicit "
+            "--backend runpod pin (parse-time error)."
+        ),
+    )
+    launch.add_argument(
         "--env-pin",
         action="append",
         default=None,
@@ -3026,6 +3051,22 @@ def main(
                 _parse_env_pins(args.env_pin)
             except ValueError as exc:
                 parser.error(str(exc))
+        # #1997: --no-runpod-fallback contradicts an explicit --backend runpod
+        # pin — the pin IS a decision to spend on RunPod, while the flag
+        # declares the dispatch deferrable rather than RunPod-funded.
+        # Silently honoring either would violate fail-fast (the flag is
+        # rung-scoped and the explicit-pin path never reaches the rung, so
+        # the combination would silently mean nothing). Reject at parse
+        # time, BEFORE any backend is built (mirrors the --execute-workload
+        # guard above).
+        if (
+            getattr(args, "no_runpod_fallback", False)
+            and (args.backend or "").strip().lower() == "runpod"
+        ):
+            parser.error(
+                "--no-runpod-fallback contradicts --backend runpod (an explicit "
+                "runpod pin IS a decision to spend on RunPod; drop one)"
+            )
         # #1835: --extra-sync-path validates at parse time (exit 2) —
         # repo-relative, no '..', non-empty — BEFORE any backend is built.
         # UNLIKE --env-pin there is deliberately NO --workload-cmd

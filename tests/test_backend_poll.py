@@ -287,6 +287,58 @@ def test_failover_runpod_unavailable_emits_infra_no_compute_poll_json(
     assert out["reason"] == "no_compute_available"
 
 
+def test_failover_stopped_pod_collision_emits_typed_terminal_poll_json(
+    tmp_path, monkeypatch, capsys
+):
+    """#1997 (async-leg trace): when the GCP->RunPod failover's fresh provision
+    is REFUSED by pod_lifecycle's stopped-pod collision guard (exit 76 -> the
+    rung's typed RunPodStoppedPodCollisionError), the poller emits the TYPED
+    terminal ``reason: runpod_stopped_pod_collision`` — NOT the re-drivable
+    ``no_compute_available`` (the watcher's capacity-retry pass must never
+    hot-retry a refusal only a human can clear) and NOT a generic failover
+    error — and leaves the sidecar pointing at the GCP handle (nothing was
+    provisioned)."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+
+    class _StoppedCollisionRunpod:
+        def prepare(self, spec):
+            return None
+
+        def launch(self, spec):
+            from explore_persona_space.backends.runpod import PodLifecycleProcessError
+
+            raise PodLifecycleProcessError(
+                76,
+                ["pod_lifecycle", "provision"],
+                output=None,
+                stderr=(
+                    "Pod pod-659 already exists STOPPED (status=EXITED, id=x).\n"
+                    "Use `pod.py resume --issue 659` to bring the stopped pod back"
+                ),
+            )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", "terminal_workload_failed")),
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.runpod.RunPodBackend",
+        _StoppedCollisionRunpod,
+    )
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "runpod_stopped_pod_collision"
+    # The recovery paths ride the log tail for the human who must clear it.
+    assert "pod.py resume --issue 659" in out["log_tail_excerpt"]
+    # Sidecar stays pointed at the GCP handle — nothing was provisioned.
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
 def test_failover_sidecar_persistence_failure_emits_infra_error_not_running(
     tmp_path, monkeypatch, capsys
 ):

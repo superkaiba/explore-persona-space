@@ -2089,6 +2089,10 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         # dedup flag is part of the schema now; a save with no prior episode
         # defaults it False (and the carry is pod_id-keyed, like #1490's).
         "unlaunched_orphan_noted": False,
+        # #1997: the bounded-diagnosis-window stop arm's once-per-pod-
+        # incarnation dedup flag is part of the schema now; a save with no
+        # prior episode defaults it False (pod_id-keyed carry, like #1519's).
+        "diagnosis_stop_noted": False,
         "first_seen": 1234.0,
         # #692 MF3: the wedge fields are part of the schema now; a status-class
         # save with no wedge state defaults them (no prior wedge to carry).

@@ -2532,6 +2532,7 @@ def _relaunch_fresh_runpod(
     )
     from explore_persona_space.backends.router import (
         NoComputeAvailableError,
+        RunPodStoppedPodCollisionError,
         failover_to_runpod_after_async_workload_crash,
     )
     from explore_persona_space.backends.runpod import RunPodBackend, RunPodWorkloadStartError
@@ -2648,6 +2649,30 @@ def _relaunch_fresh_runpod(
                 f"({str(exc)[:500]}); pod left RUNNING for diagnosis — check for a "
                 f"live workload (pidfile) before re-driving; pod BILLS until a human "
                 f"stops/terminates it{sidecar_note} (lease stamped — relaunch bounded)"
+            ),
+        )
+    except RunPodStoppedPodCollisionError as exc:
+        # #1997: pod_lifecycle refused to create a duplicate-named pod over an
+        # existing STOPPED pod-<N> (rc=76, typed by the rung BEFORE the
+        # generic no-compute conversion). Nothing was provisioned; carry the
+        # typed reason — NOT the generic no_compute_available token — because
+        # the refusal is STRUCTURAL: a human must resume the stopped pod,
+        # terminate it with approval, or re-provision under --name-suffix,
+        # so the watcher's capacity-retry pass must never hot-retry it.
+        # The attempt COMPLETED (a refusal) — clear the provision intent so a
+        # pod provisioned LATER is never matched as interrupted residue
+        # (#1838 discipline, mirroring the no-compute branch below).
+        _clear_provision_intent(issue, site="wedge_relaunch_stopped_pod_collision")
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="runpod_stopped_pod_collision",
+            log_tail=(
+                f"RunPod {handle.pod_name} wedge failover: fresh re-provision REFUSED — "
+                f"a STOPPED pod-{issue} already exists (duplicate-name hazard, #1997). "
+                f"Recovery: `pod.py resume --issue {issue}`, or `pod.py terminate "
+                f"--issue {issue} --yes --approve` then re-dispatch, or provision with "
+                f"--name-suffix <slug> ({str(exc)[:300]})"
             ),
         )
     except NoComputeAvailableError:
@@ -4794,7 +4819,7 @@ def _provision_failure_evidence(exc: BaseException) -> tuple[str, int | None]:
     return evidence_text, returncode
 
 
-def _failover_gcp_to_runpod(
+def _failover_gcp_to_runpod(  # noqa: C901 — one except branch per typed rung outcome by design; the shared failover core sat AT the cap and #1997's plan-mandated RunPodStoppedPodCollisionError branch tips it (annotated-noqa precedent: dispatch_issue.py _launch_extra_from_args).
     *,
     issue: int,
     handle,
@@ -4853,6 +4878,7 @@ def _failover_gcp_to_runpod(
     )
     from explore_persona_space.backends.router import (
         NoComputeAvailableError,
+        RunPodStoppedPodCollisionError,
         failover_to_runpod_after_async_workload_crash,
     )
     from explore_persona_space.backends.runpod import RunPodBackend, RunPodWorkloadStartError
@@ -5014,6 +5040,31 @@ def _failover_gcp_to_runpod(
         launched_handle = partial
         workload_start_error = str(exc)[:500]
         already_launched = False
+    except RunPodStoppedPodCollisionError as exc:
+        # #1997: the terminal rung's fresh provision was REFUSED by
+        # pod_lifecycle's stopped-pod same-name collision guard (rc=76, typed
+        # by the rung BEFORE the generic no-compute conversion). Nothing was
+        # provisioned (a refusal is created-nothing by construction — no
+        # #1490 residue reclaim needed), so carry the typed STRUCTURAL reason
+        # instead of the generic re-drivable no_compute_available token: the
+        # watcher's capacity-retry pass must never hot-retry a refusal only a
+        # human can clear (resume / approved terminate / --name-suffix).
+        # The attempt COMPLETED — clear the provision intent (#1838
+        # discipline, mirroring the no-compute branch below).
+        _clear_provision_intent(issue, site="gcp_core_stopped_pod_collision")
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="runpod_stopped_pod_collision",
+            log_tail=(
+                f"{cause_label} on {handle.pod_name}; RunPod fallback provision "
+                f"REFUSED — a STOPPED pod-{issue} already exists (duplicate-name "
+                f"hazard, #1997). Recovery: `pod.py resume --issue {issue}`, or "
+                f"`pod.py terminate --issue {issue} --yes --approve` then "
+                f"re-dispatch, or provision with --name-suffix <slug> "
+                f"({str(exc)[:300]}) ({failover_tag})"
+            ),
+        )
     except NoComputeAvailableError as exc:
         # RunPod truly unavailable — but "unavailable" can be a LIE about the
         # residue (#1490 / incident #1417): a provision that CREATED pod-<N>,

@@ -933,6 +933,23 @@ def test_exit_still_waiting_matches_pod_lifecycle() -> None:
     assert cli_code == pl_code == runpod_code == 75
 
 
+def test_exit_stopped_pod_collision_matches_pod_lifecycle() -> None:
+    """#1997: ``backends/runpod.py`` mirrors (never imports)
+    ``pod_lifecycle.EXIT_STOPPED_POD_COLLISION`` — pin the two equal (and
+    distinct from the exit-75 still-waiting code) so a renumbering on either
+    side fails loudly here, mirroring the exit-75 parity pin above."""
+    from explore_persona_space.backends.runpod import (
+        EXIT_STILL_WAITING,
+    )
+    from explore_persona_space.backends.runpod import (
+        EXIT_STOPPED_POD_COLLISION as runpod_code,
+    )
+    from scripts.pod_lifecycle import EXIT_STOPPED_POD_COLLISION as pl_code
+
+    assert pl_code == runpod_code == 76
+    assert runpod_code != EXIT_STILL_WAITING
+
+
 def test_provision_still_waiting_accepts_pod_lifecycle_process_error_subclass() -> None:
     """#1603 test 6: ``PodLifecycleProcessError`` (the #1465 stderr-tail relay
     subclass — returncode + cmd ride verbatim) satisfies
@@ -4704,6 +4721,97 @@ def test_min_gpu_mem_gb_lands_in_spec_extra(monkeypatch, tmp_path) -> None:
         )
     assert rc == 0
     assert gcp.launches[0].extra["min_gpu_mem_gb"] == 60
+
+
+def test_no_runpod_fallback_threads_extra(monkeypatch, tmp_path) -> None:
+    """#1997 (c1): ``--no-runpod-fallback`` threads to
+    ``spec.extra['no_runpod_fallback'] is True`` (the router terminal rung's
+    decline channel). Mirror of the ``--min-ram-gb`` threading test above."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    posts: list[dict[str, Any]] = []
+    factory = _build_mock_factory(gcp=gcp, marker_posts=posts)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1997",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--no-runpod-fallback",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra["no_runpod_fallback"] is True
+
+
+def test_no_runpod_fallback_absent_leaves_extra_unset(monkeypatch, tmp_path) -> None:
+    """#1997 (c1 control): no ``--no-runpod-fallback`` flag -> the key is
+    ABSENT from ``spec.extra`` (the #934 omit-when-absent discipline: a
+    False-valued key would flip canonicalize_spec output and every live
+    lease spec-hash)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    posts: list[dict[str, Any]] = []
+    factory = _build_mock_factory(gcp=gcp, marker_posts=posts)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1997",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "no_runpod_fallback" not in gcp.launches[0].extra
+
+
+def test_no_runpod_fallback_contradicts_runpod_pin(monkeypatch, tmp_path) -> None:
+    """#1997 (c2): ``--no-runpod-fallback`` + ``--backend runpod`` is a CLI
+    contradiction (an explicit runpod pin IS a decision to spend on RunPod)
+    — parser.error at parse time, SystemExit(2), BEFORE any backend is
+    built."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+
+    from scripts.dispatch_issue import main
+
+    with pytest.raises(SystemExit) as exc:
+        main(
+            [
+                "launch",
+                "--issue",
+                "1997",
+                "--intent",
+                "eval",
+                "--backend",
+                "runpod",
+                "--no-runpod-fallback",
+                "--workload-cmd",
+                "echo smoke",
+            ],
+        )
+    assert exc.value.code == 2
 
 
 def test_min_gpu_mem_gb_absent_leaves_extra_unset(monkeypatch, tmp_path) -> None:

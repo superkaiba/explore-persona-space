@@ -727,6 +727,22 @@ GCP_BOOT_DEATH_STREAK_N_DEFAULT: int = 2
 #: the watcher never auto re-drives it.
 ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED: str = "runpod_workload_start_failed"
 
+#: The RunPod terminal rung was REFUSED by pod_lifecycle's stopped-pod
+#: same-name collision guard (#1997, exit 76): a same-named STOPPED (EXITED)
+#: pod-<N> already exists, and a fresh create would mint a duplicate-named
+#: pod whose name-keyed state rows (pods.conf / pods_ephemeral.json) hijack
+#: the stopped pod's (the #1739 4-duplicate-pod incident). NOTHING was
+#: provisioned and NOTHING bills, but this is NOT
+#: :data:`ROUTE_REASON_NO_COMPUTE`: no lane will ever "free up" — recovery is
+#: a HUMAN action (``pod.py resume``, an approved terminate, a
+#: ``--name-suffix`` provision, or a deliberate ``--allow-stopped-duplicate``)
+#: — so the token is deliberately NOT in the watcher's
+#: ``TRANSIENT_CAPACITY_REASONS`` (the GcpDisabledError /
+#: CpuFallbackInfeasibleError structural-refusal precedent). Cross-module
+#: parity: ``scripts/backend_poll.py``'s async failover legs mint terminal
+#: JSONs with this same literal.
+ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION: str = "runpod_stopped_pod_collision"
+
 #: Consecutive ``is_started`` probe failures tolerated inside the park
 #: watchdog before it gives up with ``probe_failures_exceeded``.
 #: Mirrors ``scripts/router_acceptance.py``'s
@@ -904,6 +920,36 @@ class GcpDisabledError(RouteError):
     ``TRANSIENT_CAPACITY_REASONS`` — the fix is a human changing the pin
     (or a deliberate rollback flip of the constant), never an auto-retry.
     """
+
+
+class RunPodStoppedPodCollisionError(RouteError):
+    """Terminal: a STOPPED ``pod-<N>`` already exists; the RunPod terminal
+    rung refused a duplicate-named create (#1997, pod_lifecycle exit 76).
+
+    Deliberately a DIRECT :class:`RouteError` subclass — NOT
+    :class:`NoComputeAvailableError` — because no lane will ever free this
+    up: a human must ``pod.py resume`` the stopped pod, terminate it with
+    approval, provision under ``--name-suffix``, or pass
+    ``--allow-stopped-duplicate``. ``classify_terminal_exception``
+    (``issue_dispatch.py``) maps it to ``failure_class: infra`` /
+    ``status: blocked`` with
+    ``reason: runpod_stopped_pod_collision``, which is NOT in the watcher's
+    ``TRANSIENT_CAPACITY_REASONS`` — the watcher's capacity-retry pass must
+    never hot-retry a structural refusal (a retry would re-hit the same
+    refusal, or worse, race a human's recovery). Carries the route-attempt
+    trail like :class:`NoComputeAvailableError` so the ``epm:failure`` note
+    keeps the full ladder evidence.
+    """
+
+    def __init__(
+        self,
+        reason: str,
+        *,
+        attempts: list[dict[str, Any]] | None = None,
+    ) -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.attempts = list(attempts or [])
 
 
 class NoComputeAvailableError(RouteError):
@@ -3430,6 +3476,49 @@ def _runpod_terminal_rung(
     the pod-billing (workload-start) and CPU-guard breadcrumbs — whose
     exceptions always propagate out of the lane — stay unconditional.
     """
+    # Per-dispatch fallback opt-out (#1997): a launch composed with
+    # --no-runpod-fallback (spec.extra["no_runpod_fallback"], threaded by
+    # dispatch_issue._launch_extra_from_args) declares the work DEFERRABLE —
+    # when every free lane is exhausted it should FAIL TYPED instead of
+    # spending RunPod money. Decline at the TOP of the rung, BEFORE the
+    # CPU-intent guard / intent translation / the per-issue flock / any
+    # RunPod API work, minting the STANDARD re-drivable no_compute_available
+    # terminal (the watcher's capacity-retry pass re-drives once a lane
+    # frees; the re-driven launch re-carries the flag from the plan's launch
+    # command). This rung is the single paid-fallback convergence point —
+    # the auto chain's capacity fall-through AND the GCP failover legs all
+    # pass through it — so the flag binds every fallback path. The explicit
+    # `backend: runpod` pin (_override_runpod) never reaches this rung and
+    # deliberately ignores the flag (an explicit pin IS a decision to spend;
+    # the CLI additionally refuses the contradictory flag combination at
+    # parse time).
+    if (spec.extra or {}).get("no_runpod_fallback"):
+        attempts.append(
+            RouteAttempt(
+                kind="runpod",
+                cluster=None,
+                est_start_seconds_raw=0.0,
+                est_start_seconds_clamped=0.0,
+                outcome="runpod_fallback_declined",
+                detail=(
+                    "runpod terminal fallback DECLINED by --no-runpod-fallback "
+                    f"(deferrable dispatch); residual_gap: {residual_gap}"
+                ),
+                elapsed_seconds=now_fn() - started_at,
+            )
+        )
+        _post_terminal_failure_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_NO_COMPUTE,
+            chosen_kind="runpod",
+            attempts=attempts,
+        )
+        raise NoComputeAvailableError(
+            "every cheaper lane exhausted and the RunPod terminal fallback is "
+            "declined by --no-runpod-fallback (deferrable dispatch)",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        )
     # CPU-intent guard (#677, RELAXED for mapped intents #747/#2028). RunPod's
     # GPU mutation (podFindAndDeployOnDemand) is GPU-only, BUT #747 added a
     # RunPod CPU lane (deployCpuPod) for the CPU intents in
@@ -3573,6 +3662,7 @@ def _runpod_terminal_rung(
             # at module top, so no cycle either way — lazy is belt-and-braces).
             from explore_persona_space.backends.runpod import (
                 EXIT_STILL_WAITING,
+                EXIT_STOPPED_POD_COLLISION,
                 RunPodWorkloadStartError,
             )
 
@@ -3681,6 +3771,58 @@ def _runpod_terminal_rung(
                     EXIT_STILL_WAITING,
                 )
                 raise
+            # Exit-76 stopped-pod same-name collision (#1997): pod_lifecycle
+            # REFUSED to create a duplicate-named pod over an existing STOPPED
+            # pod-<N> (the #1739 4-duplicate incident — the name-keyed state
+            # rows would hijack the stopped pod). Nothing provisioned, nothing
+            # billing, but NOT a capacity outcome: recovery is a HUMAN action
+            # (resume / approved terminate / --name-suffix /
+            # --allow-stopped-duplicate), so raise the typed
+            # NON-watcher-re-drivable terminal. This branch MUST run BEFORE
+            # the generic fallthrough below, which would collapse the refusal
+            # into the re-drivable no_compute_available terminal — the
+            # watcher's capacity-retry pass would then hot-retry the same
+            # refusal forever.
+
+            if (
+                isinstance(exc, subprocess.CalledProcessError)
+                and exc.returncode == EXIT_STOPPED_POD_COLLISION
+            ):
+                stderr_tail = str(getattr(exc, "stderr", "") or "")[:400]
+                attempts.append(
+                    RouteAttempt(
+                        kind="runpod",
+                        cluster=None,
+                        est_start_seconds_raw=0.0,
+                        est_start_seconds_clamped=0.0,
+                        outcome="runpod_stopped_pod_collision",
+                        detail=(
+                            f"runpod terminal fallback REFUSED: a STOPPED "
+                            f"pod-{spec.issue} already exists (duplicate-name "
+                            f"hazard, #1997); recovery: pod.py resume / "
+                            f"terminate --yes --approve / --name-suffix; "
+                            f"stderr tail: {stderr_tail!r}"
+                        ),
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                _post_terminal_failure_marker(
+                    spec=spec,
+                    marker_poster=marker_poster,
+                    reason=ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION,
+                    chosen_kind="runpod",
+                    attempts=attempts,
+                )
+                raise RunPodStoppedPodCollisionError(
+                    f"RunPod terminal rung refused: a STOPPED pod-{spec.issue} "
+                    f"already exists and a duplicate-named create would hijack its "
+                    f"name-keyed state rows (#1997, pod_lifecycle exit "
+                    f"{EXIT_STOPPED_POD_COLLISION}). Recovery: `pod.py resume "
+                    f"--issue {spec.issue}`, `pod.py terminate --issue {spec.issue} "
+                    f"--yes --approve` then re-dispatch, provision with "
+                    f"--name-suffix <slug>, or pass --allow-stopped-duplicate.",
+                    attempts=[_attempt_to_dict(a) for a in attempts],
+                ) from exc
             # RunPod is the LAST resort — ANY OTHER failure here (prepare /
             # provisioning / transport, or a handle-less workload-start error
             # from the pre-provision guard) is genuinely "no compute anywhere".
@@ -6770,6 +6912,7 @@ __all__ = [
     "ROUTE_REASON_RECONNECT",
     "ROUTE_REASON_RUNPOD_FALLBACK",
     "ROUTE_REASON_RUNPOD_FIRST",
+    "ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION",
     "ROUTE_REASON_WORKLOAD_FAILURE",
     "RUNPOD_CPU_INSTANCE_CAPS",
     "RUNPOD_CPU_INSTANCE_FOR_INTENT",
@@ -6789,6 +6932,7 @@ __all__ = [
     "RouteResult",
     "RouterConfig",
     "RunPodCpuInstanceCaps",
+    "RunPodStoppedPodCollisionError",
     "WorkloadSurfacedError",
     "auto_lane_order",
     "cancel_and_wait",
