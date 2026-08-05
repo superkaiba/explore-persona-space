@@ -156,18 +156,38 @@ def _splice_one(row: dict, answer: str, variant: str, form: str) -> dict | None:
     }
 
 
+def _load_excluded_conv_ids(answers_path: Path) -> set[str]:
+    """Conv_ids the answers-pool builder EXCLUDED (r12: substantive cross-
+    variant answer divergence — the 2x2 byte-fixed answer invariant is
+    unsatisfiable for them). The manifest rides NEXT TO the pool file
+    (``answers_excluded_conv_ids.json``); absent manifest = empty set
+    (pre-r12 pools carry no exclusions)."""
+    manifest = answers_path.parent / "answers_excluded_conv_ids.json"
+    if not manifest.is_file():
+        return set()
+    doc = json.loads(manifest.read_text(encoding="utf-8"))
+    excluded = {str(x) for x in (doc.get("excluded") or [])}
+    _log(f"loaded {len(excluded)} excluded conv_id(s) from {manifest.name}")
+    return excluded
+
+
 def _process_variant(
     variant: str,
     scaffolds_path: Path,
     answers_by_key: dict[str, str],
     out_dir: Path,
     form: str,
+    excluded: set[str] | None = None,
 ) -> tuple[dict, Path]:
     """Splice every scaffold whose conv_id has an answer.
 
     Returns (counts, out_path); counts carries the per-variant answer-source
-    split (M3): n_answer_from_pool vs n_answer_from_scaffold_fallback.
+    split (M3): n_answer_from_pool vs n_answer_from_scaffold_fallback, plus
+    n_excluded_conflict (r12: builder-excluded conv_ids are DROPPED — the
+    scaffold-fallback would re-break the cross-variant byte-fixed answer
+    invariant for exactly those rows).
     """
+    excluded = excluded or set()
     scaffolds = _read_jsonl(scaffolds_path)
     n_in = len(scaffolds)
     vdir = out_dir / variant
@@ -179,10 +199,14 @@ def _process_variant(
     n_out = 0
     n_from_pool = 0
     n_from_scaffold_fallback = 0
+    n_excluded_conflict = 0
     with tmp.open("w", encoding="utf-8") as f:
         for row in scaffolds:
             key = str(row.get("conv_id") or row.get("scaffold_id") or "")
             if not key:
+                continue
+            if key in excluded:
+                n_excluded_conflict += 1
                 continue
             answer = answers_by_key.get(key)
             # Per-row answer provenance (M3): the 2x2 authorship axis rides on
@@ -216,11 +240,17 @@ def _process_variant(
             f"({frac:.3f}) fell back to the scaffold's own answer (pool miss) — "
             "mixed-authorship cell; per-row answer_source records the split"
         )
+    if n_excluded_conflict:
+        _log(
+            f"variant={variant} dropped {n_excluded_conflict} builder-excluded "
+            "conv_id(s) (substantive cross-variant answer conflict manifest)"
+        )
     counts = {
         "n_in": n_in,
         "n_out": n_out,
         "n_answer_from_pool": n_from_pool,
         "n_answer_from_scaffold_fallback": n_from_scaffold_fallback,
+        "n_excluded_conflict": n_excluded_conflict,
     }
     return counts, out_path
 
@@ -288,6 +318,7 @@ def run_phase(args: argparse.Namespace) -> int:
 
     answers_by_key = _index_answers(_read_jsonl(answers_path))
     _log(f"loaded {len(answers_by_key)} answers from {answers_path.name}")
+    excluded_cids = _load_excluded_conv_ids(answers_path)
 
     # Enumerate per-variant scaffold files (mirrors phase_a's layout:
     # <scaffolds_root>/<variant>/scaffolds_<variant>.jsonl).
@@ -317,13 +348,16 @@ def run_phase(args: argparse.Namespace) -> int:
     out_paths: dict[str, Path] = {}
     counts: dict[str, dict] = {}
     for variant, sp in per_variant_paths.items():
-        vcounts, op = _process_variant(variant, sp, answers_by_key, out_dir, args.form)
+        vcounts, op = _process_variant(
+            variant, sp, answers_by_key, out_dir, args.form, excluded=excluded_cids
+        )
         counts[variant] = vcounts
         out_paths[variant] = op
         _log(
             f"variant={variant} spliced {vcounts['n_out']}/{vcounts['n_in']} "
             f"(pool={vcounts['n_answer_from_pool']} "
-            f"fallback={vcounts['n_answer_from_scaffold_fallback']}) -> {_rel(op)}"
+            f"fallback={vcounts['n_answer_from_scaffold_fallback']} "
+            f"excluded={vcounts['n_excluded_conflict']}) -> {_rel(op)}"
         )
 
     total_out = sum(c["n_out"] for c in counts.values())

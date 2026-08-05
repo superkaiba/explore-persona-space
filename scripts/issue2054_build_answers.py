@@ -26,18 +26,22 @@ two sources, both authored-CHAT:
   drawn question (``shared_question_draw.jsonl``), sealing the convention.
 - ``stripped_<story_id>`` (recovered scaffolds): answer = the scaffold row's
   own stripper-preserved ORIGINAL answer (the parent #1345 paired stories
-  embed the original conversation answer byte-exact; the stripper records
+  embed the original conversation answer NEAR-verbatim; the stripper records
   it). Staged from the ADMITTED sharded pools
   (``issue2054_lattice/scaffolds/<variant>/scaffolds_<variant>.shardNN.jsonl``
   + ``.manifest.json`` — NEVER the unsharded name, the r6 stale-residue
-  trap), sha-verified per shard. Cross-variant answer conflicts fail loud.
+  trap), sha-verified per shard. Cross-variant answer conflicts are RESOLVED
+  per the r12 policy (whitespace/prefix -> deterministic canonicalization;
+  substantive -> conv_id EXCLUDED via ``answers_excluded_conv_ids.json``;
+  beyond-tail substantive rate -> hard raise) — see the Source-1 section.
 
 Smoke (tiny-real): ``--max-scan-rows`` caps total streamed manifest rows AND
-``--smoke-kept-cap`` caps kept answers per source; either flag = smoke mode,
-which REQUIRES a ``/tmp`` ``--out-dir`` (a capped pool at the production
-path is a residue trap for a later phase_b dispatch) and skips the
-full-coverage assert (kept > 0 asserted instead). ``--skip-upload`` skips
-the HF mirror.
+``--smoke-kept-cap`` caps kept answers per source; ``--only-stripped-cids``
+narrows the required set to named conv_ids (the conflict-resolution slice
+probe). Any of the three = smoke mode, which REQUIRES a ``/tmp``
+``--out-dir`` (a capped pool at the production path is a residue trap for a
+later phase_b dispatch) and skips the full-coverage assert (kept > 0
+asserted instead). ``--skip-upload`` skips the HF mirror.
 
 Upload: shards the pool via ``issue2054_phase_a._shard_large_jsonl_for_upload``
 and mirrors in ONE bulk commit to ``issue2054_lattice/answers/`` (the
@@ -66,6 +70,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import shutil
 import sys
@@ -90,6 +95,10 @@ import issue2054_phase_a as pa  # noqa: E402
 SCAFFOLDS_PREFIX = f"{pa.TASK_PREFIX}/scaffolds"
 ANSWERS_PREFIX = f"{pa.TASK_PREFIX}/answers"
 POOL_STEM = "answers_pool"
+# Plan §7 / kill gate 4: per-(character, model) usable-conv floor (the fits-side
+# intersection bound, `issue2054_fits.py`); the r12 exclusion report checks each
+# variant's post-exclusion admitted count against it.
+ADMISSION_FLOOR = 4480
 
 
 def _log(msg: str) -> None:
@@ -129,9 +138,12 @@ def _pinned_revision(staging_root: Path, override: str | None) -> tuple[str, dic
     return revision, meta
 
 
-def _required_conv_ids(staging_root: Path, variants: list[str]) -> tuple[set[str], dict]:
+def _required_conv_ids(
+    staging_root: Path, variants: list[str]
+) -> tuple[set[str], dict, dict[str, set[str]]]:
     """Union of ADMITTED conv_ids across ``variants`` from kept.json (the r7
-    admission record — the deterministic coverage source)."""
+    admission record — the deterministic coverage source). Also returns the
+    per-variant admitted id sets (the r12 exclusion-impact report reads them)."""
     from explore_persona_space.orchestrate.hub import stage_hub_file
 
     kept_path = stage_hub_file(
@@ -145,6 +157,7 @@ def _required_conv_ids(staging_root: Path, variants: list[str]) -> tuple[set[str
     kept_variants = kept.get("variants") or {}
     required: set[str] = set()
     per_variant: dict[str, int] = {}
+    per_variant_ids: dict[str, set[str]] = {}
     for v in variants:
         rec = kept_variants.get(v)
         if rec is None:
@@ -153,6 +166,7 @@ def _required_conv_ids(staging_root: Path, variants: list[str]) -> tuple[set[str
         if not ids:
             raise RuntimeError(f"kept.json admitted_conv_ids EMPTY for variant {v!r}")
         per_variant[v] = len(ids)
+        per_variant_ids[v] = set(ids)
         required.update(ids)
     record = {
         "kept_json_sha256": hashlib.sha256(kept_path.read_bytes()).hexdigest(),
@@ -160,7 +174,7 @@ def _required_conv_ids(staging_root: Path, variants: list[str]) -> tuple[set[str
         "admitted_per_variant": per_variant,
         "n_required_union": len(required),
     }
-    return required, record
+    return required, record, per_variant_ids
 
 
 def _stage_sharded_jsonl(dest_dir: Path, base_prefix: str, stem: str) -> Path:
@@ -220,15 +234,77 @@ def _stage_sharded_jsonl(dest_dir: Path, base_prefix: str, stem: str) -> Path:
 # ---------------------------------------------------------------------------
 # Source 1: stripped_* answers from the ADMITTED scaffold pools
 # ---------------------------------------------------------------------------
+# Cross-variant conflict resolution (r12, closes epm:failure v3). The r9
+# premise "the parent #1345 paired stories embed the original conversation
+# answer byte-exact" is FALSE at the tail: the parent story generations
+# re-render the embedded answer with whitespace reflow (255/270 measured
+# conflicts collapse under whitespace normalization) and, rarely, small
+# character-level edits (15/270 substantive; diagnosis:
+# eval_results/issue_2054/audits/answers_conflicts_diagnosis.json). The 2x2
+# authorship axis needs ONE byte-fixed answer per conv_id across variants, so:
+#   (a) whitespace_only    -> canonicalize (majority byte form; tie -> the
+#                             form with the lexicographically smallest sha256
+#                             — order-independent, a pure function of the
+#                             {variant -> answer} map);
+#   (b) prefix_truncation  -> canonicalize to the maximal superstring (the
+#                             byte form whose normalized text is the longest;
+#                             majority/sha tie-break among equals);
+#   (c) substantive        -> EXCLUDE the conv_id (manifest persisted; the
+#                             conv_id leaves the required set and phase_b
+#                             must drop it — never scaffold-fallback).
+# A hard raise is RETAINED for the beyond-tail regime: substantive exclusions
+# past max(20, 2% of the stripped union) mean systemic upstream divergence,
+# not a rendering tail — investigate, never auto-drop.
+def _norm_ws(s: str) -> str:
+    """Whitespace-collapse normalization: every whitespace run -> one space,
+    ends stripped. This is the DEFINED normalization for class (a)."""
+    return " ".join(s.split())
+
+
+def _answer_sha(s: str) -> str:
+    return hashlib.sha256(s.encode("utf-8")).hexdigest()
+
+
+def _classify_conflict(answers: list[str]) -> str:
+    """Classify one conv_id's conflicting cross-variant answer set."""
+    norms = sorted({_norm_ws(a) for a in answers}, key=len)
+    if len(norms) == 1:
+        return "whitespace_only"
+    longest = norms[-1]
+    if all(longest.startswith(n) and n != longest for n in norms[:-1]):
+        return "prefix_truncation"
+    return "substantive"
+
+
+def _canonical_answer(per_variant: dict[str, str], cls: str) -> str:
+    """Deterministic, order-independent canonical byte form for a resolvable
+    conflict: one vote per variant, majority byte form wins; ties break to the
+    lexicographically smallest sha256. For prefix_truncation the candidate set
+    is first restricted to forms carrying the maximal normalized superstring."""
+    forms = list(per_variant.values())
+    if cls == "prefix_truncation":
+        longest = max((_norm_ws(a) for a in forms), key=len)
+        forms = [a for a in forms if _norm_ws(a) == longest]
+    votes: dict[str, int] = {}
+    for a in forms:
+        votes[a] = votes.get(a, 0) + 1
+    best = max(votes.values())
+    return min((a for a, n in votes.items() if n == best), key=_answer_sha)
+
+
 def _collect_scaffold_answers(
     rows: list[dict],
+    variant: str,
     stripped_needed: set[str],
     kept_cap: int | None,
     counters: dict[str, int],
-    answers: dict[str, str],
+    collected: dict[str, dict[str, str]],
 ) -> None:
-    """Pure collection pass over one variant's admitted scaffold rows
-    (separated from staging so the gates are probe-able offline)."""
+    """Pure collection pass over one variant's admitted scaffold rows into
+    ``collected[cid][variant] = answer`` (separated from staging so the gates
+    are probe-able offline). ``kept_cap`` caps NEW conv_ids only — additional
+    variants of an already-collected conv_id always land, so the smoke slice
+    still exercises cross-variant resolution."""
     for row in rows:
         counters["scaffold_rows_read"] += 1
         cid = str(row.get("conv_id") or row.get("scaffold_id") or "")
@@ -241,16 +317,70 @@ def _collect_scaffold_answers(
         if sc.SLOT_SENTINEL in ans:
             counters["sentinel_in_answer"] += 1
             continue
-        prev = answers.get(cid)
-        if prev is not None:
-            if prev != ans:
-                counters["cross_variant_conflict"] += 1
-                _log(f"ERROR cross-variant answer conflict for conv_id={cid}")
+        per = collected.get(cid)
+        if per is None:
+            if kept_cap is not None and len(collected) >= kept_cap:
+                continue
+            per = collected[cid] = {}
+        if variant in per:
+            # Same conv_id twice within ONE variant's pool: phase_a asserts
+            # this never happens (plan assumption 29); count, keep the first.
+            counters["intra_variant_duplicate"] += 1
             continue
-        if kept_cap is not None and counters["stripped_hits"] >= kept_cap:
+        per[variant] = ans
+
+
+def _resolve_answer_conflicts(
+    collected: dict[str, dict[str, str]],
+) -> tuple[dict[str, str], set[str], dict[str, int], list[dict]]:
+    """Resolve cross-variant answer sets -> (answers, excluded, tallies, audit).
+
+    Audit rows are digest-only (conv_ids, sha256 prefixes, lengths — NEVER
+    answer text; LMSYS-derived corpus)."""
+    answers: dict[str, str] = {}
+    excluded: set[str] = set()
+    tallies = {
+        "cross_variant_conflict": 0,
+        "conflict_ws_canonicalized": 0,
+        "conflict_prefix_canonicalized": 0,
+        "conflict_substantive_excluded": 0,
+    }
+    audit: list[dict] = []
+    for cid in sorted(collected):
+        per = collected[cid]
+        distinct = set(per.values())
+        if len(distinct) == 1:
+            answers[cid] = next(iter(distinct))
             continue
-        answers[cid] = ans
-        counters["stripped_hits"] += 1
+        tallies["cross_variant_conflict"] += 1
+        cls = _classify_conflict(list(per.values()))
+        row = {
+            "conv_id": cid,
+            "class": cls,
+            "n_variants_present": len(per),
+            "n_distinct_answers": len(distinct),
+            "per_variant": {
+                v: {"sha8": _answer_sha(a)[:8], "chars": len(a)} for v, a in per.items()
+            },
+        }
+        if cls == "substantive":
+            excluded.add(cid)
+            tallies["conflict_substantive_excluded"] += 1
+            row["disposition"] = "excluded"
+            _log(f"conflict conv_id={cid} class=substantive -> EXCLUDED")
+        else:
+            canonical = _canonical_answer(per, cls)
+            answers[cid] = canonical
+            key = (
+                "conflict_ws_canonicalized"
+                if cls == "whitespace_only"
+                else "conflict_prefix_canonicalized"
+            )
+            tallies[key] += 1
+            row["disposition"] = "canonicalized"
+            row["canonical_sha8"] = _answer_sha(canonical)[:8]
+        audit.append(row)
+    return answers, excluded, tallies, audit
 
 
 def _scaffold_answers(
@@ -258,35 +388,56 @@ def _scaffold_answers(
     variants: list[str],
     needed: set[str],
     kept_cap: int | None,
-) -> tuple[dict[str, str], dict]:
-    """{stripped_conv_id -> stripper-preserved ORIGINAL answer} from the
-    admitted scaffold rows. Cross-variant duplicates must agree byte-exact
-    (same conversation => same original answer) — a conflict fails loud."""
+) -> tuple[dict[str, str], dict, set[str], list[dict]]:
+    """{stripped_conv_id -> ORIGINAL answer} from the admitted scaffold rows,
+    cross-variant conflicts resolved per the r12 policy above. Returns
+    (answers, counters, excluded_conv_ids, conflict_audit_rows)."""
     counters = {
         "scaffold_rows_read": 0,
         "stripped_hits": 0,
         "missing_answer_field": 0,
         "sentinel_in_answer": 0,
+        "intra_variant_duplicate": 0,
         "cross_variant_conflict": 0,
+        "conflict_ws_canonicalized": 0,
+        "conflict_prefix_canonicalized": 0,
+        "conflict_substantive_excluded": 0,
+        "cross_variant_conflicts_hard": 0,
     }
-    answers: dict[str, str] = {}
     stripped_needed = {cid for cid in needed if cid.startswith("stripped_")}
     if not stripped_needed:
-        return answers, counters
+        return {}, counters, set(), []
+    collected: dict[str, dict[str, str]] = {}
     for v in variants:
         pool = _stage_sharded_jsonl(
             staging_root / SCAFFOLDS_PREFIX / v, f"{SCAFFOLDS_PREFIX}/{v}", f"scaffolds_{v}"
         )
         _collect_scaffold_answers(
-            pa._read_jsonl(pool), stripped_needed, kept_cap, counters, answers
+            pa._read_jsonl(pool), v, stripped_needed, kept_cap, counters, collected
         )
-    if counters["cross_variant_conflict"]:
+    answers, excluded, tallies, audit = _resolve_answer_conflicts(collected)
+    counters.update(tallies)
+    counters["stripped_hits"] = len(answers)
+    cap = max(20, math.ceil(0.02 * len(stripped_needed)))
+    if counters["conflict_substantive_excluded"] > cap:
+        counters["cross_variant_conflicts_hard"] = counters["conflict_substantive_excluded"]
         raise RuntimeError(
-            f"{counters['cross_variant_conflict']} cross-variant answer conflict(s): "
-            "the same stripped conv_id carries different original answers across "
-            "variants — 2x2 authorship identification broken; investigate upstream"
+            f"cross_variant_conflicts_hard={counters['cross_variant_conflicts_hard']}: "
+            f"substantive cross-variant answer conflicts exceed the tail cap "
+            f"({counters['conflict_substantive_excluded']} > {cap} = max(20, 2% of "
+            f"{len(stripped_needed)} stripped conv_ids)) — systemic upstream answer "
+            "divergence, not a rendering tail; investigate the parent #1345 stories "
+            "before building this pool"
         )
-    return answers, counters
+    _log(
+        "conflict resolution: "
+        f"cids={counters['cross_variant_conflict']} "
+        f"ws_canonicalized={counters['conflict_ws_canonicalized']} "
+        f"prefix_canonicalized={counters['conflict_prefix_canonicalized']} "
+        f"substantive_excluded={counters['conflict_substantive_excluded']} "
+        f"hard={counters['cross_variant_conflicts_hard']}"
+    )
+    return answers, counters, excluded, audit
 
 
 # ---------------------------------------------------------------------------
@@ -527,7 +678,11 @@ def run(args: argparse.Namespace) -> int:
     out_dir = Path(args.out_dir).resolve()
     staging_root = Path(args.staging_dir).resolve()
     variants = [v.strip() for v in args.variants.split(",") if v.strip()]
-    smoke = args.max_scan_rows is not None or args.smoke_kept_cap is not None
+    smoke = (
+        args.max_scan_rows is not None
+        or args.smoke_kept_cap is not None
+        or bool(args.only_stripped_cids)
+    )
     if smoke and not str(out_dir).startswith("/tmp/"):
         print(
             "ERROR: smoke caps (--max-scan-rows / --smoke-kept-cap) require a /tmp "
@@ -545,17 +700,35 @@ def run(args: argparse.Namespace) -> int:
 
     revision, draw_meta = _pinned_revision(staging_root, args.manifest_revision)
     _log(f"manifest revision pinned: {revision[:12]} (draw n={draw_meta.get('n')})")
-    required, kept_record = _required_conv_ids(staging_root, variants)
+    required, kept_record, per_variant_admitted = _required_conv_ids(staging_root, variants)
     n_mt = sum(1 for x in required if x.startswith("mt_"))
     n_stripped = sum(1 for x in required if x.startswith("stripped_"))
     n_other = len(required) - n_mt - n_stripped
     if n_other:
         raise RuntimeError(f"{n_other} admitted conv_ids in neither key space (mt_/stripped_)")
     _log(f"required conv_ids: {len(required)} (mt={n_mt} stripped={n_stripped})")
+    if args.only_stripped_cids:
+        only = {x.strip() for x in args.only_stripped_cids.split(",") if x.strip()}
+        unknown = sorted(only - required)
+        if unknown:
+            raise RuntimeError(
+                f"--only-stripped-cids names {len(unknown)} conv_id(s) not in the "
+                f"admitted union (first: {unknown[:5]})"
+            )
+        required &= only
+        _log(f"SMOKE --only-stripped-cids: required narrowed to {len(required)} conv_id(s)")
 
-    scaffold_pool, scaffold_counters = _scaffold_answers(
+    scaffold_pool, scaffold_counters, excluded_cids, conflict_audit = _scaffold_answers(
         staging_root, variants, required, args.smoke_kept_cap
     )
+    if excluded_cids:
+        required -= excluded_cids
+        _log(
+            f"EXCLUDED {len(excluded_cids)} substantive-conflict stripped conv_id(s) "
+            "from the required set (cross-variant answer divergence — 2x2 byte-fixed "
+            "answer invariant unsatisfiable for these rows); phase_b must DROP them "
+            "(exclusion manifest rides the pool output)"
+        )
     mt_required = {x for x in required if x.startswith("mt_")}
     draw_q = _draw_questions(staging_root, mt_required)
     missing_draw = sorted(mt_required - draw_q.keys())
@@ -603,6 +776,82 @@ def run(args: argparse.Namespace) -> int:
         )
         return 1
 
+    # r12 conflict-resolution artifacts: digest-only audit + exclusion manifest
+    # (ids + sha prefixes + lengths — NEVER answer text; LMSYS-derived corpus).
+    # Both ride the pool upload; non-smoke runs also mirror them to the
+    # committed audits dir so the resolution record lands in git.
+    floor_report = {
+        v: {
+            "admitted": len(per_variant_admitted[v]),
+            "substantive_excluded_hits": len(per_variant_admitted[v] & excluded_cids),
+            "post_exclusion": len(per_variant_admitted[v] - excluded_cids),
+            "floor": ADMISSION_FLOOR,
+            "margin": len(per_variant_admitted[v] - excluded_cids) - ADMISSION_FLOOR,
+        }
+        for v in variants
+    }
+    audit_doc = {
+        "artifact": "answers_conflicts_audit",
+        "resolution_rules": {
+            "whitespace_only": (
+                "canonicalized: majority byte form across variants; tie -> "
+                "lexicographically smallest sha256 (order-independent)"
+            ),
+            "prefix_truncation": (
+                "canonicalized: maximal normalized superstring; majority/sha "
+                "tie-break among byte forms carrying it"
+            ),
+            "substantive": "excluded from the required set (manifest below)",
+            "normalization": 'norm(s) = " ".join(s.split())',
+            "hard_cap": "substantive_excluded > max(20, 2% of stripped union) -> raise",
+        },
+        "tallies": {
+            k: scaffold_counters[k]
+            for k in (
+                "cross_variant_conflict",
+                "conflict_ws_canonicalized",
+                "conflict_prefix_canonicalized",
+                "conflict_substantive_excluded",
+                "cross_variant_conflicts_hard",
+            )
+        },
+        "per_variant_floor_report": floor_report,
+        "conflicts": conflict_audit,
+        "utc": datetime.now(tz=timezone.utc).isoformat(),
+        "metadata": c.metadata(args.seed, len(conflict_audit), Path(__file__).name),
+    }
+    exclusion_doc = {
+        "artifact": "answers_excluded_conv_ids",
+        "consumer": (
+            "scripts/issue2054_phase_b.py — DROP these conv_ids (never "
+            "scaffold-fallback: their cross-variant answers diverge substantively, "
+            "so a per-variant fallback re-breaks the 2x2 byte-fixed answer invariant)"
+        ),
+        "excluded": sorted(excluded_cids),
+        "n_excluded": len(excluded_cids),
+        "class": "substantive",
+        "per_variant_floor_report": floor_report,
+        "utc": datetime.now(tz=timezone.utc).isoformat(),
+        "metadata": c.metadata(args.seed, len(excluded_cids), Path(__file__).name),
+    }
+    audit_path = out_dir / "answers_conflicts_audit.json"
+    exclusion_path = out_dir / "answers_excluded_conv_ids.json"
+    pa._atomic_write_json(audit_path, audit_doc)
+    pa._atomic_write_json(exclusion_path, exclusion_doc)
+    if not smoke:
+        audits_dir = _REPO_ROOT / "eval_results" / "issue_2054" / "audits"
+        audits_dir.mkdir(parents=True, exist_ok=True)
+        pa._atomic_write_json(audits_dir / audit_path.name, audit_doc)
+        pa._atomic_write_json(audits_dir / exclusion_path.name, exclusion_doc)
+        _log(f"conflict audit + exclusion manifest mirrored -> {audits_dir}")
+    for v, rec in floor_report.items():
+        _log(
+            f"floor report variant={v}: admitted={rec['admitted']} "
+            f"-{rec['substantive_excluded_hits']} excluded -> "
+            f"post_exclusion={rec['post_exclusion']} (floor {ADMISSION_FLOOR}, "
+            f"margin +{rec['margin']})"
+        )
+
     pool_path = out_dir / f"{POOL_STEM}.jsonl"
     pa._atomic_write_jsonl(pool_path, rows)
     meta = {
@@ -626,6 +875,16 @@ def run(args: argparse.Namespace) -> int:
         "missing_required": len(missing),
         "smoke": smoke,
         "counters": {"manifest": manifest_counters, "scaffolds": scaffold_counters},
+        "conflict_resolution": {
+            "n_conflict_cids": scaffold_counters["cross_variant_conflict"],
+            "ws_canonicalized": scaffold_counters["conflict_ws_canonicalized"],
+            "prefix_canonicalized": scaffold_counters["conflict_prefix_canonicalized"],
+            "substantive_excluded": scaffold_counters["conflict_substantive_excluded"],
+            "hard": scaffold_counters["cross_variant_conflicts_hard"],
+            "excluded_conv_ids_manifest": exclusion_path.name,
+            "audit": audit_path.name,
+            "per_variant_floor_report": floor_report,
+        },
         "kept_record": kept_record,
         "answer_length_stats": _length_stats([r["answer"] for r in rows]),
         "utc": datetime.now(tz=timezone.utc).isoformat(),
@@ -637,7 +896,7 @@ def run(args: argparse.Namespace) -> int:
 
     is_tmp = str(out_dir).startswith("/tmp/")
     if not is_tmp and not args.skip_upload:
-        _upload_pool(out_dir, [pool_path, meta_path])
+        _upload_pool(out_dir, [pool_path, meta_path, audit_path, exclusion_path])
     else:
         _log("upload skipped (smoke /tmp tree or --skip-upload)")
 
@@ -645,6 +904,10 @@ def run(args: argparse.Namespace) -> int:
     _log(
         f"done: kept={len(rows)} (manifest={len(manifest_pool)} "
         f"scaffold={len(scaffold_pool)}) missing_required={len(missing)} "
+        f"conflicts_ws_canonicalized={scaffold_counters['conflict_ws_canonicalized']} "
+        f"conflicts_prefix_canonicalized={scaffold_counters['conflict_prefix_canonicalized']} "
+        f"conflicts_substantive_excluded={scaffold_counters['conflict_substantive_excluded']} "
+        f"cross_variant_conflicts_hard={scaffold_counters['cross_variant_conflicts_hard']} "
         f"manifest_counters={manifest_counters} scaffold_counters={scaffold_counters}"
     )
     # phase-done terminal line (poller contract). No scripts/*.sh dispatcher
@@ -683,6 +946,13 @@ def main() -> int:
         type=int,
         default=None,
         help="SMOKE: cap kept answers per source (requires /tmp --out-dir)",
+    )
+    p.add_argument(
+        "--only-stripped-cids",
+        default=None,
+        help="SMOKE: comma-separated conv_ids — narrow the required set to "
+        "exactly these (conflict-resolution slice probe; requires /tmp "
+        "--out-dir; skips the manifest stream when no mt_* id is named)",
     )
     p.add_argument(
         "--allow-missing-required",
