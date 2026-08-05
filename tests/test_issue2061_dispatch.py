@@ -205,6 +205,32 @@ def test_parse_turnstore_name_realized_vocabulary():
     assert ts.parse_encoded_stem(stem, "answer", 29) == ("longer-rlvr", "chat", "lmsys23k")
 
 
+def test_turnstore_enumeration_collision_and_unparsed_warn(monkeypatch, capsys):
+    """The v1/v2 family-collision assert fires (fail-loud, never a silent
+    overwrite) and an unknown-vocabulary name WARNs instead of silently
+    vanishing (the M2 vanishing-cell class)."""
+
+    class E:
+        def __init__(self, p):
+            self.path = p
+
+    def fake_retry_collide(fn, *, what=""):
+        return [E("pre/turnstore_base_chat_x"), E("pre/turnstore_v2_base_chat_x")]
+
+    monkeypatch.setattr(enc, "retry_transient", fake_retry_collide)
+    with pytest.raises(ValueError, match="Ambiguous turnstore cell"):
+        enc._stage_render_corpus_turnstores()
+
+    def fake_retry_unparsed(fn, *, what=""):
+        return [E("pre/turnstore_base_chat_x"), E("pre/turnstore_mystery_chat_x")]
+
+    monkeypatch.setattr(enc, "retry_transient", fake_retry_unparsed)
+    stores = enc._stage_render_corpus_turnstores()
+    out = capsys.readouterr().out
+    assert [t["tree_path"] for t in stores] == ["pre/turnstore_base_chat_x"]
+    assert "WARN" in out and "turnstore_mystery_chat_x" in out
+
+
 def test_hub_prefix_mapping_matches_plan():
     assert hio.hub_prefix("sae-encoded") == f"{hio.HF_PREFIX}/sae_encoded"
     assert hio.hub_prefix("per-feature-r2") == f"{hio.HF_PREFIX}/analysis_tensors/per_feature_r2"
