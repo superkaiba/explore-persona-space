@@ -32,6 +32,7 @@ import re
 import shutil
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 
@@ -137,26 +138,38 @@ def phase_new(args) -> dict:
     if not wanted:
         raise SystemExit(f"[new] no shard files under {SYCO_OOD_STORE_PREFIX}")
     logger.info("[new] staging %d syco-OOD store files (offset=%d)", len(wanted), offset)
-    n_placed = n_skipped = 0
-    for i, repo_path in enumerate(sorted(wanted)):
+
+    def _target_for(repo_path: str) -> Path:
         name = repo_path.rsplit("/", 1)[-1]
         m = _SHARD_RE.match(name)
-        new_idx = offset + int(m.group("idx"))
-        new_name = f"{m.group('stem')}{new_idx:02d}{m.group('ext')}"
-        target = dest / new_name
-        if target.exists():
-            n_skipped += 1
-            continue
-        local = hub.stage_hub_file(
-            hub.DEFAULT_DATASET_REPO, repo_path, stage / name, repo_type="dataset"
-        )
-        # atomic within-filesystem publish under the renumbered name
-        tmp = target.with_name(target.name + ".tmp")
-        shutil.move(str(local), str(tmp))
-        os.replace(tmp, target)
-        n_placed += 1
-        if (i + 1) % 200 == 0:
-            logger.info("[new] %d/%d placed", i + 1, len(wanted))
+        return dest / f"{m.group('stem')}{offset + int(m.group('idx')):02d}{m.group('ext')}"
+
+    todo = [rp for rp in sorted(wanted) if not _target_for(rp).exists()]
+    n_skipped = len(wanted) - len(todo)
+    n_placed = 0
+    if todo:
+        # BOUNDED parallel staging (org 2500-req/5-min quota: max_workers<=6, the
+        # canonical stage_hub_prefix width). A serial loop over ~2.2k shard files
+        # measured ~8 files/min on this pod — hours; the pool is the fix.
+        def _one(repo_path: str) -> None:
+            name = repo_path.rsplit("/", 1)[-1]
+            local = hub.stage_hub_file(
+                hub.DEFAULT_DATASET_REPO, repo_path, stage / name, repo_type="dataset"
+            )
+            target = _target_for(repo_path)
+            tmp = target.with_name(target.name + ".tmp")
+            shutil.move(str(local), str(tmp))
+            os.replace(tmp, target)
+
+        done = 0
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            futures = {pool.submit(_one, rp): rp for rp in todo}
+            for fut in as_completed(futures):
+                fut.result()  # fail loud
+                done += 1
+                if done % 100 == 0:
+                    logger.info("[new] %d/%d placed", done, len(todo))
+        n_placed = done
     logger.info("[new] placed=%d skipped=%d", n_placed, n_skipped)
     return {"offset": offset, "n_placed": n_placed, "n_skipped": n_skipped}
 
