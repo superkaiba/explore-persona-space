@@ -8410,8 +8410,8 @@
     "2087": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2087",
-      "status": "planning",
+      "path": "tasks/approved/2087",
+      "status": "approved",
       "title": "workflow-fix: AST lint for discarded upload-helper returns (scripts/)"
     },
     "2088": {
