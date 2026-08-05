@@ -7,7 +7,7 @@ forward-only after the 2026-W22 four-H2 → three-H2 migration in task
 `tasks/completed/432/body.md`;
 this exemplar is a compact pointer + rule-by-rule walkthrough.
 
-Read alongside `lw-post-examples/` (external LW register references)
+Read alongside `docs/lw-post-examples/` (external LW register references)
 and `iterations.md` (rule provenance).
 
 **Rules demonstrated** (cited inline at each beat below):
