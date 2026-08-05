@@ -110,6 +110,18 @@ adding a pass means adding a numbered item here AND bumping the digit:
      wedge terminate mid-crash-fix-round destroyed live run state. Kill
      switch ``EPM_DISABLE_WEDGE_OWNER_GUARD=1`` (restores the pre-#1667
      terminate).
+   - **STOP (bounded-diagnosis-window arm, #1997 — reversible, never
+     terminate)** a RUNNING RunPod pod whose persisted run-handle sidecar
+     carries the #954 partial-launch evidence (``workload_executed: false``
+     + ``workload_start_error`` — the pod was deliberately left RUNNING for
+     SSH diagnosis after a failed workload start) once the pod-safety
+     incarnation clock passes ``EPS_RUNPOD_DIAGNOSIS_TTL_HOURS`` (default
+     6h) with no ``keep-running`` tag and no live owner (the #1667
+     tri-state probes; only the literal ``False`` acts). Volume +
+     ``/workspace`` logs are preserved — ``pod.py resume`` re-opens a fresh
+     TTL window. Closes the #1739 shape: ``runpod_workload_start_failed``
+     parks the task ``blocked`` (deliberately not watcher-re-drivable)
+     while the pod bills unbounded behind the diagnosis contract.
 
    The pod-safety pass does NOT use session-cwd liveness as a stop trigger
    (see "Why STOP is keyed on task status, not session liveness" below) and
@@ -1477,6 +1489,32 @@ UNLAUNCHED_ORPHAN_GRACE_SEC = 3600
 #: knob surface kept minimal per the task-#1519 body.
 UNLAUNCHED_ORPHAN_LAUNCH_SKEW_SEC = 900
 
+# Substring stamped into the #1997 bounded-diagnosis-window STOP marker: a
+# RUNNING RunPod pod whose persisted run-handle sidecar carries the #954
+# partial-launch evidence (`workload_executed: false` + `workload_start_error`)
+# was deliberately left RUNNING for SSH diagnosis (the RunPod-as-diagnosis-lane
+# doctrine, `.claude/rules/compute-backend-failover.md`) — but past the TTL
+# with no keep-running tag and no live owner it is stopped REVERSIBLY
+# (`_stop_pod`; volume + /workspace logs preserved — crash forensics survive;
+# NEVER terminated, so the compute-kill approval gate is honored by
+# construction). Deduped once per pod incarnation via the
+# `diagnosis_stop_noted` pod-safety state field. Posted as epm:progress, so it
+# MUST be a member of _WATCHER_NOTE_SENTINELS (excluded from "real progress"
+# in _latest_progress_ts — otherwise the stop marker would reset the very
+# staleness clocks the pass measures).
+_DIAGNOSIS_WINDOW_STOP_NOTE_SENTINEL = "[autonomous_session_watch:diagnosis-window-stop]"
+
+#: TTL (HOURS) before the #1997 bounded-diagnosis-window arm reversibly stops
+#: a RUNNING RunPod pod whose workload start FAILED (sidecar evidence above).
+#: 6h: comfortably above the 10-min watcher cadence and the ~2h #1481
+#: idle-discovery lag, below the 24h stale-audit horizon — a real diagnosis
+#: session has most of a working day before the stop, and `pod.py resume
+#: --issue <N>` re-opens a fresh window (the state GC on leaving RUNNING
+#: resets the incarnation clock). Env-overridable at CALL time via
+#: ``EPS_RUNPOD_DIAGNOSIS_TTL_HOURS`` (float hours;
+#: :func:`_diagnosis_window_ttl_sec`).
+DIAGNOSIS_WINDOW_TTL_HOURS = 6.0
+
 # Substring stamped into every session-stalled-alert marker note. Same role as
 # _ALERT_NOTE_SENTINEL for the pod-safety pass: a session-stalled alert is
 # posted as epm:progress and MUST be filtered out of the "real progress" set,
@@ -1998,6 +2036,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _WEDGE_OWNER_DEFER_NOTE_SENTINEL,
         _ORPHAN_GCP_HANDLE_NOTE_SENTINEL,
         _UNLAUNCHED_ORPHAN_NOTE_SENTINEL,
+        _DIAGNOSIS_WINDOW_STOP_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
@@ -4024,6 +4063,96 @@ def decide_unlaunched_orphan(
     if latest_launch_signal_ts is not None and latest_launch_signal_ts > created_ts - skew_sec:
         return "keep"
     return "alert"
+
+
+def decide_diagnosis_window_stop(
+    *,
+    pod_status: str | None,
+    pod_name: str,
+    handle_backend: str | None,
+    workload_executed: bool | None,
+    workload_start_error: str | None,
+    handle_pod_name: str | None,
+    first_seen_ts: float | None,
+    keep_running: bool,
+    owner_live: bool | str,
+    noted: bool,
+    now: float,
+    ttl_sec: float,
+) -> str:
+    """Pure decision for the #1997 bounded-diagnosis-window arm: ``"stop"`` | ``"keep"``.
+
+    A RunPod pod whose workload start FAILED is deliberately left RUNNING for
+    SSH diagnosis (the RunPod-as-diagnosis-lane doctrine — GCP's crash DELETE
+    destroys logs, so the pod IS the forensics). Pre-#1997 that window was
+    UNBOUNDED: `runpod_workload_start_failed` is deliberately NOT
+    watcher-re-drivable, so the task parks ``blocked`` while the pod bills
+    (#1739: 4 fallback-provisioned pods billed behind the contract; the #1519
+    arm only alerts). This arm BOUNDS the window with POSITIVE sidecar
+    evidence (the #954 partial handle) and a reversible ``pod.py stop`` —
+    volume + ``/workspace`` logs preserved, so the diagnosis-lane purpose
+    (crash forensics survive) is BETTER served than by unbounded RUNNING.
+    NEVER a terminate (the RunPod destroy mutation is approval-gated, commit
+    3a2f364a70; the kill gate is honored by construction because only the
+    reversible stop helper is ever called on this arm's account).
+
+    Cases (EVERY uncertain input fails toward ``"keep"`` — the file posture):
+
+    - ``pod_status != "RUNNING"`` -> keep (nothing to stop).
+    - ``handle_backend != "runpod"`` -> keep (a gcp/slurm handle is the #1490
+      orphan arm's business; ``None`` = unreadable sidecar -> keep).
+    - ``workload_executed is not False`` -> keep. ONLY the literal ``False``
+      (the #954 truthful "the workload did not start" record) is evidence; a
+      launched-then-died workload (``True``) stays with the poller/failure
+      paths + #1519 alerts, and ``None`` (field absent / schema drift) is
+      uncertain -> keep — drift disarms the arm INERTLY, never destructively.
+    - ``not workload_start_error`` -> keep (no positive failure evidence).
+    - ``handle_pod_name != pod_name`` -> keep (the sidecar names a DIFFERENT
+      pod — re-pointed by a failover / a suffixed sibling; never act on a pod
+      the evidence does not bind to — the #770-r2 sidecar-binding lesson).
+    - ``noted`` (this pod incarnation) -> keep (once-per-incarnation dedup).
+    - ``first_seen_ts is None`` -> keep (no incarnation clock yet — the age
+      accumulates from the pod-safety pass's first save, the #1490
+      convention; feeding the STATE clock rather than the pod ``created_at``
+      is load-bearing: the state file is GC'd when the pod leaves RUNNING, so
+      a deliberate ``pod.py resume`` re-opens a FRESH TTL window — the
+      intended "extend the diagnosis window" affordance, which a
+      creation-time anchor would break: ``createdAt`` never resets on
+      resume).
+    - ``now - first_seen_ts < ttl_sec`` -> keep (the diagnosis window is
+      live); at/over the TTL fires (comparator mirrors
+      :func:`decide_unlaunched_orphan`'s ``< grace_sec``).
+    - ``keep_running`` -> keep (the tag is the sanctioned longer-diagnosis
+      hold; the caller passes True for ANY non-``False`` tri-state read, so
+      a failed tag read never overrides a user's tag).
+    - ``owner_live is not False`` -> keep. Only the LITERAL ``False`` (both
+      #1667 probe legs resolved not-live) permits the stop — a live owner is
+      diagnosing, ``"unknown"`` (daemon down / unresolvable transcript) is
+      uncertain. Same literal-``False``-acts convention as
+      :func:`decide_pod_wedge`'s ``owner_live``.
+    - else -> ``"stop"``.
+    """
+    if pod_status != "RUNNING":
+        return "keep"
+    if handle_backend != "runpod":
+        return "keep"
+    if workload_executed is not False:
+        return "keep"
+    if not workload_start_error:
+        return "keep"
+    if handle_pod_name != pod_name:
+        return "keep"
+    if noted:
+        return "keep"
+    if first_seen_ts is None:
+        return "keep"
+    if now - first_seen_ts < ttl_sec:
+        return "keep"
+    if keep_running:
+        return "keep"
+    if owner_live is not False:
+        return "keep"
+    return "stop"
 
 
 def decide_keep_running_owner_escalation(
@@ -12185,6 +12314,7 @@ def _save_pod_safety_state(
     stop_failed_noted: bool | None = None,
     orphan_gcp_noted: bool | None = None,
     unlaunched_orphan_noted: bool | None = None,
+    diagnosis_stop_noted: bool | None = None,
     wedge_first_seen: float | None = _CARRY,
     wedge_missed: int | None = _CARRY,
     wedge_alerted: bool | None = _CARRY,
@@ -12217,7 +12347,10 @@ def _save_pod_safety_state(
     None carries forward identically. ``unlaunched_orphan_noted`` is the
     same pod_id-keyed dedup/carry-forward flag owned by the #1519
     unlaunched-orphan alert arm (once per pod incarnation); None carries
-    forward identically to ``orphan_gcp_noted``.  ``prev`` is the existing on-disk
+    forward identically to ``orphan_gcp_noted``. ``diagnosis_stop_noted`` is
+    the same pod_id-keyed dedup/carry-forward flag owned by the #1997
+    bounded-diagnosis-window stop arm (once per pod incarnation); None
+    carries forward identically to ``orphan_gcp_noted``.  ``prev`` is the existing on-disk
     payload (if any), passed so callers that already loaded it don't re-read;
     ``first_seen`` carries forward when present so the age backstop measures
     the original episode start, not the latest save.
@@ -12293,6 +12426,13 @@ def _save_pod_safety_state(
         unlaunched_orphan_noted = (
             bool((prev or {}).get("unlaunched_orphan_noted", False)) and same_pod
         )
+    if diagnosis_stop_noted is None:
+        # #1997 diagnosis-window stop dedup (once per pod incarnation) —
+        # byte-parallel to ``unlaunched_orphan_noted`` above: None carries the
+        # prior on-disk value forward, pod_id-keyed so a save under a NEW
+        # pod_id resets the flag to False and re-arms a fresh incarnation.
+        same_pod = (prev or {}).get("pod_id") == pod_id
+        diagnosis_stop_noted = bool((prev or {}).get("diagnosis_stop_noted", False)) and same_pod
     if wedge_first_seen is _CARRY:
         prev_wedge_first_seen = (prev or {}).get("wedge_first_seen")
         wedge_first_seen = (
@@ -12340,6 +12480,7 @@ def _save_pod_safety_state(
         "stop_failed_noted": bool(stop_failed_noted),
         "orphan_gcp_noted": bool(orphan_gcp_noted),
         "unlaunched_orphan_noted": bool(unlaunched_orphan_noted),
+        "diagnosis_stop_noted": bool(diagnosis_stop_noted),
         "first_seen": prev_first_seen,
         "wedge_first_seen": wedge_first_seen,
         "wedge_missed": int(wedge_missed),
@@ -14300,6 +14441,26 @@ def _unlaunched_orphan_grace_sec() -> int:
     return val if val > 0 else UNLAUNCHED_ORPHAN_GRACE_SEC
 
 
+def _diagnosis_window_ttl_sec() -> float:
+    """Read the #1997 diagnosis-window TTL in SECONDS, defaulting to 6.0 hours.
+
+    Read at CALL time (not import time) from ``EPS_RUNPOD_DIAGNOSIS_TTL_HOURS``
+    (float HOURS — the plan-named knob) so ops can retune without restarting
+    the watcher cron — mirroring :func:`_unlaunched_orphan_grace_sec` (the
+    #783 convention). A missing / non-numeric / non-positive value falls back
+    to :data:`DIAGNOSIS_WINDOW_TTL_HOURS` (never a kill switch — a typo'd var
+    must not collapse the TTL to zero and stop a live diagnosis session).
+    """
+    raw = os.environ.get("EPS_RUNPOD_DIAGNOSIS_TTL_HOURS")
+    if raw is None:
+        return DIAGNOSIS_WINDOW_TTL_HOURS * 3600.0
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        return DIAGNOSIS_WINDOW_TTL_HOURS * 3600.0
+    return val * 3600.0 if val > 0 else DIAGNOSIS_WINDOW_TTL_HOURS * 3600.0
+
+
 def _keep_running_owner_idle_s() -> float:
     """#1582 marker-gap + owner-transcript-idle floor in seconds (env
     ``EPM_KEEP_RUNNING_WEDGED_OWNER_MIN_H``, HOURS; default
@@ -14644,6 +14805,205 @@ def _maybe_flag_unlaunched_orphan_pod(
     # False — one duplicate alert on the next tick. The arm just persisted
     # this pod_id to disk (above); the in-memory mirror restores consistency.
     prev_state["unlaunched_orphan_noted"] = True
+    prev_state["pod_id"] = info.pod_id
+    return True
+
+
+def _diagnosis_sidecar_evidence(issue: int) -> dict | None:
+    """Read the #1997 evidence fields off issue ``issue``'s run-handle sidecar.
+
+    Returns ``{"backend", "workload_executed", "workload_start_error",
+    "pod_name"}`` (``workload_executed`` coerced to ``bool | None`` — a
+    non-bool value is schema drift and reads ``None``;
+    ``workload_start_error`` coerced to a non-empty ``str | None``) or
+    ``None`` on ANY read / parse / import failure — fail toward keep, with
+    ONE stderr diagnostic line so the quiet miss is diagnosable. Uses the
+    SAME sidecar resolver the wedge arm uses (``resolve_handle_sidecar_path``
+    / ``read_handle_sidecar``, the #692 shape).
+    """
+    try:
+        from explore_persona_space.backends.issue_dispatch import (
+            read_handle_sidecar,
+            resolve_handle_sidecar_path,
+        )
+
+        path, _probed = resolve_handle_sidecar_path(issue)
+        if not path.exists():
+            return None
+        handle = read_handle_sidecar(path)
+        extra = handle.extra or {}
+        we = extra.get("workload_executed")
+        wse = extra.get("workload_start_error")
+        return {
+            "backend": handle.backend,
+            "workload_executed": we if isinstance(we, bool) else None,
+            "workload_start_error": wse if isinstance(wse, str) and wse else None,
+            "pod_name": handle.pod_name,
+        }
+    except Exception as exc:
+        print(
+            f"  diagnosis-window: sidecar unreadable for #{issue} "
+            f"({type(exc).__name__}: {exc}); keep (fail toward keep)",
+            file=sys.stderr,
+        )
+        return None
+
+
+def _maybe_stop_diagnosis_window_pod(
+    issue: int,
+    info: PodInfo,
+    now: float,
+    prev_state: dict,
+    dry_run: bool,
+) -> bool:
+    """#1997 bounded-diagnosis-window arm: reversibly STOP a RUNNING RunPod pod
+    whose workload start FAILED (positive sidecar evidence) past the TTL.
+
+    Full predicate semantics live in :func:`decide_diagnosis_window_stop`
+    (every uncertain input fails toward keep). Wiring order mirrors the #1490
+    arm (cheap legs first; the subprocess shields run LAST, paid only for a
+    matured candidate): the once-per-incarnation ``diagnosis_stop_noted``
+    dedup + the ``first_seen`` incarnation-clock age gate short-circuit
+    before any sidecar IO; the sidecar read + a shields-assumed-inactive
+    decide pass gate the two EXPENSIVE tri-state probes
+    (:func:`_wedge_keep_running` — one ``task.py view`` subprocess — and
+    :func:`_wedge_owner_live` — events read + daemon /list); a final decide
+    pass with the real shield values makes the decision.
+
+    On ``"stop"``: the EXISTING reversible :func:`_stop_pod` helper acts (the
+    "STOP, never terminate" contract — the poller owns terminate; the
+    compute-kill approval gate is honored by construction because no
+    destruction path is ever referenced here). On success: one
+    sentinel-led ``epm:progress`` marker (pod, elapsed vs TTL, truncated
+    ``workload_start_error``, the volume-preserved guarantee, the reopen
+    command), one fail-soft Telegram push, then ``diagnosis_stop_noted`` is
+    persisted (pod_id-keyed) and mirrored — flag + ``pod_id`` — into the
+    caller's in-memory ``prev_state`` (the #1490 r2 clobber lesson). Returns
+    True when the arm HANDLED the tick (stopped, or dry-run would-stop) so
+    ``_process_pod`` returns early — a just-stopped pod has no status-class
+    decision left to make. A REAL stop failure (``pod.py stop`` rc != 0;
+    ``_stop_pod`` already printed POD STOP FAILED) does NOT note, so the
+    next tick retries — the #1155 retryable-episode posture. Dry-run: the
+    ``_stop_pod`` would-stop log line only — no marker, no push, no state
+    write (the pinned auto-stop dry-run contract).
+
+    The state GC on leaving RUNNING (:func:`_gc_orphan_pod_safety_state`)
+    reaps the noted flag AND the ``first_seen`` clock, so a deliberate
+    ``pod.py resume`` re-opens a FRESH incarnation with a FRESH TTL — the
+    intended "extend the diagnosis window" affordance;
+    ``task.py add-tag <N> keep-running`` shields an open-ended hold.
+    """
+    noted = bool(prev_state.get("diagnosis_stop_noted", False)) and prev_state.get(
+        "pod_id"
+    ) == getattr(info, "pod_id", None)
+    if noted:
+        return False
+    first_seen = prev_state.get("first_seen")
+    if not isinstance(first_seen, int | float):
+        return False  # no incarnation clock yet — age accumulates from the first save
+    ttl_sec = _diagnosis_window_ttl_sec()
+    if now - float(first_seen) < ttl_sec:
+        return False  # the diagnosis window is live — skip the sidecar IO entirely
+    evidence = _diagnosis_sidecar_evidence(issue)
+    if evidence is None:
+        return False  # no / unreadable sidecar — no positive evidence, keep
+    decide_kwargs = {
+        "pod_status": info.desired_status,
+        "pod_name": info.name,
+        "handle_backend": evidence["backend"],
+        "workload_executed": evidence["workload_executed"],
+        "workload_start_error": evidence["workload_start_error"],
+        "handle_pod_name": evidence["pod_name"],
+        "first_seen_ts": float(first_seen),
+        "noted": noted,
+        "now": now,
+        "ttl_sec": ttl_sec,
+    }
+    # Cheap pass with the shields assumed inactive: only a fully-matured,
+    # sidecar-evidenced candidate pays the two subprocess-backed probes.
+    if (
+        decide_diagnosis_window_stop(**decide_kwargs, keep_running=False, owner_live=False)
+        != "stop"
+    ):
+        return False
+    kr = _wedge_keep_running(issue)  # tri-state: True | False | "unknown"
+    owner = _wedge_owner_live(issue, now)  # tri-state: True | False | "unknown"
+    if (
+        decide_diagnosis_window_stop(
+            **decide_kwargs,
+            # ANY non-False tri-state read (tag present OR read failure) shields.
+            keep_running=(kr is not False),
+            owner_live=owner,
+        )
+        != "stop"
+    ):
+        print(
+            f"  diagnosis-window: #{issue} pod {info.name} matured past the "
+            f"{ttl_sec / 3600.0:.1f}h TTL but is SHIELDED "
+            f"(keep_running={kr!r}, owner_live={owner!r}); keep",
+            file=sys.stderr,
+        )
+        return False
+    age_h = (now - float(first_seen)) / 3600.0
+    stopped = _stop_pod(issue, dry_run)
+    if not stopped:
+        if dry_run:
+            # _stop_pod returns False under dry-run BY CONSTRUCTION (no
+            # subprocess ran) — "would stop pod" log line only, no marker, no
+            # push, no state write; return True so the dry run predicts the
+            # production early-return.
+            return True
+        # Real stop failure — _stop_pod already printed POD STOP FAILED. Do
+        # NOT note: the next tick retries (the #1155 retryable posture).
+        print(
+            f"  DIAGNOSIS-WINDOW STOP FAILED issue #{issue}: pod {info.name} keeps "
+            f"billing; retried next tick.",
+            file=sys.stderr,
+        )
+        return False
+    err_excerpt = (evidence["workload_start_error"] or "")[:300]
+    _post_progress_marker(
+        issue,
+        f"{_DIAGNOSIS_WINDOW_STOP_NOTE_SENTINEL} bounded diagnosis window (#1997): RUNNING "
+        f"pod {info.name} (pod_id={info.pod_id}) was left up for SSH diagnosis after a FAILED "
+        f"workload start (run-handle sidecar: workload_executed=false) and had billed "
+        f"{age_h:.1f}h — past the {ttl_sec / 3600.0:.1f}h TTL "
+        f"(EPS_RUNPOD_DIAGNOSIS_TTL_HOURS) with no keep-running tag and no live owner — so "
+        f"the watcher STOPPED it REVERSIBLY (pod.py stop; volume + /workspace logs PRESERVED "
+        f"— the crash forensics survive; never terminated). Reopen a fresh diagnosis window "
+        f"with `pod.py resume --issue {issue}` (a resume re-arms a fresh TTL); `task.py "
+        f"add-tag {issue} keep-running` shields a longer live-diagnosis hold. "
+        f"workload_start_error (truncated): {err_excerpt}",
+        dry_run,
+        label="diagnosis-window-stop",
+    )
+    _telegram_push(
+        f"pod-safety #1997: diagnosis-window STOP {info.name} after {age_h:.1f}h — workload "
+        f"start had FAILED and no owner was live; volume preserved, `pod.py resume --issue "
+        f"{issue}` reopens a fresh window",
+        dry_run,
+    )
+    print(
+        f"  DIAGNOSIS-WINDOW STOP issue #{issue}: pod {info.name} stopped reversibly after "
+        f"{age_h:.1f}h (TTL {ttl_sec / 3600.0:.1f}h); volume preserved.",
+        file=sys.stderr,
+    )
+    _save_pod_safety_state(
+        issue,
+        info.pod_id,
+        missed=prev_state.get("missed", 0) if isinstance(prev_state.get("missed"), int) else 0,
+        alerted=bool(prev_state.get("alerted", False)),
+        last_progress_ts=(
+            prev_state.get("last_progress_ts")
+            if isinstance(prev_state.get("last_progress_ts"), int | float)
+            else None
+        ),
+        diagnosis_stop_noted=True,
+        prev=prev_state,
+    )
+    # Mirror into the caller's in-memory snapshot (flag + pod_id — the #1490
+    # r2 lesson) so any later same-tick save carries the flag forward.
+    prev_state["diagnosis_stop_noted"] = True
     prev_state["pod_id"] = info.pod_id
     return True
 
@@ -15187,7 +15547,14 @@ def _process_pod(
     existing auto-stop into a conditional one. The wedge arm therefore handles
     only wedged pods OUTSIDE that set (the live-work statuses where the watcher
     must be conservative). A non-wedged pod reaches the status-class branches
-    unchanged, exactly as before #692."""
+    unchanged, exactly as before #692.
+
+    #1997 diagnosis-window ordering: after the two ALERT-ONLY additive arms
+    (#1490 / #1519), the bounded-diagnosis-window arm
+    (:func:`_maybe_stop_diagnosis_window_pod`) may reversibly STOP a RUNNING
+    pod whose run-handle sidecar proves a FAILED workload start past the TTL;
+    a stop handles the tick (early return — no status-class decision on a
+    just-stopped pod), and every keep falls through unchanged."""
     status = _task_status(issue)
 
     # ── #692 RunPod no-port wedge backstop (runs BEFORE the status-class arm,
@@ -15244,6 +15611,20 @@ def _process_pod(
     # pod as healthy). Falls through UNCONDITIONALLY to the status-class
     # decision below; never stops/terminates/returns-early.
     _maybe_flag_unlaunched_orphan_pod(issue, info, status, events, now, prev_state, dry_run)
+
+    # ── #1997 bounded-diagnosis-window arm (reversible STOP, sidecar-evidenced)
+    # A RUNNING RunPod pod whose persisted run-handle sidecar carries the #954
+    # partial-launch evidence (workload_executed=false + workload_start_error)
+    # was deliberately left RUNNING for SSH diagnosis (the
+    # RunPod-as-diagnosis-lane doctrine) — but the diagnosis window is now
+    # BOUNDED: past EPS_RUNPOD_DIAGNOSIS_TTL_HOURS (default 6h) with no
+    # keep-running tag and no live owner, the pod is stopped REVERSIBLY
+    # (volume + /workspace logs preserved; NEVER terminated — only _stop_pod
+    # is ever called on this arm's account, so the compute-kill approval gate
+    # is honored by construction). On a stop this tick is fully handled (the
+    # pod is no longer running) — return; every keep falls through unchanged.
+    if _maybe_stop_diagnosis_window_pod(issue, info, now, prev_state, dry_run):
+        return
 
     # Clear the alerted flag so a new staleness episode can re-alert when
     # EITHER (a) real progress advanced since last tick, OR (b) the task is

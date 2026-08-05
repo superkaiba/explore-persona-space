@@ -373,7 +373,12 @@ class RunPodWorkloadStartError(RuntimeError):
     surfaces it as a ``reason: runpod_workload_start_failed`` failure JSON
     + exit 2 — a requested execution that did not start NEVER returns ok.
     The pod is left RUNNING for SSH diagnosis (the RunPod-as-diagnosis-lane
-    doctrine, ``.claude/rules/compute-backend-failover.md``).
+    doctrine, ``.claude/rules/compute-backend-failover.md``). The window is
+    BOUNDED (#1997): the autonomous-session watcher's diagnosis-window arm
+    reversibly STOPS (never terminates) the pod after
+    ``EPS_RUNPOD_DIAGNOSIS_TTL_HOURS`` (default 6h) once no ``keep-running``
+    tag and no live owner remain — volume + ``/workspace`` logs preserved;
+    ``pod.py resume --issue <N>`` re-opens a fresh window.
     """
 
     def __init__(self, message: str, *, handle: RunHandle | None = None) -> None:
@@ -404,7 +409,9 @@ class RunPodProvisionBranchMismatchError(RunPodWorkloadStartError):
     into a partial-handle failure — the pod exists and BILLS, so the
     failover / diagnostics contract is identical to any other workload-start
     failure. The pod is left RUNNING for SSH diagnosis (the
-    RunPod-as-diagnosis-lane doctrine).
+    RunPod-as-diagnosis-lane doctrine; the window is bounded by the
+    watcher's #1997 diagnosis-window arm — see
+    :class:`RunPodWorkloadStartError`).
     """
 
 
