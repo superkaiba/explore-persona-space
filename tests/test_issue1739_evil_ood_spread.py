@@ -587,3 +587,138 @@ def test_paired_rho_delta_dominant_vs_shuffled_ci_excludes_zero_positive():
         f"expected delta CI to exclude 0 on the positive side, got [{ci_lo}, {ci_hi}] "
         f"(rho_a={rho_a}, rho_b={rho_b})"
     )
+
+
+# ---------------------------------------------------------------------------
+# Round 19 pins — concern u1c-sibling-cells-filter + u1c-mem-guard
+# ---------------------------------------------------------------------------
+def _committed_nesting_cell(
+    *,
+    f_u: float | None,
+    u_rung_label: str,
+    variant: str = "prefix_end",
+    regime: str = "e2",
+    budget_l: int = 250,
+) -> dict:
+    """One cells.jsonl row in the COMMITTED nesting: identity ONLY inside the
+    ``unit_key`` JSON STRING (+ mirrored on arm rows) — never at the top level.
+
+    Mirrors eval_results/issue_1739/evil/arm_results/percell/cells.jsonl
+    (top-level keys: arms / headline / max_over_arms_null / preds_npz /
+    skipped_arms / split_half / unit_key; measured 2026-08-05).
+    """
+    ident = {
+        "behavior": "evil",
+        "budget_l": budget_l,
+        "config": "config_a",
+        "draw": 0,
+        "eval_rung": "train",
+        "f_l": None,
+        "f_u": f_u,
+        "regime": regime,
+        "seed": 0,
+        "u_rung": 18793,
+        "u_rung_label": u_rung_label,
+        "variant": variant,
+    }
+    return {
+        "unit_key": json.dumps(ident, sort_keys=True),
+        "arms": [{"arm": "arm4_ridge_ctx", "rho_per_layer": [0.1, 0.2], **ident}],
+        "headline": {},
+        "max_over_arms_null": {},
+        "preds_npz": "percell/preds/x.npz",
+        "skipped_arms": {},
+        "split_half": {},
+    }
+
+
+def test_plain_ladder_filter_reads_unit_key_nesting(tmp_path: Path) -> None:
+    """FAILS PRE-FIX: the committed schema carries f_u/u_rung_label only inside
+    the unit_key JSON string; the old top-level filter kept 0 of these rows
+    (measured live: 0 of 826 committed evil cells; the 2026-08-03
+    ood_detection_metrics.json shipped n_metric_rows=0 at rc=0)."""
+    from scripts.issue1739_rescore_ood import _load_plain_ladder_cells
+
+    rows = [
+        _committed_nesting_cell(f_u=None, u_rung_label="full", variant="context_end", regime="e1"),
+        _committed_nesting_cell(f_u=None, u_rung_label="full", variant="prefix_end", regime="e2"),
+        # ladder rows the filter must REJECT: f_u set, or a sub-rung u pool
+        _committed_nesting_cell(f_u=0.5, u_rung_label="full"),
+        _committed_nesting_cell(f_u=None, u_rung_label="r6k"),
+    ]
+    p = tmp_path / "cells.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    cells = _load_plain_ladder_cells(p)
+    assert len(cells) == 2, f"expected 2 plain-ladder cells kept, got {len(cells)}"
+    # identity keys must be HOISTED so downstream (variant, regime) grouping +
+    # budget/draw/seed provenance reads see real values, not defaults
+    assert {(c["variant"], c["regime"]) for c in cells} == {
+        ("context_end", "e1"),
+        ("prefix_end", "e2"),
+    }
+    assert all(c["u_rung_label"] == "full" and c["f_u"] is None for c in cells)
+    assert all(c["budget_l"] == 250 and c["seed"] == 0 for c in cells)
+
+
+def test_plain_ladder_filter_zero_selection_raises(tmp_path: Path) -> None:
+    """A 0-cell selection must RAISE — never flow into a rc=0 'done: 0 metric
+    rows' run (the 2026-08-03 silent-failure shape)."""
+    from scripts.issue1739_rescore_ood import _load_plain_ladder_cells
+
+    p = tmp_path / "cells.jsonl"
+    p.write_text(json.dumps(_committed_nesting_cell(f_u=0.5, u_rung_label="r6k")) + "\n")
+    with pytest.raises(RuntimeError, match="ZERO matched the plain-ladder filter"):
+        _load_plain_ladder_cells(p)
+    # empty file: equally fail-loud
+    p.write_text("")
+    with pytest.raises(RuntimeError, match="0 cells read"):
+        _load_plain_ladder_cells(p)
+
+
+def test_plain_ladder_filter_top_level_keys_still_win(tmp_path: Path) -> None:
+    """A schema that DOES carry top-level identity keys is unaffected (top
+    level wins over unit_key contents)."""
+    from scripts.issue1739_rescore_ood import _load_plain_ladder_cells
+
+    row = _committed_nesting_cell(f_u=None, u_rung_label="full")
+    row["u_rung_label"] = "r6k"  # top-level says sub-rung -> must be rejected
+    keeper = _committed_nesting_cell(f_u=None, u_rung_label="full", variant="context_end")
+    p = tmp_path / "cells.jsonl"
+    p.write_text(json.dumps(row) + "\n" + json.dumps(keeper) + "\n")
+    cells = _load_plain_ladder_cells(p)
+    assert len(cells) == 1 and cells[0]["variant"] == "context_end"
+
+
+def test_holdout_rung_maps_memguard_refusal_to_designed_rc(monkeypatch) -> None:
+    """concern u1c-mem-guard: a MemGuardRefusal from the production path exits
+    with the designed rc (mem_guard.RSS_GUARD_RC), never a bare rc=1 — the
+    broad `except Exception` in main() would otherwise swallow it (the
+    RuntimeError subclass trap)."""
+    import scripts.issue1739_holdout_rung as hr
+    from explore_persona_space.experiments.issue_1739.mem_guard import (
+        RSS_GUARD_RC,
+        MemGuardRefusal,
+    )
+
+    def _boom(args):
+        raise MemGuardRefusal("projected +25.7 GiB over 10.0 GiB available")
+
+    monkeypatch.setattr(hr, "_run_production", _boom)
+    rc = hr.main(["--behavior", "evil", "--output-dir", "/tmp/never-written"])
+    assert rc == RSS_GUARD_RC, f"expected designed rc {RSS_GUARD_RC}, got {rc}"
+
+
+def test_holdout_rung_production_wires_pre_phase_rss_guard() -> None:
+    """The production path calls mem_guard.check_phase at BOTH heavy phase
+    entries (whitening fit + labeled whitening; run_cell_multi grid) — the
+    wiring pin for concern u1c-mem-guard (deleting either call fails here)."""
+    import inspect
+
+    import scripts.issue1739_holdout_rung as hr
+
+    src = inspect.getsource(hr._run_production)
+    assert "mem_guard.check_phase" in src
+    assert "holdout_whitening[" in src and "holdout_grid[" in src
+    assert "whitening_map_components" in src and "cell_solve_components" in src
+    # the guard must see the LOADED-map regime (map_fit=False: no map fit here)
+    assert "map_fit=False" in src

@@ -48,7 +48,10 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import numpy as np
 
 logger = logging.getLogger("issue1739_rescore_ood")
 
@@ -239,19 +242,83 @@ def _probe_and_repin_store(store_dir: Path, revision: str, *, behavior: str, smo
 # ---------------------------------------------------------------------------
 
 
+def _normalize_cell(rec: dict) -> dict:
+    """Hoist cell-identity keys out of ``unit_key`` / arm rows to the top level.
+
+    The committed ``percell/cells.jsonl`` stores a cell's identity ONLY in its
+    ``unit_key`` (a JSON-ENCODED STRING) and repeated on each row of ``arms``;
+    the record's own top-level keys are just ``headline / max_over_arms_null /
+    preds_npz / skipped_arms / split_half / unit_key / arms``. This driver was
+    written against a schema that carried those fields at the top level, so
+    ``rec.get("f_u")`` vacuously read None (key absent) while
+    ``rec.get("u_rung_label", "")`` read ``""`` != "full" — the plain-ladder
+    filter matched NOTHING (0 of 826 evil cells; the 2026-08-03
+    ``ood_detection_metrics.json`` with ``n_metric_rows: 0`` at rc=0), and the
+    (variant, regime) grouping would have defaulted every cell to
+    ("context_end", "e1") with zeroed budget/draw/seed provenance.
+
+    Hoisting once at load time fixes every downstream read site without
+    touching them. Existing top-level keys always win, so a schema that does
+    carry them is unaffected. Same shape as the armfill sibling's
+    ``_normalize_cell`` (scripts/issue1739_rescore_ood_armfill.py).
+    """
+    merged = dict(rec)
+    src: dict = {}
+    uk = rec.get("unit_key")
+    if isinstance(uk, str):
+        try:
+            parsed = json.loads(uk)
+            if isinstance(parsed, dict):
+                src = parsed
+        except json.JSONDecodeError:
+            src = {}
+    if not src:
+        arm_rows = rec.get("arms") or []
+        if arm_rows and isinstance(arm_rows[0], dict):
+            src = arm_rows[0]
+    for key in (
+        "variant",
+        "regime",
+        "u_rung_label",
+        "u_rung",
+        "f_u",
+        "f_l",
+        "budget_l",
+        "draw",
+        "seed",
+        "config",
+    ):
+        if key not in merged and key in src:
+            merged[key] = src[key]
+    return merged
+
+
 def _load_plain_ladder_cells(cells_jsonl: Path) -> list[dict]:
-    """Read cells.jsonl and return only the plain-ladder (f_u=None, u_rung_label='full') rows."""
+    """Read cells.jsonl and return only the plain-ladder (f_u=None, u_rung_label='full') rows.
+
+    Fail-loud: raises ``RuntimeError`` when the selection is EMPTY (0 rows
+    read, or >0 rows read but 0 matched) — a silently empty result set
+    previously produced a rc=0 "done: 0 metric rows" run (2026-08-03).
+    """
     cells: list[dict] = []
+    n_total = 0
     with cells_jsonl.open(encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()
             if not line:
                 continue
-            rec = json.loads(line)
+            rec = _normalize_cell(json.loads(line))
+            n_total += 1
             f_u = rec.get("f_u")
             u_rung = rec.get("u_rung_label", "")
             if f_u is None and u_rung == "full":
                 cells.append(rec)
+    if not cells:
+        raise RuntimeError(
+            f"{cells_jsonl}: {n_total} cells read, ZERO matched the plain-ladder filter "
+            "(f_u=None, u_rung_label='full'). Refusing to continue — the driver would "
+            "emit 0 metric rows and exit 0. Check the cell schema."
+        )
     _log(f"loaded {len(cells)} plain-ladder (f_u=None, u_rung='full') cells")
     return cells
 
@@ -781,6 +848,14 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
                 f"{sum(len(v) for v in preds_rows_by_rung.values())} pred rows, "
                 f"{elapsed:.1f}s)"
             )
+
+    # Fail-loud: an empty metric-row set must never persist as a rc=0
+    # "done: 0 metric rows" summary (the 2026-08-03 silent-failure shape).
+    if not all_rows:
+        raise RuntimeError(
+            "rescore produced 0 metric rows — refusing to write an empty "
+            "ood_detection_metrics.json (check cells.jsonl schema / arm skips)"
+        )
 
     # --- write per-rung JSONL ---
     rung_paths: dict[str, Path] = {}

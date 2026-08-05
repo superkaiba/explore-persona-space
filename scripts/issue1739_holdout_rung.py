@@ -581,7 +581,7 @@ def _assert_nonempty(metric_rows: list[dict], preds_rows: list[dict]) -> None:
 def _run_production(args: argparse.Namespace) -> int:
     import numpy as np
 
-    from explore_persona_space.experiments.issue_1739 import arms, fits, store_io
+    from explore_persona_space.experiments.issue_1739 import arms, fits, mem_guard, store_io
     from explore_persona_space.experiments.issue_1739.constants import (
         N_BOOT,
         N_FOLDS,
@@ -719,6 +719,23 @@ def _run_production(args: argparse.Namespace) -> int:
         del u_arrays
         gc.collect()
         _log(f"  U-pool shape: {u_x.shape}")
+        # Pre-phase RSS guard (concern u1c-mem-guard): project this variant's
+        # whitening-fit chunk temps + weight tensors + the two whitened fp64
+        # labeled copies (z_w/za_w) vs live MemAvailable and refuse with the
+        # designed rc (mem_guard.RSS_GUARD_RC) instead of a kernel OOM-kill.
+        # map_fit=False: the linear map is LOADED (frozen), never fit here.
+        mem_guard.check_phase(
+            f"holdout_whitening[{variant}]",
+            mem_guard.whitening_map_components(
+                len(layers),
+                int(u_x.shape[1]),
+                dim,
+                n_ctx=len(tbl.ctx_order),
+                n_ev=0,
+                map_fit=False,
+            ),
+            out_root=out_dir,
+        )
         # Whitening seed MUST match the persisted map's fit space: the main
         # grid fits whitening with seed=SEEDS[0] (scripts/issue1739_fits.py
         # map_seed = int(args.seeds[0])), and the frozen map's standardizers
@@ -744,6 +761,19 @@ def _run_production(args: argparse.Namespace) -> int:
         za_w = _whiten_acts(tbl.z_ans, wh)
         _log(f"  whitened acts: z={z_w.shape} za={za_w.shape}")
 
+        # Pre-phase RSS guard: run_cell_multi's per-cell z/za fp64 copies +
+        # arm transients; the transfer cell spans ALL table rows (max cell).
+        mem_guard.check_phase(
+            f"holdout_grid[{variant}]",
+            mem_guard.cell_solve_components(
+                len(layers),
+                len(tbl.ctx_order),
+                dim,
+                roster,
+                has_map=mapfit is not None,
+            ),
+            out_root=out_dir,
+        )
         m_rows, p_rows, pr_rows, s_rows = _fit_eval_variant(
             behavior=behavior,
             variant=variant,
@@ -1018,11 +1048,21 @@ def main(argv: list[str] | None = None) -> int:
     from explore_persona_space.orchestrate.env import load_dotenv
 
     load_dotenv()
+    from explore_persona_space.experiments.issue_1739.mem_guard import (
+        RSS_GUARD_RC,
+        MemGuardRefusal,
+    )
+
     args = _parse_args(argv)
     try:
         if args.smoke:
             return _run_smoke(args)
         return _run_production(args)
+    except MemGuardRefusal as exc:
+        # Designed halt (fits-CLI convention): report artifact + distinct rc —
+        # never a kernel OOM-kill that loses the log tail, never a bare rc=1.
+        print(f"[holdout][rss-guard] DESIGNED HALT rc={RSS_GUARD_RC}: {exc}", flush=True)
+        return RSS_GUARD_RC
     except Exception as exc:
         import traceback
 
