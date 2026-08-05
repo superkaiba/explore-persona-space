@@ -1728,6 +1728,12 @@ def negative_gcp_full_to_runpod() -> dict[str, Any]:
     single on-demand A100-80 rung, so the ladder exhausts immediately and the
     RunPod rung fires — proving the harness recognizes the new terminal
     outcome.
+
+    #2054: the STANDING default order now leads with runpod
+    (``auto_runpod_first``), which would resolve this scenario at the first
+    lane before the terminal rung under test ever fires — so the scenario
+    pins a free-lanes-only order (none wired → all skipped → terminal rung),
+    preserving its purpose of proving the ``auto_fallback_runpod`` terminal.
     """
     import tempfile
 
@@ -1757,7 +1763,15 @@ def negative_gcp_full_to_runpod() -> dict[str, Any]:
             gcp_backend=gcp,
             lease_store=store,
             mila_socket_alive=lambda: False,
-            config=RouterConfig(free_wait_seconds=2, poll_interval=0.01, cancel_grace_seconds=1),
+            config=RouterConfig(
+                free_wait_seconds=2,
+                poll_interval=0.01,
+                cancel_grace_seconds=1,
+                # #2054: pin a free-lanes-only order so the runpod-FIRST
+                # standing default doesn't resolve the route at lane 1 —
+                # this scenario exists to prove the TERMINAL rung.
+                lane_order=("nibi", "fir", "mila"),
+            ),
             now_fn=time.monotonic,
             sleep_fn=lambda _s: None,
         )
