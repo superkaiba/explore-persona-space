@@ -296,25 +296,51 @@ def phase_upload(args) -> dict:
     from explore_persona_space.orchestrate import hub
     from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
 
+    from scripts.issue1739_pack import pack_raw_tree
+
     out: dict = {}
     # Text first: the non-LFS path stays open even over the LFS storage quota,
     # and the rollout text is what makes a discarded store regenerable.
+    #
+    # PACK before upload. `main` alone holds 13,065 per-rollout JSONs, and the
+    # Hub hard-rejects any single commit staging >10,000 files into one repo
+    # directory (a non-retriable 400 at create_commit). The guard caught it
+    # pre-network on the first attempt. upload-policy.md's PREFERRED remedy for
+    # a many-small-file tree is packing into <=9 MB line-shards + a manifest —
+    # not dir-sharding, which clears the cap but keeps the file count and its
+    # commit-throughput cost. Reuses #1739's own packer (its unpacker restores
+    # the per-file layout with manifest/sha verification).
     for label, root in (("main", args.main_root), ("passa", args.passa_root)):
         src = Path(root) / "labeling" / BEHAVIOR
         if not src.exists():
             continue
+        n_raw = sum(1 for p in src.glob("*.json") if p.name != "_manifest.json")
+        pack_root = Path(args.out_root) / "packed" / label
+        manifest = pack_raw_tree(src, pack_root)
+        names = sorted(p.name for p in pack_root.iterdir() if p.is_file())
         dest = f"{HF_PREFIX}/raw_completions/{label}"
-        names = sorted(p.name for p in src.glob("*.json"))
         res = hub._upload_folder_filtered(
-            src,
+            pack_root,
             repo_id=HF_DATA_REPO,
             path_in_repo=dest,
             repo_type="dataset",
-            allow_patterns=["*.json"],
+            allow_patterns=["*"],
             expected_repo_paths=[f"{dest}/{n}" for n in names],
         )
-        out[f"rollouts_{label}"] = {"dest": dest, "n_files": len(names), "result": str(res)}
-        logger.info("[phase=upload] rollouts %s -> %s", label, dest)
+        out[f"rollouts_{label}"] = {
+            "dest": dest,
+            "n_raw_files": n_raw,
+            "n_shard_files": len(names),
+            "pack_groups": len(manifest.get("groups", {})) if isinstance(manifest, dict) else None,
+            "result": str(res),
+        }
+        logger.info(
+            "[phase=upload] rollouts %s packed %d raw -> %d shard file(s) -> %s",
+            label,
+            n_raw,
+            len(names),
+            dest,
+        )
 
     store = Path(args.store_dir)
     if store.exists():
