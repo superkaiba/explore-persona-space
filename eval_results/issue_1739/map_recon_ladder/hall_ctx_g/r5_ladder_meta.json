@@ -1,0 +1,13 @@
+{
+ "ladder_f_u": [
+  0.0
+ ],
+ "ladder_f_l": [
+  1.0
+ ],
+ "matched_pool_size_cap": 18793,
+ "clamp_max_f_u": 0.5,
+ "union_all_enabled": false,
+ "union_all_provenance": null,
+ "contamination": null
+}
