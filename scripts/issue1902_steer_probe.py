@@ -101,6 +101,20 @@ def stage_inputs(inputs_dir: Path) -> None:
     missing = [n for n in INPUT_FILES if not (inputs_dir / n).exists()]
     if missing:
         raise RuntimeError(f"steer_probe inputs missing after staging: {missing}")
+    # Integrity: staged bytes must match the shas recorded at upload (meta.json is the
+    # record itself, excluded) — a between-rounds re-upload of inputs/ would otherwise
+    # silently change vectors/rows under the matched-target claim.
+    import hashlib
+
+    shas = json.load(open(inputs_dir / "meta.json")).get("files_sha256", {})
+    for name in INPUT_FILES:
+        if name == "meta.json" or name not in shas:
+            continue
+        got = hashlib.sha256((inputs_dir / name).read_bytes()).hexdigest()
+        if got != shas[name]:
+            raise RuntimeError(
+                f"steer_probe input sha mismatch: {name} staged={got[:12]} recorded={shas[name][:12]}"
+            )
 
 
 def _prep_batch(entries: list[dict], device: str):

@@ -76,11 +76,9 @@ print(f"cos(-W dx, c*)     = {cos(-t, c_star):+.3f}   (what ctx_offset applies)"
 print(f"cos(W dx, dy)      = {cos(t, dy):+.3f}   (is answer shift the image of ctx shift?)")
 print(f"cos(dx, dy)        = {cos(dx, dy):+.3f}")
 
-# Preimage of c* through W (standardized coords, then unstandardize)
-U, s, Vt = np.linalg.svd(W, full_matrices=False)
-proj = U.T @ c_star  # wait: W maps std-ctx -> ans; W = U diag(s) Vt? np SVD: W = U s Vt
-# careful with orientation: predictions = Xn @ W, so answer-space components live in
-# W's COLUMNS' span: row-vector convention y = x W => y^T = W^T x^T. Use M = W.T (ans <- ctx).
+# Preimage of c* through W (standardized coords, then unstandardize).
+# Orientation: predictions = Xn @ W (row-vector convention), so answer-space components
+# live in W's COLUMNS' span: y^T = W^T x^T. Use M = W.T (ans <- ctx, column-vector map).
 M = W.T
 U, s, Vt = np.linalg.svd(M, full_matrices=False)  # M = U s Vt, ans = M @ ctx_std
 comp = U.T @ c_star  # components of c* in answer-side singular basis
@@ -90,6 +88,11 @@ for cut in (10, 100, 1000, np.inf):
     mask = s >= s[0] / cut
     frac = float((comp[mask] ** 2).sum() / e_total)
     pre_std = Vt.T[:, mask] @ (comp[mask] / s[mask])
+    band_target = U[:, mask] @ comp[mask]  # the band-projected component of c*
+    recon_err = np.linalg.norm(M @ pre_std - band_target)
+    assert recon_err < 1e-6 * max(1.0, np.linalg.norm(band_target)), (
+        f"preimage reconstruction self-check failed at cutoff {cut}: err={recon_err:.3e}"
+    )
     pre = pre_std * xsd  # unstandardize back to raw context coords
     resid = 1.0 - frac
     print(
