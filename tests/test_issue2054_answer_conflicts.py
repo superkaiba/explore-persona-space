@@ -251,3 +251,38 @@ def test_phase_b_load_excluded_manifest(tmp_path):
         json.dumps({"excluded": ["stripped_s7", "stripped_s9"]}), encoding="utf-8"
     )
     assert phase_b._load_excluded_conv_ids(answers_path) == {"stripped_s7", "stripped_s9"}
+
+
+def test_phase_b_missing_manifest_hard_fails_when_meta_declares_exclusions(tmp_path):
+    """r13 fail-closed pin: an r12+ pool whose meta declares substantive
+    exclusions MUST NOT load with an absent exclusion manifest — a consumer
+    staging the pool without the sidecar would silently re-splice the
+    excluded conv_ids via scaffold-fallback (the 2x2 invariant r12 protects).
+    The raise names BOTH files (meta + expected manifest)."""
+    answers_path = tmp_path / "answers_pool.jsonl"
+    answers_path.write_text("", encoding="utf-8")
+    (tmp_path / "answers_pool.meta.json").write_text(
+        json.dumps({"conflict_resolution": {"substantive_excluded": 15}}),
+        encoding="utf-8",
+    )
+    with pytest.raises(RuntimeError) as ei:
+        phase_b._load_excluded_conv_ids(answers_path)
+    assert "answers_pool.meta.json" in str(ei.value)
+    assert "answers_excluded_conv_ids.json" in str(ei.value)
+    # Manifest present -> loads normally even with meta declaring exclusions.
+    (tmp_path / "answers_excluded_conv_ids.json").write_text(
+        json.dumps({"excluded": ["stripped_s7"]}), encoding="utf-8"
+    )
+    assert phase_b._load_excluded_conv_ids(answers_path) == {"stripped_s7"}
+
+
+def test_phase_b_missing_manifest_permissive_when_meta_declares_zero(tmp_path):
+    """Meta present but zero substantive exclusions -> absent sidecar stays
+    legal (same as the no-meta pre-r12 case pinned above)."""
+    answers_path = tmp_path / "answers_pool.jsonl"
+    answers_path.write_text("", encoding="utf-8")
+    (tmp_path / "answers_pool.meta.json").write_text(
+        json.dumps({"conflict_resolution": {"substantive_excluded": 0}}),
+        encoding="utf-8",
+    )
+    assert phase_b._load_excluded_conv_ids(answers_path) == set()

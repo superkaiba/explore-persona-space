@@ -685,9 +685,9 @@ def run(args: argparse.Namespace) -> int:
     )
     if smoke and not str(out_dir).startswith("/tmp/"):
         print(
-            "ERROR: smoke caps (--max-scan-rows / --smoke-kept-cap) require a /tmp "
-            "--out-dir — a capped pool at the production path is a residue trap "
-            "for a later phase_b dispatch",
+            "ERROR: smoke caps (--max-scan-rows / --smoke-kept-cap / "
+            "--only-stripped-cids) require a /tmp --out-dir — a capped pool at "
+            "the production path is a residue trap for a later phase_b dispatch",
             file=sys.stderr,
         )
         return 2

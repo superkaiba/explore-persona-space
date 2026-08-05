@@ -160,10 +160,31 @@ def _load_excluded_conv_ids(answers_path: Path) -> set[str]:
     """Conv_ids the answers-pool builder EXCLUDED (r12: substantive cross-
     variant answer divergence — the 2x2 byte-fixed answer invariant is
     unsatisfiable for them). The manifest rides NEXT TO the pool file
-    (``answers_excluded_conv_ids.json``); absent manifest = empty set
-    (pre-r12 pools carry no exclusions)."""
+    (``answers_excluded_conv_ids.json``). An absent manifest is legal ONLY
+    for pools with no meta / a meta declaring zero exclusions (pre-r12
+    pools); an r12+ meta declaring ``conflict_resolution.substantive_excluded
+    > 0`` with the manifest missing HARD-FAILS — splicing without it would
+    silently re-splice the excluded conv_ids via scaffold-fallback (r13,
+    concern phase-b-exclusion-manifest-fail-open)."""
     manifest = answers_path.parent / "answers_excluded_conv_ids.json"
     if not manifest.is_file():
+        # Meta sidecar written by issue2054_build_answers.py next to the pool
+        # (POOL_STEM answers_pool -> answers_pool.meta.json; the stem-derived
+        # form covers a pool staged under a renamed stem with its own meta).
+        names = dict.fromkeys([f"{answers_path.stem}.meta.json", "answers_pool.meta.json"])
+        for meta_path in (answers_path.parent / n for n in names):
+            if not meta_path.is_file():
+                continue
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            n_excl = int((meta.get("conflict_resolution") or {}).get("substantive_excluded") or 0)
+            if n_excl > 0:
+                raise RuntimeError(
+                    f"{meta_path.name} declares {n_excl} builder-excluded conv_id(s) "
+                    "(conflict_resolution.substantive_excluded) but the exclusion "
+                    f"manifest {manifest} is absent — splicing this pool without it "
+                    "would re-splice the excluded conv_ids via scaffold-fallback, "
+                    "breaking the r12 cross-variant byte-fixed answer invariant"
+                )
         return set()
     doc = json.loads(manifest.read_text(encoding="utf-8"))
     excluded = {str(x) for x in (doc.get("excluded") or [])}
