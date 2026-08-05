@@ -193,7 +193,8 @@ def _route_label(raw: str | None) -> tuple[str | None, str | None]:
       - (mhj_class, None)      valid tactic label (exact or deterministic fuzzy)
       - (BENIGN_LABEL, None)   explicit benign verdict (counted, never a tactic)
       - (None, reason)         drop; reason in {"no_label", "other_unclassifiable",
-                               "bad_label"} (drop-never-coerce, rule 9)
+                               "ambiguous_label", "bad_label"} (drop-never-coerce,
+                               rule 9)
     """
     if raw is None:
         return None, "no_label"
@@ -207,12 +208,19 @@ def _route_label(raw: str | None) -> tuple[str | None, str | None]:
         return BENIGN_LABEL, None
     if "unclassifiable" in low or "other" in low:
         return None, "other_unclassifiable"
-    # Deterministic fuzzy match (sorted iteration; min length guards trivial
-    # substrings like "request" matching two classes nondeterministically).
+    # Fuzzy match: collect ALL candidates and DROP when the label is ambiguous.
+    # An arbitrary pick among >1 match coerces (rule 9 forbids it): the length
+    # guard does NOT make a multi-match unambiguous — "request" (7 chars) passes
+    # it and matches both "Direct Request" and "Request Framing"; sorting merely
+    # made the arbitrary pick deterministic.
     if len(low) >= 6:
-        for known in sorted(MHJ_LABELS, key=len, reverse=True):
-            if known.lower() in low or low in known.lower():
-                return known, None
+        matches = [
+            known for known in sorted(MHJ_LABELS) if known.lower() in low or low in known.lower()
+        ]
+        if len(matches) == 1:
+            return matches[0], None
+        if len(matches) > 1:
+            return None, "ambiguous_label"
     return None, "bad_label"
 
 
@@ -370,10 +378,11 @@ def classify_contexts(
     )
     # keep_raw_judge_text: parse_judge_json inside dispatch_judge_items keeps
     # only the parsed JSON object; retention attaches the verbatim response
-    # under "_raw_text" so _extract_label_json can rescue a verdict when the
-    # first-{ decode latched onto a rationale-embedded object (#1739 item-B
-    # 2026-08-03 incident: the v1 rubric's plain-text replies were 100%
-    # parse_error and the raw text was unrecoverable from the checkpoint).
+    # under "_raw_text" so _extract_label_json can rescue a verdict BOTH when
+    # the first-{ decode latched onto a rationale-embedded object AND when it
+    # found no object at all (the parse_error branch below) — the latter is the
+    # #1739 item-B 2026-08-03 shape, where the v1 rubric's plain-text replies
+    # were 100% parse_error and the raw text was unrecoverable in-process.
     with keep_raw_judge_text():
         results = dispatch_judge_items(
             items,
@@ -396,8 +405,20 @@ def classify_contexts(
             outcomes[cid] = (None, "transport", True)
             continue
         if result.get("error"):
-            # dispatch-layer parse_error: no JSON object found in the response
-            outcomes[cid] = (None, "no_label", False)
+            # dispatch-layer parse_error: no JSON object the first-{ decode
+            # could read. Retention now annotates the ERROR dict too
+            # (judge_dispatch._error_dict_with_raw), so the same text-scan
+            # rescue that serves a mis-latched parse applies here BEFORE the
+            # drop — this is the 100%-parse_error shape of the 2026-08-03 wave.
+            rescued = None
+            raw_text = result.get("_raw_text")
+            if isinstance(raw_text, str):
+                rescued = _extract_label_json(raw_text)
+            if rescued is None:
+                outcomes[cid] = (None, "no_label", False)
+                continue
+            label, drop_reason = _route_label(rescued)
+            outcomes[cid] = (label, drop_reason, False)
             continue
         raw_label = result.get("label") if isinstance(result.get("label"), str) else None
         if raw_label is None:
@@ -488,9 +509,14 @@ def _build_output(
         from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
 
         output.update(as_metadata_dict(git_provenance()))
-    except Exception:
-        # Provenance is record-only; a git-less tree never blocks the write.
-        pass
+    except Exception as exc:  # noqa: BLE001 - record-only, must never block the write
+        # Provenance is record-only; a git-less tree never blocks the write —
+        # but the failure is LOGGED, never silently swallowed (CLAUDE.md
+        # § Critical Rules: no silent failures).
+        print(
+            f"[tactic_classify] provenance metadata unavailable: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
     return output
 
 

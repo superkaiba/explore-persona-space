@@ -204,7 +204,9 @@ def _parsed_with_raw(parsed: dict | None, text: str) -> dict | None:
 
     Copies the parsed dict before annotating (never mutates a caller-visible
     object); a ``None`` parse (→ the caller's error dict) passes through
-    unchanged so error-dict shapes stay identical. A NON-dict parse (a bare
+    unchanged so error-dict shapes stay identical — the error dict itself is
+    annotated by :func:`_error_dict_with_raw` at the call site, so a parse
+    FAILURE also carries its raw text under retention. A NON-dict parse (a bare
     string that skipped :func:`_normalize_scalar_score`) also passes through
     untouched — ``dict(scalar)`` would crash retention.
     """
@@ -212,6 +214,28 @@ def _parsed_with_raw(parsed: dict | None, text: str) -> dict | None:
         return parsed
     out = dict(parsed)
     out[_RAW_TEXT_KEY] = text
+    return out
+
+
+def _error_dict_with_raw(error_dict: dict, text: str) -> dict:
+    """Attach the raw response text to a PARSE-ERROR dict when retention is on.
+
+    A ``parse_judge_json`` FAILURE is exactly the case retention exists for:
+    :func:`_parsed_with_raw` passes a ``None`` parse through untouched (so the
+    caller's error-dict SHAPE stays identical), which left the verbatim text
+    unrecoverable in-process on the one shape that needs it most — the #1739
+    item-B 2026-08-03 wave was 100% ``parse_error`` (concern
+    ``judge-raw-text-rescue-gap``). Additive and retention-scoped: with
+    retention OFF the dict is returned unchanged, so every existing caller's
+    error-dict shape is byte-identical.
+
+    Only the parse-error path carries text — a TRANSPORT exception produced no
+    response to retain (rule 24).
+    """
+    if not _KEEP_RAW_TEXT.get() or not isinstance(error_dict, dict):
+        return error_dict
+    out = dict(error_dict)
+    out.setdefault(_RAW_TEXT_KEY, text)
     return out
 
 
@@ -585,7 +609,11 @@ def _collect_batch_results(
                 "",
             )
             parsed = _parsed_with_raw(_normalize_scalar_score(parse_judge_json(text)), text)
-            scores[cid] = parsed if parsed is not None else error_dict_factory("parse_error")
+            scores[cid] = (
+                parsed
+                if parsed is not None
+                else _error_dict_with_raw(error_dict_factory("parse_error"), text)
+            )
         elif rtype == "errored":
             etype = getattr(
                 getattr(getattr(result.result, "error", None), "error", None), "type", None
@@ -657,7 +685,11 @@ async def _judge_items_sync(
                 result = await client.messages.create(**params)
                 text = next((b.text for b in result.content if b.type == "text"), "")
                 parsed = _parsed_with_raw(_normalize_scalar_score(parse_judge_json(text)), text)
-                score = parsed if parsed is not None else error_dict_factory("parse_error")
+                score = (
+                    parsed
+                    if parsed is not None
+                    else _error_dict_with_raw(error_dict_factory("parse_error"), text)
+                )
             except Exception as e:  # per-item capture is the legacy contract
                 base = error_dict_factory(f"error: {e}")
                 # rule 24(i) (#1313): a transport-class exception (429/5xx incl.
@@ -724,7 +756,11 @@ async def _judge_items_sync_multiorg(
 
     def _parse_response(text: str) -> dict:
         parsed = _parsed_with_raw(_normalize_scalar_score(parse_judge_json(text)), text)
-        return parsed if parsed is not None else error_dict_factory("parse_error")
+        return (
+            parsed
+            if parsed is not None
+            else _error_dict_with_raw(error_dict_factory("parse_error"), text)
+        )
 
     raw_results = await api_dispatch.dispatch_calls(
         dispatch_items,
@@ -753,6 +789,11 @@ async def _judge_items_sync_multiorg(
             )
             score = {**base, "transport": True} if transportish else base
         else:
+            # NO_RAW_TEXT: post-dispatch collection — the verbatim response is
+            # not in scope here (only the already-parsed res.result). The
+            # PARSING site (_parse_response above) is where retention annotates
+            # a parse failure; this branch fires only on a NON-dict parse that
+            # skipped _normalize_scalar_score.
             score = (
                 res.result if isinstance(res.result, dict) else error_dict_factory("parse_error")
             )

@@ -242,7 +242,9 @@ def mirror_to_judge_layout(
             n += 1
     if missing:
         # Budget-dropped contexts (#952 length gate) legitimately have no
-        # rollouts; anything else is a generation gap and must be loud.
+        # rollouts. The CALLER raises on any shortfall against
+        # n_kept x k_rollouts (which already excludes budget drops), so this
+        # is a diagnostic line, not the invariant.
         logger.info("[mirror] %d rollout files absent (budget-dropped contexts)", len(missing))
     return n
 
@@ -401,9 +403,20 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[phase=eos_mirror] {n_mirrored} rollout JSONs -> {judge_dir}", flush=True)
     if n_mirrored == 0:
         raise RuntimeError("no rollout JSONs mirrored — generation produced nothing")
+    # Exact-count invariant: generate_labeling KEPT contexts each own K rollout
+    # files, so a short mirror is a generation gap and must be loud (the
+    # budget-dropped contexts are already excluded from n_kept).
+    n_expected = int(gen_manifest["n_kept"]) * int(args.k_rollouts)
+    if n_mirrored != n_expected:
+        raise RuntimeError(
+            f"mirror gap: {n_mirrored} rollout JSONs mirrored, expected "
+            f"{n_expected} (n_kept={gen_manifest['n_kept']} x k={args.k_rollouts})"
+        )
 
     # Rollout TEXT uploads BEFORE the sentinel (durability first).
+    # UPLOAD_PREFIX_EXEMPT: single-issue pilot driver; hf_prefix is issue-1739-scoped by construction (CORPUS_RUNG/CORPUS_SUFFIX/sentinel names), and --hf-prefix overrides it
     _upload_dir(judge_dir, f"{hf_prefix}/rollouts/{args.split}", skip=args.skip_upload)
+    # UPLOAD_PREFIX_EXEMPT: single-issue pilot driver; hf_prefix is issue-1739-scoped by construction, and --hf-prefix overrides it
     _upload_file(
         rung_root / "contexts_manifest.json",
         f"{hf_prefix}/contexts_manifest.json",
@@ -440,16 +453,18 @@ def main(argv: list[str] | None = None) -> int:
             _write_json_atomic(sentinel_path, sentinel)
         except OSError as exc:  # /workspace absent off-pod
             logger.warning("[sentinel] could not write %s: %s", sentinel_path, exc)
+    # UPLOAD_PREFIX_EXEMPT: single-issue pilot driver; hf_prefix is issue-1739-scoped by construction, and --hf-prefix overrides it
     _upload_file(
         rung_root / f"eos_pilot_{args.corpus}_done.json",
         f"{hf_prefix}/eos_pilot_{args.corpus}_done.json",
         skip=args.skip_upload,
     )
-    # This driver IS the pod's single terminal workload (issue1739_eos_pilot_launch.sh
-    # execs it; one corpus per pod, no wrapping dispatcher), so the reserved
-    # terminal token is correct here.  # noqa: phase-done-reserved
+    # The RESERVED [phase=done] token belongs to the launcher's single terminal
+    # line (issue1739_eos_pilot_launch.sh emits it on rc=0); a mid-pipeline
+    # emission from this child would read as a false status=done to
+    # poll_pipeline.py (#545/#920).
     print(
-        f"[phase=done] eos pilot generation complete: {args.corpus} ({n_mirrored} files)",
+        f"[eos-pilot-complete] {args.corpus}: {n_mirrored} rollout JSONs, sentinel written",
         flush=True,
     )
 
@@ -461,4 +476,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    main()
+    # sys.exit(main()) — a future non-zero return must not exit 0 silently.
+    sys.exit(main())

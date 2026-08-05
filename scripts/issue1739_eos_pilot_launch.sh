@@ -35,4 +35,11 @@ echo "[launch] eos-pilot corpus=$CORPUS commit=$(git rev-parse --short HEAD) ext
 nvidia-smi --query-gpu=index,memory.used,memory.total --format=csv,noheader || true
 free -g | head -2
 
-exec uv run python scripts/issue1739_eos_pilot_pod.py --corpus "$CORPUS" "$@"
+# NOT exec: this launcher owns the pod's SINGLE terminal [phase=done] line, so
+# the child never emits the reserved token (#545/#920).
+uv run python scripts/issue1739_eos_pilot_pod.py --corpus "$CORPUS" "$@"
+rc=$?
+if [ "$rc" -eq 0 ]; then
+  echo "[phase=done] eos pilot generation complete: corpus=$CORPUS"
+fi
+exit "$rc"

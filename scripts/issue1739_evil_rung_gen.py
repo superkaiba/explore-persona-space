@@ -43,6 +43,11 @@ SMOKE_OUTPUT_DIR = Path("/tmp/issue1739_eos_smoke/rungs")
 
 CORPORA_ALL = ("mhj", "tomgibbs", "pair")
 
+# Private per-row annotation carrying the SOURCE file row index, so a
+# context_id is stable across --pilot-n / --seed / --full (m7).
+SRC_IDX_KEY = "__src_row_idx"
+
+
 # ---------------------------------------------------------------------------
 # Dedup helpers
 # ---------------------------------------------------------------------------
@@ -192,28 +197,53 @@ def _build_mhj_turns(row: dict[str, str]) -> list[str]:
     return [msg for _, msg in turn_cols]
 
 
-def _load_mhj(pilot_n: int, full: bool, smoke: bool, seed: int, rng_state: Any) -> list[dict]:
+def _load_mhj(
+    pilot_n: int,
+    full: bool,
+    smoke: bool,
+    seed: int,
+    rng_state: Any,
+    rows_override: list[dict] | None = None,
+) -> list[dict]:
     """Load MHJ harmbench_behaviors corpus.
 
-    Reports counts only; never prints context text.
+    Reports counts only; never prints context text. ``rows_override`` supplies
+    the parsed CSV rows directly, bypassing ONLY the Hub download so the
+    stratified-allocation + id-derivation bodies are unit-testable without
+    network I/O or corpus text (the production path passes None).
     """
     import random as _random
 
-    try:
-        from huggingface_hub import hf_hub_download
-    except ImportError as exc:
-        raise RuntimeError("huggingface_hub is required; install it first") from exc
+    if rows_override is not None:
+        all_rows = [dict(r) for r in rows_override]
+    else:
+        try:
+            from huggingface_hub import hf_hub_download
+        except ImportError as exc:
+            raise RuntimeError("huggingface_hub is required; install it first") from exc
 
-    csv_path = hf_hub_download(
-        "ScaleAI/mhj",
-        "harmbench_behaviors.csv",
-        repo_type="dataset",
-        token=os.environ.get("HF_TOKEN"),
-    )
+        from explore_persona_space.orchestrate import hub
 
-    with open(csv_path, newline="", encoding="utf-8") as fh:
-        reader = csv.DictReader(fh)
-        all_rows = list(reader)
+        csv_path = hub.retry_transient(
+            lambda: hf_hub_download(
+                "ScaleAI/mhj",
+                "harmbench_behaviors.csv",
+                repo_type="dataset",
+                token=os.environ.get("HF_TOKEN"),
+            ),
+            what="mhj harmbench_behaviors.csv",
+        )
+
+        with open(csv_path, newline="", encoding="utf-8") as fh:
+            reader = csv.DictReader(fh)
+            all_rows = list(reader)
+
+    # Stable source-row index: the context_id must NOT depend on the sample
+    # position, or the same corpus row gets a different id at a different
+    # --pilot-n/--seed and pilot rollouts cannot be joined with (or resumed
+    # into) the full rung.
+    for _src_i, _row in enumerate(all_rows):
+        _row[SRC_IDX_KEY] = str(_src_i)
 
     print(f"[mhj] raw rows: {len(all_rows)}", file=sys.stderr)
 
@@ -240,9 +270,12 @@ def _load_mhj(pilot_n: int, full: bool, smoke: bool, seed: int, rng_state: Any) 
         # Proportional allocation, largest-remainder top-up so the realized n
         # equals the target exactly (a floor-only split under-fills).
         alloc: dict[str, int] = {}
+        capped: dict[str, int] = {}
         for tac, rows_in in by_tactic.items():
             alloc[tac] = int(target * len(rows_in) / len(kept_rows))
         while sum(alloc.values()) < target:
+            if not by_tactic:
+                break
             tac = max(
                 by_tactic,
                 key=lambda t: (
@@ -251,22 +284,34 @@ def _load_mhj(pilot_n: int, full: bool, smoke: bool, seed: int, rng_state: Any) 
                 ),
             )
             if alloc[tac] >= len(by_tactic[tac]):
+                # Tactic exhausted: drop it from BOTH maps. Leaving its count in
+                # `alloc` keeps it counting toward the sum, so the loop would
+                # terminate early while the exhausted tactic contributes 0 rows
+                # at sampling time -> a silently short sample.
+                capped[tac] = alloc.pop(tac)
                 del by_tactic[tac]
-                if not by_tactic:
-                    break
                 continue
             alloc[tac] += 1
+        alloc.update(capped)
         for tac, n in alloc.items():
             pool = by_tactic.get(tac) or []
             sample.extend(rng.sample(pool, min(n, len(pool))))
         print(f"[mhj] stratified pilot allocation by tactic: {alloc}", file=sys.stderr)
+        # Realized-n assert: the allocation arithmetic must fill the target
+        # exactly unless the eligible pool itself is smaller.
+        if len(sample) != target:
+            raise RuntimeError(
+                f"mhj stratified sample is short: realized {len(sample)} != target "
+                f"{target} (eligible {len(kept_rows)}); allocation {alloc}"
+            )
 
     records: list[dict] = []
     for i, row in enumerate(sample):
         turns = _build_mhj_turns(row)
         if not turns:
             continue
-        cid = f"mhj-{row.get('question_id', '').strip() or str(i).zfill(6)}-{i:04d}"
+        src_i = row[SRC_IDX_KEY]
+        cid = f"mhj-{row.get('question_id', '').strip() or 'q'}-r{int(src_i):04d}"
         submission = (row.get("submission_message") or "").strip()
         records.append(
             {
@@ -343,16 +388,25 @@ def _load_tomgibbs(pilot_n: int, full: bool, smoke: bool, seed: int) -> list[dic
     except ImportError as exc:
         raise RuntimeError("huggingface_hub is required") from exc
 
-    csv_path = hf_hub_download(
-        "tom-gibbs/multi-turn_jailbreak_attack_datasets",
-        "Harmful Dataset.csv",
-        repo_type="dataset",
-        token=os.environ.get("HF_TOKEN"),
+    from explore_persona_space.orchestrate import hub
+
+    csv_path = hub.retry_transient(
+        lambda: hf_hub_download(
+            "tom-gibbs/multi-turn_jailbreak_attack_datasets",
+            "Harmful Dataset.csv",
+            repo_type="dataset",
+            token=os.environ.get("HF_TOKEN"),
+        ),
+        what="tom-gibbs Harmful Dataset.csv",
     )
 
     with open(csv_path, newline="", encoding="utf-8") as fh:
         reader = csv.DictReader(fh)
         all_rows = list(reader)
+
+    # Stable source-row index (see the mhj loader; m7).
+    for _src_i, _row in enumerate(all_rows):
+        _row[SRC_IDX_KEY] = str(_src_i)
 
     print(f"[tomgibbs] raw rows: {len(all_rows)}", file=sys.stderr)
 
@@ -412,7 +466,7 @@ def _load_tomgibbs(pilot_n: int, full: bool, smoke: bool, seed: int) -> list[dic
     records: list[dict] = []
     n_parse_fail = 0
     for i, row in enumerate(sample_rows):
-        cid = f"tomgibbs-{str(i).zfill(6)}"
+        cid = f"tomgibbs-r{int(row[SRC_IDX_KEY]):06d}"
         multi_raw = (row.get(multi_col) or "").strip() if multi_col else ""
         single_ctx = (row.get(single_col) or "").strip() if single_col else ""
 
@@ -433,7 +487,7 @@ def _load_tomgibbs(pilot_n: int, full: bool, smoke: bool, seed: int) -> list[dic
                             "cipher": row.get(cipher_col, "").strip() if cipher_col else "",
                             "output_cipher": (row.get("Output-cipher") or "").strip(),
                             "goal_id": (row.get("Goal ID") or "").strip(),
-                            "row_idx": i,
+                            "src_row_idx": int(row[SRC_IDX_KEY]),
                         },
                     }
                 )
@@ -448,7 +502,7 @@ def _load_tomgibbs(pilot_n: int, full: bool, smoke: bool, seed: int) -> list[dic
                     "meta": {
                         "arm": "single_turn",
                         "cipher": row.get(cipher_col, "").strip() if cipher_col else "",
-                        "row_idx": i,
+                        "src_row_idx": int(row[SRC_IDX_KEY]),
                     },
                 }
             )
@@ -495,12 +549,18 @@ def _list_pair_files() -> list[str]:
     except ImportError as exc:
         raise RuntimeError("huggingface_hub is required") from exc
 
-    files = list(
-        list_repo_files(
-            "abhayesian/pair_jailbreaks_formatted",
-            repo_type="dataset",
-            token=os.environ.get("HF_TOKEN"),
-        )
+    from explore_persona_space.orchestrate import hub
+
+    files = hub.retry_transient(
+        lambda: list(
+            # LIST_REPO_FILES_EXEMPT: 3-file published PAIR dataset repo, not the ~1M-file data repo, so the #833 full-tree wedge cannot apply
+            list_repo_files(  # HUB_VERIFY_RETRY_EXEMPT: the listing rides hub.retry_transient (wrap opens above)
+                "abhayesian/pair_jailbreaks_formatted",
+                repo_type="dataset",
+                token=os.environ.get("HF_TOKEN"),
+            )
+        ),
+        what="pair_jailbreaks_formatted repo listing",
     )
     print(f"[pair] repo files: {files}", file=sys.stderr)
     return files
@@ -534,11 +594,16 @@ def _load_pair(pilot_n: int, full: bool, smoke: bool, seed: int) -> list[dict]:
         raise RuntimeError(f"[pair] no suitable data file found; available: {repo_files}")
 
     print(f"[pair] downloading {data_file!r}", file=sys.stderr)
-    local_path = hf_hub_download(
-        "abhayesian/pair_jailbreaks_formatted",
-        data_file,
-        repo_type="dataset",
-        token=os.environ.get("HF_TOKEN"),
+    from explore_persona_space.orchestrate import hub
+
+    local_path = hub.retry_transient(
+        lambda: hf_hub_download(
+            "abhayesian/pair_jailbreaks_formatted",
+            data_file,
+            repo_type="dataset",
+            token=os.environ.get("HF_TOKEN"),
+        ),
+        what=f"pair_jailbreaks_formatted {data_file}",
     )
 
     # Load based on extension
@@ -563,6 +628,11 @@ def _load_pair(pilot_n: int, full: bool, smoke: bool, seed: int) -> list[dict]:
                 all_rows = [json.loads(line) for line in content.splitlines() if line.strip()]
     else:
         raise RuntimeError(f"[pair] unsupported file format: {data_file}")
+
+    # Stable source-row index (see the mhj loader; m7). Assigned BEFORE the
+    # intra-corpus dedup so the id tracks the parquet row, not the kept order.
+    for _src_i, _row in enumerate(all_rows):
+        _row[SRC_IDX_KEY] = str(_src_i)
 
     print(f"[pair] raw rows: {len(all_rows)}", file=sys.stderr)
 
@@ -591,7 +661,7 @@ def _load_pair(pilot_n: int, full: bool, smoke: bool, seed: int) -> list[dict]:
     records: list[dict] = []
     for i, row in enumerate(sample_rows):
         prompt = str(row.get("prompt") or "").strip()
-        cid = f"pair-{str(i).zfill(6)}"
+        cid = f"pair-r{int(row[SRC_IDX_KEY]):06d}"
         records.append(
             {
                 "context_id": cid,
@@ -792,12 +862,18 @@ def main() -> None:
                 "--train-rollouts-dir at them, or pass --no-train-dedup deliberately."
             )
         # Non-vacuity self-check: a real train context MUST read as a near-dup
-        # of itself under the very predicate the corpora are screened with.
+        # of itself through the N-GRAM COVERAGE branch. The exact set is passed
+        # EMPTY on purpose: `_is_near_dup` short-circuits on exact membership,
+        # so probing with the real exact set would return True before the
+        # coverage test ran at all — a tautology that passes even against a
+        # deliberately junk pool, telling you nothing about the pool the corpora
+        # are actually screened against.
         probe = next(iter(train_exact))
-        if not _is_near_dup(probe, train_exact, train_pool):
+        if not _is_near_dup(probe, set(), train_pool):
             raise RuntimeError(
                 "dedup self-check FAILED: a train context is not detected as a "
-                "near-dup of itself — the predicate or the pool is broken"
+                "near-dup of itself through the n-gram coverage branch — the "
+                "predicate or the pool is broken"
             )
         dedup_mode = (
             f"train-rollouts n_ctx={len(train_exact)} n_{NGRAM_N}gram={len(train_pool)} "
