@@ -158,7 +158,13 @@ def _load_sycoeval(subset: str) -> list[dict]:
     """Download + parse one ``meg-tong/sycophancy-eval`` subset JSONL."""
     from huggingface_hub import hf_hub_download
 
-    path = hf_hub_download(SYCOEVAL_REPO, f"{subset}.jsonl", repo_type="dataset")
+    from explore_persona_space.orchestrate import hub
+
+    # Retried download — a transient 429/504 here would abort staging outright.
+    path = hub.retry_transient(
+        lambda: hf_hub_download(SYCOEVAL_REPO, f"{subset}.jsonl", repo_type="dataset"),
+        what=f"download sycophancy-eval/{subset}.jsonl",
+    )
     # Text-mode iteration, never str.splitlines() — real-user text carries raw
     # U+2028/U+2029/NEL inside JSON strings and splitlines() shreds those rows.
     rows = []
