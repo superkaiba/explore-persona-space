@@ -262,71 +262,26 @@ def _rollout_item_id(context_id: str, k: int) -> str:
 def _score_spread(scores: list[float], *, unit: str = "rollout") -> dict:
     """Two-sided spread gate summary over one set of DV values (plan v16 §4.4).
 
-    ``spread_gate_pass = (sd >= 10) AND (bottom_frac < 0.80) AND
-    (top_frac < 0.80)``. Reports ``ceiling_frac`` alongside ``bottom_frac``
-    regardless of pass/fail.
-
-    Instrument matching (load-bearing — the round's cross-rung comparisons are
-    read against the parent's committed trait-DV verdicts): ``sd`` is the SAMPLE
-    SD (``ddof=1``) and bottom-bin membership is STRICT ``< 10``, exactly as
-    ``scripts/issue1739_k1_floor.rung_table`` and
-    ``experiments.issue_1739.gates.run_gate2`` compute them. ``sd_pop``
-    (``ddof=0``, the plan's literal ``np.std``) and ``bottom_frac_inclusive``
-    (``<= 10``) are reported alongside so no convention is hidden; the GATE
-    reads ``sd`` + ``bottom_frac``.
-
-    ``unit`` labels what one value is ("context" for the plan-§7 primary read
-    over per-context means, "rollout" for the per-rollout secondary).
+    Delegates to the CANONICAL implementation
+    ``experiments.issue_1739.gates.score_spread`` (#1739 round-22
+    consolidation — four diverged copies of this arithmetic existed; the
+    canonical helper is instrument-matched to the committed trait-DV
+    verdicts: SAMPLE SD ``ddof=1`` + STRICT bottom bin ``< 10``, with
+    ``sd_pop``/``bottom_frac_inclusive`` reported alongside). This wrapper
+    threads the pilot's own gate constants so the report values are
+    byte-identical to the pre-consolidation output (plus the helper's added
+    machine-readable convention labels).
     """
-    n = len(scores)
-    if n == 0:
-        return {
-            "unit": unit,
-            "n_scores": 0,
-            "sd": None,
-            "sd_pop": None,
-            "mean": None,
-            "bottom_frac": None,
-            "bottom_frac_inclusive": None,
-            "top_frac": None,
-            "ceiling_frac": None,
-            "spread_gate_pass": False,
-            "reason": "no kept values",
-        }
-    sd = statistics.stdev(scores) if n > 1 else 0.0
-    sd_pop = statistics.pstdev(scores) if n > 1 else 0.0
-    mean = statistics.fmean(scores)
-    bottom = sum(1 for s in scores if s < BOTTOM_BIN_UPPER) / n
-    bottom_incl = sum(1 for s in scores if s <= BOTTOM_BIN_UPPER) / n
-    top = sum(1 for s in scores if s >= TOP_BIN_LOWER) / n
-    # ceiling_frac == top_frac by our definition (score >= 90); reported
-    # alongside for symmetry with the plan's language ("Report ceiling fraction
-    # alongside floor fraction regardless of gate outcome").
-    ceiling = top
-    sd_ok = sd >= SPREAD_SD_MIN
-    bottom_ok = bottom < SPREAD_BIN_MAX_FRAC
-    top_ok = top < SPREAD_BIN_MAX_FRAC
-    fails = [
-        name
-        for name, ok in (("sd", sd_ok), ("bottom_frac", bottom_ok), ("top_frac", top_ok))
-        if not ok
-    ]
-    return {
-        "unit": unit,
-        "n_scores": n,
-        "sd": sd,
-        "sd_pop": sd_pop,
-        "mean": mean,
-        "bottom_frac": bottom,
-        "bottom_frac_inclusive": bottom_incl,
-        "top_frac": top,
-        "ceiling_frac": ceiling,
-        "sd_ok": sd_ok,
-        "bottom_ok": bottom_ok,
-        "top_ok": top_ok,
-        "spread_gate_pass": bool(sd_ok and bottom_ok and top_ok),
-        "failed_criteria": fails,
-    }
+    from explore_persona_space.experiments.issue_1739.gates import score_spread
+
+    return score_spread(
+        scores,
+        unit=unit,
+        sd_min=SPREAD_SD_MIN,
+        bin_max_frac=SPREAD_BIN_MAX_FRAC,
+        bottom_bin_upper=BOTTOM_BIN_UPPER,
+        top_bin_lower=TOP_BIN_LOWER,
+    )
 
 
 def _context_means(

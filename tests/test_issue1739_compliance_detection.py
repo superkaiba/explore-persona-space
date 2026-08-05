@@ -40,8 +40,11 @@ from issue1739_compliance_full import (  # noqa: E402
 
 # Ten items with single-draw scores straddling the 50.0 label threshold
 # (5 below, 5 at-or-above). Neutral numeric fixtures only — no corpus text.
+# Ids follow the production ``{context_id}_k{NN}`` grammar (round 22: the
+# per-rung report groups items per context via ``dv_build.parse_item_id``,
+# which fails loud on a non-conformant id); one item per context here.
 PER_ITEM: dict[str, list[float]] = {
-    f"item-{i:02d}": [float(v)]
+    f"item{i:02d}_k00": [float(v)]
     for i, v in enumerate([2.0, 8.0, 15.0, 30.0, 45.0, 55.0, 70.0, 85.0, 92.0, 98.0])
 }
 
@@ -90,7 +93,7 @@ def test_detection_hook_scores_independent_predictions_honestly() -> None:
     """
     preds = {k: v[0] for k, v in PER_ITEM.items()}
     # Swap the two boundary items' predictions across the label threshold.
-    preds["item-04"], preds["item-05"] = 60.0, 40.0
+    preds["item04_k00"], preds["item05_k00"] = 60.0, 40.0
     result = _detection_metrics(preds, PER_ITEM, threshold=50.0)
     assert result["n_pos"] == 5 and result["n_neg"] == 5
     assert result["auroc"] == pytest.approx(24.0 / 25.0)
