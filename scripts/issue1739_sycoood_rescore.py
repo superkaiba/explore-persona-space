@@ -380,13 +380,30 @@ def _group_boot_rhos(
 
     from explore_persona_space.experiments.issue_1739.arms import spearman_rows
 
+    from explore_persona_space.experiments.issue_1739.arms import (
+        bootstrap_rhos,
+        make_bootstrap_idx,
+    )
+
+    ug, inv = np.unique(groups, return_inverse=True)
+    n_groups = ug.size
+    if n_groups == sc.size:
+        # UNGROUPED rung (every context its own group): the cluster bootstrap IS
+        # the ordinary bootstrap, so take the VECTORIZED path. The generic loop
+        # below concatenates n singleton index arrays per draw — 500 x 1,304 =
+        # 652k concatenations per (arm, rung) on aita alone, which dominated the
+        # whole rescore before this branch existed.
+        idx = make_bootstrap_idx(sc.size, n_boot=n_boot, seed=seed)
+        return np.asarray(bootstrap_rhos(sc[None], dv, idx)[0], dtype=float)
+
     rng = np.random.default_rng(seed)
-    ug = np.unique(groups)
-    idx_by_g = {g: np.where(groups == g)[0] for g in ug}
+    # Precompute member index arrays ONCE (the loop then concatenates n_groups
+    # arrays per draw — cheap when n_groups is small, e.g. sycomim's 15).
+    members = [np.flatnonzero(inv == gi) for gi in range(n_groups)]
+    picks = rng.integers(0, n_groups, size=(n_boot, n_groups))
     out = np.full(n_boot, np.nan)
     for b in range(n_boot):
-        gs = rng.choice(ug, size=len(ug), replace=True)
-        idx = np.concatenate([idx_by_g[g] for g in gs])
+        idx = np.concatenate([members[gi] for gi in picks[b]])
         out[b] = float(spearman_rows(sc[idx][None], dv[idx])[0])
     return out
 
