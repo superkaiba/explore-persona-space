@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2088,
+  "highest_id": 2089,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8420,6 +8420,13 @@
       "path": "tasks/proposed/2088",
       "status": "proposed",
       "title": "workflow-fix: empty selection over local artifacts must fail loud, not exit rc=0"
+    },
+    "2089": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2089",
+      "status": "proposed",
+      "title": "workflow-fix: ruff-clean alias for the phase-done waiver token"
     },
     "209": {
       "has_clean_result": false,
