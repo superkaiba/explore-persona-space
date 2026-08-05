@@ -338,7 +338,35 @@ def test_fitness_loader_answer_state(tmp_path, monkeypatch):
 
     monkeypatch.setattr(fitness, "iter_local_shards", fake_iter_local_shards)
     x = fitness.load_lmsys_validation_activations("base", layer=LAYER, n_val_rows=3, state="answer")
-    # 5 rows loaded; n <= BOS_STRIP so no strip; uniform norms so no outlier
-    # drop; sliced to n_val_rows.
+    # 5 rows loaded; uniform norms so no outlier drop; sliced to n_val_rows.
     assert x.shape == (3, HIDDEN)
     assert torch.equal(x, _expected([0, 1, 2], "answer"))
+
+
+def test_fitness_loader_keeps_leading_rows(tmp_path, monkeypatch):
+    """No BOS-style row-strip on pooled rows (unit-D resolution).
+
+    The #1482 BOS-strip is TOKEN-pool semantics; on per-conversation pooled
+    rows it would just delete the first 8 conversations. With 12 rows banked
+    and n_val_rows=12, ALL rows — including rows 0..7 — must come back.
+    (Fails pre-fix: the old row-level strip returned only rows 8..11.)
+    """
+    d = tmp_path / STEM
+    _write_shard(d, 0, list(range(6)))
+    _write_shard(d, 1, list(range(6, 12)))
+
+    def fake_iter_local_shards(tree_path: str, revision: str | None = None):
+        yield from (str(p) for p in ts.enumerate_shards(d))
+
+    monkeypatch.setattr(fitness, "iter_local_shards", fake_iter_local_shards)
+    x = fitness.load_lmsys_validation_activations(
+        "base", layer=LAYER, n_val_rows=12, state="answer"
+    )
+    # Shape is the no-strip pin: the old strip returned (4, HIDDEN) here.
+    assert x.shape == (12, HIDDEN)
+    # Rows g >= 8 exceed the module-docstring bf16-exact range (134.5 needs 9
+    # significand bits), so compare through the same bf16 round trip.
+    expected = _expected(list(range(12)), "answer").to(torch.bfloat16).to(torch.float32)
+    assert torch.equal(x, expected)
+    # Row 0 in particular survives (the exact row the old strip deleted).
+    assert torch.equal(x[:1], _expected([0], "answer"))

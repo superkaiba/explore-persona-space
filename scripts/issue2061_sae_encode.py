@@ -32,8 +32,8 @@ batch 256) is the peak — no terminal dense concat.
 Loader-parity FVE smoke gate (plan §Design 'Loader adapter'):
     |FVE_ported - FVE_reference| < 0.05
 runs as the FIRST action when --smoke-only or --smoke-then-encode is set.
-On failure, HALTs with exit code 2 (fail-loud); do NOT proceed to
-production encode with an unverified loader.
+On failure, raises RuntimeError (fail-loud, non-zero exit); do NOT
+proceed to production encode with an unverified loader.
 
 Usage:
     uv run python scripts/issue2061_sae_encode.py --smoke-only            # loader-parity FVE gate

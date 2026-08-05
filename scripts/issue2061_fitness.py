@@ -5,20 +5,28 @@ FVE / L0 / dead-feature-count on the FIXED EleutherAI/sae-llama-3.1-8b-64x
 dictionary applied to EACH stage's banked layer-29 activations. Same
 LMSYS validation slice (~1k rows) per stage.
 
-Recipe per `.claude/rules/gotchas.md` #1482 SAE token-pool entry:
-- BOS-offset strip (first 8 positions).
-- Outlier-norm filter (L2 > 10× pool median).
+Recipe per `.claude/rules/gotchas.md` #1482 SAE token-pool entry, adapted
+to this pool's grain:
+- BOS-offset strip: **N/A here (deliberately not applied)** — the #1482
+  strip removes the first 8 TOKEN POSITIONS of a TOKEN pool (the
+  Llama/Qwen massive-activation positions adjacent to BOS). This pool is
+  per-CONVERSATION pooled rows (a1 answer-turn span-means / header slot
+  states), so no BOS-adjacent token position can enter any row by
+  construction, and #1336 banks no token-level pool to strip. A row-level
+  strip would just delete the first 8 conversations — vacuous as a
+  massive-activation guard (unit-D resolution of the unit-A carried note).
+- Outlier-norm filter (L2 > 10× pool median) — applied unchanged.
 - Var-based FVE: `1 − var(x − x̂) / var(x)`, summed per-dim unbiased
-  variance.
+  variance — applied unchanged.
 
-Pre-registered pass bar (plan §Design + §11):
+Pre-registered pass bar (plan §Design + §7 + §11):
 - Base FVE reference = measured on the BASE stage's own activations.
 - PASS: every post-training stage's FVE ≥ 0.8 × base_FVE.
 - L0 ∈ [10, 200] for the fixed dictionary applied at each stage.
 - Dead-feature fraction < 10% of d_sae.
-- HARD DRIFT FLOOR: any stage's FVE < 0.5 × base_FVE → uninterpretable;
-  the stage is EXCLUDED from the headline aggregate + carried as a
-  scope caveat.
+- HARD DRIFT FLOOR (plan §7 "Halt and report (SAE-fitness gate)"): any
+  stage's FVE < 0.5 × base_FVE → uninterpretable; the stage is EXCLUDED
+  from the headline aggregate + carried as a scope caveat.
 
 Emits `eval_results/issue_2061/fitness/<stage>_L29.json` per stage +
 `eval_results/issue_2061/fitness/summary_L29.json` with the pass/fail
@@ -63,13 +71,16 @@ from issue2061_sae_encode import BANKED_PREFIX, iter_local_shards  # noqa: E402
 
 LAYER = 29
 STAGES = ["base", "sft", "dpo", "rlvr", "longer-rlvr"]
-BOS_STRIP = 8  # first 8 positions per #1482 recipe
 OUTLIER_L2_MEDIAN_MULT = 10.0
 N_VAL_ROWS = 1000
 DEAD_FEATURE_FRACTION_BAR = 0.10
 L0_BAR_LO, L0_BAR_HI = 10, 200
-FVE_PASS_FRACTION = 0.80  # PASS: post-training FVE ≥ 0.8 × base_FVE
-FVE_HARD_FLOOR = 0.50  # HALT: FVE < 0.5 × base_FVE
+FVE_PASS_FRACTION = 0.80  # PASS: post-training FVE ≥ 0.8 × base_FVE (plan §Design)
+# Plan §7 kill criteria, "Halt and report (SAE-fitness gate)": FVE < 0.5 ×
+# base_FVE is a hard drift floor beyond the graded 0.8 bar — the stage's
+# ridge fit is uninterpretable against the fixed dictionary and is excluded
+# from the headline aggregate (registered in v5/v6 §7, not §Design).
+FVE_HARD_FLOOR = 0.50
 
 
 def load_lmsys_validation_activations(
@@ -91,24 +102,22 @@ def load_lmsys_validation_activations(
     target Y (plan §Design), which is the pool whose cross-stage SAE fitness
     this P4 gate exists to control.
 
-    NOTE (flagged in the Unit A report): the #1482 recipe's BOS-strip is
-    per-TOKEN-pool semantics; this pool is per-CONVERSATION pooled rows (no
-    BOS row exists — slots/profiles all sit past the BOS position), so the
-    row-level strip below drops the first 8 conversations. Kept for
-    plan-§Design parity; vacuous beyond that.
+    The #1482 recipe's BOS-strip is deliberately NOT applied (unit-D
+    resolution of the unit-A carried note): it strips the first 8 TOKEN
+    POSITIONS of a TOKEN pool, and this pool is per-CONVERSATION pooled rows
+    whose span-means/slot states exclude BOS-adjacent positions by
+    construction (no token-level pool is banked). A row-level strip would
+    just delete the first 8 conversations. The recipe's outlier-norm filter
+    below IS applied unchanged (well-defined on rows).
     """
     tree_path = f"{BANKED_PREFIX}/turnstore_{stage}_{render}_lmsys23k"
-    # Margin above the target so BOS-strip (8 rows) + outlier drops still
-    # leave ~n_val_rows after filtering.
+    # Margin above the target so outlier drops still leave ~n_val_rows.
     x, _conv_ids = ts.load_state_from_shards(
         iter_local_shards(tree_path, revision=data_revision),
         state=state,
         layer=layer,
-        max_rows=n_val_rows + BOS_STRIP + 32,
+        max_rows=n_val_rows + 40,
     )
-    # BOS-strip (first 8 rows of the ordered pool, per #1482).
-    if x.shape[0] > BOS_STRIP:
-        x = x[BOS_STRIP:]
     # Outlier-norm filter: drop rows with L2 > 10× pool median.
     norms = torch.linalg.norm(x, dim=-1)
     median_norm = norms.median()
@@ -177,6 +186,17 @@ def evaluate_stage(
         "l0_mean": l0,
         "dead_feature_fraction": dead_frac,
         "l0_target": k,
+        # Verifier-legible provenance of the #1482 token-pool recipe legs as
+        # realized on this per-conversation pooled-row pool (module docstring).
+        "recipe": {
+            "bos_strip": (
+                "n/a — per-conversation pooled rows; the #1482 strip removes "
+                "BOS-adjacent TOKEN positions of a token pool, and no token-level "
+                "pool is banked (deliberately not applied)"
+            ),
+            "outlier_filter": f"rows with L2 > {OUTLIER_L2_MEDIAN_MULT}x pool median dropped",
+            "fve": "var-based: 1 - var(x - x_hat)/var(x), per-dim unbiased, summed",
+        },
     }
 
 
