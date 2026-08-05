@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2085,
+  "highest_id": 2086,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8399,6 +8399,13 @@
       "path": "tasks/reviewing/2085",
       "status": "reviewing",
       "title": "workflow-fix: update the two test files' mocked auto-chain fixtures to the"
+    },
+    "2086": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2086",
+      "status": "proposed",
+      "title": "workflow-fix: teardown prose contradicts the compute-kill approval gate"
     },
     "209": {
       "has_clean_result": false,
