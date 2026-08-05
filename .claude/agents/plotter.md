@@ -25,6 +25,7 @@ tools:
   - Glob
   - Bash
   - Skill
+model: "claude-fable-5"
 ---
 
 # Plotter

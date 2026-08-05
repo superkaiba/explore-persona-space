@@ -293,17 +293,44 @@ Critic enforcement: Methodology lens item 16 MOUNT-BINDING EXTENSION
 disk row; no verify_plan.py backstop in v1 of this block.
 
 
+**Fan-out over the same HF prefix — pre-stage once and fan from the staged
+snapshot, or serialize/jitter concurrent same-prefix pulls.** A plan
+fanning N > 1 boxes / legs / GCE instances over the SAME multi-GB HF
+prefix (a shared model repo, a shared dataset prefix on the data repo)
+names its staging shape in §9. DEFAULT: pre-stage the prefix ONCE (from
+one box, or from the VM's data disk) and fan from that snapshot — via a
+shared read path (a persisted GCE disk / a mounted network volume), an
+`rsync` to each box AFTER the stage completes, or a persisted-image
+bake. ALTERNATIVE when pre-stage is genuinely infeasible: serialize the
+per-box pulls (each box waits for the previous to `snapshot_download` /
+`hf_hub_download` complete), OR jitter their start times so the requests
+land staggered rather than in one thundering herd. N concurrent
+same-prefix multi-GB pulls are a rate-limit kill risk: an HF rate-limit
+storm returns 429 (or a TCP/RST that reads as rc=137 to the workload)
+and any one box's shard fetch can die mid-stream, forcing a relaunch
+that re-books the same collision on the next attempt. Incident #1739
+(2026-08-01): three OOD boxes (oodw / oodsyc / oodhall) each staged
+~144 GB from the same HF prefix simultaneously; oodhall died rc=137
+on an inferred HF 429 storm, its FLEX_START replacement was preempted
+mid-transfer, and a third replacement launched into the same
+still-simultaneous fan-out. 5 total attempts to land one OOD leg. A §9
+plan with `N > 1` same-prefix concurrent stages and NO named staging
+shape is a REVISE. Critic enforcement: Methodology lens item 16
+FAN-OUT STAGING EXTENSION (`.claude/rules/critic-lens-reference.md`);
+no verify_plan.py backstop in v1.
+
+
 **Sentinel-signaling workloads need a /workspace-contract lane — never
 rely on auto's DRAC/Mila SLURM fallback.** If the plan's dispatch script
 posts markers via pod-side sentinel files
 (`/workspace/logs/issue-<N>-*.json` — gate sentinels, `epm:results`
-payloads), the plan SHOULD pin a DRAINED lane: `backend: gcp` (GCE
-instances mirror RunPod's `/workspace` —
-`GcpConfig.vm_scratch_dir`), `backend: fellows` (the charmander
-cluster-shared `/workspace`, drained by the VM-side poller each tick via
-`slurm_monitor.drain_cluster_sentinels` — #1898), or an explicit
-`backend: runpod` override with its residual gap named. Leaving such a
-workload on `auto` is discouraged: a fellows + GCP capacity failure
+payloads), the plan SHOULD pin a DRAINED lane: `backend: fellows` (the
+charmander cluster-shared `/workspace`, drained by the VM-side poller
+each tick via `slurm_monitor.drain_cluster_sentinels` — #1898) or an
+explicit `backend: runpod` override with its residual gap named
+(`backend: gcp` is REFUSED as of #2028 — GCP provisioning disabled;
+it is no longer a pinnable drained lane). Leaving such a
+workload on `auto` is discouraged: a fellows capacity failure
 falls through to the DRAC/Mila SLURM lanes, where compute nodes have no
 `/workspace` and the robot wrapper cannot run the sentinel drain — the
 dispatcher fails loud at its `mkdir -p /workspace/logs` and burns the
@@ -409,7 +436,17 @@ OUTPUT growth (produced files, log advance, `/proc/<pid>/io`
 write_bytes), never CPU% alone — a frozen or quadratically-grinding
 serial screen reads ~100% CPU for hours (#1738's live read needed
 positive forward-progress evidence beyond CPU% exactly because the
-screen phase logs sparsely). TRIVIALITY EXEMPTION — never
+screen phase logs sparsely). PER-REGIME BINDING — SHAPE also includes
+the lane's production REGIME (behavior / budget / corpus): a pilot
+wall measured on one lane's regime is a MEASURED basis for THAT lane
+only; proxying it to a lane with a different behavior/budget regime
+makes it a GUESSED basis there — re-pilot per regime, or fence that
+lane at ≥2× the worst-case extrapolation and mark its row
+`pilot-gated` (#1739: per-group walls measured on the evil behavior
+at top budget 8,000 were proxied to the 16,000-budget behaviors; 4 of
+6 lanes halted at their own pilot gates — sycophancy projected 5.2 h
+vs plan_wall 4.5 h — and all 4 needed relaunches with measured
+fences). TRIVIALITY EXEMPTION — never
 self-certified by an asserted cost: a row may skip the pilot ONLY when
 total_calls ≤ ~500 AND its sub-floor (~15–30 min) projection is computed
 from a MEASURED or prior-issue-CITED per-call figure; an ASSERTED
@@ -467,6 +504,21 @@ derived from it) until the pilot lands — booking the naive figure is
 the #1092 failure, not a compliant plan.
 
 
+**GPU-utilization / "GPU-bound" claims in dispatch, checkpoint, and
+monitoring notes require a SAMPLED window — never one instantaneous
+`nvidia-smi` read.** Any claim that a workload is GPU-bound / "pinned
+at N%" / idle states its sampling basis: ≥10 readings over ≥60 s (e.g.
+`nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader -l 7`
+for 10 samples), reported as mean + peak. GPU duty cycles are bursty,
+so a point sample can land on a transient peak and invert the
+conclusion (#1773: a pre-spend checkpoint claimed "GPU pinned at 90%"
+from ONE sample; a 30-reading/60 s re-measure showed mean 12.6% — the
+91% peak appeared exactly once — and an H100 billed ~7 h at ~87% idle
+behind the wrong claim). This is the utilization sibling of the
+per-cell block's output-growth health-read rule (never CPU% alone,
+#1738).
+
+
 **Store-heavy / IO-heavy phase sizing — measure one item's serialization +
 upload wall-time; compression defaults OFF for fp16 → Xet.** Any phase that
 WRITES >~10^3 output files OR >~50 GB total (per-cell activation stores,
@@ -519,8 +571,9 @@ host RAM sized on an anchor behavior's table; a sibling lane's larger
 working set kernel-OOM'd python at anon-rss 163 GiB on a 170 GB-class
 machine, twice — the second lane hit the same kill point hours later;
 the 340 GB relaunch held). Route the phase OFF the
-VM — `cpu-mid` (GCP 32 GB) or `cpu-bigmem` (128 GB) — when projected peak
-RSS ≥ ~16 GB, OR when concurrent VM-resident phases' SUMMED projected RSS
+VM — `cpu-bigmem` (RunPod `cpu5m-16-128`, 128 GB; `cpu-mid`'s RunPod row
+is only 16 GB now that the 32 GB GCP E2 shape is rollback-only, #2028) —
+when projected peak RSS ≥ ~16 GB, OR when concurrent VM-resident phases' SUMMED projected RSS
 crosses the same ~16 GB bar (#833: two ~13-15 GB phases concurrently
 resident lost 5 cells to earlyoom — concurrent residency SUMS; #778: a
 22-GiB-RSS null battery was earlyoom-killed 3× on the starved VM —
@@ -558,10 +611,12 @@ runtime backstop. Plan-time placement, not a mid-run gate.
 then reconcile worst-case wall against the GCP auto-delete fence.**
 Each row's `planned_wall_h` + `basis` MUST name the machine type of the
 lane the backend router will most likely route. Under the standing
-GCP-FIRST `auto` default that is the GCP intent mapping
+fellows-first `auto` default (#2028 — GCP provisioning disabled) that is
+the fellows H200 cluster, then the free SLURM lanes, with RunPod's H100
+intent table as the terminal rung; the GCP intent mapping
 (`INTENT_TO_MACHINE` in `src/explore_persona_space/backends/gcp.py`:
 `lora-7b` → 1× A100-80 `a2-ultragpu-1g`, `ft-7b` → 4× A100-80,
-`eval`/`debug` → 1× L4) — NOT the RunPod H100 intent table. A basis
+`eval`/`debug` → 1× L4) applies only under the rollback flip. A basis
 measured on a different GPU must be scaled with a stated per-step rate
 (e.g. "H100 basis × ~6× A100 step-time" — #599's trainer ran ~6× slower
 per-step on the A100 auto-lane, turning an H100-premised ~6.4h estimate
@@ -642,3 +697,44 @@ DECOUPLING of mixed-min-width arms into separate provisions was
 considered and rejected: wide coupling wins when capacity exists — one
 provision, shared setup — so the split is a stall-time remedy, not the
 default dispatch shape.)
+
+
+**Teammate / mid-session box dispatches — the compute-character duty binds
+outside plan §9 too.** Any multi-hour (>~1h projected) box/leg dispatched
+by a teammate, orchestrator, or subagent OUTSIDE a plan §9 row —
+mid-session scope-extension addenda included — carries the SAME
+pre-launch statement as a §9 row: a MEASURED 1-cell pilot wall basis at
+PRODUCTION shape (or a cited prior-issue MEASURED figure for the SAME
+kernel + shape), a measured / ×2-presumed RSS basis keyed to the
+LARGEST cell/lane, and a self-set fence ≥2× the pilot-extrapolated wall
+(measured per-cell wall × remaining cells / parallelism — the p90-style
+×2 dispersion default). Mechanics are UNCHANGED and NOT DUPLICATED —
+they live at § Per-cell fit phases (the measured-pilot recipe + fence
+sizing) and § CPU-phase RAM/RSS routing (the LARGEST-CELL keying + the
+≥~16 GB VM-routing bar). This section only widens the BINDING SURFACE
+set: (a) plan §9 rows are bound by their own §-scoped wording, (b) the
+CLAUDE.md § "User-chat inline free analysis" carve-out block binds
+user-chat inline runs, and (c) this section binds the residual class —
+teammate/orchestrator/subagent mid-session box dispatches, exactly the
+#1739 failure channel. PER-BEHAVIOR-BOXES BY DEFAULT — serial-chaining
+independent behaviors on one box when each behavior's leg projects
+>~2h wall is a REVISE-shape default violation: WALL BUDGET IS MAX, NOT
+SUM. Split by default (per-behavior boxes / per-behavior dispatches),
+not by opt-in. Sibling of `.claude/rules/experiment-guidelines.md`
+guideline 2's shardable-axis duty — guideline 2 governs GPU width
+WITHIN a provisioned phase (saturate-or-downsize); this ban governs
+box-LEVEL parallelism across INDEPENDENT behaviors (behaviors are the
+shardable axis at the box grain, exactly as GPUs are at the phase
+grain). Incident #1739 (2026-08-01 daily sweep entry C3; miners 1, 3,
+8): tierbb ~10h wall estimated-not-measured on one transfer; R5
+syco/hallu ~9.2h vs a 4h budget and ~25 GPU-h vs ~5–15 estimated
+("per-cell estimate was too optimistic"); corehall's measured pilot
+projected 8.494h vs plan 2.7h (~3.1× low; rc=7 fence fired correctly
+where the pilot was actually run); 5/10 new-arm GCE boxes rc=137
+OOM-killed in the PILOT phase (whitening fits at n=18793, d=3584 —
+no measured RSS basis existed for the pilot's peak); three independent
+behaviors serial-chained on one box, split only after ~3h+. Sibling
+surface (interactive): CLAUDE.md § "User-chat inline free analysis"
+compute-character block — user-directed inline runs carry the same
+duty for the same reason (both surfaces skip the planner+critic
+stack, where §9's own binding lives).

@@ -69,7 +69,12 @@
 #   pathspecs (pathspec SCOPING engages only when the hook-input cwd provably
 #   equals the root — the CWD-BLIND note above covers the bare-commit case);
 #   quoted/spacey pathspecs and non-root-cwd commits stay conservatively
-#   whole-index.
+#   whole-index. Since #1928 a strictly-recognized redirect token on the
+#   commit clause (bare `>`/`>>`/`<`/`&>`/`&>>` + its target word, fd-dups,
+#   attached clean-literal targets) is excluded from the candidate stream
+#   so plain output redirections no longer defeat scoping; a QUOTED/spacey
+#   pathspec combined with a redirect still fails rawtail token-count
+#   parity and stays conservatively whole-index (fail-closed residual).
 # - Compound gated-add + non-gated-pathspec commit (`git add scripts/x.py &&
 #   git commit -- docs/y.md`) still conservatively blocks: Layer-1 add-clause
 #   text paths stay ADDITIVE under the #1620 pathspec-scoped read too.
@@ -550,6 +555,51 @@ $1"
   esac
 }
 
+# redirect_tok_kind <tok>: commit-clause redirect-token classifier (issue
+# #1928). Redirections are consumed by the SHELL and are never git pathspec
+# arguments, so excluding a STRICTLY-recognized redirect grammar from the
+# candidate stream is semantically exact — not a heuristic relaxation.
+# Echoes exactly one of:
+#   pair — bare operator that consumes the NEXT word (optional-fd `>`, `>>`,
+#          `<`, and the `&>` / `&>>` forms);
+#   self — self-contained: fd-dup (`2>&1`, `>&2`, `2>&-`), or an operator
+#          with an ATTACHED clean-literal target — the SAME literal test
+#          classify_candidate applies;
+#   no   — everything else: FILL/quote/backslash-bearing tokens, the
+#          process-substitution family `>(..)` / `<(..)`, the here-doc /
+#          here-string operator family `<<` / `<<-` / `<<<`, and attached
+#          targets carrying `$` / backtick / parens / leading `~`.
+# The EREs are anchored ^...$; the operator classes admit neither a `(`
+# after the operator nor a second `<` beyond the single input-redirect form
+# (pinned by the r14/r15 refuse tests). Fallback direction: `no` keeps
+# today's opaque -> whole-index -> block path via classify_candidate.
+redirect_tok_kind() {
+  local tok="$1" tgt
+  case "$tok" in
+    *"$FILL"* | *[\"\'\\]*)
+      echo no
+      return
+      ;;
+  esac
+  if printf '%s\n' "$tok" | grep -qE '^([0-9]*(>>|>|<)|&>>|&>)$'; then
+    echo pair
+    return
+  fi
+  if printf '%s\n' "$tok" | grep -qE '^[0-9]*>&([0-9]+|-)$'; then
+    echo self
+    return
+  fi
+  if printf '%s\n' "$tok" | grep -qE '^([0-9]*(>>|>|<)|&>>|&>)[^<>&|()]+$'; then
+    tgt=$(printf '%s\n' "$tok" | sed -E 's/^([0-9]*(>>|>|<)|&>>|&>)//')
+    case "$tgt" in
+      *'$'* | *'`'* | '~'*) echo no ;;
+      *) echo self ;;
+    esac
+    return
+  fi
+  echo no
+}
+
 classify_cmd() {
   local cmd="$1"
   root_commit=0 has_dash_a=0 add_all_chained=0 text_paths=""
@@ -715,7 +765,7 @@ $tok" ;;
     # force the whole-index fallback, block direction).
     if [ "$verb" = commit ]; then
       local after_ddash=0 skip_next=0 saw_verb=0 n_cand=0 clause_opaque=0
-      local pd_masked=0 rawtail rtok nrec
+      local pd_masked=0 pd_skip=0 rawtail rtok nrec
       local -a pd_toks=()
       set -f
       # shellcheck disable=SC2086
@@ -728,6 +778,22 @@ $tok" ;;
           continue
         fi
         if [ "$after_ddash" = 1 ]; then
+          if [ "$pd_skip" = 1 ]; then
+            pd_skip=0
+            continue
+          fi
+          # Redirect interception (issue #1928), post-`--` twin of the
+          # positional arm below. NOTE: the rawtail-parity recovery below
+          # still counts redirect tokens in $raw, so a masked (quoted)
+          # pathspec + redirect fails parity and stays opaque (accepted
+          # fail-closed residual; see the known-limitations header).
+          case "$(redirect_tok_kind "$tok")" in
+            pair)
+              pd_skip=1
+              continue
+              ;;
+            self) continue ;;
+          esac
           pd_toks+=("$tok")
           case "$tok" in *"$FILL"* | *[\"\'\\]*) pd_masked=1 ;; esac
           continue
@@ -749,7 +815,17 @@ $tok" ;;
             case "$tok" in *a* | *i* | *p*) scope_unsafe=1 ;; esac # -a re-stage / -i include / -p patch
             case "$tok" in *m | *F | *C | *c | *t) skip_next=1 ;; esac # cluster ending in an arg-taking letter
             ;;
-          *) classify_candidate "$tok" ;; # positional token = candidate pathspec
+          *)
+            # Redirect interception (issue #1928): a strictly-recognized
+            # redirect token is shell syntax, never a pathspec — drop it
+            # (self) or also consume its separate target word (pair); every
+            # other token keeps today's candidate path unchanged.
+            case "$(redirect_tok_kind "$tok")" in
+              pair) skip_next=1 ;;
+              self) : ;;
+              *) classify_candidate "$tok" ;; # positional token = candidate pathspec
+            esac
+            ;;
         esac
       done
       set +f
@@ -808,7 +884,15 @@ EOF_RAWTAIL
       set -f
       # shellcheck disable=SC2086
       for tok in $masked; do
-        case "$tok" in -A | --all | .) a_saw_blanket=1 ;; esac
+        # #1991: recognize blanket-equivalent spellings symmetric with the L910 post-`--` rejection arm.
+        # Backslash-escaped star spellings (`\*`, `\*\*`) mask via L304 to `\`+$FILL(+`\`+$FILL),
+        # so pattern-match them by that masked shape (a literal `*`/`**` token never survives the
+        # unquoted shell as-is — the shell would glob it — so this masked shape is the only
+        # reachable form of an author-intended blanket-star spelling here).
+        case "$tok" in
+          -A | --all | . | ./ | .// | :/) a_saw_blanket=1 ;;
+          "\\"$FILL | "\\"$FILL"\\"$FILL) a_saw_blanket=1 ;;
+        esac
         if [ "$a_saw_verb" = 0 ]; then
           # Pre-verb cwd-changing wrapper (env --chdir=DIR git add ...)
           # moves the pathspec-resolution base — exemption-INELIGIBLE
@@ -1016,6 +1100,12 @@ run_self_test() {
   echo note > "$RFOR/tasks/t.md"
   git -C "$RFOR" add scripts/foreign.py tasks/t.md
 
+  # Message file for the -F commit-form cases (issue #1949); the hook parses
+  # only the argv shape — the file content is never read.
+  local MSGF
+  MSGF="$TMP/msg.txt"
+  printf 'msg\n' > "$MSGF"
+
   CERTF="$TMP/cert.txt"
 
   run_case() {
@@ -1091,6 +1181,22 @@ EOF
     'git commit -m x -- tasks/t.md' "$RFOR"
   run_case "B19 dir pathspec covers staged gated, no cert" 2 \
     'git commit -m x -- scripts/' "$RFOR"
+
+  # --- redirect tokens on the commit clause (issue #1928) ---
+  run_case "A21 pathspec commit + detached redirect keeps scoping (#1928)" 0 \
+    'git commit -m x -- tasks/t.md > /tmp/i1928_selftest.log 2>&1' "$RFOR"
+  run_case "A22 pathspec commit + fd-dup keeps scoping (#1928)" 0 \
+    'git commit -m x -- tasks/t.md 2>&1' "$RFOR"
+  run_case "B39 bare commit + redirect still blocks (sweep protection, #1928)" 2 \
+    'git commit -m x > /tmp/i1928_selftest.log 2>&1' "$RFOR"
+  run_case "B40 pathspec naming staged gated file + redirect still blocks (#1928)" 2 \
+    'git commit -m x -- scripts/foreign.py > /tmp/i1928_selftest.log 2>&1' "$RFOR"
+
+  # --- -F message-file commit form (issue #1949) ---
+  run_case "A23 -F msgfile + artifact pathspec keeps scoping (#1949)" 0 \
+    "git commit -F $MSGF -- tasks/t.md" "$RFOR"
+  run_case "B41 bare -F msgfile commit still blocks (sweep protection, #1949)" 2 \
+    "git commit -F $MSGF" "$RFOR"
 
   # --- path-limited `git add --all -- <pathspec>` exemption (issue #1977) ---
   run_case "A20 path-limited add --all with artifact pathspec" 0 \
@@ -1416,7 +1522,8 @@ if [ "$foreign" = 1 ]; then
 command line. Another session's staging? Commit ONLY your own paths from the
 repo root — a pathspec-limited commit is never blocked by foreign staged
 files: git commit -m \"<msg>\" -- <your paths>  (unquoted paths, run at the
-repo root; the guard scopes its check to the pathspec).
+repo root; the guard scopes its check to the pathspec). Plain output
+redirections on the commit clause are tolerated since #1928.
 "
 fi
 
@@ -1449,9 +1556,12 @@ cat >&2 <<BLOCK_MSG
 BLOCKED: repo-root commit carries UNCERTIFIED code payload:${uncertified}
 ${diag_lines}${foreign_para}${cd_para}Direct-to-main code (scripts/src/tests) must pass the inline payload lint gate
 first (SKILL.md Step 9a-ter § Inline payload lint gate, #1388/#1460/#1500):
-  printf '%s\n' <paths> > /tmp/issue-<N>-inline-payload.txt
+  printf '%s\n' <paths> > /tmp/issue-<N>-<round-slug>-inline-payload.txt
   uv run python scripts/inline_lint_gate.py --issue <N> \\
-    --payload-file /tmp/issue-<N>-inline-payload.txt     # ONE background Bash (~3-8 min)
+    --payload-file /tmp/issue-<N>-<round-slug>-inline-payload.txt   # ONE background Bash (~3-8 min)
+The <round-slug> makes the path ROUND-unique (e.g. r2-fu1); the bare
+issue-keyed name issue-<N>-inline-payload.txt is REFUSED by the gate (#1948:
+concurrent same-issue rounds clobber the shared path).
 On PASS it certifies each path's exact content; re-run after any further edit.
 If your blocked command COMPOUNDED "git add ... && git commit ...", the add
 never ran either — re-stage before retrying the commit (2026-07-28: a retry

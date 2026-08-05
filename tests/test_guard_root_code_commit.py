@@ -437,7 +437,27 @@ def test_b12_compound_add_commit_untracked_no_cert_blocks(code_repo: Path, cert:
 
 
 @pytest.mark.parametrize(
-    "stage_form", ["git add -A", "git add .", "git add --all"], ids=["dash-A", "dot", "all"]
+    "stage_form",
+    [
+        "git add -A",
+        "git add .",
+        "git add --all",
+        "git add ./",
+        "git add .//",
+        "git add :/",
+        "git add \\*",
+        "git add \\*\\*",
+    ],
+    ids=[
+        "dash-A",
+        "dot",
+        "all",
+        "dotslash",
+        "dotslash-double",
+        "pathspec-root",
+        "star",
+        "star-double",
+    ],
 )
 def test_b13_blanket_add_chained_fails_closed(stage_form: str, art_repo: Path, cert: Path) -> None:
     _assert_blocked(_run(f"{stage_form} && git commit -m x", art_repo, cert))
@@ -1117,3 +1137,245 @@ def test_b34_pipelined_assignment_refused(code_repo: Path, cert: Path) -> None:
     r = _run(f'{_WT_ASSIGN} | true; cd "$WT" && git commit -m x', code_repo, cert)
     _assert_blocked(r)
     assert "reason=pipelined-assignment" in r.stderr, r.stderr
+
+
+# ---------------------------------------------------------------------------
+# rd-group (issue #1928; plan pins r1-r16 map to rd1-rd16 — the `rd` prefix
+# avoids the pre-existing #1857 rehash test_r1..test_r4 name family):
+# strictly-recognized redirect tokens on a commit
+# clause engage pathspec scoping exactly like their redirect-free twins
+# (r1-r5); every ambiguity keeps the opaque -> whole-index -> block fallback
+# (r6-r13), and the three excluded token families — process substitution,
+# here-doc / here-string operators, non-clean-literal attached targets —
+# genuinely refuse (r14-r16).
+
+
+def test_rd1_add_then_pathspec_commit_with_redirect_and_chain_allowed(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """Incident shape R-F2: non-gated add && pathspec commit + redirect +
+    fd-dup, then a `;`-chained echo/tail pair."""
+    cmd = (
+        "git add tasks/t.md && git commit -m x -- tasks/t.md "
+        "> /tmp/i1928_commit.log 2>&1; echo done; tail -2 /tmp/i1928_commit.log"
+    )
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_rd2_pathspec_commit_with_fd_dup_and_pipe_allowed(foreign_repo: Path, cert: Path) -> None:
+    """Incident shape R-F3: pathspec commit + `2>&1` piped into a read-only
+    consumer clause."""
+    _assert_allowed(_run("git commit -m x -- tasks/t.md 2>&1 | tail -5", foreign_repo, cert))
+
+
+def test_rd3_multi_pathspec_detached_redirect_newline_chain_allowed(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """Incident shape R-F5: multi-pathspec commit + detached redirect +
+    fd-dup, newline-chained echo/tail."""
+    cmd = (
+        "git commit -m x -- tasks/t.md docs/b.md > /tmp/i1928_commit.log 2>&1\n"
+        "echo committed\ntail -3 /tmp/i1928_commit.log"
+    )
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_rd4_attached_target_redirect_allowed(foreign_repo: Path, cert: Path) -> None:
+    """Attached-target form: operator + clean-literal target as ONE token."""
+    _assert_allowed(
+        _run("git commit -m x -- tasks/t.md >/tmp/i1928_commit.log", foreign_repo, cert)
+    )
+
+
+def test_rd5_certified_own_gated_payload_with_redirect_allowed(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """c6 analogue: CERTIFIED own gated payload pathspec commit + redirect is
+    allowed despite the foreign uncertified staged file."""
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _cert_line(cert, "scripts/own.py", _worktree_sha(foreign_repo, "scripts/own.py"))
+    cmd = "git commit -m x -- scripts/own.py > /tmp/i1928_commit.log 2>&1"
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_rd6_bare_commit_with_redirect_blocks(foreign_repo: Path, cert: Path) -> None:
+    """Danger control: a bare commit sweeps the whole staged index regardless
+    of the redirect (commit_bare_clause path)."""
+    _assert_blocked(_run("git commit -m x > /tmp/i1928_commit.log 2>&1", foreign_repo, cert))
+
+
+def test_rd7_pathspec_naming_foreign_gated_with_redirect_blocks(
+    foreign_repo: Path, cert: Path
+) -> None:
+    _assert_blocked(
+        _run("git commit -m x -- scripts/foreign.py > /tmp/i1928_commit.log", foreign_repo, cert)
+    )
+
+
+def test_rd8_variable_pathspec_token_with_redirect_blocks(foreign_repo: Path, cert: Path) -> None:
+    """MF-2 unchanged: a `$`-bearing pathspec token stays opaque even when a
+    recognized redirect rides the same clause."""
+    _assert_blocked(_run("git commit -m x -- $SPEC > /tmp/i1928_commit.log", foreign_repo, cert))
+
+
+def test_rd9_quoted_spacey_pathspec_with_redirect_blocks(foreign_repo: Path, cert: Path) -> None:
+    """Accepted fail-closed residual: a masked (quoted) pathspec + redirect
+    fails rawtail token-count parity and stays opaque."""
+    _assert_blocked(
+        _run('git commit -m x -- "tasks/my file.md" > /tmp/i1928_commit.log', foreign_repo, cert)
+    )
+
+
+def test_rd10_include_flag_with_redirect_blocks(foreign_repo: Path, cert: Path) -> None:
+    """scope_unsafe unchanged: `--include`-class flags still disable scoping."""
+    _assert_blocked(
+        _run("git commit --include -m x -- tasks/t.md > /tmp/i1928_commit.log", foreign_repo, cert)
+    )
+
+
+def test_rd11_subdir_cwd_with_redirect_blocks(foreign_repo: Path, cert: Path) -> None:
+    """cwd gate unchanged: a non-root hook cwd never scopes."""
+    cmd = "git commit -m x -- t.md > /tmp/i1928_commit.log"
+    _assert_blocked(_run(cmd, foreign_repo, cert, cwd=foreign_repo / "tasks"))
+
+
+def test_rd12_in_command_cd_with_redirect_blocks(foreign_repo: Path, cert: Path) -> None:
+    """cd_nonroot unchanged: an in-command relative cd never scopes."""
+    _assert_blocked(
+        _run("cd tasks && git commit -m x -- t.md > /tmp/i1928_commit.log", foreign_repo, cert)
+    )
+
+
+def test_rd13_malformed_redirect_shaped_positional_stays_opaque_blocks(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """A word-attached `>`-bearing token matches NO redirect form: grammar
+    fallback -> classify_candidate -> opaque -> whole-index -> block."""
+    _assert_blocked(_run("git commit -m x -- tasks/t.md out>>result>x", foreign_repo, cert))
+
+
+@pytest.mark.parametrize("tok", [">(cat)", "<(cat)"])
+def test_rd14_process_substitution_form_token_refused(
+    tok: str, foreign_repo: Path, cert: Path
+) -> None:
+    """Must-Fix (i): process-substitution-form tokens are NOT redirects — the
+    grammar classifies them `no` -> opaque -> whole-index -> block."""
+    _assert_blocked(_run(f"git commit -m x -- tasks/t.md {tok}", foreign_repo, cert))
+
+
+@pytest.mark.parametrize("tok", ["<< EOF", "<<-EOF", "<<< data", "<<<data"])
+def test_rd15_heredoc_herestring_operator_token_refused(
+    tok: str, foreign_repo: Path, cert: Path
+) -> None:
+    """Must-Fix (ii): here-doc / here-string operator tokens (bare and
+    word-attached) are NOT the single input-redirect form — `no` -> opaque
+    -> whole-index -> block."""
+    _assert_blocked(_run(f"git commit -m x -- tasks/t.md {tok}", foreign_repo, cert))
+
+
+@pytest.mark.parametrize("tok", [">$LOGFILE", "2>$(mktemp)"])
+def test_rd16_redirect_with_non_clean_literal_attached_target_refused(
+    tok: str, foreign_repo: Path, cert: Path
+) -> None:
+    """Must-Fix (iii): an operator whose ATTACHED target carries `$` or a
+    command-substitution form fails the clean-literal test — `no` -> opaque
+    -> whole-index -> block."""
+    _assert_blocked(_run(f"git commit -m x -- tasks/t.md {tok}", foreign_repo, cert))
+
+
+# ---------------------------------------------------------------------------
+# f-group (issue #1949): the `-F <msgfile>` / `--file=<msgfile>` message-file
+# commit form + the exact rc-capture compound suffixes from the 2026-07-31
+# incident (two sessions' pathspec-limited root commits were blocked by a
+# FOREIGN session's staged uncertified file). The behavioral root cause was
+# fixed by #1928 (`305df9ad14`); these tests PIN the previously-uncovered `-F`
+# dimension of the commit-clause flag table (the `-m | -F | ... skip_next`
+# separate-word arm, the `--*=*` attached-arg arm, and the single-dash cluster
+# arm), so a future flag-table refactor cannot silently regress the pathspec
+# escape with no red test.
+
+
+def _msgfile(tmp_path: Path) -> Path:
+    """Commit-message file for the `-F` / `--file=` form. The hook parses
+    only the argv shape — the file content is never read by the guard."""
+    p = tmp_path / "commitmsg.txt"
+    p.write_text("task #9: fix\n", encoding="utf-8")
+    return p
+
+
+def test_f1_msgfile_pathspec_certified_own_payload_allowed(
+    tmp_path: Path, foreign_repo: Path, cert: Path
+) -> None:
+    """c6 analogue for `-F`: a certified own gated payload committed via
+    `git commit -F <msgfile> -- <own>` is allowed despite the foreign
+    uncertified staged file (#1949)."""
+    msg = _msgfile(tmp_path)
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _cert_line(cert, "scripts/own.py", _worktree_sha(foreign_repo, "scripts/own.py"))
+    _assert_allowed(_run(f"git commit -F {msg} -- scripts/own.py", foreign_repo, cert))
+
+
+def test_f2_msgfile_artifact_pathspec_allowed(
+    tmp_path: Path, foreign_repo: Path, cert: Path
+) -> None:
+    """c1 analogue for `-F`: an artifact pathspec commit with a message FILE
+    scopes (the separate-word `-F` arm consumes the msgfile path token)."""
+    msg = _msgfile(tmp_path)
+    _assert_allowed(_run(f"git commit -F {msg} -- tasks/t.md", foreign_repo, cert))
+
+
+def test_f3_msgfile_pathspec_redirect_rc_capture_allowed(
+    tmp_path: Path, foreign_repo: Path, cert: Path
+) -> None:
+    """The exact 2026-07-31 boundary-impl incident shape (#1949): certified
+    own pathspec + `-F <msgfile>` + redirect + a `; COMMIT_RC=$?` rc-capture
+    clause (the `$?` lives in a SEPARATE clause, never the commit clause)."""
+    msg = _msgfile(tmp_path)
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _cert_line(cert, "scripts/own.py", _worktree_sha(foreign_repo, "scripts/own.py"))
+    cmd = f"git commit -F {msg} -- scripts/own.py > /tmp/i1949_commit.log 2>&1; COMMIT_RC=$?"
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_f4_dash_m_pathspec_redirect_rc_echo_allowed(foreign_repo: Path, cert: Path) -> None:
+    """The exact 2026-07-31 orchestrator incident shape (#1949): `-m` +
+    certified own pathspec + redirect + a `; echo rc=$?` suffix clause."""
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _cert_line(cert, "scripts/own.py", _worktree_sha(foreign_repo, "scripts/own.py"))
+    cmd = "git commit -m x -- scripts/own.py > /tmp/i1949_commit.log 2>&1; echo rc=$?"
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_f5_bare_msgfile_commit_blocks(tmp_path: Path, foreign_repo: Path, cert: Path) -> None:
+    """Sweep protection for `-F` (B39's message-file twin): a bare
+    whole-index `-F` commit still blocks on the foreign uncertified file."""
+    msg = _msgfile(tmp_path)
+    _assert_blocked(_run(f"git commit -F {msg}", foreign_repo, cert))
+
+
+def test_f6_msgfile_pathspec_naming_foreign_gated_blocks(
+    tmp_path: Path, foreign_repo: Path, cert: Path
+) -> None:
+    """A `-F` pathspec commit NAMING the foreign uncertified gated file
+    blocks (rd7's message-file twin)."""
+    msg = _msgfile(tmp_path)
+    _assert_blocked(_run(f"git commit -F {msg} -- scripts/foreign.py", foreign_repo, cert))
+
+
+def test_f7_attached_file_eq_spelling_artifact_pathspec_allowed(
+    tmp_path: Path, foreign_repo: Path, cert: Path
+) -> None:
+    """`--file=<msgfile>` attached spelling: pins the `--*=*`
+    no-separate-arg arm (the msgfile rides inside ONE token, nothing is
+    consumed), so the artifact pathspec still scopes."""
+    msg = _msgfile(tmp_path)
+    _assert_allowed(_run(f"git commit --file={msg} -- tasks/t.md", foreign_repo, cert))
+
+
+def test_f8_single_dash_cluster_ending_in_arg_letter_allowed(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """Adjacent flag-table arm (plan deviation clause, critic advisory): a
+    single-dash CLUSTER ending in an arg-taking letter (`-qm x`) consumes its
+    separate message word, so the artifact pathspec still scopes (#1949)."""
+    _assert_allowed(_run("git commit -qm x -- tasks/t.md", foreign_repo, cert))

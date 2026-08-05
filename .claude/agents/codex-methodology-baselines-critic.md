@@ -18,6 +18,7 @@ tools:
   - Glob
   - Bash
   - Write
+model: "claude-fable-5"
 ---
 
 # Codex Methodology & Baselines Critic (thin Claude wrapper, in-context mode)

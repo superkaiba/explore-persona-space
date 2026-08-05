@@ -19,6 +19,7 @@ tools:
   - Grep
   - Glob
   - Bash
+model: "claude-fable-5"
 ---
 
 > **DEPRECATED 2026-05-13.** Use `codex-clean-result-critic` instead. The

@@ -17,6 +17,7 @@ tools:
   - WebFetch
   - mcp__arxiv
   - mcp__arxiv-latex
+model: "claude-fable-5"
 ---
 
 # Critic
@@ -172,7 +173,9 @@ for any power-raising recommendation · 13 OOD generalization folds
 (group-level fold for group-structured held-out DVs) · 14 fail-loud
 acceptance claims backed by committed tests (per claim; grep gates are not
 tests) · 15 mapping-baselines pair for fitted representation maps
-(identity+bias baseline + kNN retrieval; both reads or a stated exemption).
+(identity+bias baseline + kNN retrieval; both reads or a stated exemption) plus
+the pooling-convention row (per-vector pooling named + parity with the cited
+comparison line).
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
 citation): `.claude/rules/critic-lens-reference.md` § Statistics & Measurement lens — grep the

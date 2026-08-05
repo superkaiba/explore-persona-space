@@ -113,6 +113,17 @@ with five elements:
    copies are effectively out of `wipe`'s reach — crash-persist
    diagnostics are forensic record, prefer a fresh resume prefix) |
    `fresh-output-path / --no-resume` (the relaunch writes/reads elsewhere)
+   | `hf-force-reupload → <affected HF prefixes>` (when the fix
+   invalidates artifacts ALREADY uploaded to HF, name the affected HF
+   prefixes and force re-upload with `resume_skip=False` — or write to a
+   fresh prefix; a presence-check `resume_skip=True` upload silently
+   retains corrupted artifacts for downstream reusers. #1902: 62 store
+   leaf prefixes force re-uploaded.)
+   | `wipe-derived-sentinels → <sentinel paths>` (downstream phase
+   sentinels / done-markers whose inputs the fix invalidated are wiped
+   or quarantined, even on a `--from-phase` relaunch that would not
+   otherwise touch them. #1902 attempt 11: stale pre-fix fits sentinels
+   forced attempt 11.)
    | `N/A — <reason>` (no resume state written; or fresh instance AND no
    remote resume fetch).
 
@@ -453,7 +464,9 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
      (`.claude/rules/pod-side-reporting.md` § Result-push verification
      contract, #1880), and a lane running a pre-#1880 driver
      deterministically false-crashes at its terminal push with its
-     results intact in crash-persist.
+     results intact in crash-persist. The PULL/SYNC direction — the
+     push touches files a live worker holds locally modified — is
+     governed by § Mid-run pushes to a live-synced branch below.
 2. **Stale-checkpoint disposition (element 5), executed in the SAME
    command chain as the launch** (the pid-file-contract shape,
    `.claude/rules/pod-side-reporting.md` § Pid-file launch contract),
@@ -551,6 +564,63 @@ here, noted for the record). The implementer's
 own same-pod smoke-slice confirmation (element 2) is UNCHANGED and is
 not a "relaunch" under this section.
 
+**Shared-module propagation (REQUIRED — when the fix touches shared library
+code).** When the crash-fix touches SHARED library code — anything under
+`src/explore_persona_space/orchestrate/`, `src/explore_persona_space/backends/`,
+`src/explore_persona_space/eval/`, `src/explore_persona_space/train/`, OR any
+shared `scripts/` helper (any `scripts/` file NOT of the form
+`scripts/issue<N>_*.py`, which are issue-local by construction) — the SAME
+round either (a) LANDS the fix on `main` (via the worktree rebase-merge at
+Step 10d, a scratch-worktree push per CLAUDE.md § Concurrent repo-root
+committers), OR (b) posts an EXPLICIT propagation note naming which sibling
+issues' running trees carry the stale code (an `epm:progress` note whose
+leading token is `shared-module-propagation`, listing the sibling issue ids
+the fix must reach — the standing observability convention for fleet-visible
+cross-issue signals). A round-local branch fix on a shared module is an
+INCOMPLETE round: the shared library remains stale on every sibling issue's
+running tree until the fix lands on main. Failure evidence: `#1979 → #1947,
+22c2ddb2d3 landed after both crashes`. Scope boundary vs the neighboring
+§ Mid-run pushes to a live-synced branch: that section governs PUSH TIMING to
+avoid dirty-worker sync refusal on the crashing issue's OWN branch; this
+clause governs FIX PROPAGATION to SIBLING issues' branches (a different
+failure axis — sibling trees have their own live workers whose crashes the
+unpropagated fix does not prevent).
+
+### Mid-run pushes to a live-synced branch (enumerate live workers FIRST)
+
+Never push a commit to `issue-<N>` — or any ref live workers pull/sync
+mid-run — that touches a file ANY live worker holds locally modified.
+The worker's sync step refuses on DIRTY TOUCHED PATHS regardless of
+byte-identical content (the refusal keys on locally modified paths, not
+content — a byte-identity argument is a wrong theory of git), and the
+lane dies at its sync point — typically the upload leg — HOURS after
+the push (#1739: 3 lanes x 216 cells each, fits rc=0, killed at their
+upload legs; science recovered from EXIT-trap crash bundles, ~5-6 GPU-h
+re-compose, and a mid-run SSH patch attempt also failed on inter-box
+firewall/IAP). BEFORE any mid-run push to a live-synced ref, enumerate
+the live workers and what each holds locally modified; then either:
+
+(a) pin lanes to a detached launch SHA at dispatch, so mid-run branch
+    pushes are invisible to running workers (preferred, plan-time). A
+    detached-HEAD lane's terminal results push composes with the #1880
+    recipe as `git push origin HEAD:refs/heads/<branch>` after the
+    fetch+rebase;
+(b) defer the patch commit until every running worker has passed its
+    sync step; or
+(c) land the fix worker-locally only and push after the wave drains —
+    SAME-POD relaunches only: a fresh-provision (GCE/SLURM) relaunch
+    ancestry-probes `origin/issue-<N>` (§ fix-commit ancestry above),
+    so a worker-local-only fix halts it — safely but wastefully — on
+    fix-commit-absent.
+
+A sibling lane's crash-fix relaunch legitimately REQUIRES the fix on
+the remote ref (§ fix-commit ancestry above) — sequence it via (b)/(c),
+never skip the relaunch's ancestry probe. Sibling direction:
+`.claude/rules/pod-side-reporting.md` § Result-push verification
+contract (#1880) covers the PUSH race (a live lane's terminal push
+needs fetch+rebase); this subsection covers the PULL/SYNC refusal —
+one mid-run-push doctrine, two failure directions.
+
 ### Changed-argv relaunch: argv dry-run (REQUIRED unless byte-identical AND the CLI surface is untouched)
 
 A crash-fix relaunch whose command line differs from the crashed
@@ -567,6 +637,21 @@ governed by the same SKILL.md clause (incident #1738 Phase-3 attempt 1:
 a required input-source flag omitted from a hand-composed first launch;
 post-parse `SystemExit` rc=1 ~7 s after a full GCE flexstart boot +
 venv install).
+
+**Relaunch-flag fidelity + machine caps (#1964).** A relaunch's flag set
+is copied VERBATIM from the persisted handle sidecar
+(`.claude/cache/issue-<N>-handle.json`) — never re-derived from plan
+prose or memory; deliberate changes are named DIFFS against the sidecar
+set in the relaunch note (#1902: attempt 6 dispatched twice, missing
+`--intent` then `--time-budget-hours`, while the full set sat in the
+sidecar). Machine-sized caps (`--rss-cap-gb`, thread caps, width) are
+RE-DERIVED for the TARGET machine on any cross-machine move — a sidecar
+cap is sized to the machine that wrote it (#1946: a 128 GB box was
+dispatched with the 16 GB VM-default cap copied forward). The
+dispatch-side probes (a)-(c) — staged-input existence, env-pin
+completeness, per-LEG carry-over — are canonical at the SKILL.md Step 6b
+dispatch-preflight block (`.claude/skills/issue/SKILL.md`
+§ Dispatch-input/env/flag preflight) and bind on relaunches too.
 
 ### Crash-fix rounds: symbol-rename whole-tree grep duty (REQUIRED — every retry round; #1728)
 

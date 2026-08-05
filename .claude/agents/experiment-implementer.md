@@ -23,6 +23,7 @@ tools:
   - WebSearch
   - WebFetch
   - mcp__plugin_context7_context7
+model: "claude-fable-5"
 ---
 
 # Experiment Implementer
@@ -239,6 +240,11 @@ section wins on invocation form.
    per-arm-resolution:
      <arm-1>: REAL | FALLBACK <reason> | N/A — no computation path
      <arm-2>: …
+   resume-matrix:
+     <leg-name-1>: REAL — <one-line: which resume/topup/salvage leg was exercised, e.g. topup-record-recorded-miss> | FALLBACK — <one-line reason> | N/A — no resume/topup/salvage branch in this diff
+     <leg-name-2>: …
+   production-outroot-unit:
+     <unit-name>: REAL — <one-line: which unit ran into eval_results/issue_<N>/> | FALLBACK — <one-line: production-shape unit infeasible at smoke, reason> | N/A — dispatcher writes no out-root (analysis-only / API-only)
    "
    ```
    Legal `verdict:` tokens: `PASS_UNIFIED` | `PASS_CANARY
@@ -246,7 +252,11 @@ section wins on invocation form.
    `FAIL_NO_CANARY`. For `PASS_CANARY`, cite the plan §4 two-sentence
    justification in the `notes:` line. For `PASS_PARTIAL`, list the
    fallback-rowed arm names verbatim (as a set they must equal the
-   arms whose per-arm row reads `FALLBACK`). For `FAIL_NO_CANARY`,
+   arms whose `per-arm-resolution:` row reads `FALLBACK` — the
+   `arms_stubbed=<comma-list>` set-equality scopes to
+   `per-arm-resolution:` rows ONLY, NOT the `resume-matrix:` or
+   `production-outroot-unit:` sub-blocks' own `FALLBACK` rows).
+   For `FAIL_NO_CANARY`,
    post the marker AND additionally emit a one-line
    `<!-- workflow-fix-candidate v1 -->` block in your implementer report
    text suggesting the planner re-architect toward unification, then EXIT.
@@ -265,7 +275,9 @@ section wins on invocation form.
    branches and stub fallbacks. Step 6d.0 refuses to dispatch on
    anything other than `PASS_UNIFIED` or `PASS_CANARY`.
 
-   Four additional smoke-contract requirements:
+   Additional smoke-contract requirements (Step 6d.0 gate refuses on
+   missing evidence; every requirement below extends the
+   smoke-architecture-check marker's per-leg attestation shape):
 
    - **Cross-phase data-contract smoke.** When any phase CONSUMES
      artifacts from a DIFFERENT issue / condition registry (parent
@@ -301,6 +313,54 @@ section wins on invocation form.
      gotchas.md "Real-corpus streaming filters"). Record it under
      `## Smoke run` — Step 6d.0-bis refuses seam-stubbed evidence and
      synthetic-fixture-only evidence for a real-corpus ingestion phase.
+   - **Resume-matrix smoke.** When the diff exposes ANY resumable
+     re-entry branch — a resume predicate (done-file skip, sidecar-based
+     terminal-verdict skip), a `--from-phase <name>` / `--resume` flag, a
+     salvage/topup leg, a recorded-verdict re-read — the pre-launch
+     smoke exercises EACH such leg at least once against a synthesized
+     partial state: run the smoke, interrupt or seed the partial
+     artifacts the leg re-reads, re-enter with the resume flag or the
+     recorded-sidecar in place, confirm exit 0 + the leg's designed
+     disposition (skip / re-emit / continue). Grep the diff for the
+     branch class (`resume`, `topup`, `salvage`, `_record.json`,
+     `if.*exists.*: return`, `--from-phase`) to enumerate the legs; a
+     leg that cannot be brought to the smoke floor is declared
+     `FALLBACK — <one-line reason>` in the marker's `resume-matrix:`
+     sub-block (matching the per-arm-resolution vocabulary), mirroring
+     the existing PASS_PARTIAL declared-escape shape. Rationale (#1947
+     P0 launches 4-5, #1315 r6, #1112 r6): recorded terminal-verdict
+     re-entry crashes, salvage input overwrites, resumed-process
+     side-effect loss, partial-artifact resume — four distinct crash
+     classes that fire only on the RE-ENTRY leg the smoke never
+     exercises. Persisted memories:
+     `feedback_resume_predicate_recorded_terminal_verdicts.md`,
+     `feedback_salvage_inputs_pin_identity.md`,
+     `feedback_registry_side_effect_lost_on_resume.md`,
+     `feedback_partial_artifact_resume_and_trainer_ckpt_tokenizer.md`.
+   - **Real production out-root unit.** Before the full launch, ONE
+     real corpus/fit unit runs end-to-end at production shape writing
+     to the PRODUCTION out-root (`eval_results/issue_<N>/...`), not a
+     `/tmp/issue-<N>-smoke/` twin. This catches seams that fire only
+     against the canonical path: `mkdir` of an out-root parent whose
+     directory tree the first cell creates, registry-coupled metadata
+     lookups keyed on the caller's own cell/arm ids
+     (`_pfx_fit_core`-style `arm_method(arm_id)` misses), path
+     predicates that gate on the canonical out-root prefix. Compose
+     with the existing PASS_CANARY declared-escape when one cell at
+     production shape is genuinely infeasible (GPU-scale weight
+     materialization, multi-hour per-cell wall) — declare it as
+     `production-outroot-unit: FALLBACK — <one-line reason>` in the
+     marker. The unit's outputs are the FIRST cell of the out-root the
+     full launch subsequently populates — no clobber of committed
+     artifacts by construction (a first-launch out-root has none); a
+     re-launch smoke into an already-committed out-root uses the
+     scratch-dir redirect / restore-after-smoke fallback exactly as
+     today (§ Smoke outputs never overwrite committed artifacts).
+     Rationale (#1947 P4/P5 round 2): 8 fit units died on `KeyError:
+     'imp-bare-con-sv-s42'` at the reused `_pfx_fit_core`'s registry
+     lookup; smokes missed it because tiny fixtures used registry arm
+     ids. Persisted memory:
+     `feedback_reused_fit_core_registry_lookup_seam.md`.
 6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
    §Gotchas for libraries / patterns relevant to the modules you edit
    (vLLM, TRL, Hydra, MooseFS, RunPod, persona injection, marker
@@ -530,6 +590,9 @@ such corpora or banks:
    under `## Smoke run` in the report (see Report Format § (c) below).
    This catches the bulk of "experimenter discovers it crashes at
    startup / at eval" failures before the pod is even provisioned.
+   A composed judge-instrument leg counts as wired only with the
+   rule-27 parse-contract round-trip test
+   (`.claude/rules/llm-judging.md`); a dry run proves routing only.
 
    **Per ARM CLASS, not just per phase.** When a phase's driver spans
    MULTIPLE ARM CLASSES (distinct source-context classes / recipe

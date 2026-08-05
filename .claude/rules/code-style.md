@@ -81,11 +81,30 @@ CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
   Record `pid=$PHASE_PID` + the log path + `choom=ok|failed` + `harvest=<abs output path>` (the
   § Harvest contract's declared results location; #1656) in the stage-dispatch breadcrumb
   (SKILL.md § Detached VM-side long compute phases — incl. the collateral-kill signature and the
-  relaunch-once-then-pod-pivot rule; #811).
+  relaunch-once-then-pod-pivot rule, with its first-kill CPU-pod exception for storm-attributed
+  API-bound drivers; #811).
 - **Post-pipe `$?` is the LAST stage's status, not the pipeline's.** After ANY `cmd_a | cmd_b` (a `tail`/`grep`/`head` post-filter, `2>&1 | json.load`, a `| jq`), a bare `$?` captures `cmd_b`'s exit code and MASKS `cmd_a`'s failure. Use `set -o pipefail` (single-shot: `bash -o pipefail -c '...'`) or `${PIPESTATUS[0]}` before echoing an rc; a wrapper printing `=== rc=$? ===` after a pipeline is the banned regression (#1717 defect (e), session `a2c4bae3`, 2026-07-26 — `rc=0` on a failed `select_step9c_tests.py` invocation because `$?` read `tail -20`'s status). Generalizes the CLAUDE.md "never pipe `git push`/`merge`/`commit` through `tail`/`grep`/`head`" bullet to every command whose exit code drives a decision.
 - **Env sync after dep changes:** `uv lock && git push`, then `pod.py sync env`.
 - **HF cache** always `/workspace/.cache/huggingface` on pods (symlinks enforce).
 - **Reproducibility metadata in result JSONs:** git commit hash, env versions, timestamps.
+  Lane caveat: on git-less scratch trees (fellows/SLURM `materialize_branch_src` rsync copies) a
+  strict `git rev-parse` shellout kills the workload (git exits 128 → the workload dies rc=1) —
+  degrade `EPS_GIT_SHA` env → `check=False` → `"unavailable-no-git-checkout"` (full entry:
+  `.claude/rules/gotchas.md`; incident #1902).
+  **Dirty-tree flag (#1482, #2065):** the commit hash alone is a lie when the producing script
+  is uncommitted-dirty — a committed artifact can then claim provenance from a commit that does
+  NOT contain the code that produced it (#1482: a `+369/-40`-line modified script stamped a
+  clean SHA). New reproducibility-metadata writers use
+  `explore_persona_space.orchestrate.provenance.git_provenance()` and merge
+  `as_metadata_dict(prov)` into the metadata block: it adds `git_dirty` (`True`/`False`/`None`)
+  and, when dirty, `git_dirty_paths` (working-tree-wide, capped at 50 with an overflow tail).
+  Default = RECORD, never fail loud (`git_dirty=None` on the git-less lane above). Non-JSON
+  channels (PDF Keywords, PNG pnginfo, WandB run names) render the human-legible
+  `commit_string(prov)` → `<sha>` or `<sha>+dirty`. The three duplicate `_git_commit_hash()`
+  helpers previously scattered across `analysis/convexity_meta.py`, `artifacts/organisms.py`,
+  and `analysis/paper_plots.py` are consolidated into the new helper (the paper_plots copy is
+  kept as a thin deprecated shim delegating to `_git_short_sha` for the one out-of-scope
+  external importer under `experiments/leave_one_out_505/`).
 - **Supersede → delete the old version.** When an improved version of a script
   / helper supersedes an old one, DELETE the old version after rewiring every
   reference to it — do NOT keep both. Two live scripts that do the same job

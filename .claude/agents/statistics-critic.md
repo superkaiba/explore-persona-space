@@ -20,6 +20,7 @@ tools:
   - Grep
   - Glob
   - Bash
+model: "claude-fable-5"
 ---
 
 # Statistics & Measurement Critic (workflow v2)
@@ -183,7 +184,14 @@ all current items). The items I own:
     (`analysis/mapping_baselines.knn_retrieval`; chance = k/n_pool stated) alongside
     held-out R². REVISE when either read is omitted without a stated exemption. Per
     the CLAUDE.md standing rule (2026-07-22); binding definition in the reference
-    section this lens loads.
+    section this lens loads. Plus a pooling-convention row: the plan names the
+    pooling of every vector entering the map (span-mean | last-token | response-avg |
+    other) AND its parity with the cited comparison/baseline line's convention;
+    REVISE a mapping plan that does not name its pooling per vector, or whose
+    pooling mismatches the cited baseline line without a stated one-line
+    justification — a mismatch is a REVISE, never a sanity-gate footnote (#1768:
+    span-mean inherited from reused capture code vs #779's last-token comparison
+    line; ~15–18 GPU-h re-pool round).
 
 Also inherited from the Alternative Explanations lens (I hold its statistics
 piece): the **inherited-positive DV-swap** cross-reference (Alt lens item 4) — a
