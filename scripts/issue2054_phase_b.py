@@ -8,7 +8,8 @@ default, argparse refuses a form-less invocation): story forms splice at the
 construction; span offsets known by construction), and the chat / bare_text
 framings re-frame the scaffold's question + answer through
 `issue2054_forms` (narrative prose dropped — chat/bare are structurally
-assistant-only per plan §4 Cells). The answer pool comes from
+assistant-only per plan §4 Cells; scope those runs with
+`--variants conversation_paired_stories_assistant`). The answer pool comes from
 `--answers-source` — a JSONL of {conv_id, answer} or {scaffold_id,
 answer} rows (sanctioned, chat-authored — the parent's inserted-arm answers).
 
@@ -366,6 +367,25 @@ def run_phase(args: argparse.Namespace) -> int:
         )
         return 1
 
+    # Variant scoping (plan §4 Cells): chat / bare_text are structurally
+    # assistant-only, story forms run all five variants — the DISPATCH owns
+    # that matrix (forms.py: "the dispatch decides which forms actually
+    # run"); this flag is what makes it expressible. Default (None) keeps
+    # the historical all-discovered behavior. A requested variant with no
+    # scaffold JSONL fails loud — never a silent skip.
+    if getattr(args, "variants", None):
+        requested = [v.strip() for v in str(args.variants).split(",") if v.strip()]
+        missing = [v for v in requested if v not in per_variant_paths]
+        if missing:
+            print(
+                f"ERROR: --variants names variant(s) with no scaffold JSONL under "
+                f"{scaffolds_root}: {missing} (discovered: {sorted(per_variant_paths)})",
+                file=sys.stderr,
+            )
+            return 1
+        per_variant_paths = {v: per_variant_paths[v] for v in requested}
+        _log(f"variant scope: {requested}")
+
     out_paths: dict[str, Path] = {}
     counts: dict[str, dict] = {}
     for variant, sp in per_variant_paths.items():
@@ -429,6 +449,17 @@ def main() -> int:
             "framing to render (plan §4 — the lattice's central manipulated "
             "variable; REQUIRED, no default so a caller can never silently "
             "fall back to attrib_quoted)"
+        ),
+    )
+    p.add_argument(
+        "--variants",
+        default=None,
+        help=(
+            "comma-separated variant subset to splice (default: all variant dirs "
+            "discovered under --scaffolds-dir). Plan §4 Cells scoping: chat / "
+            "bare_text are structurally assistant-only — pass "
+            "--variants conversation_paired_stories_assistant for those forms; "
+            "story forms (attrib_quoted, bare_label) run all five variants"
         ),
     )
     p.add_argument("--output-dir", default="data/issue_2054/spliced_inserted/")
