@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2092,
+  "highest_id": 2093,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8456,6 +8456,13 @@
       "path": "tasks/proposed/2092",
       "status": "proposed",
       "title": "batch drain loses bare-numeric judge verdicts (#1434 parity not ported): 64% vs 2.8% drops"
+    },
+    "2093": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2093",
+      "status": "proposed",
+      "title": "curate near-ceiling agent-memory indexes (merge duplicates, retire superseded)"
     },
     "21": {
       "has_clean_result": false,
