@@ -120,19 +120,16 @@ def list_pairs(revision: str, limit: int = 0) -> list[str]:
     never the committed defaults); the 28-pair completeness assert applies to
     the full run only.
     """
-    rows = hub.retry_transient(
-        lambda: list(
-            HfApi().list_repo_tree(
-                REPO,
-                path_in_repo=f"{PREFIX}/activations_steered/gen1c/context",
-                repo_type="dataset",
-                recursive=False,
-                revision=revision,
-            )
-        ),
-        what="list_repo_tree(gen1c/context)",
+    # Canonical retried scoped listing (#920/#997) — one server-side tree walk,
+    # never a bare list_repo_tree / full-repo listing on the ~1M-file data repo.
+    root = f"{PREFIX}/activations_steered/gen1c/context"
+    files = hub.list_hf_files_under_path(
+        HfApi(), REPO, root, repo_type="dataset", revision=revision
     )
-    pairs = sorted(r.path.rsplit("/", 1)[-1] for r in rows)
+    # File paths look like <root>/<pair>/L20/aX.pt — the pair is the segment
+    # immediately under the listed root.
+    depth = len(root.split("/"))
+    pairs = sorted({f.split("/")[depth] for f in files if f.startswith(root + "/")})
     if limit > 0:
         return pairs[:limit]
     assert len(pairs) == 28, f"expected 28 pairs, got {len(pairs)}: {pairs[:3]}..."
