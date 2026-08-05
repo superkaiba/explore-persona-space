@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2101,
+  "highest_id": 2102,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8534,6 +8534,13 @@
       "path": "tasks/proposed/2101",
       "status": "proposed",
       "title": "workflow-fix: no-lost-row check on agent-memory index alignments"
+    },
+    "2102": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2102",
+      "status": "proposed",
+      "title": "workflow-fix: workflow.yaml wf-fix prose vs 8 daily-doc pins (main-red)"
     },
     "212": {
       "has_clean_result": true,
