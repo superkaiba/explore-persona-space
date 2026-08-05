@@ -1,6 +1,6 @@
 {
-  "commit": "9465d7a2+dirty",
-  "git_commit": "9465d7a2",
+  "commit": "09f17c44+dirty",
+  "git_commit": "09f17c44",
   "git_dirty": true,
   "git_dirty_paths": [
     ".claude/agent-memory/code-reviewer/MEMORY.md",
@@ -19,15 +19,11 @@
     "figures/issue_1482/context_category_query_notrunc.meta.json",
     "figures/issue_1482/context_category_query_notrunc.pdf",
     "figures/issue_1482/context_category_query_notrunc.png",
-    "figures/issue_1739/result1_spread/spread_grid_simple.meta.json",
-    "figures/issue_1739/result1_spread/spread_grid_simple.pdf",
-    "figures/issue_1739/result1_spread/spread_grid_simple.png",
-    "scripts/hooks/on-stop-429-retry.sh",
     "scripts/issue1482_arm_drop_by_predictor.py",
     "scripts/issue1482_context_extremes_dashboard.py",
     "scripts/issue1739_result1_spread_fig_v2.py"
   ],
-  "created": "2026-08-05T15:40:41Z",
+  "created": "2026-08-05T15:58:47Z",
   "figsize": [
     13.0,
     11.6
@@ -173,7 +169,7 @@
         ],
         "yticklabels": [
           "in-distribution (out-of-fold)\nReddit personal-advice posts\nn=16,000",
-          "OOD transfer (same platform)\nheld-out Reddit r/socialskills\nn=1,304",
+          "held-out in-distribution\nr/socialskills (= half the train pool)\nn=1,304",
           "deployment-like traffic\nrandom WildChat conversations\nn=1,982",
           "synthetic elicitation suite\npersona-vectors eval grid\nn=200"
         ]

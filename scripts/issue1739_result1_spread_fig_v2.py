@@ -99,10 +99,17 @@ SETTING_ROLE = {
     "nqopen": "OOD transfer",
     "simpleqa": "OOD transfer",
     # ELEPHANT AITA-YTA had no resolvable HF id; the plan's registered fallback
-    # is a hash-partitioned held-out slice of the SAME subreddit family the
-    # train pool draws from — a weaker shift than the planned cross-platform
-    # rung, so the role says so (#1739 body, provenance note 1).
-    "aita": "OOD transfer (same platform)",
+    # is a hash-partitioned held-out slice of r/socialskills — which is not a
+    # neighbouring subreddit but HALF THE TRAIN POOL ITSELF (corpus_staging.py
+    # :889-903, per_split = cap // 2 -> 8,000 relationship_advice + 8,000
+    # socialskills; verified on the DV rows' group_key prefixes). Train draws
+    # sha1(post_id) mod 10 in 0..8, this rung draws bucket 9
+    # (SYC_PARTITION_MOD=10, SYC_EVAL_BUCKET=9), so post ids are disjoint and
+    # there is no leakage — but a disjoint 10% partition of a subreddit the
+    # model trained on is IN-distribution, not transfer. Calling it "OOD"
+    # (even "OOD, same platform") overstates the shift: sycophancy's only
+    # genuine OOD text rung is random WildChat. (#1739 body, provenance note 1.)
+    "aita": "held-out in-distribution",
     "wildchat_rung": "deployment-like traffic",
     PVSYNTH: "synthetic elicitation suite",
 }
@@ -128,7 +135,7 @@ SETTING_IDENTITY = {
     ("evil", "hhrt"): "hh-rlhf red-team attempts",
     ("evil", "toxicchat"): "ToxicChat (flagged)",
     ("sycophancy", "train"): "Reddit personal-advice posts",
-    ("sycophancy", "aita"): "held-out Reddit r/socialskills",
+    ("sycophancy", "aita"): "r/socialskills (= half the train pool)",
     ("hallucination", "train"): "TriviaQA (rc.nocontext)",
     ("hallucination", "nqopen"): "NQ-Open",
     ("hallucination", "simpleqa"): "SimpleQA",
