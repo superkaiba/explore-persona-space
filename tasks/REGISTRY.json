@@ -7645,8 +7645,8 @@
     "1988": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1988",
-      "status": "planning",
+      "path": "tasks/approved/1988",
+      "status": "approved",
       "title": "workflow-fix: widen check-28 figure token pattern to arm slugs"
     },
     "1989": {
