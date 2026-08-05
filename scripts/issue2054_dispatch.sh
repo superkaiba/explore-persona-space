@@ -188,7 +188,7 @@ build_cmd() {
         --output-dir data/issue_2054/fits/
         --seed 137
         --layer 19
-        --n-null-draws 200
+        --n-null-draws 100
       )
       ;;
     ladder)

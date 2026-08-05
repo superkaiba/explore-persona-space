@@ -47,9 +47,16 @@ load_dotenv()
 
 import issue1345_scaffold_common as sc  # noqa: E402
 import issue2054_forms as forms  # noqa: E402
+import issue2054_resume as resume  # noqa: E402
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 TASK_PREFIX = "issue2054_lattice"
+
+# Pre-registered cap-hit re-gen trigger (CLAUDE.md generation-stage rule; M4):
+# cap-hit fraction > 2% per variant => re-generate the cap-hit rows at >= 2x
+# the cap. The digest REPORTS the realized fraction + whether the trigger
+# fired; the re-gen itself is a follow-up invocation at the doubled cap.
+CAP_HIT_REGEN_THRESHOLD = 0.02
 
 _MODEL_ID = {
     "qwen2.5-7b": "Qwen/Qwen2.5-7B",
@@ -79,7 +86,10 @@ def _rel(path: Path) -> str:
 
 
 def _read_jsonl(path: Path) -> list[dict]:
+    """Tolerant JSONL reader; undecodable lines are COUNTED + warned (M3 —
+    never silently skipped)."""
     rows: list[dict] = []
+    n_bad = 0
     with path.open(encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -88,16 +98,30 @@ def _read_jsonl(path: Path) -> list[dict]:
             try:
                 rows.append(json.loads(line))
             except json.JSONDecodeError:
-                continue
+                n_bad += 1
+    if n_bad:
+        _log(f"WARN {n_bad} undecodable JSONL line(s) skipped in {path}")
     return rows
 
 
 def _char_name_from_scaffold_row(row: dict, variant: str) -> str:
-    """Recover the character name for the prefill render / splice."""
+    """Recover the character name for the prefill render / splice.
+
+    Fail-loud on an unknown variant with no row-level `character` (M3 — the
+    silent "ARIA" default corrupted splices for unmapped variants; ARIA is a
+    REAL parent character, reachable only via the explicit map entry).
+    """
     ch = str(row.get("character") or "").strip()
     if ch:
         return ch
-    return _CHAR_NAME_FROM_VARIANT.get(variant, "ARIA")
+    mapped = _CHAR_NAME_FROM_VARIANT.get(variant)
+    if mapped is None:
+        raise ValueError(
+            f"cannot resolve character name: variant {variant!r} is not in "
+            f"_CHAR_NAME_FROM_VARIANT and row {row.get('scaffold_id')!r} carries "
+            "no 'character' field"
+        )
+    return mapped
 
 
 def _prepare_prefill(row: dict, variant: str, form: str) -> dict | None:
@@ -235,12 +259,76 @@ def _run_dry_run(
     return total_out, counts
 
 
+def _variant_regime(variant: str, args: argparse.Namespace) -> dict:
+    """The FULL output-affecting regime for one phase_c variant (M6/C9).
+
+    Keyed on the 4-axis cell key (Unit C constraint: condition + form are
+    output-affecting regime keys) plus every generation knob. NOTE the output
+    FILENAME carries no model axis, so two `--model` runs into ONE
+    --output-dir collide — the sidecar's regime check REFUSES that shape and
+    directs distinct output dirs.
+    """
+    return {
+        "cell": forms.cell_key(variant, "on_policy", args.form, args.model),
+        "seed": int(args.seed),
+        "temperature": float(args.temperature),
+        "max_new_tokens": int(args.max_new_tokens),
+        "target_conv_ids": int(args.target_conv_ids),
+    }
+
+
+def _count_jsonl_rows(path: Path) -> int:
+    n = 0
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                n += 1
+    return n
+
+
 def _run_vllm(
     per_variant_paths: dict[str, Path],
     out_dir: Path,
     args: argparse.Namespace,
 ) -> tuple[int, dict[str, dict]]:
-    """GPU generation path: batched vLLM continuation from the prefill prefix."""
+    """GPU generation path: batched vLLM continuation from the prefill prefix.
+
+    Resume (C9/M6): a variant whose output JSONL + regime-matching done
+    sidecar already exist is SKIPPED (a crash on variant 4/5 no longer
+    re-pays variants 1-3); a CHANGED scaffolds input recomputes with a log
+    line; a DIFFERENT regime at the same path refuses
+    (issue2054_resume.RegimeMismatch). `--overwrite` forces regeneration.
+    The vLLM engine loads ONLY when at least one variant actually runs.
+    """
+    counts: dict[str, dict] = {}
+    total_out = 0
+
+    # Resume pass FIRST — defer the vLLM import/engine-load until we know at
+    # least one variant needs generation.
+    to_run: list[tuple[str, Path, Path, dict, dict]] = []
+    for variant, sp in per_variant_paths.items():
+        vdir = out_dir / variant
+        vdir.mkdir(parents=True, exist_ok=True)
+        # Form-aware name (C6): two --form runs of one variant must not clobber.
+        out_path = vdir / forms.phase_output_name("on_policy", variant, args.form)
+        regime = _variant_regime(variant, args)
+        inputs = {"scaffolds_sha256": resume.file_sha256(sp)}
+        disposition, reason = resume.resume_disposition(
+            out_path, regime, inputs, overwrite=args.overwrite
+        )
+        if disposition == resume.SKIP:
+            n_out = _count_jsonl_rows(out_path)
+            counts[variant] = {"n_in": n_out, "n_out": n_out, "resumed": True}
+            total_out += n_out
+            _log(f"variant={variant} RESUME skip ({reason}) -> {_rel(out_path)} rows={n_out}")
+            continue
+        if disposition == resume.RECOMPUTE:
+            _log(f"variant={variant} recompute: {reason}")
+        to_run.append((variant, sp, out_path, regime, inputs))
+
+    if not to_run:
+        return total_out, counts
+
     try:
         from vllm import LLM, SamplingParams
     except ImportError as exc:  # noqa: BLE001
@@ -251,17 +339,12 @@ def _run_vllm(
     _log(f"loading vLLM engine model={model_id} temperature={args.temperature}")
     llm = LLM(model=model_id, dtype="bfloat16", trust_remote_code=True)
 
-    counts: dict[str, dict] = {}
-    total_out = 0
-    for variant, sp in per_variant_paths.items():
+    for variant, sp, out_path, regime, inputs in to_run:
         scaffolds = _read_jsonl(sp)
         scaffolds = _select_rows(scaffolds, args.target_conv_ids)
-        vdir = out_dir / variant
-        vdir.mkdir(parents=True, exist_ok=True)
-        # Form-aware name (C6): two --form runs of one variant must not clobber.
-        out_path = vdir / forms.phase_output_name("on_policy", variant, args.form)
         n_in = len(scaffolds)
         n_out = 0
+        n_cap_hit = 0
 
         prepared: list[dict] = []
         for row in scaffolds:
@@ -296,19 +379,48 @@ def _run_vllm(
                 row_out = _splice_generated(base, answer, args.form)
                 if row_out is None:
                     continue
-                row_out["finish_reason"] = o.outputs[0].finish_reason
+                finish_reason = o.outputs[0].finish_reason
+                row_out["finish_reason"] = finish_reason
+                if finish_reason == "length":
+                    n_cap_hit += 1
                 f.write(json.dumps(row_out, ensure_ascii=False) + "\n")
                 n_out += 1
         os.replace(tmp, out_path)
-        counts[variant] = {"n_in": n_in, "n_out": n_out}
+        resume.write_done(out_path, regime, inputs)
+        counts[variant] = {
+            "n_in": n_in,
+            "n_out": n_out,
+            **_cap_hit_stats(n_cap_hit, n_out),
+        }
         total_out += n_out
-        _log(f"variant={variant} generated {n_out}/{n_in} -> {_rel(out_path)}")
+        if counts[variant]["cap_hit_regen_trigger_fired"]:
+            _log(
+                f"WARN variant={variant} cap-hit fraction "
+                f"{counts[variant]['cap_hit_fraction']:.4f} > {CAP_HIT_REGEN_THRESHOLD} — "
+                f"pre-registered re-gen trigger: re-generate the {n_cap_hit} cap-hit "
+                f"rows at >= 2x max_new_tokens ({2 * args.max_new_tokens})"
+            )
+        _log(f"variant={variant} generated {n_out}/{n_in} cap_hit={n_cap_hit} -> {_rel(out_path)}")
 
     return total_out, counts
 
 
+def _cap_hit_stats(n_cap_hit: int, n_out: int) -> dict:
+    """Realized cap-hit fraction + the pre-registered >2% re-gen trigger (M4)."""
+    frac = (n_cap_hit / n_out) if n_out > 0 else 0.0
+    return {
+        "n_cap_hit": int(n_cap_hit),
+        "cap_hit_fraction": float(frac),
+        "cap_hit_regen_threshold": CAP_HIT_REGEN_THRESHOLD,
+        "cap_hit_regen_trigger_fired": bool(frac > CAP_HIT_REGEN_THRESHOLD),
+    }
+
+
 def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path) -> None:
-    """Best-effort mirror of on-policy JSONLs — ONE bulk upload_folder commit."""
+    """Mirror on-policy JSONLs — ONE bulk upload_folder commit. FATAL on
+    failure (M2): generations MUST land on HF before the pod-side phase can
+    print `[phase=done]` (#521/#664 class — a swallowed upload failure +
+    exit 0 loses the rollouts at pod teardown)."""
     from explore_persona_space.orchestrate.hub import _upload_folder_filtered
 
     allow_patterns: list[str] = []
@@ -323,19 +435,22 @@ def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path) -> None:
         allow_patterns.append(rel)
         expected_paths.append(f"{TASK_PREFIX}/on_policy/{rel}")
     if not allow_patterns:
+        if paths_by_variant:
+            # Declared outputs but nothing upload-eligible: an empty-set
+            # verify is vacuous (#1482) — fail loud, never pass silently.
+            raise RuntimeError(
+                f"upload set resolved EMPTY against declared outputs: {paths_by_variant}"
+            )
         return
-    try:
-        _upload_folder_filtered(
-            out_dir,
-            repo_id=HF_DATA_REPO,
-            repo_type="dataset",
-            path_in_repo=f"{TASK_PREFIX}/on_policy",
-            allow_patterns=allow_patterns,
-            expected_repo_paths=expected_paths,
-        )
-        _log(f"uploaded {len(allow_patterns)} on-policy file(s) in one bulk commit")
-    except Exception as exc:  # noqa: BLE001
-        _log(f"WARN on-policy bulk upload failed: {exc}")
+    _upload_folder_filtered(
+        out_dir,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{TASK_PREFIX}/on_policy",
+        allow_patterns=allow_patterns,
+        expected_repo_paths=expected_paths,
+    )
+    _log(f"uploaded {len(allow_patterns)} on-policy file(s) in one bulk commit")
 
 
 def run_phase(args: argparse.Namespace) -> int:
@@ -376,11 +491,12 @@ def run_phase(args: argparse.Namespace) -> int:
 
     is_smoke = str(out_dir).startswith("/tmp/")
     if not is_smoke and not args.skip_upload and not args.dry_run:
-        try:
-            _upload_to_hf(out_paths, out_dir)
-        except Exception as exc:  # noqa: BLE001
-            _log(f"WARN upload stage failed: {exc}")
+        # FATAL on failure (M2): the sentinel/`[phase=done]` must never report
+        # done with the generations un-persisted (#521 class). No try/except.
+        _upload_to_hf(out_paths, out_dir)
 
+    # M4: aggregate cap-hit report (per-variant fractions live in `counts`).
+    total_cap_hit = sum(int(c.get("n_cap_hit") or 0) for c in counts.values())
     digest = {
         "phase": "phase_c",
         "form": args.form,
@@ -391,6 +507,13 @@ def run_phase(args: argparse.Namespace) -> int:
         "dry_run": bool(args.dry_run),
         "counts": counts,
         "n_total_out": total_out,
+        "cap_hit": {
+            **_cap_hit_stats(total_cap_hit, total_out),
+            "regen_action": (
+                "re-generate cap-hit rows at >= 2x max_new_tokens "
+                f"({2 * args.max_new_tokens}) when any variant exceeds the threshold"
+            ),
+        },
         "out_paths": {v: _rel(p) for v, p in out_paths.items()},
         "seed": args.seed,
         "utc": datetime.now(tz=timezone.utc).isoformat(),
@@ -457,8 +580,20 @@ def main() -> int:
         action="store_true",
         help="CPU-only wiring smoke: prepare prefills, emit mock JSONL, no vLLM",
     )
+    p.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=(
+            "regenerate variants even when a regime-matching done sidecar exists "
+            "(the deliberate re-gen path; default resumes completed variants — C9/M6)"
+        ),
+    )
     args = p.parse_args()
-    return run_phase(args)
+    try:
+        return run_phase(args)
+    except resume.RegimeMismatch as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

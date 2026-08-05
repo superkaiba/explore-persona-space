@@ -63,6 +63,7 @@ load_dotenv()
 
 import issue1345_scaffold_common as sc  # noqa: E402
 import issue2054_forms as forms  # noqa: E402
+import issue2054_resume as resume  # noqa: E402
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 PARENT_PREFIX = "issue1345_framing"
@@ -104,7 +105,10 @@ def _rel(path: Path) -> str:
 
 
 def _read_jsonl(path: Path) -> list[dict]:
+    """Tolerant JSONL reader; undecodable lines are COUNTED + warned (M3 —
+    never silently skipped)."""
     rows: list[dict] = []
+    n_bad = 0
     with path.open(encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -113,7 +117,9 @@ def _read_jsonl(path: Path) -> list[dict]:
             try:
                 rows.append(json.loads(line))
             except json.JSONDecodeError:
-                continue
+                n_bad += 1
+    if n_bad:
+        _log(f"WARN {n_bad} undecodable JSONL line(s) skipped in {path}")
     return rows
 
 
@@ -126,7 +132,17 @@ def _base_variant_for(op_variant: str) -> str:
 
 
 def _char_name_from_variant(op_variant: str) -> str:
-    return _CHAR_NAME_FROM_VARIANT.get(_base_variant_for(op_variant), "ARIA")
+    """Character name for an on-policy variant. Fail-loud on an unknown base
+    variant (M3): the silent "ARIA" default made `_extract_op_answer` parse
+    parent stories under the WRONG character name — 0 answers, silently."""
+    base = _base_variant_for(op_variant)
+    mapped = _CHAR_NAME_FROM_VARIANT.get(base)
+    if mapped is None:
+        raise ValueError(
+            f"cannot resolve character name: variant {op_variant!r} (base {base!r}) "
+            "is not in _CHAR_NAME_FROM_VARIANT — extend the map for a new variant"
+        )
+    return mapped
 
 
 def _canon_conv_id(conv_id: str) -> str:
@@ -304,8 +320,18 @@ def _process_variant(
     fold_conv_ids: set[str] | None,
     target_conv_ids: int,
     form: str,
+    *,
+    fold_map_sha: str | None,
+    overwrite: bool,
 ) -> dict:
-    """Splice parent's on-policy answers into scaffolds for one variant."""
+    """Splice parent's on-policy answers into scaffolds for one variant.
+
+    Resume (C9/M6): a variant whose output + regime-matching done sidecar
+    already exist is SKIPPED (incl. the parent-story HF downloads); a CHANGED
+    scaffolds input / fold map recomputes with a log line; a DIFFERENT regime
+    refuses (RegimeMismatch). Parent #1345 story data is frozen and is NOT
+    part of the input pin.
+    """
     base_variant = _base_variant_for(variant)
     scaffolds_path = scaffolds_root / base_variant / f"scaffolds_{base_variant}.jsonl"
     if not scaffolds_path.is_file():
@@ -321,6 +347,35 @@ def _process_variant(
             _log(f"variant={variant} no scaffolds found under {scaffolds_root}")
             return {"variant": variant, "n_in": 0, "n_out": 0, "out_path": None}
         scaffolds_path = alt[0]
+
+    vdir_early = out_dir / variant
+    vdir_early.mkdir(parents=True, exist_ok=True)
+    early_out_path = vdir_early / forms.phase_output_name("cell_c", variant, form)
+    regime = {
+        "cell": forms.cell_key(variant, "cell_c", form, "any"),
+        "target_conv_ids": int(target_conv_ids),
+        "fold_filter": fold_conv_ids is not None,
+    }
+    inputs = {
+        "scaffolds_sha256": resume.file_sha256(scaffolds_path),
+        "fold_map_sha256": fold_map_sha,
+    }
+    disposition, reason = resume.resume_disposition(
+        early_out_path, regime, inputs, overwrite=overwrite
+    )
+    if disposition == resume.SKIP:
+        done = resume.read_done(early_out_path) or {}
+        extra = done.get("extra") or {}
+        _log(f"variant={variant} RESUME skip ({reason}) -> {_rel(early_out_path)}")
+        return {
+            "variant": variant,
+            "status": "resumed",
+            "n_in": int(extra.get("n_in") or 0),
+            "n_out": int(extra.get("n_out") or 0),
+            "out_path": early_out_path,
+        }
+    if disposition == resume.RECOMPUTE:
+        _log(f"variant={variant} recompute: {reason}")
 
     scaffolds = _read_jsonl(scaffolds_path)
     if target_conv_ids > 0:
@@ -373,6 +428,8 @@ def _process_variant(
             f.write(json.dumps(spliced, ensure_ascii=False) + "\n")
             n_out += 1
     os.replace(tmp, out_path)
+    if n_out > 0:
+        resume.write_done(out_path, regime, inputs, extra={"n_in": n_in, "n_out": n_out})
 
     if n_in > 0 and answers_by_conv and n_out == 0:
         # Zero-join diagnostic: name sample keys from BOTH sides so a future
@@ -408,7 +465,8 @@ def _process_variant(
 
 
 def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path) -> None:
-    """Best-effort mirror of cell_c JSONLs — ONE bulk upload_folder commit."""
+    """Mirror cell_c JSONLs — ONE bulk upload_folder commit. FATAL on failure
+    (M2): a swallowed upload + `[phase=done]` silently strands the splices."""
     from explore_persona_space.orchestrate.hub import _upload_folder_filtered
 
     allow_patterns: list[str] = []
@@ -423,19 +481,20 @@ def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path) -> None:
         allow_patterns.append(rel)
         expected_paths.append(f"{TASK_PREFIX}/cell_c/{rel}")
     if not allow_patterns:
+        if paths_by_variant:
+            raise RuntimeError(
+                f"upload set resolved EMPTY against declared outputs: {paths_by_variant}"
+            )
         return
-    try:
-        _upload_folder_filtered(
-            out_dir,
-            repo_id=HF_DATA_REPO,
-            repo_type="dataset",
-            path_in_repo=f"{TASK_PREFIX}/cell_c",
-            allow_patterns=allow_patterns,
-            expected_repo_paths=expected_paths,
-        )
-        _log(f"uploaded {len(allow_patterns)} cell_c file(s) in one bulk commit")
-    except Exception as exc:  # noqa: BLE001
-        _log(f"WARN cell_c bulk upload failed: {exc}")
+    _upload_folder_filtered(
+        out_dir,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{TASK_PREFIX}/cell_c",
+        allow_patterns=allow_patterns,
+        expected_repo_paths=expected_paths,
+    )
+    _log(f"uploaded {len(allow_patterns)} cell_c file(s) in one bulk commit")
 
 
 def run_phase(args: argparse.Namespace) -> int:
@@ -456,6 +515,7 @@ def run_phase(args: argparse.Namespace) -> int:
         return 2
     api = HfApi()
 
+    fold_map_sha: str | None = None
     if args.no_fold_filter:
         fold_conv_ids = None
         _log("shared fold map filter disabled by --no-fold-filter")
@@ -469,6 +529,7 @@ def run_phase(args: argparse.Namespace) -> int:
             )
             return 1
         fold_conv_ids = _load_shared_fold_map(fold_map_path)
+        fold_map_sha = resume.file_sha256(fold_map_path)
         _log(f"shared fold map loaded: {len(fold_conv_ids)} conv_ids (canonical key space)")
 
     per_variant_reports: list[dict] = []
@@ -482,6 +543,8 @@ def run_phase(args: argparse.Namespace) -> int:
             fold_conv_ids,
             args.target_conv_ids,
             args.form,
+            fold_map_sha=fold_map_sha,
+            overwrite=args.overwrite,
         )
         per_variant_reports.append(report)
         if report.get("out_path") is not None:
@@ -494,10 +557,9 @@ def run_phase(args: argparse.Namespace) -> int:
 
     is_smoke = str(out_dir).startswith("/tmp/")
     if not is_smoke and not args.skip_upload:
-        try:
-            _upload_to_hf(out_paths, out_dir)
-        except Exception as exc:  # noqa: BLE001
-            _log(f"WARN upload stage failed: {exc}")
+        # FATAL on failure (M2): `[phase=done]` must never report done with
+        # the cell (c) splices un-persisted. No try/except.
+        _upload_to_hf(out_paths, out_dir)
 
     digest = {
         "phase": "phase_d",
@@ -566,8 +628,20 @@ def main() -> int:
         action="store_true",
         help="disable the shared fold-map conv_id membership check (smoke use only)",
     )
+    p.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=(
+            "re-splice variants even when a regime-matching done sidecar exists "
+            "(default resumes completed variants — C9/M6)"
+        ),
+    )
     args = p.parse_args()
-    return run_phase(args)
+    try:
+        return run_phase(args)
+    except resume.RegimeMismatch as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

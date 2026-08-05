@@ -56,6 +56,7 @@ Exit 0 on success. Exit 1 on fit / HF failure. Exit 2 on missing input.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -104,6 +105,21 @@ DEFAULT_DOF_CAP = 0.9
 # Bootstrap draws over conversations within the equalized intersection
 # (statistics-critic concern #2 — conv-within-intersection bootstrap CI).
 DEFAULT_BOOTSTRAP_DRAWS = 200
+
+# Per-source M-fit memo bound (M5): each cached W is ~100 MB float64 at
+# d=D_out=3584, so cap residency; the run_phase loop ALSO clears the cache
+# whenever the source cell changes (pairs enumerate source-major).
+_FIT_CACHE_MAX_ENTRIES = 24
+
+# Pilot-before-fleet preferences (M5; plan §9): assistant × chat × inserted ×
+# instruct, falling back to the first located cell.
+PILOT_PREFERRED_CELL = (
+    "conversation_paired_stories_assistant",
+    "inserted",
+    "chat",
+    "qwen2.5-7b-instruct",
+)
+PILOT_RSS_ROUTE_OFF_VM_GIB = 16.0
 
 # The cell (c) `char_*_op*` variants (phase_d output) are IN the default so
 # the 2x2's (c) leg is discoverable without operator memory (C6 review note).
@@ -263,18 +279,18 @@ def _standardize(X_train: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarra
     return (X_train - xmu) / xsd, xmu, xsd
 
 
-def _fit_ridge_and_apply(
+def _fit_ridge(
     X_train: np.ndarray,
     Y_train: np.ndarray,
-    apply_at: dict[str, np.ndarray],
     *,
     lambdas: np.ndarray = DEFAULT_LAMBDAS,
     dof_cap: float = DEFAULT_DOF_CAP,
-) -> tuple[dict[str, np.ndarray], dict]:
-    """Ambient GCV-ridge fit. Returns predictions at every key in `apply_at`
-    (each is an X of shape (n, d)) + fit info.
+) -> dict:
+    """Ambient GCV-ridge FIT ONLY (M5 dedupe: fit/apply split so one fit can
+    be applied at many inputs — and MEMOIZED across pairs sharing a source).
 
     Standardize X on the train fold; center Y; primary reconstruction via SVD.
+    Returns the fitted model {xmu, xsd, ymu, W, info}.
     """
     Xtr64 = X_train.astype(np.float64)
     Ytr64 = Y_train.astype(np.float64)
@@ -316,10 +332,6 @@ def _fit_ridge_and_apply(
     filt = s / (s2 + best_lam)
     W = (Vt.T * filt) @ UtY  # (d, D_out)
 
-    preds: dict[str, np.ndarray] = {}
-    for key, X_apply in apply_at.items():
-        Xa = (X_apply.astype(np.float64) - xmu) / xsd
-        preds[key] = Xa @ W + ymu
     info = {
         "best_lambda": best_lam,
         "dof": best_dof,
@@ -330,7 +342,27 @@ def _fit_ridge_and_apply(
         "d_in": int(Xtr.shape[1]),
         "d_out": int(Ytr64.shape[1]),
     }
-    return preds, info
+    return {"xmu": xmu, "xsd": xsd, "ymu": ymu, "W": W, "info": info}
+
+
+def _apply_ridge(model: dict, X_apply: np.ndarray) -> np.ndarray:
+    """Apply a `_fit_ridge` model at new inputs (cheap — never a refit)."""
+    Xa = (X_apply.astype(np.float64) - model["xmu"]) / model["xsd"]
+    return Xa @ model["W"] + model["ymu"]
+
+
+def _fit_ridge_and_apply(
+    X_train: np.ndarray,
+    Y_train: np.ndarray,
+    apply_at: dict[str, np.ndarray],
+    *,
+    lambdas: np.ndarray = DEFAULT_LAMBDAS,
+    dof_cap: float = DEFAULT_DOF_CAP,
+) -> tuple[dict[str, np.ndarray], dict]:
+    """Fit once, apply at every key in `apply_at` (thin fit+apply wrapper)."""
+    model = _fit_ridge(X_train, Y_train, lambdas=lambdas, dof_cap=dof_cap)
+    preds = {key: _apply_ridge(model, X_apply) for key, X_apply in apply_at.items()}
+    return preds, model["info"]
 
 
 def _r2_matrix(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -437,11 +469,24 @@ def _compute_rungs_for_fold(
     Xt_tr: np.ndarray,
     Xt_te: np.ndarray,
     Yt_tr: np.ndarray,
+    *,
+    source_fit: dict | None = None,
 ) -> tuple[dict[str, np.ndarray], dict]:
     """Compute all 9 rung predictions at the target's held-out fold rows.
 
     Mirrors `scripts/issue1345_ladder_rungs.py::_rungs_for`, but on numpy +
-    no per-eval refits (three source-map applications reuse the SAME fit).
+    no per-eval refits. EXACTLY THREE GCV-SVD fits per fold (M5 dedupe —
+    down from five: the pre-fix `preds_B9` re-fit the identical Ys_tr→Yt_tr
+    map as `preds_B`, and `preds_shift` re-fit the identical Xs_tr→Ys_tr
+    source map as `preds_M`; both are now extra `apply_at` targets of the
+    ONE fit):
+
+      A — target-contexts -> source-contexts (rungs 7/9),
+      M — the source map v_C_source -> v_A_source (rungs 1/2/4/5/6/7 inputs),
+      B — source-answer -> target-answer (rungs 8/9).
+
+    `source_fit` (optional) is a prefit M model from the caller's per-source
+    memo — pairs sharing (source, arm, fold, train rows) skip the M fit.
 
     Args:
       Xs_tr, Ys_tr: source cell's train-fold rows (context / answer).
@@ -456,34 +501,26 @@ def _compute_rungs_for_fold(
     # A: ridge target-contexts -> source-contexts (rung 7 / 9 need the
     # target→source context reparameterization applied to BOTH the target's
     # train rows and its held-out rows).
-    preds_A, info_A = _fit_ridge_and_apply(
-        X_train=Xt_tr,
-        Y_train=Xs_tr,
-        apply_at={"tr": Xt_tr, "te": Xt_te},
-    )
-    Xs_hat_tr, Xs_hat_te = preds_A["tr"], preds_A["te"]
+    model_A = _fit_ridge(Xt_tr, Xs_tr)
+    info_A = model_A["info"]
+    Xs_hat_tr = _apply_ridge(model_A, Xt_tr)
+    Xs_hat_te = _apply_ridge(model_A, Xt_te)
 
-    # M: source ridge  v_C_source -> v_A_source. Apply it at four different
-    # inputs — target's context train/te AND the target→source-reparam of the
-    # same — in ONE fit call.
-    preds_M, info_M = _fit_ridge_and_apply(
-        X_train=Xs_tr,
-        Y_train=Ys_tr,
-        apply_at={
-            "P_tr": Xt_tr,
-            "P_te": Xt_te,
-            "P7_tr": Xs_hat_tr,
-            "P7_te": Xs_hat_te,
-        },
-    )
-    P_tr = preds_M["P_tr"]
-    P_te = preds_M["P_te"]
-    P7_tr = preds_M["P7_tr"]
-    P7_te = preds_M["P7_te"]
-
-    # Context / answer mean shifts (source -> target).
+    # Context / answer mean shifts (source -> target) — dx BEFORE the M
+    # applications so rung 2's shifted input rides the SAME M fit (M5).
     dx = Xt_tr.astype(np.float64).mean(axis=0) - Xs_tr.astype(np.float64).mean(axis=0)
     dy = Yt_tr.astype(np.float64).mean(axis=0) - Ys_tr.astype(np.float64).mean(axis=0)
+
+    # M: source ridge  v_C_source -> v_A_source — ONE fit (or the caller's
+    # memoized one), applied at FIVE inputs: target contexts train/te, the
+    # target→source reparam of both, and rung 2's mean-shifted held-out.
+    model_M = source_fit if source_fit is not None else _fit_ridge(Xs_tr, Ys_tr)
+    info_M = model_M["info"]
+    P_tr = _apply_ridge(model_M, Xt_tr)
+    P_te = _apply_ridge(model_M, Xt_te)
+    P7_tr = _apply_ridge(model_M, Xs_hat_tr)
+    P7_te = _apply_ridge(model_M, Xs_hat_te)
+    P_shift = _apply_ridge(model_M, Xt_te.astype(np.float64) - dx)
 
     # Bias refit + global scale (rung 4, rung 5): both take the source-map's
     # predictions on target contexts and adjust with a target-train fit.
@@ -499,45 +536,29 @@ def _compute_rungs_for_fold(
     # Rung 6 — orthogonal Procrustes on the source-map's held-out predictions.
     rot_te, resid_max = _procrustes_apply(P_tr, Yt_tr, P_te)
 
-    # Rung 8 — refit ridge (source-answer -> target-answer) using the SAME
-    # answer clouds, then apply to the source-map's target held-out prediction.
-    preds_B, info_B = _fit_ridge_and_apply(
-        X_train=Ys_tr,
-        Y_train=Yt_tr,
-        apply_at={"P_te": P_te},
-    )
-    P_te_reparam = preds_B["P_te"]
-
-    # Rung 9 — full A-M-B chain: reparameterize context (rung 7's P7_te) →
-    # source map → reparameterize answer.
-    preds_B9, _info_B9 = _fit_ridge_and_apply(
-        X_train=Ys_tr,
-        Y_train=Yt_tr,
-        apply_at={"P7_te": P7_te},
-    )
-    P7_te_reparam = preds_B9["P7_te"]
+    # Rungs 8 + 9 — ONE ridge (source-answer -> target-answer) applied to BOTH
+    # the direct source-map prediction (rung 8) and the context-reparam chain
+    # prediction (rung 9): same train clouds ⇒ same fit (M5 dedupe).
+    model_B = _fit_ridge(Ys_tr, Yt_tr)
+    info_B = model_B["info"]
+    P_te_reparam = _apply_ridge(model_B, P_te)
+    P7_te_reparam = _apply_ridge(model_B, P7_te)
 
     rung_preds: dict[str, np.ndarray] = {
         "1_direct": P_te,
-        # Rung 2 shifts target contexts BEFORE applying source map — one extra
-        # source-map application at Xt_te - dx.
+        "2_ctx_offset": P_shift,
+        "3_ans_offset": P_te + dy,
+        "4_bias_refit": P_te + bstar,
+        "5_global_scale": a * (P_te - pmu) + ymu,
+        "6_rotation": rot_te,
+        "7_ctx_reparam": P7_te + b7,
+        "8_ans_reparam": P_te_reparam,
+        "9_full_AMB": P7_te_reparam,
     }
-    preds_shift, _info_shift = _fit_ridge_and_apply(
-        X_train=Xs_tr,
-        Y_train=Ys_tr,
-        apply_at={"P_shift": Xt_te.astype(np.float64) - dx},
-    )
-    rung_preds["2_ctx_offset"] = preds_shift["P_shift"]
-    rung_preds["3_ans_offset"] = P_te + dy
-    rung_preds["4_bias_refit"] = P_te + bstar
-    rung_preds["5_global_scale"] = a * (P_te - pmu) + ymu
-    rung_preds["6_rotation"] = rot_te
-    rung_preds["7_ctx_reparam"] = P7_te + b7
-    rung_preds["8_ans_reparam"] = P_te_reparam
-    rung_preds["9_full_AMB"] = P7_te_reparam
 
     info = {
         "source_fit": info_M,
+        "source_fit_memoized": bool(source_fit is not None),
         "ctx_reparam_fit": info_A,
         "ans_reparam_fit": info_B,
         "global_scale_a": a,
@@ -563,11 +584,20 @@ def _fit_arm_pair(
     seed: int,
     pilot: bool,
     bootstrap_draws: int,
+    fit_cache: dict | None = None,
 ) -> dict:
     """Compute the 9-rung ladder for one ordered (source, target, arm) pair.
 
     Equalize-down: fold rows keyed on the INTERSECTION of source + target
     conv_ids (post-arm mask). Both cells' arm rows re-index to that shared set.
+
+    `fit_cache` (M5): a caller-scoped memo of source-map fits keyed on
+    (source_cell, arm, fold, sha of the realized train ids) — pairs sharing a
+    source AND the same equalized train rows skip the M re-fit. NOTE the
+    per-pair equalize-down makes the train rows PAIR-dependent, so the memo
+    hits only when intersections coincide (the conv-matched production design
+    makes that common within a comparison group); it is exact by construction
+    (keyed on the realized rows, never assumed).
     """
     k = int(fold_map["k"])
     fold_of = fold_map["fold_of"]
@@ -632,12 +662,27 @@ def _fit_arm_pair(
         Yt_tr = Yt_all[train_idx_t]
         Yt_te = Yt_all[val_idx_t]
 
+        # Per-source M-fit memo (M5): exact key on the realized train rows.
+        # On a miss the fit happens HERE and is stored for later same-source
+        # pairs; `_compute_rungs_for_fold` then never re-fits M.
+        source_fit: dict | None = None
+        if fit_cache is not None:
+            train_sha = hashlib.sha256("\n".join(train_ids).encode()).hexdigest()
+            cache_key = (source_cell_key, arm, fold_i, train_sha)
+            source_fit = fit_cache.get(cache_key)
+            if source_fit is None:
+                source_fit = _fit_ridge(Xs_tr, Ys_tr)
+                if len(fit_cache) >= _FIT_CACHE_MAX_ENTRIES:
+                    fit_cache.clear()  # bounded memory (each W is ~100 MB f64)
+                fit_cache[cache_key] = source_fit
+
         rung_preds, info_fit = _compute_rungs_for_fold(
             Xs_tr=Xs_tr,
             Ys_tr=Ys_tr,
             Xt_tr=Xt_tr,
             Xt_te=Xt_te,
             Yt_tr=Yt_tr,
+            source_fit=source_fit,
         )
 
         # kNN retrieval on rung 1 (the direct-transfer read) — a scale-invariant
@@ -806,15 +851,17 @@ def _enumerate_ordered_pairs(
 
 
 def _upload_to_hf(pair_paths: list[Path]) -> None:
-    """Best-effort mirror of rung JSONs — ONE bulk `upload_folder` commit."""
+    """Mirror rung JSONs — ONE bulk `upload_folder` commit. FATAL on failure
+    (M2): a swallowed upload + `[phase=done]` silently strands the rungs."""
     from explore_persona_space.orchestrate.hub import _upload_folder_filtered
 
     if not pair_paths:
         return
     parents = {p.parent.resolve() for p in pair_paths}
     if len(parents) != 1:
-        _log(f"WARN heterogeneous ladder roots; skipping bulk upload: {parents}")
-        return
+        raise RuntimeError(
+            f"heterogeneous ladder roots — cannot compose one bulk upload: {parents}"
+        )
     root = next(iter(parents))
     allow_patterns: list[str] = []
     expected_paths: list[str] = []
@@ -828,19 +875,18 @@ def _upload_to_hf(pair_paths: list[Path]) -> None:
         allow_patterns.append(rel)
         expected_paths.append(f"{TASK_PREFIX}/ladder/{rel}")
     if not allow_patterns:
-        return
-    try:
-        _upload_folder_filtered(
-            root,
-            repo_id=HF_DATA_REPO,
-            repo_type="dataset",
-            path_in_repo=f"{TASK_PREFIX}/ladder",
-            allow_patterns=allow_patterns,
-            expected_repo_paths=expected_paths,
+        raise RuntimeError(
+            f"upload set resolved EMPTY against declared rung JSONs ({len(pair_paths)} paths)"
         )
-        _log(f"uploaded {len(allow_patterns)} rung JSON(s) in one bulk commit")
-    except Exception as exc:  # noqa: BLE001
-        _log(f"WARN ladder upload failed: {exc}")
+    _upload_folder_filtered(
+        root,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{TASK_PREFIX}/ladder",
+        allow_patterns=allow_patterns,
+        expected_repo_paths=expected_paths,
+    )
+    _log(f"uploaded {len(allow_patterns)} rung JSON(s) in one bulk commit")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -853,6 +899,132 @@ def _write_json(path: Path, payload: dict) -> None:
     with tmp.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, sort_keys=True, default=str)
     os.replace(tmp, path)
+
+
+def _pair_intersection_sha(
+    source_acts: dict, target_acts: dict, arm: str, fold_of: dict
+) -> tuple[str, int]:
+    """(sha256 over the sorted realized pair intersection, its size) — the
+    resume key's identity pin for one (source, target, arm) pair (C9/M6)."""
+    _, _, s_ids = _select_arm(source_acts, arm)
+    _, _, t_ids = _select_arm(target_acts, arm)
+    inter = sorted(set(s_ids) & set(t_ids) & set(fold_of.keys()))
+    return hashlib.sha256("\n".join(inter).encode()).hexdigest(), len(inter)
+
+
+# Regime keys a resumed pair must match EXACTLY against its existing rung
+# JSON (C9/M6 — every output-affecting key; the #722-r3 rule).
+_PAIR_RESUME_KEYS = (
+    "source",
+    "target",
+    "arm",
+    "n_rungs",
+    "seed",
+    "bootstrap_draws",
+    "pilot",
+    "dry_run",
+    "target_ceiling",
+    "intersection_sha256",
+)
+_PAIR_RESUME_FOLD_KEYS = {"fold_map_k": "k", "fold_map_seed": "seed"}
+
+
+def _pair_resume_check(out_path: Path, expected: dict) -> tuple[bool, str]:
+    """(skip?, reason) for one pair against its existing rung JSON."""
+    if not out_path.is_file():
+        return False, ""
+    try:
+        with out_path.open(encoding="utf-8") as f:
+            existing = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return False, "existing rung JSON unreadable"
+    mismatched = [k for k in _PAIR_RESUME_KEYS if existing.get(k) != expected.get(k)]
+    fm = existing.get("fold_map") or {}
+    mismatched += [
+        ek for ek, fk in _PAIR_RESUME_FOLD_KEYS.items() if fm.get(fk) != expected.get(ek)
+    ]
+    if mismatched:
+        return False, f"regime keys changed: {mismatched}"
+    status = (existing.get("arm_report") or {}).get("status")
+    if status != "ok":
+        return False, f"existing rung JSON status={status!r}"
+    return True, "rung JSON complete under matching regime"
+
+
+def _run_ladder_pilot_gate(
+    ordered_pairs: list,
+    activations_by_cell: dict,
+    fold_map: dict,
+    fits_dir: Path,
+    args: argparse.Namespace,
+    output_dir: Path,
+) -> None:
+    """Pilot-before-fleet (M5; plan §9): ONE (source, target, arm) pair, ONE
+    fold, at production shape, measured (wall + peak RSS) and persisted to
+    `<output-dir>/pilot_gate_report.json` BEFORE the fleet loop."""
+    import resource as _resource
+
+    report_path = output_dir / "pilot_gate_report.json"
+    if report_path.is_file() and not args.overwrite:
+        try:
+            with report_path.open(encoding="utf-8") as f:
+                prior = json.load(f)
+            if prior.get("bootstrap_draws") == int(args.bootstrap_draws):
+                _log(f"pilot gate: prior report matches ({_rel(report_path)}); skipping")
+                return
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    pilot_pair = None
+    for s, t in ordered_pairs:
+        s_key = _cell_key(s[0], s[1], s[2], s[3])
+        t_key = _cell_key(t[0], t[1], t[2], t[3])
+        if s_key in activations_by_cell and t_key in activations_by_cell:
+            pilot_pair = (s, t, s_key, t_key)
+            if (s[0], s[1], s[2], s[3]) == PILOT_PREFERRED_CELL:
+                break
+    if pilot_pair is None:
+        _log("pilot gate: no runnable pair located; skipping")
+        return
+    _s, _t, s_key, t_key = pilot_pair
+    arm = args.arms[0]
+    _log(f"pilot gate: 1-pair 1-fold measured pilot on {s_key} -> {t_key} ({arm})")
+    t0 = time.time()
+    pilot_report = _fit_arm_pair(
+        source_cell_key=s_key,
+        target_cell_key=t_key,
+        arm=arm,
+        source_acts=activations_by_cell[s_key],
+        target_acts=activations_by_cell[t_key],
+        fold_map=fold_map,
+        target_ceiling=_load_target_ceiling(fits_dir, t_key, arm),
+        n_rungs=len(RUNGS),
+        seed=int(args.seed),
+        pilot=True,  # 1 fold — production shape otherwise
+        bootstrap_draws=int(args.bootstrap_draws),
+    )
+    wall = time.time() - t0
+    peak_rss_gib = _resource.getrusage(_resource.RUSAGE_SELF).ru_maxrss / (1024**2)
+    payload = {
+        "phase": "ladder-pilot-gate",
+        "source": s_key,
+        "target": t_key,
+        "arm": arm,
+        "bootstrap_draws": int(args.bootstrap_draws),
+        "wall_seconds": round(wall, 3),
+        "peak_rss_gib": round(peak_rss_gib, 3),
+        "rss_route_off_vm_gib": PILOT_RSS_ROUTE_OFF_VM_GIB,
+        "status": pilot_report.get("status"),
+        "utc": datetime.now(tz=timezone.utc).isoformat(),
+    }
+    _write_json(report_path, payload)
+    _log(f"pilot gate: wall={wall:.1f}s peak_rss={peak_rss_gib:.2f} GiB -> {_rel(report_path)}")
+    if peak_rss_gib >= PILOT_RSS_ROUTE_OFF_VM_GIB:
+        _log(
+            f"WARN pilot peak RSS {peak_rss_gib:.2f} GiB >= "
+            f"{PILOT_RSS_ROUTE_OFF_VM_GIB} GiB — plan §9 routes this fit family "
+            "OFF the shared VM (cpu-mid / cpu-bigmem); dispatcher decision"
+        )
 
 
 def run_phase(args: argparse.Namespace) -> int:
@@ -931,10 +1103,23 @@ def run_phase(args: argparse.Namespace) -> int:
     ordered_pairs = _enumerate_ordered_pairs(cells, smoke=is_smoke)
     _log(f"pairs: {len(ordered_pairs)} ordered (source, target)")
 
+    # Pilot-before-fleet (M5; plan §9 pilot-gate): ONE pair, 1 fold, at
+    # production shape, measured + persisted BEFORE the fleet loop.
+    if not args.dry_run and not args.pilot and not args.skip_pilot_gate:
+        _run_ladder_pilot_gate(
+            ordered_pairs, activations_by_cell, fold_map, fits_dir, args, output_dir
+        )
+
     pair_paths: list[Path] = []
     pair_summaries: list[dict] = []
     n_rungs = max(1, min(len(RUNGS), int(args.rungs)))
     t0 = time.time()
+
+    # Per-source M-fit memo (M5), cleared when the source cell changes —
+    # `_enumerate_ordered_pairs` is source-major, so residency stays bounded
+    # to one source's folds.
+    fit_cache: dict = {}
+    current_source: str | None = None
 
     for (s_var, s_cond, s_form, s_mod, _s_path), (
         t_var,
@@ -947,12 +1132,63 @@ def run_phase(args: argparse.Namespace) -> int:
         t_key = _cell_key(t_var, t_cond, t_form, t_mod)
         if s_key not in activations_by_cell or t_key not in activations_by_cell:
             continue
+        if s_key != current_source:
+            fit_cache.clear()
+            current_source = s_key
         s_acts = activations_by_cell[s_key]
         t_acts = activations_by_cell[t_key]
 
         arm_reports: dict[str, dict] = {}
         for arm in args.arms:
             ceiling = _load_target_ceiling(fits_dir, t_key, arm)
+            # Rung-scoped filename per plan §6 (rung_{i}_{source}_to_{target}_{arm}.json
+            # — one file per (source, target, arm), enumerating all N rungs the run
+            # covered; when a subset is computed the filename records the first-rung
+            # index for provenance).
+            first_rung_i = 1
+            out_name = f"rung_{first_rung_i}_{s_key}_to_{t_key}_{arm}.json"
+            out_path = output_dir / out_name
+
+            # Resume (C9/M6): a pair whose rung JSON already carries this
+            # exact regime (incl. the realized pair intersection + the target
+            # ceiling the ratios divide by) is skipped. Self-describing JSON
+            # ⇒ a mismatch RECOMPUTES (logged) — no refusal needed.
+            inter_sha, n_inter = _pair_intersection_sha(s_acts, t_acts, arm, fold_map["fold_of"])
+            expected_regime = {
+                "source": s_key,
+                "target": t_key,
+                "arm": arm,
+                "n_rungs": n_rungs,
+                "seed": int(args.seed),
+                "bootstrap_draws": int(args.bootstrap_draws),
+                "pilot": bool(args.pilot),
+                "dry_run": bool(args.dry_run),
+                "target_ceiling": ceiling,
+                "intersection_sha256": inter_sha,
+                "fold_map_k": int(fold_map["k"]),
+                "fold_map_seed": int(fold_map.get("seed", -1)),
+            }
+            if not args.overwrite and not args.dry_run and not args.pilot:
+                skip, why = _pair_resume_check(out_path, expected_regime)
+                if skip:
+                    pair_paths.append(out_path)
+                    pair_summaries.append(
+                        {
+                            "path": _rel(out_path),
+                            "source": s_key,
+                            "target": t_key,
+                            "arm": arm,
+                            "status": "resumed",
+                            "n_intersection": n_inter,
+                            "target_ceiling": ceiling,
+                            "n_rungs": n_rungs,
+                        }
+                    )
+                    _log(f"pair={s_key}->{t_key} arm={arm} RESUME skip ({why})")
+                    continue
+                if why:
+                    _log(f"pair={s_key}->{t_key} arm={arm} recompute: {why}")
+
             arm_report = _fit_arm_pair(
                 source_cell_key=s_key,
                 target_cell_key=t_key,
@@ -965,6 +1201,7 @@ def run_phase(args: argparse.Namespace) -> int:
                 seed=int(args.seed),
                 pilot=bool(args.pilot or args.dry_run),
                 bootstrap_draws=int(args.bootstrap_draws),
+                fit_cache=fit_cache,
             )
             arm_reports[arm] = arm_report
 
@@ -978,6 +1215,8 @@ def run_phase(args: argparse.Namespace) -> int:
                 "arm_report": arm_report,
                 "target_ceiling": ceiling,
                 "seed": int(args.seed),
+                "bootstrap_draws": int(args.bootstrap_draws),
+                "intersection_sha256": inter_sha,
                 "dry_run": bool(args.dry_run),
                 "pilot": bool(args.pilot),
                 "utc": datetime.now(tz=timezone.utc).isoformat(),
@@ -989,13 +1228,6 @@ def run_phase(args: argparse.Namespace) -> int:
                 "activations_dir": _rel(activations_dir),
                 "fits_dir": _rel(fits_dir),
             }
-            # Rung-scoped filename per plan §6 (rung_{i}_{source}_to_{target}_{arm}.json
-            # — one file per (source, target, arm), enumerating all N rungs the run
-            # covered; when a subset is computed the filename records the first-rung
-            # index for provenance).
-            first_rung_i = 1
-            out_name = f"rung_{first_rung_i}_{s_key}_to_{t_key}_{arm}.json"
-            out_path = output_dir / out_name
             _write_json(out_path, pair_payload)
             pair_paths.append(out_path)
             pair_summaries.append(
@@ -1017,12 +1249,11 @@ def run_phase(args: argparse.Namespace) -> int:
                 f"-> {_rel(out_path)} elapsed={elapsed:.1f}s"
             )
 
-    # Uploads (real runs only; smoke tree stays under /tmp/).
+    # Uploads (real runs only; smoke tree stays under /tmp/). FATAL on
+    # failure (M2): `[phase=done]` must never report done with the rung JSONs
+    # un-persisted. No try/except.
     if not is_smoke and not args.skip_upload:
-        try:
-            _upload_to_hf(pair_paths)
-        except Exception as exc:  # noqa: BLE001
-            _log(f"WARN upload stage failed: {exc}")
+        _upload_to_hf(pair_paths)
 
     digest = {
         "phase": "ladder",
@@ -1131,6 +1362,22 @@ def main() -> int:
         "--pilot",
         action="store_true",
         help="1-pair 1-fold pilot mode.",
+    )
+    p.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=(
+            "recompute pairs even when a regime-matching rung JSON exists "
+            "(default resumes completed pairs — C9/M6)"
+        ),
+    )
+    p.add_argument(
+        "--skip-pilot-gate",
+        action="store_true",
+        help=(
+            "skip the automatic 1-pair measured pilot leg before the fleet "
+            "(M5/plan §9; only when a standalone pilot already ran)"
+        ),
     )
     args = p.parse_args()
     return run_phase(args)

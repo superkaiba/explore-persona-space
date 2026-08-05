@@ -281,5 +281,8 @@ def test_phase_b_splice_one_attrib_matches_parent_round_trip():
 
 
 def test_phase_b_splice_one_question_missing_chat_row_skips():
-    row = {"scaffold_text": f"No quoted query here. {S}", "scaffold_id": "x"}
+    # `character` present so the M3 fail-loud char resolution passes and the
+    # test exercises its actual subject: a question-less chat row is a
+    # counted SKIP (None), never a silent fallback to another form.
+    row = {"scaffold_text": f"No quoted query here. {S}", "scaffold_id": "x", "character": "Helios"}
     assert phase_b._splice_one(row, ANSWER, "_flat", "chat") is None

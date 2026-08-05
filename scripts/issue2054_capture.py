@@ -73,6 +73,7 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 load_dotenv()
 
 import issue2054_forms as forms  # noqa: E402
+import issue2054_resume as resume  # noqa: E402
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 TASK_PREFIX = "issue2054_lattice"
@@ -108,7 +109,10 @@ def _rel(path: Path) -> str:
 
 
 def _read_jsonl(path: Path) -> list[dict]:
+    """Tolerant JSONL reader; undecodable lines are COUNTED + warned (M3 —
+    never silently skipped)."""
     rows: list[dict] = []
+    n_bad = 0
     with path.open(encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -117,7 +121,9 @@ def _read_jsonl(path: Path) -> list[dict]:
             try:
                 rows.append(json.loads(line))
             except json.JSONDecodeError:
-                continue
+                n_bad += 1
+    if n_bad:
+        _log(f"WARN {n_bad} undecodable JSONL line(s) skipped in {path}")
     return rows
 
 
@@ -252,9 +258,12 @@ def _char_span_to_token_span(
     return lo, hi
 
 
-def _token_before_char(offsets: list[tuple[int, int]], char_pos: int) -> int:
+def _token_before_char(offsets: list[tuple[int, int]], char_pos: int) -> int | None:
     """Return the token index whose end offset is <= char_pos (the last token
-    STRICTLY before char_pos).
+    STRICTLY before char_pos), or None when NO token ends before char_pos —
+    the caller records v_P as null (M3: the pre-fix `max(0, idx)` silently
+    substituted token 0, coercing an undefined prefix boundary to a wrong
+    activation instead of the null-recording contract).
     """
     idx = -1
     for i, (tok_lo, tok_hi) in enumerate(offsets):
@@ -264,7 +273,7 @@ def _token_before_char(offsets: list[tuple[int, int]], char_pos: int) -> int:
             idx = i
         else:
             break
-    return max(0, idx)
+    return None if idx < 0 else idx
 
 
 def _compute_positions(tokenizer, row: dict) -> dict | None:
@@ -298,6 +307,10 @@ def _compute_positions(tokenizer, row: dict) -> dict | None:
         prefix_src = "none"
     else:
         v_P_pos = _token_before_char(offsets, prefix_end_char)
+        if v_P_pos is None:
+            # No token ends before the recorded boundary: v_P is undefined for
+            # this row — record null, never coerce to token 0 (M3).
+            prefix_src = "none"
     return {
         "input_ids": input_ids,
         "answer_lo": answer_lo,
@@ -625,7 +638,47 @@ def _run_gpu_variant(
     the target layer; emits {conv_id: {v_C, v_A, v_P}} to an .npz per cell.
 
     This is the on-pod path. Not exercised by the dry-run smoke.
+
+    Resume (C9/M6): a cell whose .npz + regime-matching done sidecar already
+    exist is SKIPPED — a crash on variant 4/5 of the ~100 GPU-h capture no
+    longer re-forwards variants 1-3. Regime = the FULL 4-axis cell key
+    (variant/condition/form/model — the Unit C constraint) + layer + seed +
+    target_conv_ids; a CHANGED input JSONL recomputes with a log line; a
+    DIFFERENT regime at the same path refuses (RegimeMismatch).
     """
+    # 4-axis cell naming (C6): condition + form are part of the output identity.
+    cell = forms.cell_key(variant, args.phase, args.form, model_slug)
+    activation_path = output_dir / variant / f"{cell}.npz"
+    regime = {
+        "cell": cell,
+        "layer": int(args.layer),
+        "seed": int(args.seed),
+        "target_conv_ids": int(args.target_conv_ids),
+    }
+    inputs = {"input_sha256": resume.file_sha256(input_path)}
+    disposition, reason = resume.resume_disposition(
+        activation_path, regime, inputs, overwrite=args.overwrite
+    )
+    if disposition == resume.SKIP:
+        done = resume.read_done(activation_path) or {}
+        n_ok = int((done.get("extra") or {}).get("n_ok") or 0)
+        _log(f"variant={variant} model={model_slug} RESUME skip ({reason}) cell={cell}")
+        return {
+            "variant": variant,
+            "model": model_slug,
+            "condition": args.phase,
+            "form": args.form,
+            "cell": cell,
+            "input_path": _rel(input_path),
+            "n_in": n_ok,
+            "n_out": n_ok,
+            "diagnostics": _rel(diagnostics_dir / f"{cell}.json"),
+            "activations": _rel(activation_path),
+            "status": "resumed",
+        }
+    if disposition == resume.RECOMPUTE:
+        _log(f"variant={variant} model={model_slug} recompute: {reason}")
+
     import numpy as np
     import torch
 
@@ -755,11 +808,7 @@ def _run_gpu_variant(
 
     # Stack + write. v_P is stored per-row with a mask carrying the null rows;
     # None rows write a zero vector alongside `v_P_present == False`.
-    import numpy as np
-
-    # 4-axis cell naming (C6): condition + form are part of the output identity.
-    cell = forms.cell_key(variant, args.phase, args.form, model_slug)
-    activation_path = output_dir / variant / f"{cell}.npz"
+    # (`cell` + `activation_path` were resolved at the resume check above.)
     activation_path.parent.mkdir(parents=True, exist_ok=True)
     v_C_arr = (
         np.stack(v_C_rows, axis=0) if v_C_rows else np.zeros((0, hidden_dim), dtype=np.float16)
@@ -819,6 +868,14 @@ def _run_gpu_variant(
         },
     )
     _write_diagnostics(diagnostics_path, payload)
+    # Done sidecar LAST — written only after BOTH the .npz and the diagnostics
+    # landed, so a crash between the two can never mint a false skip (C9/M6).
+    resume.write_done(
+        activation_path,
+        regime,
+        inputs,
+        extra={"n_ok": len(conv_ids), "wall_seconds": round(wall_seconds, 3)},
+    )
 
     _log(
         f"variant={variant} model={model_slug} captured n_ok={len(conv_ids)}/{n_in} "
@@ -846,8 +903,11 @@ def _run_gpu_variant(
 
 
 def _upload_to_hf(activations_by_variant: dict[str, Path], model_slug: str) -> None:
-    """Best-effort mirror of activations — ONE bulk `upload_folder` commit per
-    (variant, model) via the shared `_upload_folder_filtered` helper.
+    """Mirror activations — ONE bulk `upload_folder` commit per (variant,
+    model) via the shared `_upload_folder_filtered` helper. FATAL on failure
+    (M2): the capture store is ~100 GPU-h of plan-declared downstream input —
+    a swallowed upload failure + `[phase=done]` + Step-8 teardown is the #521
+    loss class, a direct Upload Policy violation.
 
     Skipped by the caller when `--skip-upload` or `--dry-run` is set.
     """
@@ -859,8 +919,9 @@ def _upload_to_hf(activations_by_variant: dict[str, Path], model_slug: str) -> N
         return
     parents = {p.parent.parent.resolve() for p in activations_by_variant.values()}
     if len(parents) != 1:
-        _log(f"WARN heterogeneous activation roots; skipping bulk upload: {parents}")
-        return
+        raise RuntimeError(
+            f"heterogeneous activation roots — cannot compose one bulk upload: {parents}"
+        )
     root = next(iter(parents))
     allow_patterns: list[str] = []
     expected_paths: list[str] = []
@@ -874,22 +935,22 @@ def _upload_to_hf(activations_by_variant: dict[str, Path], model_slug: str) -> N
         allow_patterns.append(rel)
         expected_paths.append(f"{TASK_PREFIX}/activations/{rel}")
     if not allow_patterns:
-        return
-    try:
-        _upload_folder_filtered(
-            root,
-            repo_id=HF_DATA_REPO,
-            repo_type="dataset",
-            path_in_repo=f"{TASK_PREFIX}/activations",
-            allow_patterns=allow_patterns,
-            expected_repo_paths=expected_paths,
+        # Declared outputs but nothing upload-eligible: an empty-set verify is
+        # vacuous (#1482) — fail loud, never pass silently.
+        raise RuntimeError(
+            f"upload set resolved EMPTY against declared activations: {activations_by_variant}"
         )
-        _log(
-            f"uploaded {len(allow_patterns)} activation file(s) in one bulk commit "
-            f"(model={model_slug})"
-        )
-    except Exception as exc:  # noqa: BLE001
-        _log(f"WARN activation bulk upload failed (model={model_slug}): {exc}")
+    _upload_folder_filtered(
+        root,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{TASK_PREFIX}/activations",
+        allow_patterns=allow_patterns,
+        expected_repo_paths=expected_paths,
+    )
+    _log(
+        f"uploaded {len(allow_patterns)} activation file(s) in one bulk commit (model={model_slug})"
+    )
 
 
 def run_phase(args: argparse.Namespace) -> int:
@@ -933,6 +994,10 @@ def run_phase(args: argparse.Namespace) -> int:
                 report = _run_gpu_variant(
                     variant, args.model, input_path, output_dir, diagnostics_dir, args
                 )
+        except resume.RegimeMismatch:
+            # A regime refusal is a WHOLE-invocation defect (wrong flags /
+            # colliding output dir), never a per-variant skip — propagate.
+            raise
         except Exception as exc:  # noqa: BLE001
             _log(f"ERROR variant={variant} model={args.model}: {exc}")
             per_variant_reports.append(
@@ -959,13 +1024,22 @@ def run_phase(args: argparse.Namespace) -> int:
     if not args.dry_run and total_ok == 0:
         print("ERROR: capture produced ZERO summaries across all variants", file=sys.stderr)
         return 1
+    errored = [r["variant"] for r in per_variant_reports if r.get("status") == "error"]
+    if not args.dry_run and errored:
+        # Never exit 0 with cells missing — the digest records the errors, and
+        # the resume sidecars make the re-run skip the completed cells (C9/M6).
+        print(
+            f"ERROR: capture errored on {len(errored)} variant(s): {errored} "
+            "(completed cells persisted; re-run resumes them)",
+            file=sys.stderr,
+        )
+        return 1
 
     is_smoke = str(output_dir).startswith("/tmp/")
     if not is_smoke and not args.skip_upload and not args.dry_run:
-        try:
-            _upload_to_hf(activations_by_variant, args.model)
-        except Exception as exc:  # noqa: BLE001
-            _log(f"WARN upload stage failed: {exc}")
+        # FATAL on failure (M2): `[phase=done]` must never report done with
+        # the 100 GPU-h activation store un-persisted (#521 class).
+        _upload_to_hf(activations_by_variant, args.model)
 
     digest = {
         "phase": "capture",
@@ -1048,8 +1122,20 @@ def main() -> int:
         action="store_true",
         help="CPU-only wiring smoke: exercise CLI + tokenization, emit 0-byte activation shell",
     )
+    p.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=(
+            "re-capture cells even when a regime-matching done sidecar exists "
+            "(default resumes completed cells — C9/M6)"
+        ),
+    )
     args = p.parse_args()
-    return run_phase(args)
+    try:
+        return run_phase(args)
+    except resume.RegimeMismatch as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":
