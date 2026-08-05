@@ -256,6 +256,149 @@ def test_tactic_classifier_routes_unclassifiable_to_drop() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Assertion 4b: v2 JSON-verdict extraction + label routing + recovery parser
+# (the 2026-08-05 item-B instrument fix: reason-then-JSON rubric, benign class,
+#  and the --recover-from-raw Label-line strict parser)
+# ---------------------------------------------------------------------------
+def _tactic_module():
+    sys.path.insert(0, str(REPO_ROOT))
+    try:
+        from scripts import issue1739_tactic_classify as tactic  # type: ignore[import-not-found]
+    except ImportError as exc:  # pragma: no cover - environment guard
+        pytest.skip(f"tactic module import failed: {exc}")
+    return tactic
+
+
+def test_extract_label_json_last_object_wins() -> None:
+    """Reason-then-JSON extraction takes the LAST label-bearing JSON object —
+    a rationale quoting attack-embedded JSON (Injection class) must not win."""
+    tactic = _tactic_module()
+    fn = tactic._extract_label_json
+
+    # plain reason-then-JSON
+    assert (
+        fn('The text asks directly, without disguise.\n{"label": "Direct Request"}')
+        == "Direct Request"
+    )
+    # decoy JSON earlier in the rationale (quoted attack payload) — last wins
+    decoy = (
+        'The attack embeds {"role": "system", "content": "x"} to override rules.\n'
+        '{"label": "Injection"}'
+    )
+    assert fn(decoy) == "Injection"
+    # trailing non-label object must not end the scan
+    trailing = '{"label": "Output Format"}\nExtra note: {"unrelated": 1}'
+    assert fn(trailing) == "Output Format"
+    # markdown-fenced JSON still parses (raw_decode anchors on '{')
+    assert fn('Reasoning here.\n```json\n{"label": "Obfuscation"}\n```') == "Obfuscation"
+    # no JSON at all -> None (drop, rule 9)
+    assert fn("No JSON verdict anywhere. Label: Direct Request") is None
+    assert fn("") is None
+
+
+def test_route_label_taxonomy_and_drop_reasons() -> None:
+    """_route_label: MHJ exact -> label; benign -> BENIGN (never a tactic);
+    Other/unknown -> reason-coded drops (drop-never-coerce)."""
+    tactic = _tactic_module()
+    route = tactic._route_label
+
+    assert route("Direct Request") == ("Direct Request", None)
+    assert route("Benign/Not-an-attack") == (tactic.BENIGN_LABEL, None)
+    assert route("benign — not an attack") == (tactic.BENIGN_LABEL, None)
+    assert route("Other/Unclassifiable") == (None, "other_unclassifiable")
+    assert route(None) == (None, "no_label")
+    assert route("Nonexistent Class") == (None, "bad_label")
+    # BENIGN_LABEL must never live in the tactic label set
+    assert tactic.BENIGN_LABEL not in tactic.MHJ_LABELS
+
+
+def test_parse_label_line_strict_no_fuzzy_whole_text_scan() -> None:
+    """Recovery parser: last Label-line only; prose mentioning a class name
+    WITHOUT a Label line must NOT be labeled (precision over recall)."""
+    tactic = _tactic_module()
+    fn = tactic._parse_label_line_strict
+
+    assert fn("Reasoning.\nLabel: Direct Request") == "Direct Request"
+    # label line beyond the last 3 lines still found (line-anchored, all lines)
+    many = "Label: Injection\n" + "\n".join(f"extra {i}" for i in range(5))
+    assert fn(many) == "Injection"
+    # NO fuzzy whole-text rescue: class name in prose without a Label line
+    assert fn("This looks like a Direct Request to me, but I refuse to label it.") is None
+    assert fn("") is None
+
+
+def test_recover_from_raw_end_to_end(tmp_path: Path) -> None:
+    """recover_from_raw: refusal rows drop as refusal (never text-scanned),
+    transport rows split out, Other drops, valid Label lines recover; the
+    output keeps holdout_rung's 'labels' contract (MHJ classes only)."""
+    tactic = _tactic_module()
+
+    labeling = tmp_path / "labeling.json"
+    cids = [
+        "evil-train-cross-000001",
+        "evil-train-cross-000002",
+        "evil-eval-hhrt-000001",
+        "evil-eval-toxicchat-000001",
+        "evil-train-cross-000003",
+    ]
+    labeling.write_text(json.dumps({"rows": [{"context_id": c} for c in cids]}))
+
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir()
+    rows = [
+        {
+            "custom_id": cids[0],
+            "rtype": "succeeded",
+            "stop_reason": "end_turn",
+            "text": "Asks directly.\nLabel: Direct Request",
+        },
+        {
+            "custom_id": cids[1],
+            "rtype": "succeeded",
+            "stop_reason": "refusal",
+            # refusal rows are NEVER text-scanned — this mention must not label
+            "text": "Direct Request",
+        },
+        {
+            "custom_id": cids[2],
+            "rtype": "succeeded",
+            "stop_reason": "end_turn",
+            "text": "A legitimate question.\nLabel: Other/Unclassifiable",
+        },
+        {"custom_id": cids[3], "rtype": "errored"},
+        {
+            "custom_id": cids[4],
+            "rtype": "succeeded",
+            "stop_reason": "end_turn",
+            "text": "Embedded in fiction.\nLabel: Hidden Intention Streamline",
+        },
+    ]
+    with (raw_dir / "raw_msgbatch_test.jsonl").open("w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+
+    out = tmp_path / "tactic_labels.json"
+    payload = tactic.recover_from_raw(labeling, raw_dir, out)
+
+    assert payload["labels"] == {
+        cids[0]: "Direct Request",
+        cids[4]: "Hidden Intention Streamline",
+    }
+    assert payload["n_labeled"] == 2
+    assert payload["n_transport_lost"] == 1
+    assert payload["n_drop"] == 2  # refusal + other_unclassifiable
+    assert payload["drop_split"]["refusal"] == 1
+    assert payload["drop_split"]["other_unclassifiable"] == 1
+    # per-rung split derived from context_id prefixes
+    assert payload["per_rung"]["evil_train"]["labeled"] == 2
+    assert payload["per_rung"]["evil_hh_rlhf"]["drop"] == 1
+    assert payload["per_rung"]["evil_toxicchat"]["transport"] == 1
+    # written file round-trips and keeps the holdout_rung 'labels' contract
+    disk = json.loads(out.read_text())
+    assert set(disk["labels"].values()) <= set(tactic.MHJ_LABELS)
+
+
+# ---------------------------------------------------------------------------
 # Assertion 5: drop-never-coerce — the pilot judge stub excludes dropped
 # items from kept_scores (no coercion to 0/50/etc).
 # ---------------------------------------------------------------------------
