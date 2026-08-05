@@ -1323,6 +1323,11 @@ def phase_anchors(cfg: RunConfig) -> int:
         max_new_tokens=cfg.max_new_tokens,
         temperature=ANCHOR_TEMPERATURE,
         seed_base=cfg.seed_base,
+        # History-aware render: steering's own context_messages silently DROPS
+        # the conv prefix's `history` turns (bank.py module note) — the conv
+        # anchors would otherwise generate under the WRONG (bare-like) context.
+        render_fn=BANK.render_context_2094,
+        ids_fn=BANK.context_token_ids_2094,
     )
     logger.info(
         "[anchors] %d contexts x %d draws in %.1fs", len(order), draws, time.monotonic() - t0
@@ -1472,6 +1477,13 @@ def run_block(
                 max_new_tokens=cfg.max_new_tokens,
                 temperature=GRID_TEMPERATURE,
                 seed_base=cfg.seed_base,
+                # History-aware render (bank.py module note): the hook's
+                # row_lengths/positions come from the *_2094 ids, so the render
+                # MUST match — steering's default drops conv `history`, which
+                # both mis-renders the context AND breaks the arm() length
+                # invariant for every conv-prefixed context_a (mp-conv pairs).
+                render_fn=BANK.render_context_2094,
+                ids_fn=BANK.context_token_ids_2094,
             )
         finally:
             hook.remove()
