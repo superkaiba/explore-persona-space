@@ -640,6 +640,28 @@ def compute_global_null(
     }
 
 
+def enforce_expected_cell_count(
+    per_cell_max_j: dict,
+    expect_n_cells: int | None,
+    n_skipped: int,
+) -> str | None:
+    """None when the GLOBAL cell axis matches --expect-n-cells (or unchecked).
+
+    The GLOBAL null's cell count is load-bearing (the registered statistic
+    rides a fixed 64-cell axis, plan §Design): a partial P2 output must fail
+    the production aggregation pass LOUD instead of writing a silently-shrunk
+    GLOBAL_L29.json (review m2). Returns the error message on mismatch so the
+    caller exits non-zero BEFORE writing the GLOBAL file.
+    """
+    if expect_n_cells is None or len(per_cell_max_j) == expect_n_cells:
+        return None
+    return (
+        f"GLOBAL null covers {len(per_cell_max_j)} cell(s) != expected {expect_n_cells} "
+        f"(--expect-n-cells; {n_skipped} cell(s) skipped — see the WARN summary above). "
+        "The registered statistic's cell axis is load-bearing: NOT writing GLOBAL_L29.json."
+    )
+
+
 def _load_r2_file(
     r2_dir: Path,
     stage: str,
@@ -769,6 +791,15 @@ def main() -> int:
         action="store_true",
         help="After the GLOBAL null, upload --output-dir to the HF data repo "
         "(analysis_tensors/null/) — plan §9: before the job releases the node.",
+    )
+    parser.add_argument(
+        "--expect-n-cells",
+        type=int,
+        default=None,
+        help="Fail loud when the GLOBAL aggregation covers a different number of "
+        "delta cells (production: 64 registered cells, plan §Design — a partial "
+        "P2 output must never silently shrink the registered cell axis; review "
+        "m2). Ignored by --skip-global workers; default None = unchecked.",
     )
     parser.add_argument("--n-draws", type=int, default=N_DRAWS)
     parser.add_argument("--draw-block", type=int, default=DRAW_BLOCK)
@@ -999,6 +1030,13 @@ def main() -> int:
 
     if not per_cell_max_j:
         print("[error] No per-cell nulls computed — cannot form GLOBAL null")
+        return 1
+
+    cell_count_error = enforce_expected_cell_count(
+        per_cell_max_j, args.expect_n_cells, len(skipped_cells)
+    )
+    if cell_count_error is not None:
+        print(f"[error] {cell_count_error}")
         return 1
 
     global_null = compute_global_null(per_cell_max_j)

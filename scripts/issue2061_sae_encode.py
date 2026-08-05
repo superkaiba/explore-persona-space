@@ -156,6 +156,7 @@ def _stage_render_corpus_turnstores(revision: str | None = None) -> list[dict[st
     # un-retried upstream (#658/#833) — so materialize under retry_transient.
     entries = retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient; list() inside the thunk
             api.list_repo_tree(
                 repo_id=DATA_REPO,
                 path_in_repo=BANKED_PREFIX,
@@ -229,6 +230,7 @@ def hub_shard_files(tree_path: str, revision: str | None = None) -> list[str]:
     api = HfApi()
     entries = retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient; list() inside the thunk
             api.list_repo_tree(
                 repo_id=DATA_REPO,
                 path_in_repo=tree_path,
@@ -547,13 +549,10 @@ def main() -> int:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     print(f"[setup] Output dir: {args.output_dir.resolve()}")
 
-    print(f"[setup] Loading SAE weights layer={args.layer}")
-    weights, cfg = load_sae_weights(
-        SAE_REPO, layer=args.layer, revision=args.sae_revision, device=args.device
-    )
-    k = int(cfg["k"])
-    print(f"[setup] SAE: k={k}, d_sae={weights['encoder.weight'].shape[0]}, d_in={cfg['d_in']}")
-
+    # Enumerate + filter the target turnstores BEFORE the ~8.6 GB SAE weights
+    # download (review m4): a bad store enumeration / empty filter then costs
+    # seconds, not a weights download. Enumeration depends only on
+    # --data-revision, never on the weights.
     print("[setup] Enumerating banked turnstores")
     all_turnstores = _stage_render_corpus_turnstores(revision=args.data_revision)
     print(f"[setup] Found {len(all_turnstores)} turnstores")
@@ -574,6 +573,13 @@ def main() -> int:
         )
         return 1
     print(f"[setup] Target: {len(targets)} turnstore(s)")
+
+    print(f"[setup] Loading SAE weights layer={args.layer}")
+    weights, cfg = load_sae_weights(
+        SAE_REPO, layer=args.layer, revision=args.sae_revision, device=args.device
+    )
+    k = int(cfg["k"])
+    print(f"[setup] SAE: k={k}, d_sae={weights['encoder.weight'].shape[0]}, d_in={cfg['d_in']}")
 
     manifest_path = args.output_dir / "encode_manifest.jsonl"
     with manifest_path.open("a") as manifest:

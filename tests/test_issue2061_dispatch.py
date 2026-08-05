@@ -120,6 +120,20 @@ def test_p3_runner_wires_refit_inputs():
     assert "--stage-encoded-from-hub" in body and "--encoded-dir" in body
 
 
+def test_p3_aggregation_expects_registered_cell_count_but_smoke_does_not():
+    # m2 (round 3): the PRODUCTION aggregation pass carries the fail-loud
+    # 64-cell guard (registered statistic, plan §Design), while the smoke
+    # chain must NEVER inherit it — a production-n gate at smoke n is the
+    # #1345 gate-calibration class (gotchas.md).
+    m = re.search(r"run_p3_null\(\) \{(.*?)\n\}", DISPATCH, flags=re.S)
+    assert m, "run_p3_null() block not found"
+    assert "--expect-n-cells" in m.group(1)
+    assert "ISSUE2061_EXPECT_N_CELLS:-64" in m.group(1)
+    s = re.search(r"run_smoke\(\) \{(.*?)\n\}", DISPATCH, flags=re.S)
+    assert s, "run_smoke() block not found"
+    assert "--expect-n-cells" not in s.group(1)
+
+
 def test_p3_fanout_pins_cvd_per_worker():
     m = re.search(r"run_p3_fanout\(\) \{(.*?)\n\}", DISPATCH, flags=re.S)
     assert m, "run_p3_fanout() block not found"

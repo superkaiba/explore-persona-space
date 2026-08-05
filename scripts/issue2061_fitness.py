@@ -365,6 +365,16 @@ def main() -> int:
 
         hio.upload_dir(args.output_dir, "fitness")
 
+    errored = sorted(s for s, r in stage_results.items() if "error" in r)
+    if errored:
+        # Per-stage error records + the summary above stay the report shape
+        # (deliberate, review r2), but the PHASE rc must reflect the failure
+        # so the dispatcher halts instead of gating P5 on a fitness verdict
+        # that could not be computed (review m3). A computed HALT_HARD_DRIFT
+        # VERDICT is a report artifact, not an error — it still exits 0; the
+        # upload above already ran so the error report persists either way.
+        print(f"[error] {len(errored)} stage(s) errored ({', '.join(errored)}) — exiting 1")
+        return 1
     return 0
 
 

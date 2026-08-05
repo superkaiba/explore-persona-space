@@ -144,6 +144,9 @@ def test_fit_cell_end_to_end_tiny(tmp_path):
         assert 0.0 <= r0[key] <= 1.0
     assert r0["lambda_selector"] == f"gcv-dof-cap-{fpf.DOF_CAP_FRACTION}"
     assert len(r0["best_lambda_folds"]) == fpf.K_FOLDS
+    # m1 (round 3): identity+bias inapplicability is STATED in the fit output
+    # (plan §Design "Baselines per fitted map"), never silently skipped.
+    assert r0["identity_bias"].startswith("N/A: dim mismatch")
 
 
 # ---------------------------------------------------------------------------
@@ -375,6 +378,17 @@ def test_write_cell_jsonl_persists_argmax_and_render(tmp_path):
 # ---------------------------------------------------------------------------
 # Round-2 M2 — LEFT-parse of cell filenames (underscore corpora never vanish)
 # ---------------------------------------------------------------------------
+def test_expect_n_cells_guard():
+    # m2 (round 3): the GLOBAL null's cell axis is registered (64 cells) — the
+    # production aggregation pass fails loud on a mismatch instead of writing
+    # a silently-shrunk GLOBAL_L29.json. None = unchecked (smoke/worker form).
+    cells = {("base_sft", "chat", "tiny", "context", "1"): np.zeros(4)}
+    assert nullmod.enforce_expected_cell_count(cells, 1, 0) is None
+    assert nullmod.enforce_expected_cell_count(cells, None, 5) is None
+    msg = nullmod.enforce_expected_cell_count(cells, 64, 63)
+    assert msg is not None and "64" in msg and "63" in msg
+
+
 def test_parse_r2_stem_underscore_corpora_and_fail_loud():
     assert ts.parse_r2_stem("base_chat_gsm8k_train_full_context_L29", 29) == (
         "base",

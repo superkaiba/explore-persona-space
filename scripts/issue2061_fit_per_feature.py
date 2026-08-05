@@ -496,6 +496,11 @@ def fit_cell(
     knn_e = _knn_retrieval_sparse(Y_pred_pool, y_idx, y_val, ks=(1, k_ret), metric="euclidean")
     knn_c = _knn_retrieval_sparse(Y_pred_pool, y_idx, y_val, ks=(1, k_ret), metric="cosine")
     lambda_selector = f"gcv-dof-cap-{DOF_CAP_FRACTION}"  # #1887 diagnostics (M4)
+    # Plan §Design "Baselines per fitted map": the identity+learned-bias
+    # baseline requires input/output spaces of equal dimension — its
+    # inapplicability is STATED in the fit output, never silently skipped
+    # (review m1; CLAUDE.md identity+bias Critical Rule).
+    identity_bias = f"N/A: dim mismatch ({d_in} vs {d_sae})"
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w") as f:
@@ -510,6 +515,7 @@ def fit_cell(
                         "best_lambda_folds": per_fold_lambda,
                         "effective_dof_folds": per_fold_dof,
                         "lambda_selector": lambda_selector,
+                        "identity_bias": identity_bias,
                         "knn_acc_1_euclid": float(knn_e["acc_at_k"][1]),
                         "knn_acc_k_euclid": float(knn_e["acc_at_k"][k_ret]),
                         "knn_k_ret": int(k_ret),
