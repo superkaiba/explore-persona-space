@@ -1,0 +1,673 @@
+#!/usr/bin/env python
+"""Build the canonical Phase-B answers pool for task #2054 (round 9, prerequisite 1).
+
+Emits a JSONL of ``{conv_id, answer, answer_provenance}`` rows — the
+``--answers-source`` input ``scripts/issue2054_phase_b.py::_index_answers``
+consumes (extra fields ignored by the consumer). Every answer is the
+ORIGINAL conversation's assistant reply — the authored-CHAT cell of the
+plan's authorship x presentation 2x2 (plan v8 ~93-104). Cell (c) / Phase D
+owns the story-authored transpose; no model-written or story-authored text
+enters this pool.
+
+Coverage contract (round-9 spec, epm:progress v82): the pool covers the
+union of ADMITTED Phase-A conv_ids (``issue2054_lattice/scaffolds/kept.json``
+``variants.<v>.admitted_conv_ids`` — the r7 admission record), so phase_b's
+``n_answer_from_scaffold_fallback`` is zero by construction. Two key spaces,
+two sources, both authored-CHAT:
+
+- ``mt_<hash>`` (generated scaffolds): answer = the FIRST assistant message
+  AFTER the FIRST user turn of the manifest conversation
+  (``issue1738_multiturn/sampling_manifest``, 55 ``part_*.jsonl``), staged at
+  the SAME revision the seed-137 shared draw pinned
+  (``shared_question_draw.meta.json`` ``revision``) and scanned in the SAME
+  sorted-part order with first-wins dedupe — matching
+  ``issue2054_phase_a._draw_shared_questions``'s turn-selection convention
+  exactly. Every matched row's first-user-turn is asserted equal to the
+  drawn question (``shared_question_draw.jsonl``), sealing the convention.
+- ``stripped_<story_id>`` (recovered scaffolds): answer = the scaffold row's
+  own stripper-preserved ORIGINAL answer (the parent #1345 paired stories
+  embed the original conversation answer byte-exact; the stripper records
+  it). Staged from the ADMITTED sharded pools
+  (``issue2054_lattice/scaffolds/<variant>/scaffolds_<variant>.shardNN.jsonl``
+  + ``.manifest.json`` — NEVER the unsharded name, the r6 stale-residue
+  trap), sha-verified per shard. Cross-variant answer conflicts fail loud.
+
+Smoke (tiny-real): ``--max-scan-rows`` caps total streamed manifest rows AND
+``--smoke-kept-cap`` caps kept answers per source; either flag = smoke mode,
+which REQUIRES a ``/tmp`` ``--out-dir`` (a capped pool at the production
+path is a residue trap for a later phase_b dispatch) and skips the
+full-coverage assert (kept > 0 asserted instead). ``--skip-upload`` skips
+the HF mirror.
+
+Upload: shards the pool via ``issue2054_phase_a._shard_large_jsonl_for_upload``
+and mirrors in ONE bulk commit to ``issue2054_lattice/answers/`` (the
+``_upload_scaffold_files`` pattern). A consumer on a fresh machine
+reassembles from ``answers_pool.manifest.json`` + shards.
+
+Content hygiene: prints COUNTS / ids / hashes only — never conversation or
+answer text (LMSYS-derived corpus).
+
+Exit 0 on success; 1 on coverage / consistency / upload failure; 2 on usage
+errors or missing dependency.
+
+Usage (production, dispatched by the orchestrator after code review):
+  uv run python scripts/issue2054_build_answers.py \\
+      --out-dir data/issue_2054/answers --staging-dir data/issue_2054/hf_dl
+
+Smoke:
+  uv run python scripts/issue2054_build_answers.py \\
+      --out-dir /tmp/issue-2054-r9-smoke/answers \\
+      --staging-dir /tmp/issue-2054-r9-smoke/hf_dl \\
+      --variants char_vex --max-scan-rows 2000 --smoke-kept-cap 8 --skip-upload
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _SCRIPT_DIR.parent
+for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
+import issue1345_common as c  # noqa: E402
+import issue1345_scaffold_common as sc  # noqa: E402
+import issue2054_phase_a as pa  # noqa: E402
+
+SCAFFOLDS_PREFIX = f"{pa.TASK_PREFIX}/scaffolds"
+ANSWERS_PREFIX = f"{pa.TASK_PREFIX}/answers"
+POOL_STEM = "answers_pool"
+
+
+def _log(msg: str) -> None:
+    print(f"[phase=build_answers] {msg}", flush=True)
+
+
+def _api():
+    from huggingface_hub import HfApi
+
+    return HfApi()
+
+
+# ---------------------------------------------------------------------------
+# Staging
+# ---------------------------------------------------------------------------
+def _pinned_revision(staging_root: Path, override: str | None) -> tuple[str, dict]:
+    """Resolve the manifest revision: the r7 shared draw's pinned revision
+    (``shared_question_draw.meta.json``) unless overridden. Using the SAME
+    snapshot the draw scanned guarantees identical ``source_hash``-derived
+    conv_id keys."""
+    from explore_persona_space.orchestrate.hub import stage_hub_file
+
+    meta_path = stage_hub_file(
+        pa.HF_DATA_REPO,
+        f"{SCAFFOLDS_PREFIX}/shared_question_draw.meta.json",
+        staging_root / SCAFFOLDS_PREFIX / "shared_question_draw.meta.json",
+        repo_type="dataset",
+        overwrite=True,
+    )
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    revision = override or str(meta.get("revision") or "")
+    if not revision:
+        raise RuntimeError(
+            "no manifest revision: shared_question_draw.meta.json carries none "
+            "and --manifest-revision was not passed"
+        )
+    return revision, meta
+
+
+def _required_conv_ids(staging_root: Path, variants: list[str]) -> tuple[set[str], dict]:
+    """Union of ADMITTED conv_ids across ``variants`` from kept.json (the r7
+    admission record — the deterministic coverage source)."""
+    from explore_persona_space.orchestrate.hub import stage_hub_file
+
+    kept_path = stage_hub_file(
+        pa.HF_DATA_REPO,
+        f"{SCAFFOLDS_PREFIX}/kept.json",
+        staging_root / SCAFFOLDS_PREFIX / "kept.json",
+        repo_type="dataset",
+        overwrite=True,
+    )
+    kept = json.loads(kept_path.read_text(encoding="utf-8"))
+    kept_variants = kept.get("variants") or {}
+    required: set[str] = set()
+    per_variant: dict[str, int] = {}
+    for v in variants:
+        rec = kept_variants.get(v)
+        if rec is None:
+            raise RuntimeError(f"kept.json has no admission record for variant {v!r}")
+        ids = [str(x) for x in (rec.get("admitted_conv_ids") or [])]
+        if not ids:
+            raise RuntimeError(f"kept.json admitted_conv_ids EMPTY for variant {v!r}")
+        per_variant[v] = len(ids)
+        required.update(ids)
+    record = {
+        "kept_json_sha256": hashlib.sha256(kept_path.read_bytes()).hexdigest(),
+        "kept_target_conv_ids": kept.get("target_conv_ids"),
+        "admitted_per_variant": per_variant,
+        "n_required_union": len(required),
+    }
+    return required, record
+
+
+def _stage_sharded_jsonl(dest_dir: Path, base_prefix: str, stem: str) -> Path:
+    """Stage one sharded JSONL from HF: manifest-first, per-shard sha256
+    verification, exact in-order concatenation (the r6 recipe,
+    ``issue2054_phase_a._stage_prejudge_from_hf``). The plain ``<stem>.jsonl``
+    hub name is NEVER consumed — on this prefix it resolves to prior-round
+    unsharded residue (the r6 defect)."""
+    from explore_persona_space.orchestrate.hub import stage_hub_file
+
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    mpath = stage_hub_file(
+        pa.HF_DATA_REPO,
+        f"{base_prefix}/{stem}.manifest.json",
+        dest_dir / f"{stem}.manifest.json",
+        repo_type="dataset",
+        overwrite=True,
+    )
+    man = json.loads(mpath.read_text(encoding="utf-8"))
+    parts = list(man.get("parts") or [])
+    if not parts:
+        raise RuntimeError(f"shard manifest lists no parts: {base_prefix}/{stem}.manifest.json")
+    want_sha = man.get("sha256") or {}
+    local_parts: list[Path] = []
+    for name in parts:
+        lp = stage_hub_file(
+            pa.HF_DATA_REPO,
+            f"{base_prefix}/{name}",
+            dest_dir / name,
+            repo_type="dataset",
+            overwrite=True,
+        )
+        got = hashlib.sha256(lp.read_bytes()).hexdigest()
+        exp = want_sha.get(name)
+        if exp and exp != got:
+            raise RuntimeError(
+                f"shard {name} sha mismatch: {got[:12]}... != manifest {str(exp)[:12]}..."
+            )
+        local_parts.append(lp)
+    target = dest_dir / f"{stem}.jsonl"
+    tmp = target.with_name(target.name + ".tmp")
+    with tmp.open("wb") as out:
+        for lp in local_parts:
+            out.write(lp.read_bytes())
+    os.replace(tmp, target)
+    _log(f"staged {stem}: {len(local_parts)} shard(s) -> {target.stat().st_size} B")
+    return target
+
+
+# ---------------------------------------------------------------------------
+# Source 1: stripped_* answers from the ADMITTED scaffold pools
+# ---------------------------------------------------------------------------
+def _collect_scaffold_answers(
+    rows: list[dict],
+    stripped_needed: set[str],
+    kept_cap: int | None,
+    counters: dict[str, int],
+    answers: dict[str, str],
+) -> None:
+    """Pure collection pass over one variant's admitted scaffold rows
+    (separated from staging so the gates are probe-able offline)."""
+    for row in rows:
+        counters["scaffold_rows_read"] += 1
+        cid = str(row.get("conv_id") or row.get("scaffold_id") or "")
+        if cid not in stripped_needed:
+            continue
+        ans = str(row.get("answer") or "")
+        if not ans:
+            counters["missing_answer_field"] += 1
+            continue
+        if sc.SLOT_SENTINEL in ans:
+            counters["sentinel_in_answer"] += 1
+            continue
+        prev = answers.get(cid)
+        if prev is not None:
+            if prev != ans:
+                counters["cross_variant_conflict"] += 1
+                _log(f"ERROR cross-variant answer conflict for conv_id={cid}")
+            continue
+        if kept_cap is not None and counters["stripped_hits"] >= kept_cap:
+            continue
+        answers[cid] = ans
+        counters["stripped_hits"] += 1
+
+
+def _scaffold_answers(
+    staging_root: Path,
+    variants: list[str],
+    needed: set[str],
+    kept_cap: int | None,
+) -> tuple[dict[str, str], dict]:
+    """{stripped_conv_id -> stripper-preserved ORIGINAL answer} from the
+    admitted scaffold rows. Cross-variant duplicates must agree byte-exact
+    (same conversation => same original answer) — a conflict fails loud."""
+    counters = {
+        "scaffold_rows_read": 0,
+        "stripped_hits": 0,
+        "missing_answer_field": 0,
+        "sentinel_in_answer": 0,
+        "cross_variant_conflict": 0,
+    }
+    answers: dict[str, str] = {}
+    stripped_needed = {cid for cid in needed if cid.startswith("stripped_")}
+    if not stripped_needed:
+        return answers, counters
+    for v in variants:
+        pool = _stage_sharded_jsonl(
+            staging_root / SCAFFOLDS_PREFIX / v, f"{SCAFFOLDS_PREFIX}/{v}", f"scaffolds_{v}"
+        )
+        _collect_scaffold_answers(
+            pa._read_jsonl(pool), stripped_needed, kept_cap, counters, answers
+        )
+    if counters["cross_variant_conflict"]:
+        raise RuntimeError(
+            f"{counters['cross_variant_conflict']} cross-variant answer conflict(s): "
+            "the same stripped conv_id carries different original answers across "
+            "variants — 2x2 authorship identification broken; investigate upstream"
+        )
+    return answers, counters
+
+
+# ---------------------------------------------------------------------------
+# Source 2: mt_* answers from the #1738 manifest (pinned revision)
+# ---------------------------------------------------------------------------
+def _draw_questions(staging_root: Path, needed: set[str]) -> dict[str, str]:
+    """{mt_conv_id -> drawn question} for the consistency assert."""
+    from explore_persona_space.orchestrate.hub import stage_hub_file
+
+    path = stage_hub_file(
+        pa.HF_DATA_REPO,
+        f"{SCAFFOLDS_PREFIX}/shared_question_draw.jsonl",
+        staging_root / SCAFFOLDS_PREFIX / "shared_question_draw.jsonl",
+        repo_type="dataset",
+        overwrite=True,
+    )
+    out: dict[str, str] = {}
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            cid = str(row.get("conv_id") or "")
+            if cid in needed:
+                out[cid] = str(row.get("question") or "")
+    return out
+
+
+def _ensure_manifest_revision_pin(manifest_dir: Path, revision: str) -> None:
+    """Staged manifest parts are reused across runs (stage_hub_file skips
+    existing targets), so a revision change must WIPE the stale mirror —
+    reused bytes from another snapshot silently change the source_hash-derived
+    conv_id keys."""
+    pin = manifest_dir / ".staging_revision.json"
+    if manifest_dir.is_dir():
+        prev = None
+        if pin.is_file():
+            prev = json.loads(pin.read_text(encoding="utf-8")).get("revision")
+        if prev == revision:
+            return
+        # Unknown-provenance or other-revision mirror: wipe (reused bytes from
+        # another snapshot silently change the conv_id keys).
+        _log(f"staged manifest revision {str(prev)[:12]} != pinned {revision[:12]} — restaging")
+        shutil.rmtree(manifest_dir)
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+    pin.write_text(json.dumps({"revision": revision}), encoding="utf-8")
+
+
+def _manifest_answers(
+    staging_root: Path,
+    revision: str,
+    needed: set[str],
+    draw_q: dict[str, str],
+    *,
+    max_scan_rows: int | None,
+    kept_cap: int | None,
+) -> tuple[dict[str, str], dict]:
+    """Scan the #1738 manifest at the pinned revision in the draw's exact
+    order (sorted part filenames, in-file order, first-wins per conv_id) and
+    collect, per needed ``mt_*`` conv_id, the first assistant message AFTER
+    the first user turn. Parts are staged lazily so a capped smoke stages
+    only what it scans."""
+    from explore_persona_space.orchestrate.hub import (
+        list_hf_files_under_path,
+        retry_transient,
+        stage_hub_file,
+    )
+
+    counters = {
+        "parts_scanned": 0,
+        "rows_scanned": 0,
+        "not_required": 0,
+        "dupe_required_row": 0,
+        "matched_kept": 0,
+        "no_user_turn": 0,
+        "no_assistant_reply": 0,
+        "empty_answer": 0,
+        "sentinel_in_answer": 0,
+        "question_mismatch": 0,
+    }
+    answers: dict[str, str] = {}
+    mt_needed = {cid for cid in needed if cid.startswith("mt_")}
+    if not mt_needed:
+        return answers, counters
+
+    manifest_dir = staging_root / pa.QUESTION_MANIFEST_PREFIX
+    _ensure_manifest_revision_pin(manifest_dir, revision)
+    api = _api()
+    part_paths = retry_transient(
+        lambda: list_hf_files_under_path(
+            api,
+            pa.HF_DATA_REPO,
+            pa.QUESTION_MANIFEST_PREFIX,
+            repo_type="dataset",
+            revision=revision,
+        ),
+        what=f"list_hf_files_under_path({pa.QUESTION_MANIFEST_PREFIX})",
+    )
+    part_paths = sorted(p for p in part_paths if p.rsplit("/", 1)[-1].startswith("part_"))
+    if not part_paths:
+        raise FileNotFoundError(f"no part_*.jsonl under {pa.QUESTION_MANIFEST_PREFIX}@{revision}")
+
+    mismatched: list[str] = []
+    remaining = set(mt_needed)
+    done = False
+    for path_in_repo in part_paths:
+        if done:
+            break
+        local = stage_hub_file(
+            pa.HF_DATA_REPO,
+            path_in_repo,
+            manifest_dir / path_in_repo.rsplit("/", 1)[-1],
+            repo_type="dataset",
+            revision=revision,
+        )
+        counters["parts_scanned"] += 1
+        with local.open(encoding="utf-8") as f:
+            for line in f:
+                if max_scan_rows is not None and counters["rows_scanned"] >= max_scan_rows:
+                    done = True
+                    break
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                counters["rows_scanned"] += 1
+                cid = "mt_" + str(row.get("source_hash") or "").removeprefix("sha:")[:12]
+                if cid not in mt_needed:
+                    counters["not_required"] += 1
+                    continue
+                if cid not in remaining:
+                    # First-wins: the draw's seen_cid dedupe kept the FIRST
+                    # row with this key in the same scan order.
+                    counters["dupe_required_row"] += 1
+                    continue
+                remaining.discard(cid)  # processed now, whatever the outcome
+                msgs = row.get("messages") or []
+                u_idx = next(
+                    (i for i, m in enumerate(msgs) if m.get("role") == "user"),
+                    None,
+                )
+                if u_idx is None:
+                    counters["no_user_turn"] += 1
+                    continue
+                q = str(msgs[u_idx].get("content") or "").strip()
+                expect_q = draw_q.get(cid)
+                if expect_q is not None and q != expect_q:
+                    counters["question_mismatch"] += 1
+                    mismatched.append(cid)
+                    continue
+                a_msg = next(
+                    (m for m in msgs[u_idx + 1 :] if m.get("role") == "assistant"),
+                    None,
+                )
+                if a_msg is None:
+                    counters["no_assistant_reply"] += 1
+                    continue
+                ans = str(a_msg.get("content") or "").strip()
+                if not ans:
+                    counters["empty_answer"] += 1
+                    continue
+                if sc.SLOT_SENTINEL in ans:
+                    counters["sentinel_in_answer"] += 1
+                    continue
+                answers[cid] = ans
+                counters["matched_kept"] += 1
+                if kept_cap is not None and counters["matched_kept"] >= kept_cap:
+                    done = True
+                    break
+                if not remaining:
+                    done = True
+                    break
+    if mismatched:
+        raise RuntimeError(
+            f"{len(mismatched)} manifest first-user-turn(s) != drawn question "
+            f"(first ids: {mismatched[:5]}) — turn-selection convention or "
+            "revision drift; refusing to emit a mis-paired pool"
+        )
+    return answers, counters
+
+
+# ---------------------------------------------------------------------------
+# Upload
+# ---------------------------------------------------------------------------
+def _upload_pool(out_dir: Path, files: list[Path]) -> None:
+    """Mirror the pool to HF in ONE bulk commit under
+    ``issue2054_lattice/answers/`` (the ``_upload_scaffold_files`` pattern;
+    >9.5 MB JSONLs ride the sharded form)."""
+    from explore_persona_space.orchestrate.hub import _upload_folder_filtered
+
+    files = pa._shard_large_jsonl_for_upload(files)
+    allow = sorted({f.relative_to(out_dir).as_posix() for f in files if f.is_file()})
+    if not allow:
+        raise RuntimeError(f"upload set resolved EMPTY against declared outputs: {files}")
+    expected = [f"{ANSWERS_PREFIX}/{rel}" for rel in allow]
+    _upload_folder_filtered(
+        out_dir,
+        repo_id=pa.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=ANSWERS_PREFIX,
+        allow_patterns=allow,
+        expected_repo_paths=expected,
+    )
+    _log(f"uploaded {len(allow)} pool file(s) in one bulk commit -> {ANSWERS_PREFIX}/")
+
+
+# ---------------------------------------------------------------------------
+# Driver
+# ---------------------------------------------------------------------------
+def _length_stats(answers: list[str]) -> dict:
+    if not answers:
+        return {"n": 0}
+    lens = sorted(len(a) for a in answers)
+
+    def _pct(p: float) -> int:
+        return lens[min(len(lens) - 1, int(p * (len(lens) - 1)))]
+
+    return {
+        "n": len(lens),
+        "chars_mean": round(sum(lens) / len(lens), 1),
+        "chars_median": _pct(0.5),
+        "chars_p10": _pct(0.10),
+        "chars_p90": _pct(0.90),
+        "chars_max": lens[-1],
+    }
+
+
+def run(args: argparse.Namespace) -> int:
+    out_dir = Path(args.out_dir).resolve()
+    staging_root = Path(args.staging_dir).resolve()
+    variants = [v.strip() for v in args.variants.split(",") if v.strip()]
+    smoke = args.max_scan_rows is not None or args.smoke_kept_cap is not None
+    if smoke and not str(out_dir).startswith("/tmp/"):
+        print(
+            "ERROR: smoke caps (--max-scan-rows / --smoke-kept-cap) require a /tmp "
+            "--out-dir — a capped pool at the production path is a residue trap "
+            "for a later phase_b dispatch",
+            file=sys.stderr,
+        )
+        return 2
+    out_dir.mkdir(parents=True, exist_ok=True)
+    staging_root.mkdir(parents=True, exist_ok=True)
+    _log(
+        f"start: out={out_dir} staging={staging_root} variants={variants} "
+        f"smoke={smoke} max_scan_rows={args.max_scan_rows} kept_cap={args.smoke_kept_cap}"
+    )
+
+    revision, draw_meta = _pinned_revision(staging_root, args.manifest_revision)
+    _log(f"manifest revision pinned: {revision[:12]} (draw n={draw_meta.get('n')})")
+    required, kept_record = _required_conv_ids(staging_root, variants)
+    n_mt = sum(1 for x in required if x.startswith("mt_"))
+    n_stripped = sum(1 for x in required if x.startswith("stripped_"))
+    n_other = len(required) - n_mt - n_stripped
+    if n_other:
+        raise RuntimeError(f"{n_other} admitted conv_ids in neither key space (mt_/stripped_)")
+    _log(f"required conv_ids: {len(required)} (mt={n_mt} stripped={n_stripped})")
+
+    scaffold_pool, scaffold_counters = _scaffold_answers(
+        staging_root, variants, required, args.smoke_kept_cap
+    )
+    draw_q = _draw_questions(staging_root, {x for x in required if x.startswith("mt_")})
+    manifest_pool, manifest_counters = _manifest_answers(
+        staging_root,
+        revision,
+        required,
+        draw_q,
+        max_scan_rows=args.max_scan_rows,
+        kept_cap=args.smoke_kept_cap,
+    )
+
+    rows: list[dict] = []
+    for cid, ans in manifest_pool.items():
+        rows.append({"conv_id": cid, "answer": ans, "answer_provenance": "manifest_original"})
+    for cid, ans in scaffold_pool.items():
+        rows.append(
+            {"conv_id": cid, "answer": ans, "answer_provenance": "scaffold_recovered_original"}
+        )
+    rows.sort(key=lambda r: r["conv_id"])
+    if not rows:
+        print("ERROR: built ZERO pool rows (kept == 0)", file=sys.stderr)
+        return 1
+
+    covered = {r["conv_id"] for r in rows}
+    missing = sorted(required - covered)
+    if not smoke and len(missing) > args.allow_missing_required:
+        pa._atomic_write_json(out_dir / "missing_required_conv_ids.json", {"missing": missing})
+        print(
+            f"ERROR: pool misses {len(missing)} required conv_id(s) "
+            f"(> --allow-missing-required {args.allow_missing_required}); ids "
+            f"persisted to {out_dir / 'missing_required_conv_ids.json'} — these "
+            "rows would silently DROP (mt_*) or fall back (stripped_*) in phase_b",
+            file=sys.stderr,
+        )
+        return 1
+
+    pool_path = out_dir / f"{POOL_STEM}.jsonl"
+    pa._atomic_write_jsonl(pool_path, rows)
+    meta = {
+        "artifact": "phase_b_answers_pool",
+        "consumer": "scripts/issue2054_phase_b.py --answers-source",
+        "provenance_note": (
+            "authored-CHAT original conversation answers (2x2 row b); "
+            "manifest_original = first assistant message after the first user "
+            "turn at the pinned draw revision; scaffold_recovered_original = "
+            "stripper-preserved original answer from the admitted pools"
+        ),
+        "manifest_revision": revision,
+        "draw_meta_fingerprint": draw_meta.get("fingerprint"),
+        "variants": variants,
+        "required": {"total": len(required), "mt": n_mt, "stripped": n_stripped},
+        "rows": len(rows),
+        "rows_by_provenance": {
+            "manifest_original": len(manifest_pool),
+            "scaffold_recovered_original": len(scaffold_pool),
+        },
+        "missing_required": len(missing),
+        "smoke": smoke,
+        "counters": {"manifest": manifest_counters, "scaffolds": scaffold_counters},
+        "kept_record": kept_record,
+        "answer_length_stats": _length_stats([r["answer"] for r in rows]),
+        "utc": datetime.now(tz=timezone.utc).isoformat(),
+        "metadata": c.metadata(args.seed, len(rows), Path(__file__).name),
+    }
+    meta_path = out_dir / f"{POOL_STEM}.meta.json"
+    pa._atomic_write_json(meta_path, meta)
+    _log(f"wrote {len(rows)} rows -> {pool_path} (+ {meta_path.name})")
+
+    is_tmp = str(out_dir).startswith("/tmp/")
+    if not is_tmp and not args.skip_upload:
+        _upload_pool(out_dir, [pool_path, meta_path])
+    else:
+        _log("upload skipped (smoke /tmp tree or --skip-upload)")
+
+    assert len(rows) > 0
+    _log(
+        f"done: kept={len(rows)} (manifest={len(manifest_pool)} "
+        f"scaffold={len(scaffold_pool)}) missing_required={len(missing)} "
+        f"manifest_counters={manifest_counters} scaffold_counters={scaffold_counters}"
+    )
+    print("[phase=done]", flush=True)  # noqa: phase-done-reserved
+    return 0
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("--out-dir", default="data/issue_2054/answers")
+    p.add_argument(
+        "--staging-dir",
+        default="data/issue_2054/hf_dl",
+        help="mirror root for staged HF inputs (manifest parts, kept.json, scaffold shards)",
+    )
+    p.add_argument(
+        "--variants",
+        default=",".join(pa.DEFAULT_VARIANTS),
+        help="comma-separated variant list whose admitted conv_ids define coverage",
+    )
+    p.add_argument(
+        "--manifest-revision",
+        default=None,
+        help="override the draw-pinned #1738 manifest revision (default: "
+        "shared_question_draw.meta.json 'revision')",
+    )
+    p.add_argument(
+        "--max-scan-rows",
+        type=int,
+        default=None,
+        help="SMOKE: cap total streamed manifest rows (requires /tmp --out-dir)",
+    )
+    p.add_argument(
+        "--smoke-kept-cap",
+        type=int,
+        default=None,
+        help="SMOKE: cap kept answers per source (requires /tmp --out-dir)",
+    )
+    p.add_argument(
+        "--allow-missing-required",
+        type=int,
+        default=0,
+        help="tolerate up to N required conv_ids without a pool answer "
+        "(default 0 = fail loud; missing ids are persisted either way)",
+    )
+    p.add_argument("--seed", type=int, default=137, help="metadata only — no sampling here")
+    p.add_argument("--skip-upload", action="store_true", help="skip the HF mirror step")
+    args = p.parse_args()
+    try:
+        return run(args)
+    except Exception as exc:  # noqa: BLE001
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
