@@ -306,6 +306,11 @@ def main() -> int:
     ap.add_argument(
         "--wildchat-coverage", default="eval_results/issue_1739/armfill_round/coverage.json"
     )
+    ap.add_argument(
+        "--round3-root",
+        default="eval_results/issue_1739/armfill_round3/arms101718",
+        help="root holding the round3 sycophancy_wildchat_rung_<variant>/ transfer rows",
+    )
     ap.add_argument("--out", default="eval_results/issue_1739/syco_ood/transfer_summary.json")
     ap.add_argument("--fig-dir", default="figures/issue_1739")
     ap.add_argument("--budget", type=int, default=16000)
@@ -315,10 +320,14 @@ def main() -> int:
     summary = _aggregate(metrics["metric_rows"], budget_l=args.budget)
     ceilings = _ceilings(Path(args.base_dv), Path(args.new_dv))
     rank = _rank_survival(summary)
-    wc = _wildchat_reference(
-        Path(args.wildchat_coverage),
-        round3_root=Path("eval_results/issue_1739/armfill_round3/arms101718"),
-    )
+    wc = _wildchat_reference(Path(args.wildchat_coverage), round3_root=Path(args.round3_root))
+    if not wc:
+        logger.info(
+            "[fold] WARNING: no wildchat reference rows resolved from %s / %s — the "
+            "deployment-like comparison column will be EMPTY in the summary",
+            args.wildchat_coverage,
+            args.round3_root,
+        )
 
     payload = {
         "behavior": "sycophancy",
