@@ -30,6 +30,22 @@ paths:
 > the `cpu5m-16-128` row; the #677 typed terminal stays as the fail-loud
 > floor for a future unmapped CPU intent).
 
+> **#2054 — RUNPOD IS THE FIRST AUTO LANE (user directive 2026-08-05:
+> "make sure that STARTING A NEW POD THROUGH ANTHROPIC SAETY ORG IS FIRST
+> RESORT").** The RunPod team account is the shared Anthropic
+> fellows/safety org pool — a sponsored pool, not discretionary spend — so
+> `DEFAULT_AUTO_LANE_ORDER` now leads with `runpod`
+> (`("runpod", "fellows", "nibi", "fir", "mila")` flag-ON;
+> `("runpod", "fellows", "gcp", "nibi", "fir", "mila")` under the #2028
+> rollback build). The runpod-first lane launches via the SAME machinery as
+> the #656 terminal rung (`reason: auto_runpod_first`); a capacity miss
+> with nothing provisioned falls through to the lanes behind it, and the
+> terminal rung SURVIVES as the end-of-chain RunPod retry
+> (`reason: auto_fallback_runpod`). Every GCP→RunPod FAILOVER trigger below
+> is unchanged. The local `pod_lifecycle` account-$/hr cap guard became
+> ADVISORY-ONLY in the same change (it can never refuse or stall a
+> provision; the RunPod console cap is the enforcement point).
+
 CLAUDE.md § "Compute backends — multi-lane router" carries the always-on
 summary; this file is the full policy + the #658 motivating incident, and
 loads when you touch the router / GCP backend code. The router module
@@ -407,9 +423,10 @@ Five distinct GCP-failure paths, ALL ending at the same
   (#680; see "Ladder order" below — short jobs spot A100-80 → spot A100-40
   → flex-start A100-80 → on-demand A100-80 → on-demand A100-40; long /
   unknown jobs flex-start A100-80 → on-demand A100-80 → on-demand A100-40,
-  NO spot), then the free SLURM lanes, then falls through to RunPod as the
-  LAST rung (`reason: auto_fallback_runpod`, #656). RunPod never first,
-  never skipping a cheaper rung. The A100-40 rungs are fits-40 intents
+  NO spot), then the free SLURM lanes, then falls through to the RunPod
+  terminal rung (`reason: auto_fallback_runpod`, #656) — since #2054 an
+  end-of-chain RETRY (RunPod already led the order as lane 1,
+  `reason: auto_runpod_first`). The A100-40 rungs are fits-40 intents
   only, and — #1468 — only when the dispatch declares no
   `--min-gpu-mem-gb` above `gcp.A100_40_USABLE_GIB` = 38 GiB (incident
   #1315: HF+vLLM co-residency died at engine init on the 39.49 GiB card).
@@ -568,21 +585,26 @@ provision into split-ownership.
 
 ### Ladder order (length-aware, #680)
 
-NOTE (#1609/#2028): under the standing auto default the free `fellows`
-(charmander H200) SLURM lane leads and the auto order carries NO gcp rung —
-`DEFAULT_AUTO_LANE_ORDER = ("fellows", "nibi", "fir", "mila")` (#2028; the
-5-lane fellows-then-GCP order `("fellows", "gcp", "nibi", "fir", "mila")` is
-the flag-off rollback build) — so a fellows capacity miss /
+NOTE (#1609/#2028/#2054): under the standing auto default the RUNPOD lane
+leads (#2054 — the Anthropic-org pool; a capacity miss falls through), then
+the free `fellows` (charmander H200) SLURM lane, and the auto order carries
+NO gcp rung —
+`DEFAULT_AUTO_LANE_ORDER = ("runpod", "fellows", "nibi", "fir", "mila")`
+(#2028/#2054; the runpod-first 6-lane order
+`("runpod", "fellows", "gcp", "nibi", "fir", "mila")` is the flag-off
+rollback build) — so a fellows capacity miss /
 dead endpoint / PENDING-at-cap park (after the granted-QoS ladder
 high-eur → normal-eur → low-eur park-fails on the AUTO path, #1899:
 scancel + re-submit per `ClusterConfig.qos_ladder` rung, fallback rungs
 parked `EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS` — default 300 s — each;
 explicit `backend: fellows` pins never walk the ladder) advances to the
 free DRAC/Mila lanes (this GCP ladder is entered only under the flag-off
-rollback); RunPod stays the terminal rung. Fellows rollback: flip the
+rollback); RunPod stays the terminal RETRY rung behind its #2054
+first-lane position. Fellows rollback: flip the
 fellows `CLUSTER_CONFIGS` row to `available=False` or set
-`EPM_AUTO_LANE_ORDER=nibi,fir,mila` (both instant, no code revert; a `gcp`
-entry in the env order raises while `GCP_PROVISIONING_DISABLED` is on).
+`EPM_AUTO_LANE_ORDER=runpod,nibi,fir,mila` (both instant, no code revert; a
+`gcp` entry in the env order raises while `GCP_PROVISIONING_DISABLED` is
+on; `runpod` is a legal entry as of #2054).
 Sentinel drain: fellows is a DRAINED lane as of
 #1898 — the VM-side poller drains `/workspace/logs/issue-<N>-*.json` over
 `ssh charmander` each poll tick (`slurm_monitor.drain_cluster_sentinels`,

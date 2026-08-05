@@ -64,6 +64,7 @@ from explore_persona_space.backends.router import (
     ROUTE_REASON_OVERRIDE,
     ROUTE_REASON_RECONNECT,
     ROUTE_REASON_RUNPOD_FALLBACK,
+    ROUTE_REASON_RUNPOD_FIRST,
     auto_lane_order,
     cancel_and_wait,
     park_until_running_or_cap,
@@ -106,8 +107,14 @@ def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
     if request.node.get_closest_marker("gcp_policy_default"):
         return
     monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    # #2054 put runpod FIRST in _default_auto_lane_order(); the legacy
+    # ladder/failover suite exercises the pre-#2054 fellows/gcp/SLURM
+    # machinery, so pin the pre-#2054 rollback order (no runpod head) here.
+    # Runpod-first default-contract tests carry
+    # @pytest.mark.gcp_policy_default (module defaults: flag ON,
+    # runpod-first order).
     monkeypatch.setattr(
-        router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
+        router_module, "DEFAULT_AUTO_LANE_ORDER", ("fellows", "gcp", "nibi", "fir", "mila")
     )
 
 
@@ -186,6 +193,34 @@ class _PassiveRunpod(_BaseBackend):
 
     def launch(self, spec: RunSpec) -> RunHandle:
         self.launches.append(spec)
+        return RunHandle(
+            backend="runpod",
+            cluster=None,
+            job_id="pod-fake",
+            pod_name=f"pod-{spec.issue}",
+            scratch_dir="/workspace",
+            log_path=f"/workspace/logs/issue-{spec.issue}.log",
+            extra={"issue": spec.issue},
+        )
+
+
+class _FlakyRunpod(_BaseBackend):
+    """RunPod double whose first N launches fail, then succeed (#2054).
+
+    Models the runpod-FIRST lane capacity-missing (the failure is wrapped
+    into ``NoComputeAvailableError`` by ``_runpod_terminal_rung`` and the
+    lane wrapper converts it into a lane miss), then the end-of-chain
+    terminal RETRY landing after the free lanes are exhausted.
+    """
+
+    def __init__(self, fail_first_n: int = 1) -> None:
+        self.launches: list[RunSpec] = []
+        self._fail_first_n = fail_first_n
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        self.launches.append(spec)
+        if len(self.launches) <= self._fail_first_n:
+            raise RuntimeError("runpod capacity miss (flaky double)")
         return RunHandle(
             backend="runpod",
             cluster=None,
@@ -536,8 +571,11 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
     attempt is LAST in the trail, behind every GCP rung outcome and the
     fellows + nibi park-fails. #680: a short lora-7b now walks 5 GCP rungs
     (spot A100-80, spot A100-40, flex-start A100-80, on-demand A100-80,
-    on-demand A100-40). #1609: the fellows lane sits FIRST in the default
-    order and is exhausted alongside — RunPod stays last.
+    on-demand A100-40). #1609: the fellows lane sits FIRST in the legacy
+    order and is exhausted alongside — RunPod stays last. #2054 NOTE: this
+    pins the pre-#2054 LEGACY-ORDER machinery (the autouse fixture pins
+    that order); the STANDING default now leads with runpod — see
+    test_runpod_first_capacity_miss_falls_through_then_terminal_retry.
     """
     rp = _PassiveRunpod()
     fellows = _FreeLaneBackend(kind="fellows", starts_when=10**9)  # never starts
@@ -593,16 +631,13 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
 
 
 @pytest.mark.gcp_policy_default
-def test_runpod_is_last_rung_after_free_lanes_exhausted_no_gcp(
+def test_runpod_first_lane_launches_before_any_free_lane(
     lease_store, marker_poster, captured_markers
 ):
-    """#2028 flag-ON ordering pin (the no-GCP contract of
-    test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted, which
-    keeps pinning the rollback build under the autouse fixture): with GCP
-    provisioning disabled the auto walk exhausts fellows + the free SLURM
-    lanes ONLY — ZERO gcp attempts anywhere — before the RunPod terminal
-    rung, which stays LAST (never first, never skipping a cheaper free
-    lane)."""
+    """#2054 flag-ON ordering pin (user directive 2026-08-05): RunPod is the
+    FIRST auto lane — a healthy RunPod launch resolves the route at lane 1
+    with reason ``auto_runpod_first``, ZERO free-lane attempts and ZERO gcp
+    attempts anywhere."""
     rp = _PassiveRunpod()
     fellows = _FreeLaneBackend(kind="fellows", launch_raises=RuntimeError("fellows full"))
     nibi = _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("nibi full"))
@@ -620,17 +655,92 @@ def test_runpod_is_last_rung_after_free_lanes_exhausted_no_gcp(
         sleep_fn=lambda _s: None,
     )
     assert result.chosen_kind == "runpod"
-    assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK
+    assert result.reason == ROUTE_REASON_RUNPOD_FIRST
     assert len(rp.launches) == 1
+    assert len(fellows.launches) == 0 and len(nibi.launches) == 0
     outcomes = [(a.kind, a.outcome) for a in result.attempts]
     assert not any(k == "gcp" for k, _o in outcomes)  # ZERO gcp attempts
+    assert not any(k in ("fellows", "nibi") for k, _o in outcomes)  # no free-lane attempts
+    assert outcomes[-1] == ("runpod", "launched")
+    # The success marker carries the first-lane reason.
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FIRST)
+    assert finals
+
+
+@pytest.mark.gcp_policy_default
+def test_runpod_first_miss_lands_on_free_lane(lease_store, marker_poster):
+    """#2054: a runpod-first capacity miss (nothing provisioned) is a LANE
+    MISS — the chain continues to the free lanes and resolves there, no
+    exception, no misleading ``no_compute_available`` breadcrumb."""
+    rp = _FlakyRunpod(fail_first_n=99)  # every runpod launch capacity-misses
+    fellows = _FreeLaneBackend(kind="fellows", starts_when=1)
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=rp,
+        free_backends={"fellows": fellows},
+        gcp_backend=None,
+        lease_store=lease_store,
+        is_started=_is_started_after_n(1),
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=2, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "fellows"
+    assert len(rp.launches) == 1  # the lane attempt; no terminal retry needed
+    assert len(fellows.launches) == 1
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    runpod_fail_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod"]
+    fellows_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "fellows"]
+    assert runpod_fail_idxs and fellows_idxs
+    assert max(runpod_fail_idxs) < min(fellows_idxs)  # runpod attempted FIRST
+
+
+@pytest.mark.gcp_policy_default
+def test_runpod_first_capacity_miss_falls_through_then_terminal_retry(
+    lease_store, marker_poster, captured_markers
+):
+    """#2054 flag-ON ordering pin (replaces
+    test_runpod_is_last_rung_after_free_lanes_exhausted_no_gcp): the auto
+    walk attempts RunPod FIRST (lane miss), exhausts fellows + the free
+    SLURM lanes — ZERO gcp attempts anywhere — then the #656 terminal rung
+    RETRIES RunPod as the LAST attempt (reason ``auto_fallback_runpod``)."""
+    rp = _FlakyRunpod(fail_first_n=1)  # lane miss, then the terminal retry lands
+    fellows = _FreeLaneBackend(kind="fellows", launch_raises=RuntimeError("fellows full"))
+    nibi = _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("nibi full"))
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi, "fellows": fellows},
+        gcp_backend=None,  # flag-ON: gcp is not in the default order at all
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK  # the terminal RETRY
+    assert len(rp.launches) == 2  # lane attempt + terminal retry
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    assert not any(k == "gcp" for k, _o in outcomes)  # ZERO gcp attempts
+    runpod_miss_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o != "launched"]
     fellows_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "fellows"]
     nibi_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "nibi"]
-    runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
-    assert fellows_idxs and nibi_idxs and runpod_idxs
-    assert runpod_idxs[-1] == len(outcomes) - 1  # runpod LAST
-    assert max(fellows_idxs) < min(nibi_idxs)  # fellows BEFORE the free tail
-    assert max(nibi_idxs) < runpod_idxs[-1]
+    runpod_launched_idxs = [
+        i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"
+    ]
+    assert runpod_miss_idxs and fellows_idxs and nibi_idxs and runpod_launched_idxs
+    assert max(runpod_miss_idxs) < min(fellows_idxs)  # runpod lane FIRST
+    assert max(fellows_idxs) < min(nibi_idxs)  # fellows before the free tail
+    assert runpod_launched_idxs[-1] == len(outcomes) - 1  # terminal retry LAST
+    # The final marker carries the terminal-retry reason + residual gap.
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
+    assert finals
+    assert "runpod_fallback_residual_gap" in finals[-1]["extra"]
 
 
 def test_auto_picks_lane_with_lowest_clamped_est_start(lease_store):
@@ -3260,26 +3370,30 @@ def test_prepare_failed_breadcrumb_reason_matches_typed_terminal(
 
 @pytest.mark.gcp_policy_default
 def test_default_auto_lane_order_has_no_gcp():
-    """The standing default (#2028): fellows first, then the legacy free
-    SLURM lanes — NO gcp rung anywhere in the default auto order while
-    GCP provisioning is disabled. (Renamed from
-    test_default_auto_lane_order_is_gcp_first — this is the durability pin
+    """The standing default (#2028/#2054): RUNPOD first (the Anthropic-org
+    sponsored pool — user directive 2026-08-05), then fellows, then the
+    legacy free SLURM lanes — NO gcp rung anywhere in the default auto
+    order while GCP provisioning is disabled. (This is the durability pin
     CLAUDE.md § Compute backends cites; the invariant it pins is the
     DEFAULT_AUTO_LANE_ORDER tuple itself.)"""
     assert router_module.GCP_PROVISIONING_DISABLED is True
-    assert DEFAULT_AUTO_LANE_ORDER == ("fellows", "nibi", "fir", "mila")
+    assert DEFAULT_AUTO_LANE_ORDER == ("runpod", "fellows", "nibi", "fir", "mila")
+    assert DEFAULT_AUTO_LANE_ORDER[0] == "runpod"  # first resort (#2054)
     assert "gcp" not in DEFAULT_AUTO_LANE_ORDER
     # With no env override, the resolver returns the default verbatim.
     assert auto_lane_order() == DEFAULT_AUTO_LANE_ORDER
 
 
-def test_default_auto_lane_order_rollback_build_restores_gcp():
-    """The flag-off rollback build (#2028) re-inserts gcp after fellows,
-    restoring the #1609 fellows-then-GCP order. Runs under the autouse
-    rollback fixture (flag OFF + DEFAULT_AUTO_LANE_ORDER re-derived)."""
+def test_default_auto_lane_order_rollback_build_restores_gcp(monkeypatch):
+    """The flag-off rollback build (#2028) re-inserts gcp after fellows;
+    runpod stays FIRST in both builds (#2054). Runs under the autouse
+    rollback fixture (flag OFF; the fixture pins the pre-#2054 legacy order
+    for the machinery suite, so re-derive the REAL rollback default here)."""
     assert router_module.GCP_PROVISIONING_DISABLED is False  # the fixture
-    assert router_module._default_auto_lane_order() == ("fellows", "gcp", "nibi", "fir", "mila")
-    assert auto_lane_order() == ("fellows", "gcp", "nibi", "fir", "mila")
+    rollback_order = router_module._default_auto_lane_order()
+    assert rollback_order == ("runpod", "fellows", "gcp", "nibi", "fir", "mila")
+    monkeypatch.setattr(router_module, "DEFAULT_AUTO_LANE_ORDER", rollback_order)
+    assert auto_lane_order() == rollback_order
 
 
 @pytest.mark.gcp_policy_default
@@ -3325,14 +3439,15 @@ def test_auto_lane_order_env_override_parsed(monkeypatch):
     assert auto_lane_order() == ("gcp",)
 
 
-def test_auto_lane_order_env_rejects_runpod(monkeypatch):
-    """A 'runpod' entry RAISES loudly — real-money safety; NEVER silently
-    dropped. RunPod stays override-only regardless of the configured order."""
-    from explore_persona_space.backends.router import RouteError
-
+def test_auto_lane_order_env_accepts_runpod(monkeypatch):
+    """A 'runpod' entry is LEGAL as of #2054 (user directive 2026-08-05: the
+    Anthropic-org pool is the first resort) — it round-trips verbatim.
+    (Replaces test_auto_lane_order_env_rejects_runpod, the historical
+    real-money-last-resort refusal.)"""
     monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "runpod,nibi")
-    with pytest.raises(RouteError, match="runpod"):
-        auto_lane_order()
+    assert auto_lane_order() == ("runpod", "nibi")
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "runpod,fellows,nibi,fir,mila")
+    assert auto_lane_order() == ("runpod", "fellows", "nibi", "fir", "mila")
 
 
 @pytest.mark.parametrize("bad_lane", ["bogus", "auto", "cluster", "RUNPOD", "Nibi"])
@@ -3363,13 +3478,11 @@ def test_auto_lane_order_env_accepts_fellows(monkeypatch):
     assert auto_lane_order() == ("fellows", "gcp")
 
 
-def test_auto_lane_order_env_rejects_runpod_alongside_fellows(monkeypatch):
-    """``runpod`` still raises loudly with fellows in the list."""
-    from explore_persona_space.backends.router import RouteError
-
+def test_auto_lane_order_env_accepts_runpod_alongside_fellows(monkeypatch):
+    """``runpod`` round-trips alongside fellows (#2054 — legality is
+    position-independent; duplicates still raise via the generic rule)."""
     monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "fellows,runpod")
-    with pytest.raises(RouteError, match="runpod"):
-        auto_lane_order()
+    assert auto_lane_order() == ("fellows", "runpod")
 
 
 def test_auto_lane_order_env_rejects_duplicate_fellows(monkeypatch):
@@ -3775,24 +3888,26 @@ def test_other_slurm_pin_queue_timeout_still_cancels_and_raises(lease_store, mon
     assert any(a["outcome"] == "park_cap_exceeded" for a in attempts)
 
 
-def test_route_rejects_runpod_in_config_lane_order(lease_store):
-    """A per-call RouterConfig.lane_order smuggling 'runpod' fails at
-    route() entry, BEFORE any reconnect or submit I/O."""
-    from explore_persona_space.backends.router import RouteError
-
-    nibi = _FreeLaneBackend(kind="nibi")
-    rp = _ExplodingRunpod()
-    with pytest.raises(RouteError, match="runpod"):
-        route(
-            _spec(backend=None),
-            runpod_backend=rp,
-            free_backends={"nibi": nibi},
-            lease_store=lease_store,
-            config=RouterConfig(lane_order=("runpod", "nibi")),
-            now_fn=_clock(),
-            sleep_fn=lambda _s: None,
-        )
-    assert len(nibi.launches) == 0
+def test_route_accepts_runpod_in_config_lane_order(lease_store):
+    """A per-call RouterConfig.lane_order naming 'runpod' is LEGAL as of
+    #2054 (replaces test_route_rejects_runpod_in_config_lane_order): the
+    runpod lane is attempted at its position, and a capacity miss falls
+    through to the next configured lane."""
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=1)
+    rp = _FlakyRunpod(fail_first_n=99)  # every runpod launch capacity-misses
+    result = route(
+        _spec(backend=None),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        lease_store=lease_store,
+        is_started=_is_started_after_n(1),
+        config=RouterConfig(lane_order=("runpod", "nibi"), free_wait_seconds=2, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert len(rp.launches) == 1  # runpod attempted FIRST (lane miss)
+    assert len(nibi.launches) == 1
 
 
 def test_gcp_first_default_attempts_gcp_before_free_lanes(
