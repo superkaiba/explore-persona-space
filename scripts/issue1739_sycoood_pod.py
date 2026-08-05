@@ -392,7 +392,18 @@ def main() -> int:
 
     Path(args.out_root).mkdir(parents=True, exist_ok=True)
     phases = PHASE_ORDER if args.phase == "all" else (args.phase,)
+    # MERGE-ON-LOAD (the owed manifest-clobber fix): per-phase process isolation
+    # previously overwrote pod_run_manifest.json with only the current phase's
+    # entry; load any prior manifest so each invocation ACCUMULATES phases.
+    manifest_path = Path(args.out_root) / "pod_run_manifest.json"
     results: dict = {"phases": {}, "args": {k: str(v) for k, v in vars(args).items()}}
+    if manifest_path.exists():
+        try:
+            prior = json.loads(manifest_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            prior = {}
+        if isinstance(prior.get("phases"), dict):
+            results["phases"].update(prior["phases"])
     t0 = time.time()
     for name in phases:
         logger.info("[phase=%s] start", name)
