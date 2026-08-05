@@ -299,7 +299,15 @@ def _recover_scaffolds_from_hf(variants: list[str], api) -> dict[str, list[dict]
 
     recovered: dict[str, list[dict]] = {}
     for variant in variants:
-        char_name = _CHAR_NAME_FROM_VARIANT.get(variant, "ARIA")
+        if variant not in _CHAR_NAME_FROM_VARIANT:
+            # M3 (review r2 Minor 1): the silent "ARIA" default strips parent
+            # stories under the wrong character name -> kept=0 silently for an
+            # unmapped --variants entry. Fail loud like the phase_b/c/d twins.
+            raise ValueError(
+                f"cannot resolve character name: recovery variant {variant!r} is not "
+                "in _CHAR_NAME_FROM_VARIANT — extend the map for a new variant"
+            )
+        char_name = _CHAR_NAME_FROM_VARIANT[variant]
         # Parent stores kept stories under
         # issue1345_framing/{variant}/raw_completions/stories/*.jsonl
         story_prefix = f"{PARENT_PREFIX}/{variant}/raw_completions/stories"
@@ -852,6 +860,10 @@ def _judge_admission(
     record: dict = {
         "judge_model": None,
         "max_tokens": args.max_tokens,
+        # Realized sampling regime (review r2 deferred ruling 2 / Minor 6):
+        # judge_graded's batch client does NOT thread temperature — the plan
+        # §10 "temperature 0" is a documented deviation (graded_judge.py:15).
+        "temperature": "api-default — not threadable through judge_graded/batch client",
         "n_draws": max(1, args.judge_draws),
         "threshold": args.judge_keep_threshold,
         "rubric_sha256": hashlib.sha256(rubric.encode()).hexdigest()[:16],
@@ -1252,6 +1264,10 @@ def run_phase(args: argparse.Namespace) -> int:
 
         if gen_stage_resumed:
             prejudge_paths = {v: _prejudge_path(out_dir, v) for v in variants}
+            # C-R2-1: the sidecars on disk (validated by _prejudge_resume_ok)
+            # are the judge leg's staleness anchors — they ride the re-upload
+            # below exactly as on a fresh gen leg.
+            prejudge_sidecars = [resume.sidecar_path(p) for p in prejudge_paths.values()]
         else:
             prejudge_paths = _write_scaffolds_local(variant_rows, out_dir, suffix="_prejudge")
             # Gen-side resume predicate + judge-side staleness anchor (C9/M6).
@@ -1260,15 +1276,21 @@ def run_phase(args: argparse.Namespace) -> int:
             )
 
         if args.stage == "gen":
-            if gen_stage_resumed:
-                _log("gen stage resumed — prior gen leg already uploaded; skipping re-upload")
-            elif str(out_dir).startswith("/tmp/") or args.skip_upload:
+            if str(out_dir).startswith("/tmp/") or args.skip_upload:
                 _log("gen leg upload skipped (smoke /tmp tree or --skip-upload)")
             else:
                 # Pod leg ends here: persist the seam the VM judge stage consumes
                 # (fail-loud — #1482 off-pod read class), plus the gen raws +
                 # question draw (raw completions upload ALWAYS). The prejudge
                 # sidecars ride along (the judge leg's staleness anchor).
+                # C-R2-1 invariant: this upload runs on the RESUMED branch too.
+                # The done-sidecars are written BEFORE the fail-loud upload, so
+                # a crash AT the upload leaves valid sidecars on disk and the
+                # standard crash-recovery re-run RESUMES — a resumed-branch
+                # skip would then print [phase=done] with the prejudge pools
+                # never on HF (the #521 data-loss class M2 closed). The bulk
+                # commit is idempotent on unchanged content, so the re-upload
+                # costs one no-op-diff commit on a clean resume.
                 upload_files = list(prejudge_paths.values()) + prejudge_sidecars
                 for v in variants:
                     upload_files.extend(sorted((out_dir / v / "gen").glob("*.jsonl")))

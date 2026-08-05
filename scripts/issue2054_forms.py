@@ -102,6 +102,17 @@ def _check_axis(name: str, value: str) -> None:
         )
 
 
+def base_character(variant: str) -> str:
+    """Map an on-policy variant to its base character (``char_X_op[_base]`` ->
+    ``char_X``); non-op variants pass through. Single source for the
+    (character, model) comparison-group key (fits M1) and the ladder's §6
+    pair-class predicates (M-R2-1)."""
+    for tail in ("_op_base", "_op"):
+        if variant.endswith(tail):
+            return variant[: -len(tail)]
+    return variant
+
+
 def cell_key(variant: str, condition: str, form: str, model: str) -> str:
     """Canonical 4-axis cell key ``variant__condition__form__model``.
 

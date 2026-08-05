@@ -50,7 +50,14 @@ completion. Best-effort HF mirror to `issue2054_lattice/ladder/` when
 (1 fold, ≤1 (source, target) pair, self-transfer permitted for smoke) and
 skips uploads.
 
+Production pair enumeration RESTRICTS to the plan-§6 comparison classes by
+default (M-R2-1; `--pair-classes`, see `PLAN6_PAIR_CLASSES`), and the
+auto pilot gate extrapolates its measured 1-unit wall to the PENDING fleet,
+failing loud past `--max-fleet-wall-hours` (exit 7 — a designed halt with the
+projection persisted in `pilot_gate_report.json`; the #823 fleet-wall class).
+
 Exit 0 on success. Exit 1 on fit / HF failure. Exit 2 on missing input.
+Exit 7 on an over-budget fleet-wall projection (designed halt).
 """
 
 from __future__ import annotations
@@ -77,6 +84,7 @@ load_dotenv()
 import numpy as np  # noqa: E402
 
 import issue2054_forms as forms  # noqa: E402
+from issue2054_pilot import FleetWallExceeded, fleet_projection_update  # noqa: E402
 from issue2054_resume import regime_values_equal  # noqa: E402
 from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
     identity_bias_predict,
@@ -121,6 +129,24 @@ PILOT_PREFERRED_CELL = (
     "qwen2.5-7b-instruct",
 )
 PILOT_RSS_ROUTE_OFF_VM_GIB = 16.0
+
+# The assistant identity's variant slug (plan §4 "Identities": assistant is
+# the only non-character identity; its chat x inserted cell is the 2x2's (a)).
+ASSISTANT_VARIANT = "conversation_paired_stories_assistant"
+
+# Plan-§6 comparison classes the production pair enumeration restricts to
+# (M-R2-1): §6 item 9 cross-framing (Result 1 / §7 H1), item 10
+# cross-character (Result 2 / §7 H2), item 12 the (a,b,c,d) 2x2 per
+# (character, model), and the §4-req-2 cross-model read. The all-ordered-pairs
+# product (~2,450 pairs at ~50 cells) is the #823 fleet-wall class and §6
+# registers no read over most of it; "all" is the explicit opt-in.
+PLAN6_PAIR_CLASSES = ("cross_framing", "cross_character", "twobytwo", "cross_model")
+
+# Fail-loud budget for the pilot-extrapolated fleet wall (M-R2-1; exit 7 on
+# an over-budget projection). Grounding: issue2054_pilot.FLEET_WALL_WARN_HOURS
+# — plan §9 books the fit family as a pilot-gated VM-CPU wall, and >12 h is
+# the #823 realized-wall class. Override deliberately per dispatch.
+DEFAULT_MAX_FLEET_WALL_HOURS = 12.0
 
 # The cell (c) `char_*_op*` variants (phase_d output) are IN the default so
 # the 2x2's (c) leg is discoverable without operator memory (C6 review note).
@@ -819,15 +845,83 @@ def _resolve_cells(
     return out
 
 
+def _is_character_variant(variant: str) -> bool:
+    """Character-family identity (plan §4: HELIOS/Wren/Dana/Vex + their
+    `_op`/`_op_base` on-policy variants); the assistant is the only
+    non-character identity in the lattice."""
+    return variant.startswith("char_")
+
+
+def _twobytwo_group(cell: _Cell) -> tuple[str, str] | None:
+    """(base_character, model) 2x2 group of a character-family cell (plan §4
+    Block 3 / fits `_comparison_group_key`); None for non-character cells."""
+    variant, _condition, _form, model = cell[:4]
+    if _is_character_variant(variant):
+        return (forms.base_character(variant), model)
+    return None
+
+
+def _is_chat_anchor(cell: _Cell) -> bool:
+    """The 2x2's (a) cell — chat-authored, chat-presented: the assistant
+    chat x inserted cell, shared by every (character, model) group of the
+    same model (plan §4 Block 3 table)."""
+    variant, condition, form, _model = cell[:4]
+    return variant == ASSISTANT_VARIANT and condition == "inserted" and form == "chat"
+
+
+def _pair_class(s: _Cell, t: _Cell) -> str | None:
+    """First plan-§6 comparison class the ordered (source, target) pair
+    serves, or None when no registered §6 cross-cell read consumes it
+    (M-R2-1). A pair matching several classes counts under the first in
+    PLAN6_PAIR_CLASSES order (a set-membership restriction — dedup-free)."""
+    s_var, s_cond, s_form, s_mod = s[:4]
+    t_var, t_cond, t_form, t_mod = t[:4]
+    # §6 item 9 (Result 1) / §7 H1 within-scaffold cross-boundary: cross-
+    # framing within ONE identity, INSERTED (controlled) arm only — the §4
+    # interpretive split bars reading an on-policy cross-framing delta as a
+    # framing effect.
+    if s_var == t_var and s_mod == t_mod and s_cond == t_cond == "inserted" and s_form != t_form:
+        return "cross_framing"
+    # §6 item 10 (Result 2) / §7 H2 cross-scaffold same-boundary: cross-
+    # character within one (form, condition, model).
+    if (
+        s_mod == t_mod
+        and s_cond == t_cond
+        and s_form == t_form
+        and _is_character_variant(s_var)
+        and _is_character_variant(t_var)
+        and forms.base_character(s_var) != forms.base_character(t_var)
+    ):
+        return "cross_character"
+    # §6 item 12: transfers within one (character, model) 2x2 — same-group
+    # cells pair with each other, and the (a) chat anchor (assistant chat x
+    # inserted, same model) pairs with every group's (b)/(c)/(d) cells.
+    if s_mod == t_mod:
+        s_group, t_group = _twobytwo_group(s), _twobytwo_group(t)
+        if s_group is not None and s_group == t_group:
+            return "twobytwo"
+        if (s_group is not None and _is_chat_anchor(t)) or (
+            t_group is not None and _is_chat_anchor(s)
+        ):
+            return "twobytwo"
+    # Plan §4 req 2 — model is a read-side variable: same cell, other model.
+    if s_var == t_var and s_cond == t_cond and s_form == t_form and s_mod != t_mod:
+        return "cross_model"
+    return None
+
+
 def _enumerate_ordered_pairs(
     cells: list[_Cell],
     *,
     smoke: bool,
+    pair_classes: tuple[str, ...] = PLAN6_PAIR_CLASSES,
 ) -> list[tuple[_Cell, _Cell]]:
     """Ordered (source, target) pairs of cells.
 
-    - Full run: every ordered pair (s, t) where s != t is a rung candidate;
-      the caller runs the full 9-rung battery per pair.
+    - Full run (M-R2-1): pairs RESTRICT to the plan-§6 comparison classes by
+      default (`_pair_class`); the all-ordered-pairs product is the #823
+      fleet-wall class. `--pair-classes all` restores the full product
+      (explicit opt-in; the fleet-wall fence still applies).
     - Smoke: a SINGLE (s, s) self-transfer pair — with only one cell located,
       the ladder proves it can compute rung 1 (the within-cell ceiling
       reproduction) and every other rung on that same fixture.
@@ -838,12 +932,14 @@ def _enumerate_ordered_pairs(
         # Fallback to self-transfer so the ladder is exercisable at smoke scale.
         s = cells[0]
         return [(s, s)]
+    wanted = set(pair_classes)
     pairs: list[tuple[_Cell, _Cell]] = []
     for s in cells:
         for t in cells:
             if s == t:
                 continue
-            pairs.append((s, t))
+            if "all" in wanted or _pair_class(s, t) in wanted:
+                pairs.append((s, t))
     return pairs
 
 
@@ -967,19 +1063,52 @@ def _run_ladder_pilot_gate(
     fits_dir: Path,
     args: argparse.Namespace,
     output_dir: Path,
+    *,
+    n_pending_units: int,
 ) -> None:
     """Pilot-before-fleet (M5; plan §9): ONE (source, target, arm) pair, ONE
     fold, at production shape, measured (wall + peak RSS) and persisted to
-    `<output-dir>/pilot_gate_report.json` BEFORE the fleet loop."""
+    `<output-dir>/pilot_gate_report.json` BEFORE the fleet loop.
+
+    M-R2-1: the measured 1-unit 1-fold wall is extrapolated to the PENDING
+    fleet (`wall x fold_k x n_pending_units` — pending, so a mostly-resumed
+    re-run never trips the fence for work that will not run, #1586) and the
+    projection is enforced against `--max-fleet-wall-hours`: an over-budget
+    projection raises FleetWallExceeded (exit 7 — a designed halt, #1415
+    convention), with the report JSON written BEFORE the raise.
+    """
     import resource as _resource
 
     report_path = output_dir / "pilot_gate_report.json"
+    fold_k = int(fold_map["k"])
+    if n_pending_units <= 0:
+        _log("pilot gate: 0 pending (pair, arm) units — skipping (fully resumed fleet)")
+        return
     if report_path.is_file() and not args.overwrite:
         try:
             with report_path.open(encoding="utf-8") as f:
                 prior = json.load(f)
-            if prior.get("bootstrap_draws") == int(args.bootstrap_draws):
+            # Measurement-affecting knobs (r2 Minor 5: the single-knob compare
+            # reused a stale pilot across changed arm/seed regimes).
+            prior_matches = (
+                prior.get("bootstrap_draws") == int(args.bootstrap_draws)
+                and prior.get("arm") == args.arms[0]
+                and prior.get("seed") == int(args.seed)
+            )
+            if prior_matches:
                 _log(f"pilot gate: prior report matches ({_rel(report_path)}); skipping")
+                # Re-derive the fleet projection for THIS run's pending count
+                # from the prior MEASURED wall (resume-aware, M-R2-1).
+                fleet_projection_update(
+                    report_path,
+                    prior,
+                    wall_seconds=float(prior.get("wall_seconds", 0.0)),
+                    n_fleet_units=n_pending_units,
+                    fold_k=fold_k,
+                    log=_log,
+                    max_fleet_wall_hours=float(args.max_fleet_wall_hours),
+                    units_basis="pending (pair, arm) units",
+                )
                 return
         except (OSError, json.JSONDecodeError):
             pass
@@ -1019,6 +1148,7 @@ def _run_ladder_pilot_gate(
         "source": s_key,
         "target": t_key,
         "arm": arm,
+        "seed": int(args.seed),
         "bootstrap_draws": int(args.bootstrap_draws),
         "wall_seconds": round(wall, 3),
         "peak_rss_gib": round(peak_rss_gib, 3),
@@ -1026,7 +1156,6 @@ def _run_ladder_pilot_gate(
         "status": pilot_report.get("status"),
         "utc": datetime.now(tz=timezone.utc).isoformat(),
     }
-    _write_json(report_path, payload)
     _log(f"pilot gate: wall={wall:.1f}s peak_rss={peak_rss_gib:.2f} GiB -> {_rel(report_path)}")
     if peak_rss_gib >= PILOT_RSS_ROUTE_OFF_VM_GIB:
         _log(
@@ -1034,6 +1163,18 @@ def _run_ladder_pilot_gate(
             f"{PILOT_RSS_ROUTE_OFF_VM_GIB} GiB — plan §9 routes this fit family "
             "OFF the shared VM (cpu-mid / cpu-bigmem); dispatcher decision"
         )
+    # M-R2-1: pilot -> fleet projection over the PENDING units + fail-loud
+    # fence (writes the report, incl. on the raise path — artifact-routed).
+    fleet_projection_update(
+        report_path,
+        payload,
+        wall_seconds=wall,
+        n_fleet_units=n_pending_units,
+        fold_k=fold_k,
+        log=_log,
+        max_fleet_wall_hours=float(args.max_fleet_wall_hours),
+        units_basis="pending (pair, arm) units",
+    )
 
 
 def run_phase(args: argparse.Namespace) -> int:
@@ -1109,27 +1250,34 @@ def run_phase(args: argparse.Namespace) -> int:
         print("ERROR: every located activation .npz is empty", file=sys.stderr)
         return 2
 
-    ordered_pairs = _enumerate_ordered_pairs(cells, smoke=is_smoke)
-    _log(f"pairs: {len(ordered_pairs)} ordered (source, target)")
-
-    # Pilot-before-fleet (M5; plan §9 pilot-gate): ONE pair, 1 fold, at
-    # production shape, measured + persisted BEFORE the fleet loop.
-    if not args.dry_run and not args.pilot and not args.skip_pilot_gate:
-        _run_ladder_pilot_gate(
-            ordered_pairs, activations_by_cell, fold_map, fits_dir, args, output_dir
+    ordered_pairs = _enumerate_ordered_pairs(
+        cells, smoke=is_smoke, pair_classes=tuple(args.pair_classes)
+    )
+    pair_class_counts: dict[str, int] = {}
+    for s, t in ordered_pairs:
+        cls = "self_transfer" if s == t else (_pair_class(s, t) or "all_opt_in")
+        pair_class_counts[cls] = pair_class_counts.get(cls, 0) + 1
+    n_full_product = len(cells) * max(0, len(cells) - 1)
+    _log(
+        f"pairs: {len(ordered_pairs)} ordered (source, target) under "
+        f"pair-classes={','.join(args.pair_classes)} (full ordered product: "
+        f"{n_full_product}); per-class: {pair_class_counts}"
+    )
+    if not is_smoke and len(cells) >= 2 and not ordered_pairs:
+        _log(
+            "WARN pair-class restriction matched ZERO pairs across >=2 located "
+            "cells — check --pair-classes against the located cell axes"
         )
 
     pair_paths: list[Path] = []
     pair_summaries: list[dict] = []
     n_rungs = max(1, min(len(RUNGS), int(args.rungs)))
-    t0 = time.time()
 
-    # Per-source M-fit memo (M5), cleared when the source cell changes —
-    # `_enumerate_ordered_pairs` is source-major, so residency stays bounded
-    # to one source's folds.
-    fit_cache: dict = {}
-    current_source: str | None = None
-
+    # Resume pre-pass (C9/M6) — ONE pass over every (pair, arm) unit builds
+    # the PENDING work list; the pilot gate's fleet projection keys on the
+    # pending count (M-R2-1; #1586: gates scale to pending work, so a
+    # mostly-resumed re-run never trips the fence for work that will not run).
+    pending: list[dict] = []
     for (s_var, s_cond, s_form, s_mod, _s_path), (
         t_var,
         t_cond,
@@ -1141,13 +1289,8 @@ def run_phase(args: argparse.Namespace) -> int:
         t_key = _cell_key(t_var, t_cond, t_form, t_mod)
         if s_key not in activations_by_cell or t_key not in activations_by_cell:
             continue
-        if s_key != current_source:
-            fit_cache.clear()
-            current_source = s_key
         s_acts = activations_by_cell[s_key]
         t_acts = activations_by_cell[t_key]
-
-        arm_reports: dict[str, dict] = {}
         for arm in args.arms:
             ceiling = _load_target_ceiling(fits_dir, t_key, arm)
             # Rung-scoped filename per plan §6 (rung_{i}_{source}_to_{target}_{arm}.json
@@ -1197,72 +1340,128 @@ def run_phase(args: argparse.Namespace) -> int:
                     continue
                 if why:
                     _log(f"pair={s_key}->{t_key} arm={arm} recompute: {why}")
-
-            arm_report = _fit_arm_pair(
-                source_cell_key=s_key,
-                target_cell_key=t_key,
-                arm=arm,
-                source_acts=s_acts,
-                target_acts=t_acts,
-                fold_map=fold_map,
-                target_ceiling=ceiling,
-                n_rungs=n_rungs,
-                seed=int(args.seed),
-                pilot=bool(args.pilot or args.dry_run),
-                bootstrap_draws=int(args.bootstrap_draws),
-                fit_cache=fit_cache,
+            pending.append(
+                {
+                    "s_key": s_key,
+                    "t_key": t_key,
+                    "arm": arm,
+                    "out_path": out_path,
+                    "ceiling": ceiling,
+                    "inter_sha": inter_sha,
+                }
             )
-            arm_reports[arm] = arm_report
+    _log(f"units: {len(pending)} pending (pair, arm) unit(s); {len(pair_paths)} resumed")
 
-            pair_payload = {
-                "phase": "ladder",
+    # Pilot-before-fleet (M5; plan §9 pilot-gate): ONE pair, 1 fold, at
+    # production shape, measured + persisted BEFORE the fleet loop — then the
+    # M-R2-1 pilot->fleet projection over the PENDING units (fail-loud fence).
+    if not args.dry_run and not args.pilot and not args.skip_pilot_gate:
+        _run_ladder_pilot_gate(
+            ordered_pairs,
+            activations_by_cell,
+            fold_map,
+            fits_dir,
+            args,
+            output_dir,
+            n_pending_units=len(pending),
+        )
+
+    t0 = time.time()
+
+    # Per-source M-fit memo (M5), cleared when the source cell changes —
+    # `_enumerate_ordered_pairs` is source-major (the pre-pass preserves its
+    # order), so residency stays bounded to one source's folds.
+    fit_cache: dict = {}
+    current_source: str | None = None
+
+    for unit in pending:
+        s_key = unit["s_key"]
+        t_key = unit["t_key"]
+        arm = unit["arm"]
+        out_path = unit["out_path"]
+        ceiling = unit["ceiling"]
+        inter_sha = unit["inter_sha"]
+        if s_key != current_source:
+            fit_cache.clear()
+            current_source = s_key
+        s_acts = activations_by_cell[s_key]
+        t_acts = activations_by_cell[t_key]
+
+        arm_report = _fit_arm_pair(
+            source_cell_key=s_key,
+            target_cell_key=t_key,
+            arm=arm,
+            source_acts=s_acts,
+            target_acts=t_acts,
+            fold_map=fold_map,
+            target_ceiling=ceiling,
+            n_rungs=n_rungs,
+            seed=int(args.seed),
+            pilot=bool(args.pilot or args.dry_run),
+            bootstrap_draws=int(args.bootstrap_draws),
+            fit_cache=fit_cache,
+        )
+
+        pair_payload = {
+            "phase": "ladder",
+            "source": s_key,
+            "target": t_key,
+            "arm": arm,
+            "n_rungs": n_rungs,
+            "rungs_computed": list(RUNGS[:n_rungs]),
+            "arm_report": arm_report,
+            "target_ceiling": ceiling,
+            "seed": int(args.seed),
+            "bootstrap_draws": int(args.bootstrap_draws),
+            "intersection_sha256": inter_sha,
+            "dry_run": bool(args.dry_run),
+            "pilot": bool(args.pilot),
+            "utc": datetime.now(tz=timezone.utc).isoformat(),
+            "fold_map": {
+                "path": _rel(fold_map_path),
+                "k": int(fold_map["k"]),
+                "seed": int(fold_map.get("seed", -1)),
+            },
+            "activations_dir": _rel(activations_dir),
+            "fits_dir": _rel(fits_dir),
+        }
+        _write_json(out_path, pair_payload)
+        pair_paths.append(out_path)
+        pair_summaries.append(
+            {
+                "path": _rel(out_path),
                 "source": s_key,
                 "target": t_key,
                 "arm": arm,
-                "n_rungs": n_rungs,
-                "rungs_computed": list(RUNGS[:n_rungs]),
-                "arm_report": arm_report,
+                "status": arm_report.get("status"),
+                "n_intersection": arm_report.get("n_intersection"),
                 "target_ceiling": ceiling,
-                "seed": int(args.seed),
-                "bootstrap_draws": int(args.bootstrap_draws),
-                "intersection_sha256": inter_sha,
-                "dry_run": bool(args.dry_run),
-                "pilot": bool(args.pilot),
-                "utc": datetime.now(tz=timezone.utc).isoformat(),
-                "fold_map": {
-                    "path": _rel(fold_map_path),
-                    "k": int(fold_map["k"]),
-                    "seed": int(fold_map.get("seed", -1)),
-                },
-                "activations_dir": _rel(activations_dir),
-                "fits_dir": _rel(fits_dir),
+                "n_rungs": n_rungs,
             }
-            _write_json(out_path, pair_payload)
-            pair_paths.append(out_path)
-            pair_summaries.append(
-                {
-                    "path": _rel(out_path),
-                    "source": s_key,
-                    "target": t_key,
-                    "arm": arm,
-                    "status": arm_report.get("status"),
-                    "n_intersection": arm_report.get("n_intersection"),
-                    "target_ceiling": ceiling,
-                    "n_rungs": n_rungs,
-                }
-            )
-            elapsed = time.time() - t0
-            _log(
-                f"pair={s_key}->{t_key} arm={arm} status={arm_report.get('status')} "
-                f"n_intersection={arm_report.get('n_intersection')} "
-                f"-> {_rel(out_path)} elapsed={elapsed:.1f}s"
-            )
+        )
+        elapsed = time.time() - t0
+        _log(
+            f"pair={s_key}->{t_key} arm={arm} status={arm_report.get('status')} "
+            f"n_intersection={arm_report.get('n_intersection')} "
+            f"-> {_rel(out_path)} elapsed={elapsed:.1f}s"
+        )
 
     # Uploads (real runs only; smoke tree stays under /tmp/). FATAL on
     # failure (M2): `[phase=done]` must never report done with the rung JSONs
     # un-persisted. No try/except.
     if not is_smoke and not args.skip_upload:
         _upload_to_hf(pair_paths)
+
+    # Fleet projection for the digest (M-R2-1: "report the projected fleet
+    # wall in the digest") — read back from the pilot-gate report artifact.
+    projected_fleet_wall_seconds = None
+    pilot_report_path = output_dir / "pilot_gate_report.json"
+    if pilot_report_path.is_file():
+        try:
+            with pilot_report_path.open(encoding="utf-8") as f:
+                projected_fleet_wall_seconds = json.load(f).get("projected_fleet_wall_seconds")
+        except (OSError, json.JSONDecodeError):
+            pass
 
     digest = {
         "phase": "ladder",
@@ -1274,6 +1473,14 @@ def run_phase(args: argparse.Namespace) -> int:
         "n_rungs": n_rungs,
         "rungs_computed": list(RUNGS[:n_rungs]),
         "n_cells_found": len(cells),
+        "pair_classes": list(args.pair_classes),
+        "pair_class_counts": pair_class_counts,
+        "n_pairs_enumerated": len(ordered_pairs),
+        "n_full_ordered_product": n_full_product,
+        "n_units_pending": len(pending),
+        "n_units_resumed": sum(1 for s in pair_summaries if s.get("status") == "resumed"),
+        "projected_fleet_wall_seconds": projected_fleet_wall_seconds,
+        "max_fleet_wall_hours": float(args.max_fleet_wall_hours),
         "n_pairs_run": len({(s["source"], s["target"]) for s in pair_summaries}),
         "pair_summaries": pair_summaries,
         "shared_fold_map": _rel(fold_map_path),
@@ -1360,6 +1567,27 @@ def main() -> int:
         default=DEFAULT_BOOTSTRAP_DRAWS,
         help="Bootstrap draws over conversations within the equalized intersection.",
     )
+    p.add_argument(
+        "--pair-classes",
+        type=lambda s: tuple(x.strip() for x in s.split(",") if x.strip()),
+        default=PLAN6_PAIR_CLASSES,
+        help=(
+            "Comma-separated plan-§6 pair classes to enumerate "
+            f"({', '.join(PLAN6_PAIR_CLASSES)}; default: all four — M-R2-1), "
+            "or 'all' for the full ordered product (explicit opt-in; the "
+            "fleet-wall fence still applies)."
+        ),
+    )
+    p.add_argument(
+        "--max-fleet-wall-hours",
+        type=float,
+        default=DEFAULT_MAX_FLEET_WALL_HOURS,
+        help=(
+            "Fail-loud budget for the pilot-extrapolated fleet wall (M-R2-1): "
+            "projected wall over this exits 7 (a designed halt with the "
+            "projection persisted in pilot_gate_report.json, never a crash)."
+        ),
+    )
     p.add_argument("--skip-upload", action="store_true", help="Skip the HF mirror step.")
     p.add_argument("--upload", action="store_true", help="Force HF mirror step.")
     p.add_argument(
@@ -1389,7 +1617,18 @@ def main() -> int:
         ),
     )
     args = p.parse_args()
-    return run_phase(args)
+    valid_classes = set(PLAN6_PAIR_CLASSES) | {"all"}
+    unknown = [c for c in args.pair_classes if c not in valid_classes]
+    if unknown:
+        p.error(f"unknown --pair-classes {unknown} (expected {sorted(valid_classes)})")
+    try:
+        return run_phase(args)
+    except FleetWallExceeded as exc:
+        # Designed halt (M-R2-1): the projection is persisted in
+        # pilot_gate_report.json before the raise — route on the artifact,
+        # never treat exit 7 as an anonymous crash (#1415 convention).
+        print(f"ERROR {exc}", file=sys.stderr)
+        return 7
 
 
 if __name__ == "__main__":
