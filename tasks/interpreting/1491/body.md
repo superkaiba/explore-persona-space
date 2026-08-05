@@ -34,10 +34,10 @@ relates_to:
 ## Takeaways
 
 - Raw context→answer R² rises 0.564→0.725 from 0.5B to 7B (each step p < 0.002, n=1,000), plateaus at 14B, and falls to 0.645 at 32B — below 3B.
-- The two-draw reliability ceiling rises 0.750→0.930 alongside; normalized by it, the map captures a near-constant 0.75–0.79 of achievable variance through 14B, then 0.70 at 32B.
+- The two-draw reliability ceiling rises 0.750→0.930 alongside; normalized by it, the map holds 0.75–0.79 through 14B — already easing 7B→14B (p = 0.042) — then 0.70 at 32B.
 - End-to-end, raw predictability gains +0.081 while ceiling-normalized predictability falls 0.057 (both p < 0.002): scale does not buy a more predictable map once reliability is factored out.
-- 14B and 32B share hidden width 5,120 (48 vs 64 layers) with matched ceilings and nulls; the 32B drop is a depth effect — truncation and capture batching refuted.
-- Caveats: single run per rung; matched train n=25,000 is below every rung's sample-size asymptote and dimension-equalization controls were deferred — cross-scale verdicts carry a sample-efficiency qualifier.
+- 14B and 32B share width 5,120 (48 vs 64 layers) with matched ceilings and nulls; the drop reads as a depth or organization effect — width, truncation, and batching refuted.
+- Caveats: single run per rung; matched train n=25,000 sits below the asymptote measured at 7B (per-rung sample-size curves and dimension-equalization controls deferred) — cross-scale verdicts carry a sample-efficiency qualifier.
 
 ## Goal
 
@@ -66,7 +66,7 @@ relates_to:
 | Residual-skip | ridge base plus a width-8,192 MLP fit on ridge residuals | `fits_<slug>.json` `predictors.residual_skip.meta` |
 | Paired contrasts | 1,000 bootstrap draws, seed 42, one shared resample matrix over the 1,000 test contexts | [`adjacent_contrasts.json` @ pin](https://github.com/superkaiba/explore-persona-space/blob/7ab8dd6c89b407a6cfb3c69bb7cb4ffbfa1b59de/eval_results/issue_1491/scale_ladder/adjacent_contrasts.json) |
 
-**Evaluation:** The dependent variable's construct is the predictability of a model's own answer-activation profile from its pre-generation context representation; the metric is variance-weighted held-out test R² pooled over all hidden dimensions (1 − Σ SSE per dimension / Σ SST per dimension) on the 1,000 pinned test contexts, in raw activation space with no PCA. The measurement is on-policy and on-distribution: each rung's targets are that model's own sampled responses to real user prompts, and the fit never sees the test contexts. No LLM judge is involved (representation-level DV; the dual-DV requirement is not applicable per plan). The per-rung reliability ceiling is the variance-weighted per-dimension correlation between two independent generation draws of the same test contexts — the R² a perfect map could reach given response sampling variance. Floors per rung: a shuffled-pairing null (ridge refit on permuted context→target pairing), the train-mean predictor (equivalently the degenerate prefix arm), identity copy, per-dimension scaled identity, and identity plus learned bias (prediction = context vector + train-mean offset, the standing identity-family baseline). The standing retrieval read reports acc@1 of matching each prediction to its true answer vector among the 1,000 held-out targets (cosine; chance 0.001). Cross-scale differences use a paired bootstrap over the 1,000 shared test contexts (1,000 draws, seed 42, one shared resample matrix; ceilings treated as fixed per-rung scalars); the recomputed ridge R² matched the committed fits to within 1.0e-7 per rung. A truncation control recomputes rates per split from stored generation finish reasons and re-reads R² under test-restriction and full refits.
+**Evaluation:** The dependent variable's construct is the predictability of a model's own answer-activation profile from its pre-generation context representation; the metric is variance-weighted held-out test R² pooled over all hidden dimensions (1 − Σ SSE per dimension / Σ SST per dimension) on the 1,000 pinned test contexts, in raw activation space with no PCA. The measurement is on-policy and on-distribution: each rung's targets are that model's own sampled responses to real user prompts, and the fit never sees the test contexts. No LLM judge is involved (representation-level DV; the dual-DV requirement is not applicable per plan). The per-unit companion metric is the per-context cosine between the predicted and the realized answer profile; unlike variance-weighted R² it keeps the answer-profile component shared across contexts, so its per-rung medians are compressed into a narrow band and need not rank the rungs the way R² does. The per-rung reliability ceiling is the variance-weighted per-dimension correlation between two independent generation draws of the same test contexts — the R² a perfect map could reach given response sampling variance. Floors per rung: a shuffled-pairing null (ridge refit on permuted context→target pairing), the train-mean predictor (equivalently the degenerate prefix arm), identity copy, per-dimension scaled identity, and identity plus learned bias (prediction = context vector + train-mean offset, the standing identity-family baseline). The standing retrieval read reports acc@1 of matching each prediction to its true answer vector among the 1,000 held-out targets (cosine; chance 0.001). Cross-scale differences use a paired bootstrap over the 1,000 shared test contexts (1,000 draws, seed 42, one shared resample matrix; ceilings treated as fixed per-rung scalars); the recomputed ridge R² matched the committed fits to within 1.1e-7 per rung (largest gap 1.0126e-7, at 3B). A truncation control recomputes rates per split from stored generation finish reasons and re-reads R² under test-restriction and full refits.
 
 <!-- concern-deferred: ladder-deferred-confound-controls -->
 <!-- concern-deferred: ladder-selfgate-sentinel-nonconforming -->
@@ -97,27 +97,29 @@ Worked example (32B rung, test context index 70): the ridge map's predicted answ
 
 ### Raw predictability peaks at 7B and falls at 32B; the reliability ceiling explains most of the rise
 
-Left: held-out variance-weighted test R² per model size for ridge, MLP (width 32,768), and kernel ridge, with the two-draw reliability ceiling and shuffled-pairing null; right: the same fits divided by each rung's ceiling (n=1,000 per point). The companion strip plot shows every test context's predicted-vs-realized cosine per rung.
+Left: held-out variance-weighted test R² per model size for ridge, MLP (width 32,768), and kernel ridge, with the two-draw reliability ceiling and shuffled-pairing null; right: the same fits divided by each rung's ceiling (n=1,000 per point). The strip plot gives each test context's predicted-vs-realized cosine.
 
-![Two-panel chart: raw held-out test R2 per model size with reliability ceiling and null, left; ceiling-normalized R2, right](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7ab8dd6c89b407a6cfb3c69bb7cb4ffbfa1b59de/figures/issue_1491/ladder_r2_raw_and_normalized.png)
+![Raw held-out test R2 per model size with reliability ceiling and null, left; ceiling-normalized R2, right](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7ab8dd6c89b407a6cfb3c69bb7cb4ffbfa1b59de/figures/issue_1491/ladder_r2_raw_and_normalized.png)
 
 > **Figure.** *Raw predictability rises to 7B then falls at 32B, while its ceiling saturates; normalized predictability is near-flat.* Left: ridge / MLP / kernel-ridge test R² per rung (n=1,000 test contexts) with the two-draw ceiling and shuffled-pairing null. Right: each fit divided by the rung's ceiling.
 
-![Strip plot of per-context prediction quality: cosine between predicted and actual answer profile for all 1,000 test contexts at each model size, median diamonds](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7ab8dd6c89b407a6cfb3c69bb7cb4ffbfa1b59de/figures/issue_1491/ladder_r2_raw_and_normalized_points.png)
+![Strip plot of predicted-versus-actual cosine for 1,000 test contexts per model size, median diamonds](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7ab8dd6c89b407a6cfb3c69bb7cb4ffbfa1b59de/figures/issue_1491/ladder_r2_raw_and_normalized_points.png)
 
 > **Figure.** *Per-unit companion to the two aggregate panels.* Each dot is one of the 1,000 held-out test contexts (ridge map); the diamond marks the per-rung median cosine between predicted and realized answer profile.
 
-Raw ridge R² rises 0.564→0.725 from 0.5B to 7B (every step p < 0.002, paired over the 1,000 shared contexts), is flat to 14B (p = 0.33), then drops to 0.645 at 32B. The ceiling rises 0.750→0.930 and saturates from 7B, so normalized predictability holds at 0.75–0.79 through 14B: the raw rise mostly tracks response reliability. The kernel-ridge margin shrinks with scale at this matched train size (0.057 at 0.5B, negative at 32B), and the deferred sample-size and dimension controls leave cross-scale verdicts sample-efficiency-qualified.
+Raw ridge R² rises 0.564→0.725 from 0.5B to 7B (every step p < 0.002, paired over 1,000 shared contexts), holds to 14B (p = 0.33), then drops to 0.645 at 32B. The ceiling rises 0.750→0.930 and saturates from 7B, so the raw rise mostly tracks response reliability: normalized predictability sits at 0.75–0.79 through 14B, already declining 7B→14B (−0.009, p = 0.042), then 0.695 at 32B.
+
+Median per-context cosine is near-flat and ranks differently (3B highest at 0.966, 32B 0.957) — the mean-dominated per-unit view compresses the R² trend. The kernel-ridge margin also shrinks with scale (0.057 at 0.5B, negative at 32B).
 
 ### At fixed width, the deeper 32B model is less predictable than 14B
 
-Left: held-out test R² for 14B (48 layers) vs 32B (64 layers) — both hidden width 5,120 — under ridge, MLP (width 32,768), and kernel ridge. Right: paired per-context scatter of predicted-vs-realized cosine, the 14B map against the 32B map, over the 1,000 shared test contexts.
+Left: held-out test R² for 14B (48 layers) vs 32B (64 layers) — both hidden width 5,120 — under ridge, MLP (width 32,768), and kernel ridge. Right: paired per-context scatter of predicted-vs-realized cosine, 14B map against 32B map, over the 1,000 shared test contexts.
 
-![Chart of 14B versus 32B test R2 per fitter at shared width, left; paired per-context cosine scatter with diagonal, right](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7ab8dd6c89b407a6cfb3c69bb7cb4ffbfa1b59de/figures/issue_1491/depth_pair_fixed_width.png)
+![14B versus 32B test R2 per fitter at shared width, left; paired per-context cosine scatter with diagonal, right](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7ab8dd6c89b407a6cfb3c69bb7cb4ffbfa1b59de/figures/issue_1491/depth_pair_fixed_width.png)
 
 > **Figure.** *At the same representation width, the 64-layer model's answers are harder to predict than the 48-layer model's.* Left: per-fitter R², 14B vs 32B (n=1,000). Right: per-context paired view; the mass sits below the diagonal (worse at 32B).
 
-With width, ceiling (0.930 vs 0.928), and null (−0.026 vs −0.027) matched — and every 32B primary split captured at batch size 8 — the 0.076 raw / 0.080 normalized drop (both p < 0.002, n=1,000) reads as a depth or representation-organization effect: a standalone fixed-width comparison, not two points on a monotone curve. The fitter ordering also inverts at 32B (ridge 0.645 above kernel ridge 0.630 above MLP 0.599; residual-skip best at 0.651), opposite of every other rung — observed and unexplained, as nonlinear per-context predictions were not persisted.
+With width, ceiling (0.930 vs 0.928), and null (−0.026 vs −0.027) matched — and every 32B primary split captured at batch size 8 — the 0.076 raw / 0.080 normalized drop (both p < 0.002, n=1,000) reads as a depth or representation-organization effect: a standalone fixed-width contrast, not a scale trend. Layer choice stays open: both rungs are read at a fixed 0.67–0.69 depth fraction and the per-scale sweep was deferred. Unique to 32B, ridge (0.645) beats kernel ridge (0.630), which leads by 0.029–0.057 elsewhere; both MLP widths trail, the wider worse (0.599 vs 0.615), and residual-skip leads at 0.651 — unexplained, as nonlinear per-context predictions were not persisted.
 
 ### The fitted map clears every identity-family floor, and retrieval agrees
 
@@ -125,9 +127,9 @@ Left: ridge test R² per rung against five floors — shuffled-pairing null, tra
 
 ![Chart of ridge test R2 versus identity-family and null floors per model size, left; retrieval accuracy at one for ridge and identity plus bias, right](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7ab8dd6c89b407a6cfb3c69bb7cb4ffbfa1b59de/figures/issue_1491/floors_and_retrieval.png)
 
-> **Figure.** *Only the fitted map predicts anything; retrieval reproduces the scale trend.* Left: floors sit at or far below zero at every rung (identity copy reaches −3.2). Right: ridge acc@1 vs the identity-plus-bias baseline against chance 0.001 (n=1,000).
+> **Figure.** *The fitted map outruns every floor; retrieval reproduces the scale trend.* Left: floors run from +0.08 (scaled identity at 7B) down to −3.2 (identity copy). Right: ridge acc@1 vs the identity-plus-bias baseline against chance 0.001 (n=1,000).
 
-Only the fitted map sits above zero: nulls read −0.016 to −0.027 and identity plus learned bias −0.60 to −1.44, so a constant offset explains none of the held-out variance. Retrieval reproduces the trend — ridge acc@1 rises 0.428→0.772 from 0.5B to 7B, then falls to 0.561 at 32B (identity plus bias 0.313) — so the 32B drop is not an artifact of the variance-weighted metric.
+The fitted map clears the best floor at every rung by at least 0.56; the only floor above zero at all is per-dimension scaled identity (+0.078 at 7B, +0.037 at 14B). Nulls read −0.016 to −0.027 and identity plus learned bias −0.60 to −1.44, so a constant offset explains none of the held-out variance. Retrieval reproduces the trend — ridge acc@1 rises 0.428→0.772 from 0.5B to 7B, then falls to 0.561 at 32B (identity plus bias 0.313) — so the 32B drop is not an artifact of the variance-weighted metric.
 
 ### Response truncation does not explain the scale trend
 
@@ -158,3 +160,4 @@ Transfer runs 0.089–0.110 below in-distribution at every rung with the same sh
 > Can you run an experiment to test how this mapping changes with scale of the model: - [ ] Does model's behavior get more predictable with scale?
 
 Lineage: [#779](https://eps.superkaiba.com/tasks/779) — parent (the 7B context→answer-map anchor line). Created 2026-07-18; run 2026-08-05 (manifest, generation + capture, fits, truncation control, and paired contrasts all landed the same day); interpretation posted 2026-08-05.
+
