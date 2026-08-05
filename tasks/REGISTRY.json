@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2090,
+  "highest_id": 2091,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8441,6 +8441,14 @@
       "path": "tasks/proposed/2090",
       "status": "proposed",
       "title": "workflow-fix: wire the both-arms mapping rule into Statistics lens item 15"
+    },
+    "2091": {
+      "goal": "Measure how the answer-decoding regime (single greedy vs K-rollout-averaged stochastic vs single stochastic draw) changes answer-vector variance, context->answer mapping quality and its cross-regime transfer, and behavioral-expression prediction accuracy for sycophancy / hallucination / evil, on generic held-out data versus trait-eliciting data.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2091",
+      "status": "proposed",
+      "title": "Deterministic vs stochastic decoding: answer-vector variance, mapping quality, and behavioral-expression prediction"
     },
     "21": {
       "has_clean_result": false,
