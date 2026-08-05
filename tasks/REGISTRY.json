@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2083,
+  "highest_id": 2084,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8385,6 +8385,13 @@
       "path": "tasks/archived/2083",
       "status": "archived",
       "title": "workflow-fix: root-draft observer misses untracked strays under scripts/"
+    },
+    "2084": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2084",
+      "status": "proposed",
+      "title": "Bound the session-auto-respawn lane: 7 respawns, zero progress"
     },
     "209": {
       "has_clean_result": false,
