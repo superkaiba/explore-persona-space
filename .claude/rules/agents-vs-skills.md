@@ -145,8 +145,8 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `codex-interpretation-critic` | Codex twin of `interpretation-critic` (7 lenses including multimodal lens 6); spawned every round up to the per-reviewer cap (5) (round-1-only until 2026-06-12); thin Claude prompt-composer — composes a critique prompt and returns its path; the orchestrator dispatches Codex's `companion task` runtime |
 | `codex-clean-result-critic` | Codex twin of `clean-result-critic` (15 lenses against the four-flat-H2 (v4) spec — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` + `**Repro:**`/`**Context:**` footer; confidence in H1 title tag only — 1 Title, 2 v4-structure, 3 Figure (+ three-beat), 4 Takeaways quality, 5 Footer/Reproducibility, 6 Voice, 7 statistical-framing rule, 8 mentor-facing title, 9 one-result-one-figure per `### <result>`, 10 Goal + Methodology completeness, 11 underlying data alongside every aggregate (low-level per-unit data plot behind each aggregate stat + raw-alongside-processed), 12 conciseness, 13 planned-vs-actual coverage, 14 binding-concerns audit, 15 headline not resting on a contaminated / failed-data-gate arm — lens text composed verbatim from `.claude/rules/clean-result-critic-lens-reference.md` at compose time, #1159); v3/v2/legacy bodies reviewed under the grandfathered names; branches on `paper:` frontmatter exactly as the Claude critic — for a `paper: true` task the composed Codex prompt inlines the SEVEN paper lenses (P1-P7, incl. P7 verbatim examples + judge prompts) + the `verify_paper.py` preamble + the `.tex`/figure-PNG/compiled-PDF read targets INSTEAD of the fifteen markdown lenses (no `\metric` lens in v1); spawned every round up to the per-reviewer cap (5) (round-1-only until 2026-06-12); thin Claude prompt-composer — composes the critique prompt and returns its path; the orchestrator dispatches Codex's `companion task` runtime; grounds on composer-inlined verify_task_body.py + audit_clean_results_body_discipline.py (markdown) / verify_paper.py (paper) output — the composer runs them outside the sandbox at compose time (#1050; this twin is dispatched read-only and uv cannot reliably execute in its sandbox) |
 | `codex-follow-up-critic` | Codex twin of `follow-up-critic` (the 5th doubled review site, added 2026-06-13) — same SINGLE-PASS redundancy screen, same per-proposal `not-redundant | redundant` verdict, same nothing-dropped contract; thin Claude prompt-composer — composes the redundancy-screen prompt and returns its path; the orchestrator dispatches Codex's `companion task` runtime (the wrapper never dispatches Codex itself — orphan-job anti-pattern, #533) |
-| ~~`reviewer`~~ | **DEPRECATED 2026-05-13.** Final adversarial responsibilities absorbed by `clean-result-critic` Lens 7 (statistical-framing rule). File kept for historical reference. |
-| ~~`codex-reviewer`~~ | **DEPRECATED 2026-05-13** alongside `reviewer`. Replaced by `codex-clean-result-critic`. |
+| ~~`reviewer`~~ | **DEPRECATED 2026-05-13.** Final adversarial responsibilities absorbed by `clean-result-critic` Lens 7 (statistical-framing rule). File deleted 2026-08-05 (see git history). |
+| ~~`codex-reviewer`~~ | **DEPRECATED 2026-05-13** alongside `reviewer`. Replaced by `codex-clean-result-critic`. File deleted 2026-08-05 (see git history). |
 
 ### Skills (playbooks — `.claude/skills/`)
 
@@ -183,7 +183,7 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
   A workflow-surface fix is filed as a `kind: infra` task and implemented by a
   background `/issue <N> --auto` session (the standard `implementer` at Step
   4b) via the full code-change pipeline — see `.claude/rules/workflow-fix-on-bug.md`.
-  The retired `workflow-improver` agent (frozen with a DEPRECATED banner) is
-  the cautionary example here: do NOT recreate a `workflow-improver`-shaped
-  dedicated agent — the `/issue` pipeline + `implementer` already own that role
-  under full review.
+  The retired `workflow-improver` agent (tombstoned 2026-08-05 — a stub
+  frontmatter remains so a stale spawn fails loud) is the cautionary example
+  here: do NOT recreate a `workflow-improver`-shaped dedicated agent — the
+  `/issue` pipeline + `implementer` already own that role under full review.
