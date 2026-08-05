@@ -640,6 +640,24 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--threshold-base",
+        type=int,
+        default=None,
+        help=(
+            "Sync/batch routing threshold passthrough (judge_dispatch.decide_route: "
+            "sync when n_items < threshold_base * otpm/OTPM_DIVISOR). Default None "
+            "-> 0, which FORCES the Batch path. A large value (e.g. 50000000) forces "
+            "the SYNC path. Load-bearing for this rubric: the batch results drain "
+            "(batch_judge.py `parsed = parse_judge_json(text)`) does NOT apply "
+            "`_normalize_scalar_score`, which every sync drain does — so a BARE "
+            "NUMERIC verdict (what the persona-vectors trait rubric's 'just the "
+            "number' instruction routinely elicits) is discarded as `parse_error` "
+            "on batch and kept on sync. Measured on this pilot: tom-gibbs 63.7% "
+            "batch drops vs 96.7% of the same items scoring on sync at an "
+            "IDENTICAL max_tokens."
+        ),
+    )
+    parser.add_argument(
         "--limit",
         type=int,
         default=None,
@@ -705,7 +723,11 @@ def main() -> int:
         "per_rung": {},
     }
 
-    threshold_base = 0 if args.batch_api else None
+    threshold_base = (
+        args.threshold_base if args.threshold_base is not None else (0 if args.batch_api else None)
+    )
+    payload_out["threshold_base"] = threshold_base
+    payload_out["route"] = "sync-forced" if (threshold_base or 0) > 1_000_000 else "batch-forced"
 
     # Real-path preload: pull the trait rubric ONCE (shared across rungs).
     rubric = None
