@@ -24,8 +24,18 @@ statistic` — the round-1 sign-flip placeholder is deleted):
   3. Per-draw GLOBAL max reduction (PRIMARY headline null):
      `global_max_d = max_cell max_j_d`. Report p50/p95/p97.5/p99.
   4. Per-cell p97.5 retained as SECONDARY diagnostic only.
-  5. Persist per-draw `max_j_d` per cell (KB-scale) so the GLOBAL
-     reduction + any post-hoc re-reduction is recoverable.
+  5. Persist per-draw `max_j_d` per cell (KB-scale) PLUS the per-draw
+     ARGMAX feature id `null_argmax_feature_per_draw` (int32; the
+     plan-v6 persistence-contract addition — makes the §6 analyzer duty
+     2 band-vs-ceiling / rare-feature-domination read direct) so the
+     GLOBAL reduction + any post-hoc re-reduction is recoverable.
+
+Cells are keyed (pair, render, corpus, arm): the plan's 8-corpus axis is
+the realized (render, corpus-stem) combinations, filenames carry the
+render (review M3 — a naturalistic run can never skip-reuse chat nulls),
+and cell enumeration parses r2 filenames from the LEFT via the shared
+fail-loud parser (review M2 — underscore corpora like gsm8k_train_full
+can never silently vanish from the GLOBAL null).
 
 **Verdict**: `max_{j, cell} ΔR²_j` from the true assignment (P2's
 per-feature R² files) vs the p97.5 quantile of the GLOBAL null. As a
@@ -71,8 +81,8 @@ Usage:
       --context-shard-dir data/issue_2061/turnstores \
       --encoded-dir data/issue_2061/sae_encoded [--device cuda]
 
-  uv run python scripts/issue2061_null.py --pair base_sft --corpus lmsys23k \
-      --arm context --context-shard-dir ... --encoded-dir ...
+  uv run python scripts/issue2061_null.py --pair base_sft --render chat \
+      --corpus lmsys23k --arm context --context-shard-dir ... --encoded-dir ...
 """
 
 from __future__ import annotations
@@ -160,29 +170,11 @@ def compute_true_delta_max(
     return float(delta[idx]), idx
 
 
-def to_fixed_width_sparse(y: torch.Tensor, row_chunk: int = 2048) -> tuple[np.ndarray, np.ndarray]:
-    """Dense (n, d_sae) -> fixed-width sparse ((n, kmax) idx int64, (n, kmax) val f32).
-
-    The SAE target is TopK (k=32) so kmax is small; padding is (idx=0,
-    val=0.0), which is accumulation-safe everywhere the engine consumes it
-    (all consumers ADD `val`, never overwrite). Row-chunked so an mmap'd
-    dense store never materializes whole.
-    """
-    n = int(y.shape[0])
-    counts = np.empty(n, dtype=np.int64)
-    for r0 in range(0, n, row_chunk):
-        yc = y[r0 : r0 + row_chunk].to(torch.float32)
-        counts[r0 : r0 + yc.shape[0]] = (yc != 0).sum(dim=1).numpy()
-    kmax = max(1, int(counts.max()) if n else 1)
-    idx = np.zeros((n, kmax), dtype=np.int64)
-    val = np.zeros((n, kmax), dtype=np.float32)
-    for r0 in range(0, n, row_chunk):
-        yc = y[r0 : r0 + row_chunk].to(torch.float32).numpy()
-        for i in range(yc.shape[0]):
-            nz = np.nonzero(yc[i])[0]
-            idx[r0 + i, : len(nz)] = nz
-            val[r0 + i, : len(nz)] = yc[i, nz]
-    return idx, val
+# NOTE (review round 2): `to_fixed_width_sparse` moved to
+# `issue2061_turnstore.to_fixed_width_sparse` (the shared data-layer module —
+# the P2 parity gate + tests consume it too); the engine's target inputs now
+# arrive PRE-SPARSE from the P1 payload (`ts.load_encoded_target`), so this
+# module no longer converts from dense on the production path.
 
 
 class _CellEngine:
@@ -513,29 +505,40 @@ def per_cell_null_refit(
     partial_path: Path | None = None,
     partial_meta: dict | None = None,
     progress_label: str = "",
-) -> np.ndarray:
-    """(n_draws,) float32 of max_j ΔR²_j under the registered permutation null.
+) -> tuple[np.ndarray, np.ndarray]:
+    """((n_draws,) float32 max_j ΔR²_j, (n_draws,) int32 argmax feature id).
+
+    The registered permutation null, plus the per-draw ARGMAX feature id —
+    the plan-v6 persistence-contract addition (analyzer duty 2: makes the
+    band-vs-ceiling / rare-feature-domination diagnosis DIRECT on the null
+    side; additive only — the statistic and reduction are unchanged).
 
     Draws run in blocks through `engine.r2_for_flips`; after every block the
     accumulated draws are checkpointed atomically to `partial_path` (keyed on
-    `partial_meta` — EVERY output-affecting regime key; a mismatched partial
-    is ignored, never silently reused). Per-block progress lines satisfy the
-    per-unit-progress contract (`.claude/rules/code-style.md`).
+    `partial_meta` — EVERY output-affecting regime key; a mismatched OR
+    legacy-schema partial is ignored, never silently reused). Per-block
+    progress lines satisfy the per-unit-progress contract
+    (`.claude/rules/code-style.md`).
     """
     n_draws = len(seeds)
     out = np.full(n_draws, np.nan, dtype=np.float32)
+    out_arg = np.full(n_draws, -1, dtype=np.int32)
     start = 0
     meta_str = json.dumps(partial_meta or {}, sort_keys=True)
     if partial_path is not None and partial_path.exists():
         try:
             prev = np.load(partial_path, allow_pickle=False)
+            # Access ALL keys inside the try: a pre-argmax legacy partial
+            # raises KeyError here and is recomputed, never half-trusted.
+            prev_draws, prev_arg = prev["draws"], prev["argmax"]
             if str(prev["meta"]) == meta_str and int(prev["n_done"]) <= n_draws:
                 start = int(prev["n_done"])
-                out[:start] = prev["draws"][:start]
+                out[:start] = prev_draws[:start]
+                out_arg[:start] = prev_arg[:start]
                 print(f"[null]{progress_label} resumed at draw {start}/{n_draws}", flush=True)
             else:
                 print(f"[null]{progress_label} partial meta mismatch — recomputing", flush=True)
-        except Exception as e:  # corrupt partial: recompute, never trust it
+        except Exception as e:  # corrupt/legacy partial: recompute, never trust it
             print(f"[null]{progress_label} unreadable partial ({e}) — recomputing", flush=True)
     t0 = time.time()
     for b0 in range(start, n_draws, draw_block):
@@ -548,7 +551,10 @@ def per_cell_null_refit(
             mask = np.isfinite(d_i)
             if not mask.any():
                 raise RuntimeError(f"draw {b0 + i}: no co-active features in either group")
-            out[b0 + i] = float(np.max(d_i[mask]))
+            valid = np.where(mask)[0]
+            loc = int(np.argmax(d_i[mask]))
+            out[b0 + i] = float(d_i[valid[loc]])
+            out_arg[b0 + i] = int(valid[loc])
         print(
             f"[null]{progress_label} draws {b1}/{n_draws} elapsed={time.time() - t0:.1f}s",
             flush=True,
@@ -558,26 +564,34 @@ def per_cell_null_refit(
             # np.savez APPENDS `.npz` to any name lacking it, which would
             # strand the os.replace source (the #1092 gotcha).
             tmp = partial_path.with_name(partial_path.name.removesuffix(".npz") + ".tmp.npz")
-            np.savez(tmp, draws=out, n_done=np.int64(b1), meta=np.str_(meta_str))
+            np.savez(tmp, draws=out, argmax=out_arg, n_done=np.int64(b1), meta=np.str_(meta_str))
             os.replace(tmp, partial_path)
-    return out
+    return out, out_arg
 
 
 def write_cell_jsonl(
     output_path: Path,
     pair: tuple[str, str],
+    render: str,
     corpus: str,
     arm: str,
     true_max: float,
     true_argmax: int,
     null_max_j_per_draw: np.ndarray,
+    null_argmax_feature_per_draw: np.ndarray,
     extra: dict | None = None,
 ) -> None:
-    """Emit per-cell record with per-draw max_j_d + local quantiles."""
+    """Emit per-cell record: per-draw max_j_d + ARGMAX feature ids + quantiles.
+
+    `null_argmax_feature_per_draw` (int32, plan-v6 persistence contract) rides
+    beside `null_max_j_per_draw` so the analyzer's band-vs-ceiling /
+    rare-feature-domination read is direct, not inferential (§6 duty 2).
+    """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     quantiles = {f"p{q}": float(np.percentile(null_max_j_per_draw, q)) for q in [50, 95, 97.5, 99]}
     row = {
         "pair": f"{pair[0]}_{pair[1]}",
+        "render": render,
         "corpus": corpus,
         "arm": arm,
         "layer": LAYER,
@@ -585,6 +599,9 @@ def write_cell_jsonl(
         "true_argmax_feature_id": true_argmax,
         "null_quantiles_per_cell": quantiles,
         "null_max_j_per_draw": null_max_j_per_draw.astype(np.float32).tolist(),
+        "null_argmax_feature_per_draw": [
+            int(v) for v in np.asarray(null_argmax_feature_per_draw, dtype=np.int32)
+        ],
         "n_draws": len(null_max_j_per_draw),
         "draw_seed_base": DRAW_SEED_BASE,
     }
@@ -595,12 +612,14 @@ def write_cell_jsonl(
 
 
 def compute_global_null(
-    per_cell_max_j: dict[tuple[str, str, str, str], np.ndarray],
+    per_cell_max_j: dict[tuple[str, str, str, str, str], np.ndarray],
 ) -> dict:
     """Per-draw GLOBAL max reduction (PRIMARY headline null quantile).
 
     For each draw d, form `global_max_d = max_cell max_j_d`. Report
-    p50/p95/p97.5/p99 of this GLOBAL null distribution.
+    p50/p95/p97.5/p99 of this GLOBAL null distribution. Cells are keyed
+    (pair, render, corpus, arm, layer) — the plan's 8-corpus axis is the
+    realized (render, corpus-stem) combinations (review M2/M3).
     """
     if not per_cell_max_j:
         raise ValueError("No per-cell null draws available.")
@@ -615,7 +634,8 @@ def compute_global_null(
         "n_draws": stacked.shape[1],
         "draw_seed_base": DRAW_SEED_BASE,
         "cells": [
-            {"pair": p, "corpus": c, "arm": a, "layer": L} for (p, c, a, L) in per_cell_max_j.keys()
+            {"pair": p, "render": r, "corpus": c, "arm": a, "layer": L}
+            for (p, r, c, a, L) in per_cell_max_j.keys()
         ],
     }
 
@@ -623,18 +643,14 @@ def compute_global_null(
 def _load_r2_file(
     r2_dir: Path,
     stage: str,
+    render: str,
     corpus: str,
     arm: str,
-    render: str = "chat",
 ) -> np.ndarray | None:
-    """Try both naming conventions from B-2."""
-    candidates = [
-        r2_dir / f"{stage}_{render}_{corpus}_{arm}_L{LAYER}.jsonl",
-        r2_dir / f"{stage}_{corpus}_{arm}_L{LAYER}.jsonl",
-    ]
-    for path in candidates:
-        if path.exists():
-            return load_per_feature_r2(path)
+    """Load one P2 per-feature R² file (canonical render-bearing name only)."""
+    path = r2_dir / f"{stage}_{render}_{corpus}_{arm}_L{LAYER}.jsonl"
+    if path.exists():
+        return load_per_feature_r2(path)
     return None
 
 
@@ -647,20 +663,34 @@ def _load_cell_stage_inputs(
     arm: str,
     layer: int = LAYER,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[str], int]:
-    """(X, y_idx, y_val, conv_ids, d_sae) for one stage of a delta cell."""
+    """(X, y_idx, y_val, conv_ids, d_sae) for one stage of a delta cell.
+
+    Consumes the P1 fixed-width TopK sparse payload directly
+    (`ts.load_encoded_target`; review M1 — the dense (n, d_sae) store is
+    retired) and KEYS the X/Y row alignment on conv_ids: the payload carries
+    the encode-time conversation ids, which must equal the turnstore's
+    (fail-loud, never order-faith).
+    """
     ts_dir = context_shard_dir / f"turnstore_{stage}_{render}_{corpus}"
-    enc = encoded_dir / f"{stage}_{render}_{corpus}_answer_L{layer}.pt"
+    enc = encoded_dir / ts.encoded_target_name(stage, render, corpus, "answer", layer)
     if not ts_dir.is_dir():
         raise FileNotFoundError(f"missing turnstore dir {ts_dir}")
     if not enc.exists():
         raise FileNotFoundError(f"missing encoded target {enc}")
     shard_paths = ts.enumerate_shards(ts_dir)
     x, conv_ids = ts.load_state_from_shards(shard_paths, state=arm, layer=layer)
-    y = torch.load(enc, map_location="cpu", weights_only=True, mmap=True)
-    if y.shape[0] != x.shape[0]:
-        raise ValueError(f"row mismatch: turnstore n={x.shape[0]} vs encoded n={y.shape[0]}")
-    y_idx, y_val = to_fixed_width_sparse(y)
-    return x.numpy(), y_idx, y_val, conv_ids, int(y.shape[1])
+    payload = ts.load_encoded_target(enc)
+    if payload["conv_ids"] != conv_ids:
+        n_common = len(set(payload["conv_ids"]) & set(conv_ids))
+        raise ValueError(
+            f"X/Y row alignment mismatch for {enc.name}: encoded payload conv_ids differ "
+            f"from the turnstore's ({n_common} in common; n_payload="
+            f"{len(payload['conv_ids'])}, n_turnstore={len(conv_ids)}) — the encode and "
+            "null MUST consume the same turnstore snapshot (review M1)."
+        )
+    y_idx = payload["idx"].numpy().astype(np.int64)
+    y_val = payload["val"].numpy()
+    return x.numpy(), y_idx, y_val, conv_ids, int(payload["d_sae"])
 
 
 def main() -> int:
@@ -669,7 +699,15 @@ def main() -> int:
         "--pair", type=str, default=None, help="e.g. 'base_sft'; omit for all 4 pairs"
     )
     parser.add_argument("--corpus", type=str, default=None)
-    parser.add_argument("--render", type=str, default="chat")
+    parser.add_argument(
+        "--render",
+        type=str,
+        default=None,
+        help="Render filter. REQUIRED with an explicit --corpus (input paths are "
+        "render-keyed); default None under --all-cells = every render discovered "
+        "in the r2 dir (the plan's 8-corpus axis is the realized (render, corpus) "
+        "combinations — review M2/M3).",
+    )
     parser.add_argument("--arm", choices=["prefix", "context"], default=None)
     parser.add_argument("--all-cells", action="store_true")
     parser.add_argument(
@@ -696,34 +734,43 @@ def main() -> int:
     seeds = draw_seed_schedule(args.n_draws)
     print(f"[setup] Shared draw_seed_schedule: {len(seeds)} seeds, base={DRAW_SEED_BASE}")
 
-    # Enumerate target (pair, corpus, arm) cells.
+    # Enumerate target (pair, render, corpus, arm) cells. The corpus axis is
+    # the realized (render, corpus-stem) combinations — parsed from the LEFT
+    # via the shared fail-loud parser so underscore corpora (gsm8k_train_full,
+    # gsm8k_test1319) can never silently vanish from the GLOBAL null (M2).
     pairs = [tuple(args.pair.split("_", 1))] if args.pair else STAGE_PAIRS
     arms = [args.arm] if args.arm else ["prefix", "context"]
 
-    # Auto-detect corpora from the r2_dir.
     if args.corpus:
-        corpora = [args.corpus]
+        if not args.render:
+            print("[error] --corpus requires --render (input paths are render-keyed)")
+            return 1
+        render_corpora = [(args.render, args.corpus)]
     elif args.all_cells:
-        seen = set()
-        for path in args.r2_dir.glob(f"*_L{LAYER}.jsonl"):
-            # <stage>_<render>_<corpus>_<arm> or <stage>_<corpus>_<arm>
-            parts = path.stem.rsplit("_", 3)
-            if len(parts) >= 3:
-                seen.add(parts[-3])  # corpus is 3rd-from-last
-        corpora = sorted(seen)
+        combos: set[tuple[str, str]] = set()
+        for path in sorted(args.r2_dir.glob(f"*_L{LAYER}.jsonl")):
+            _stage, render, corpus, _arm = ts.parse_r2_stem(path.stem, LAYER)
+            combos.add((render, corpus))
+        render_corpora = sorted(c for c in combos if args.render is None or c[0] == args.render)
     else:
-        corpora = []
+        render_corpora = []
 
-    if not corpora:
-        print("[error] No corpora found (use --corpus or --all-cells)")
+    if not render_corpora:
+        print("[error] No (render, corpus) combos found (use --corpus + --render, or --all-cells)")
         return 1
+    print(f"[setup] (render, corpus) combos: {render_corpora}")
 
-    per_cell_max_j: dict[tuple[str, str, str, str], np.ndarray] = {}
+    per_cell_max_j: dict[tuple[str, str, str, str, str], np.ndarray] = {}
+    skipped_cells: list[tuple[str, str]] = []  # (cell label, reason) — see WARN summary
     for pair in pairs:
-        for corpus in corpora:
+        for render, corpus in render_corpora:
             for arm in arms:
-                cell_key = (f"{pair[0]}_{pair[1]}", corpus, arm, f"L{LAYER}")
-                output_path = args.output_dir / f"{cell_key[0]}_{corpus}_{arm}_L{LAYER}.jsonl"
+                pair_str = f"{pair[0]}_{pair[1]}"
+                cell_key = (pair_str, render, corpus, arm, f"L{LAYER}")
+                cell_label = f"{pair_str}/{render}/{corpus}/{arm}"
+                # Render rides the output filename so a naturalistic run can
+                # never skip-reuse (or overwrite) a chat run's nulls (M3).
+                output_path = args.output_dir / f"{pair_str}_{render}_{corpus}_{arm}_L{LAYER}.jsonl"
                 if output_path.exists():
                     print(f"[skip] Exists: {output_path}")
                     # Reload the per-draw values for global aggregation.
@@ -734,10 +781,11 @@ def main() -> int:
                     )
                     continue
 
-                r2_before = _load_r2_file(args.r2_dir, pair[0], corpus, arm, args.render)
-                r2_after = _load_r2_file(args.r2_dir, pair[1], corpus, arm, args.render)
+                r2_before = _load_r2_file(args.r2_dir, pair[0], render, corpus, arm)
+                r2_after = _load_r2_file(args.r2_dir, pair[1], render, corpus, arm)
                 if r2_before is None or r2_after is None:
-                    print(f"[skip] Missing R² for {pair}/{corpus}/{arm}")
+                    print(f"[skip] Missing R² for {cell_label}")
+                    skipped_cells.append((cell_label, "missing P2 R² file(s)"))
                     continue
                 if args.context_shard_dir is None:
                     print(
@@ -748,13 +796,14 @@ def main() -> int:
 
                 try:
                     xb, yib, yvb, cb, dsb = _load_cell_stage_inputs(
-                        args.context_shard_dir, args.encoded_dir, pair[0], args.render, corpus, arm
+                        args.context_shard_dir, args.encoded_dir, pair[0], render, corpus, arm
                     )
                     xa, yia, yva, ca, dsa = _load_cell_stage_inputs(
-                        args.context_shard_dir, args.encoded_dir, pair[1], args.render, corpus, arm
+                        args.context_shard_dir, args.encoded_dir, pair[1], render, corpus, arm
                     )
                 except FileNotFoundError as e:
-                    print(f"[skip] Missing raw inputs for {pair}/{corpus}/{arm}: {e}")
+                    print(f"[skip] Missing raw inputs for {cell_label}: {e}")
+                    skipped_cells.append((cell_label, f"missing raw inputs: {e}"))
                     continue
                 if dsb != dsa:
                     raise ValueError(f"d_sae mismatch across stages: {dsb} vs {dsa}")
@@ -787,10 +836,10 @@ def main() -> int:
                     )
                 meta = {
                     "engine_version": ENGINE_VERSION,
-                    "pair": cell_key[0],
+                    "pair": pair_str,
                     "corpus": corpus,
                     "arm": arm,
-                    "render": args.render,
+                    "render": render,
                     "layer": LAYER,
                     "n_draws": args.n_draws,
                     "draw_seed_base": DRAW_SEED_BASE,
@@ -803,8 +852,8 @@ def main() -> int:
                     "n_rows_after": int(xa.shape[0]),
                 }
                 partial_path = output_path.with_name(output_path.name + ".partial.npz")
-                label = f" {cell_key[0]}/{corpus}/{arm}"
-                null_max_j = per_cell_null_refit(
+                label = f" {cell_label}"
+                null_max_j, null_argmax = per_cell_null_refit(
                     engine,
                     seeds,
                     draw_block=args.draw_block,
@@ -817,11 +866,13 @@ def main() -> int:
                 write_cell_jsonl(
                     output_path,
                     pair=pair,
+                    render=render,
                     corpus=corpus,
                     arm=arm,
                     true_max=true_max,
                     true_argmax=true_argmax,
                     null_max_j_per_draw=null_max_j,
+                    null_argmax_feature_per_draw=null_argmax,
                     extra={
                         **meta,
                         "engine_identity_max_delta": ident["max"],
@@ -836,10 +887,19 @@ def main() -> int:
                     partial_path.unlink()
                 per_cell_max_j[cell_key] = null_max_j
                 print(
-                    f"[cell] {cell_key[0]}/{corpus}/{arm} true_max={true_max:.4f} "
+                    f"[cell] {cell_label} true_max={true_max:.4f} "
                     f"argmax={true_argmax} local_p97.5={np.percentile(null_max_j, 97.5):.4f} "
                     f"({elapsed:.1f}s)"
                 )
+
+    if skipped_cells:
+        print(
+            f"\n[WARN] {len(skipped_cells)} enumerated cell(s) SKIPPED — the GLOBAL null "
+            "covers only the computed cells (its cell count is load-bearing; verify the "
+            "skips are expected before verdicting):"
+        )
+        for cell_label, reason in skipped_cells:
+            print(f"  [WARN] skipped {cell_label}: {reason}")
 
     if not per_cell_max_j:
         print("[error] No per-cell nulls computed — cannot form GLOBAL null")

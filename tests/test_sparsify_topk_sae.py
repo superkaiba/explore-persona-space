@@ -114,3 +114,17 @@ def test_topk_encode_zero_input():
     for row in range(2):
         kept_idx = torch.nonzero(z[row]).flatten().sort().values.tolist()
         assert kept_idx == [5, 6, 7], f"row {row}: {kept_idx}"
+
+
+def test_topk_encode_sparse_scatter_equals_dense(tiny_synthetic_sae):
+    """topk_encode_sparse (the P1 storage path, #2061 review M1) scatters back
+    to EXACTLY topk_encode's dense output — same torch.topk selection."""
+    from explore_persona_space.analysis.sparsify_topk_sae import topk_encode_sparse
+
+    x, weights, k = tiny_synthetic_sae
+    dense = topk_encode(x, weights, k=k)
+    vals, idx = topk_encode_sparse(x, weights, k=k)
+    assert vals.shape == idx.shape == (x.shape[0], k)
+    recon = torch.zeros_like(dense)
+    recon.scatter_(-1, idx, vals)
+    assert torch.equal(recon, dense)

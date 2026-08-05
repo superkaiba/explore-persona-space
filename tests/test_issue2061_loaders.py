@@ -200,9 +200,10 @@ def test_sae_encode_loader_answer_state_all_shards(tmp_path, monkeypatch):
     _write_shard(d, 0, [0, 1])
     _write_shard(d, 1, [2, 3, 4])
     _fake_hub(monkeypatch, enc, d)
-    x = enc._load_turnstore_state("some/tree", state="answer", layer=LAYER)
+    x, conv_ids = enc._load_turnstore_state("some/tree", state="answer", layer=LAYER)
     assert x.shape == (5, HIDDEN)
     assert torch.equal(x, _expected([0, 1, 2, 3, 4], "answer"))
+    assert conv_ids == [f"conv-{g:03d}" for g in range(5)]  # keyed X/Y alignment (M1)
 
 
 def test_sae_encode_loader_max_rows_stops_early(tmp_path, monkeypatch):
@@ -218,10 +219,110 @@ def test_sae_encode_loader_max_rows_stops_early(tmp_path, monkeypatch):
         return real_fake(repo_id, filename, repo_type=repo_type, revision=revision)
 
     monkeypatch.setattr(enc, "hf_hub_download", counting_download)
-    x = enc._load_turnstore_state("some/tree", state="context", layer=LAYER, max_rows=2)
+    x, conv_ids = enc._load_turnstore_state("some/tree", state="context", layer=LAYER, max_rows=2)
     assert x.shape == (2, HIDDEN)
     assert torch.equal(x, _expected([0, 1], "context"))
+    assert conv_ids == ["conv-000", "conv-001"]
     assert len(downloads) == 1  # lazy generator: shard 1 never fetched
+
+
+# ---------------------------------------------------------------------------
+# P1 -> P2/P3 sparse-payload round trip (review M1: the producer writes the
+# TopK sparse layout; BOTH consumers open it; dense reconstruction is exactly
+# topk_encode; --max-rows debug encodes never collide with production paths)
+# ---------------------------------------------------------------------------
+def _tiny_sae_weights(d_in: int = HIDDEN, d_sae: int = 24, seed: int = 5):
+    rng = torch.Generator().manual_seed(seed)
+    return {
+        "encoder.weight": torch.randn(d_sae, d_in, generator=rng),
+        "encoder.bias": torch.randn(d_sae, generator=rng),
+        "W_dec": torch.randn(d_sae, d_in, generator=rng),
+        "b_dec": torch.randn(d_in, generator=rng),
+    }
+
+
+def test_encode_turnstore_sparse_payload_roundtrip(tmp_path, monkeypatch):
+    from explore_persona_space.analysis.sparsify_topk_sae import topk_encode
+
+    d = tmp_path / STEM
+    _write_shard(d, 0, [0, 1, 2])
+    _write_shard(d, 1, [3, 4])
+    _fake_hub(monkeypatch, enc, d)
+    weights = _tiny_sae_weights()
+    out_dir = tmp_path / "encoded"
+    turnstore = {"stage": "base", "render": "chat", "corpus": "lmsys23k", "tree_path": "t"}
+    out = enc.encode_turnstore(
+        turnstore, weights=weights, k=3, output_dir=out_dir, layer=LAYER, device="cpu"
+    )
+    assert out.name == f"base_chat_lmsys23k_answer_L{LAYER}.pt"
+
+    # Consumer 1 (P2/P3 shared loader): payload opens, conv_ids keyed.
+    payload = ts.load_encoded_target(out)
+    assert payload["conv_ids"] == [f"conv-{g:03d}" for g in range(5)]
+    assert payload["k"] == 3 and payload["d_sae"] == 24
+    # Dense reconstruction == the dense encoder on the same rows, exactly.
+    x, _ = enc._load_turnstore_state("some/tree", state="answer", layer=LAYER)
+    dense_ref = topk_encode(x, weights, k=3)
+    assert torch.equal(ts.encoded_to_dense(payload), dense_ref)
+
+    # Skip predicate: a valid same-regime payload is skip-reused...
+    out2 = enc.encode_turnstore(
+        turnstore, weights=weights, k=3, output_dir=out_dir, layer=LAYER, device="cpu"
+    )
+    assert out2 == out
+    # ...but a stale DENSE store at the canonical path is re-encoded (M3).
+    torch.save(dense_ref, out)
+    out3 = enc.encode_turnstore(
+        turnstore, weights=weights, k=3, output_dir=out_dir, layer=LAYER, device="cpu"
+    )
+    assert ts.load_encoded_target(out3)["format"] == ts.ENCODED_TARGET_FORMAT
+
+    # --max-rows debug cap writes a SUFFIXED path the production glob and the
+    # canonical consumers never see (M3: no skip-reuse of a capped shard).
+    capped = enc.encode_turnstore(
+        turnstore, weights=weights, k=3, output_dir=out_dir, layer=LAYER, device="cpu", max_rows=2
+    )
+    assert capped.name == f"base_chat_lmsys23k_answer_L{LAYER}_rows2.pt"
+    assert sorted(p.name for p in out_dir.glob(f"*_answer_L{LAYER}.pt")) == [out.name]
+    assert ts.load_encoded_target(capped)["n_rows"] == 2
+
+
+def test_null_stage_inputs_open_sparse_payload_and_key_alignment(tmp_path, monkeypatch):
+    import issue2061_null as nullmod
+
+    d = tmp_path / "shards" / STEM
+    _write_shard(d, 0, [0, 1, 2])
+    _write_shard(d, 1, [3, 4])
+    _fake_hub(monkeypatch, enc, d)
+    weights = _tiny_sae_weights()
+    enc_dir = tmp_path / "encoded"
+    turnstore = {"stage": "base", "render": "chat", "corpus": "lmsys23k", "tree_path": "t"}
+    out = enc.encode_turnstore(
+        turnstore, weights=weights, k=3, output_dir=enc_dir, layer=LAYER, device="cpu"
+    )
+
+    # Consumer 2 (P3 null): opens the payload + verifies conv-id alignment.
+    x, y_idx, y_val, conv_ids, d_sae = nullmod._load_cell_stage_inputs(
+        tmp_path / "shards", enc_dir, "base", "chat", "lmsys23k", "context", layer=LAYER
+    )
+    assert x.shape == (5, HIDDEN) and y_idx.shape == (5, 3) and y_val.shape == (5, 3)
+    assert d_sae == 24 and conv_ids == [f"conv-{g:03d}" for g in range(5)]
+
+    # Alignment is KEYED: a payload from a DIFFERENT turnstore snapshot fails loud.
+    payload = ts.load_encoded_target(out)
+    ts.save_encoded_target(
+        out,
+        idx=payload["idx"],
+        val=payload["val"],
+        d_sae=payload["d_sae"],
+        k=payload["k"],
+        conv_ids=[f"other-{i}" for i in range(5)],
+        cell=payload["cell"],
+    )
+    with pytest.raises(ValueError, match="row alignment mismatch"):
+        nullmod._load_cell_stage_inputs(
+            tmp_path / "shards", enc_dir, "base", "chat", "lmsys23k", "context", layer=LAYER
+        )
 
 
 # ---------------------------------------------------------------------------

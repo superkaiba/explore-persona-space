@@ -99,7 +99,7 @@ def _write_random_turnstore(dir_: Path, conv_gs: list[int], seed: int, stem: str
 
 
 def _dense_to_iv(y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    return nullmod.to_fixed_width_sparse(torch.as_tensor(y, dtype=torch.float32))
+    return ts.to_fixed_width_sparse(torch.as_tensor(y, dtype=torch.float32))
 
 
 # ---------------------------------------------------------------------------
@@ -114,8 +114,19 @@ def test_fit_cell_end_to_end_tiny(tmp_path):
     _write_random_turnstore(tdir, list(range(n)), seed=0, stem=stem)
     rng = np.random.default_rng(1)
     y = (rng.normal(size=(n, d_sae)) * (rng.random(size=(n, d_sae)) < 0.5)).astype(np.float32)
+    # Write the encoded target through the PRODUCER's payload writer (the
+    # P1 -> P2 layout round trip; review M1).
+    y_idx, y_val = _dense_to_iv(y)
     enc = tmp_path / f"base_chat_tiny_answer_L{LAYER}.pt"
-    torch.save(torch.as_tensor(y), enc)
+    ts.save_encoded_target(
+        enc,
+        idx=torch.as_tensor(y_idx),
+        val=torch.as_tensor(y_val),
+        d_sae=d_sae,
+        k=y_idx.shape[1],
+        conv_ids=[f"conv-{g:03d}" for g in range(n)],
+        cell={"stage": "base", "render": "chat", "corpus": "tiny", "state": "answer", "layer": 1},
+    )
 
     out = tmp_path / "out.jsonl"
     fpf._PARITY_GATE_STATE["done"] = False  # force the gate on this cell
@@ -271,42 +282,50 @@ def test_planted_signal_null_p975_below_observed_max():
     assert ident["argmax"] == 7
     assert ident["max"] > 0.5
     seeds = nullmod.draw_seed_schedule(120)
-    null = nullmod.per_cell_null_refit(engine, seeds, draw_block=30)
+    null, null_arg = nullmod.per_cell_null_refit(engine, seeds, draw_block=30)
     p975 = float(np.percentile(null, 97.5))
     assert p975 < ident["max"], (p975, ident["max"])
+    # Plan-v6 persistence contract: per-draw argmax feature ids ride along.
+    assert null_arg.dtype == np.int32 and null_arg.shape == null.shape
+    assert ((null_arg >= 0) & (null_arg < 32)).all()
 
 
 def test_null_deterministic_and_block_invariant():
     seeds = nullmod.draw_seed_schedule(24)
-    a = nullmod.per_cell_null_refit(_make_engine(), seeds, draw_block=24)
-    b = nullmod.per_cell_null_refit(_make_engine(), seeds, draw_block=7)
+    a, a_arg = nullmod.per_cell_null_refit(_make_engine(), seeds, draw_block=24)
+    b, b_arg = nullmod.per_cell_null_refit(_make_engine(), seeds, draw_block=7)
     assert np.array_equal(a, b)
+    assert np.array_equal(a_arg, b_arg)  # argmax ids are block-invariant too
 
 
 def test_null_partial_checkpoint_resume(tmp_path):
     seeds = nullmod.draw_seed_schedule(20)
     meta = {"regime": "test", "n_draws": 20}
     partial = tmp_path / "cell.jsonl.partial.npz"
-    full = nullmod.per_cell_null_refit(
+    full, full_arg = nullmod.per_cell_null_refit(
         _make_engine(), seeds, draw_block=5, partial_path=partial, partial_meta=meta
     )
     assert partial.exists()
-    # Truncate to a mid-run state, then resume: identical result.
+    # Truncate to a mid-run state, then resume: identical result (both arrays).
     prev = np.load(partial, allow_pickle=False)
     truncated = np.array(prev["draws"])
     truncated[10:] = np.nan
+    trunc_arg = np.array(prev["argmax"])
+    trunc_arg[10:] = -1
     np.savez(
         tmp_path / "cell.jsonl.partial.npz",
         draws=truncated,
+        argmax=trunc_arg,
         n_done=np.int64(10),
         meta=prev["meta"],
     )
-    resumed = nullmod.per_cell_null_refit(
+    resumed, resumed_arg = nullmod.per_cell_null_refit(
         _make_engine(), seeds, draw_block=5, partial_path=partial, partial_meta=meta
     )
     assert np.array_equal(full, resumed)
+    assert np.array_equal(full_arg, resumed_arg)
     # A meta (regime-key) mismatch is NEVER silently reused (#722 r3 class).
-    other = nullmod.per_cell_null_refit(
+    other, other_arg = nullmod.per_cell_null_refit(
         _make_engine(),
         seeds,
         draw_block=5,
@@ -314,6 +333,133 @@ def test_null_partial_checkpoint_resume(tmp_path):
         partial_meta={"regime": "OTHER", "n_draws": 20},
     )
     assert np.array_equal(full, other)
+    assert np.array_equal(full_arg, other_arg)
+    # A LEGACY (pre-argmax) partial is recomputed, never half-trusted.
+    np.savez(
+        tmp_path / "cell.jsonl.partial.npz",
+        draws=truncated,
+        n_done=np.int64(10),
+        meta=prev["meta"],
+    )
+    legacy, legacy_arg = nullmod.per_cell_null_refit(
+        _make_engine(), seeds, draw_block=5, partial_path=partial, partial_meta=meta
+    )
+    assert np.array_equal(full, legacy)
+    assert np.array_equal(full_arg, legacy_arg)
+
+
+def test_write_cell_jsonl_persists_argmax_and_render(tmp_path):
+    """Plan-v6 persistence contract: null_argmax_feature_per_draw (int32) +
+    render ride every per-cell row; existing fields unchanged."""
+    out = tmp_path / "base_sft_chat_tiny_context_L1.jsonl"
+    max_j = np.asarray([0.1, 0.2, 0.05], dtype=np.float32)
+    arg_j = np.asarray([7, 3, 7], dtype=np.int32)
+    nullmod.write_cell_jsonl(
+        out,
+        pair=("base", "sft"),
+        render="chat",
+        corpus="tiny",
+        arm="context",
+        true_max=0.5,
+        true_argmax=7,
+        null_max_j_per_draw=max_j,
+        null_argmax_feature_per_draw=arg_j,
+    )
+    row = json.loads(out.read_text().split("\n")[0])
+    assert row["render"] == "chat"
+    assert row["null_argmax_feature_per_draw"] == [7, 3, 7]
+    assert row["null_max_j_per_draw"] == pytest.approx([0.1, 0.2, 0.05])
+    assert row["n_draws"] == 3
+
+
+# ---------------------------------------------------------------------------
+# Round-2 M2 — LEFT-parse of cell filenames (underscore corpora never vanish)
+# ---------------------------------------------------------------------------
+def test_parse_r2_stem_underscore_corpora_and_fail_loud():
+    assert ts.parse_r2_stem("base_chat_gsm8k_train_full_context_L29", 29) == (
+        "base",
+        "chat",
+        "gsm8k_train_full",
+        "context",
+    )
+    assert ts.parse_r2_stem("longer-rlvr_naturalistic_gsm8k_test1319_prefix_L29", 29) == (
+        "longer-rlvr",
+        "naturalistic",
+        "gsm8k_test1319",
+        "prefix",
+    )
+    with pytest.raises(ValueError, match="arm token"):
+        ts.parse_r2_stem("base_chat_corpus_notanarm_L29", 29)
+    with pytest.raises(ValueError):
+        ts.parse_r2_stem("base_chat_context_L29", 29)  # no corpus token
+    with pytest.raises(ValueError):
+        ts.parse_r2_stem("base_chat_x_context_L23", 29)  # wrong layer suffix
+
+
+# ---------------------------------------------------------------------------
+# Round-2 M1 — streamed P2 fit == the #779 layer-batched helper (same
+# estimator, primal-space feature-chunked evaluation), and the sparse kNN ==
+# the dense mapping_baselines helper.
+# ---------------------------------------------------------------------------
+def test_streamed_fit_matches_layer_batched_helper():
+    rng = np.random.default_rng(11)
+    n, d_in, d_sae = 48, 6, 24
+    X = rng.normal(size=(n, d_in)).astype(np.float32)
+    y = (rng.normal(size=(n, d_sae)) * (rng.random(size=(n, d_sae)) < 0.5)).astype(np.float32)
+    y_idx, y_val = _dense_to_iv(y)
+    conv = [f"c{i:03d}" for i in range(n)]
+    folds = fpf._make_folds(conv, k=5, seed=0)
+    for cap in (None, fpf.DOF_CAP_FRACTION):
+        for fi, test_idx in enumerate(folds):
+            train_idx = np.concatenate([f for j, f in enumerate(folds) if j != fi])
+            out_pred = np.zeros((n, d_sae), dtype=np.float64)
+            info = fpf._fold_fit_streamed(
+                X,
+                y_idx,
+                y_val,
+                d_sae,
+                train_idx,
+                test_idx,
+                gcv_dof_cap=cap,
+                feature_chunk=7,  # deliberately unaligned chunking
+                ss_res=np.zeros(d_sae),
+                ss_tot=np.zeros(d_sae),
+                out_pred=out_pred,
+            )
+            preds_helper, info_helper = ridge_fit_predict_fast_layer_batched(
+                X[train_idx][None].astype(np.float64),
+                y[train_idx][None].astype(np.float64),
+                X[test_idx][None].astype(np.float64),
+                lambdas=fpf.LAMBDA_GRID,
+                return_info=True,
+                gcv_dof_cap=cap,
+            )
+            assert info["best_lambda"] == pytest.approx(
+                float(info_helper["best_lambda"][0]), rel=1e-12
+            )
+            assert info["dof"] == pytest.approx(float(info_helper["dof"][0]), rel=1e-9)
+            np.testing.assert_allclose(out_pred[test_idx], preds_helper[0], rtol=1e-7, atol=1e-10)
+
+
+def test_knn_retrieval_sparse_matches_dense():
+    rng = np.random.default_rng(13)
+    n, d_sae = 30, 24
+    y = (rng.normal(size=(n, d_sae)) * (rng.random(size=(n, d_sae)) < 0.4)).astype(np.float32)
+    y_idx, y_val = _dense_to_iv(y)
+    pred = (y + 0.3 * rng.normal(size=(n, d_sae))).astype(np.float32)
+    for metric in ("euclidean", "cosine"):
+        sparse = fpf._knn_retrieval_sparse(
+            pred, y_idx, y_val, ks=(1, 5), metric=metric, row_chunk=7
+        )
+        dense = knn_retrieval(
+            pred.astype(np.float64), y.astype(np.float64), ks=(1, 5), metric=metric
+        )
+        for k in (1, 5):
+            assert sparse["acc_at_k"][k] == pytest.approx(dense["acc_at_k"][k]), metric
+            assert sparse["chance_at_k"][k] == pytest.approx(dense["chance_at_k"][k])
+        assert sparse["median_rank"] == pytest.approx(dense["median_rank"]), metric
+        assert sparse["mrr"] == pytest.approx(dense["mrr"], rel=1e-9), metric
+        assert sparse["n_pool"] == dense["n_pool"] == n
 
 
 def test_engine_requires_paired_conversations():

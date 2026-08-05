@@ -40,6 +40,14 @@ load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch/numpy impor
 
 import numpy as np  # noqa: E402
 
+# Sibling-script import (bare module name via the script-dir sys.path insert —
+# same pattern as issue2061_fit_per_feature.py).
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
+
+import issue2061_turnstore as ts  # noqa: E402
+
 # matplotlib is a per-project dep already; only import when actually plotting
 # to keep --help fast + argparse smoke check cheap.
 
@@ -61,34 +69,37 @@ def _load_null_global(null_dir: Path) -> dict:
         return json.load(f)
 
 
-def _load_per_cell_null(null_dir: Path) -> dict[tuple[str, str, str], dict]:
-    """Load all per-cell null JSONL files. Key: (pair_str, corpus, arm)."""
-    cells: dict[tuple[str, str, str], dict] = {}
+def _load_per_cell_null(null_dir: Path) -> dict[tuple[str, str, str, str], dict]:
+    """Load all per-cell null JSONL files. Key: (pair_str, render, corpus, arm).
+
+    Render rides the key (review M2/M3): chat and naturalistic cells of one
+    corpus stem are DISTINCT cells and must never collide on one dict entry.
+    """
+    cells: dict[tuple[str, str, str, str], dict] = {}
     for path in sorted(null_dir.glob(f"*_L{LAYER}.jsonl")):
         with path.open() as f:
             row = json.loads(f.readline())
-        cells[(row["pair"], row["corpus"], row["arm"])] = row
+        cells[(row["pair"], row["render"], row["corpus"], row["arm"])] = row
     return cells
 
 
-def _load_per_feature_r2(r2_dir: Path) -> dict[tuple[str, str, str], np.ndarray]:
-    """Load per-feature R² arrays. Key: (stage, corpus, arm)."""
-    r2_files: dict[tuple[str, str, str], np.ndarray] = {}
+def _load_per_feature_r2(r2_dir: Path) -> dict[tuple[str, str, str, str], np.ndarray]:
+    """Load per-feature R² arrays. Key: (stage, render, corpus, arm).
+
+    Filenames parse from the LEFT via the shared fail-loud parser
+    (`issue2061_turnstore.parse_r2_stem`, review M2): underscore corpora
+    (gsm8k_train_full) stay intact, and the render token stays in the key so
+    the two renders of one corpus stem never silently overwrite each other.
+    """
+    r2_files: dict[tuple[str, str, str, str], np.ndarray] = {}
     for path in sorted(r2_dir.glob(f"*_L{LAYER}.jsonl")):
-        # <stage>_<render>_<corpus>_<arm>_L<layer>.jsonl OR
-        # <stage>_<corpus>_<arm>_L<layer>.jsonl
-        parts = path.stem.rsplit("_", 3)
-        if len(parts) < 3:
-            continue
-        stage = parts[0].split("_")[0]  # first token
-        arm = parts[-2]
-        corpus = parts[-3]
+        stage, render, corpus, arm = ts.parse_r2_stem(path.stem, LAYER)
         r2 = []
         with path.open() as f:
             for line in f:
                 row = json.loads(line)
                 r2.append(row["R2"] if row["R2"] is not None else np.nan)
-        r2_files[(stage, corpus, arm)] = np.asarray(r2, dtype=np.float64)
+        r2_files[(stage, render, corpus, arm)] = np.asarray(r2, dtype=np.float64)
     return r2_files
 
 
@@ -142,17 +153,19 @@ def figure_f1_delta_scatter(
     for stage_before, stage_after in STAGE_PAIRS:
         pair_str = f"{stage_before}_{stage_after}"
         for arm in ["prefix", "context"]:
-            cells = [k for k in r2s if k[0] == stage_before and k[2] == arm]
+            # Cells are (render, corpus) combos (review M2): both renders of a
+            # corpus stem are DISTINCT cells and both plot, distinctly labeled.
+            cells = [k for k in r2s if k[0] == stage_before and k[3] == arm]
             if not cells:
                 continue
             fig, ax = plt.subplots(figsize=(9, 5))
-            for stage_key, corpus, arm_key in cells:
-                before = r2s.get((stage_before, corpus, arm))
-                after = r2s.get((stage_after, corpus, arm))
+            for _stage_key, render, corpus, _arm_key in cells:
+                before = r2s.get((stage_before, render, corpus, arm))
+                after = r2s.get((stage_after, render, corpus, arm))
                 if before is None or after is None:
                     continue
                 delta = after - before
-                ax.scatter(np.arange(len(delta)), delta, s=1, alpha=0.3, label=corpus)
+                ax.scatter(np.arange(len(delta)), delta, s=1, alpha=0.3, label=f"{render}/{corpus}")
             if global_p975 is not None:
                 ax.axhline(
                     global_p975,
@@ -160,7 +173,7 @@ def figure_f1_delta_scatter(
                     linestyle="--",
                     label=f"GLOBAL null p97.5={global_p975:.4f}",
                 )
-            local_p = per_cell.get((pair_str, cells[0][1], arm), {}) if cells else {}
+            local_p = per_cell.get((pair_str, cells[0][1], cells[0][2], arm), {}) if cells else {}
             local_q = local_p.get("null_quantiles_per_cell", {}).get("p97.5")
             if local_q is not None:
                 ax.axhline(
@@ -262,10 +275,11 @@ def figure_f6_global_null(
     true_max_per_cell: list[float] = []
     for stage_before, stage_after in STAGE_PAIRS:
         for arm in ["prefix", "context"]:
-            corpora = {k[1] for k in r2s if k[0] == stage_before and k[2] == arm}
-            for corpus in corpora:
-                before = r2s.get((stage_before, corpus, arm))
-                after = r2s.get((stage_after, corpus, arm))
+            # (render, corpus) combos — review M2: both renders are cells.
+            combos = {(k[1], k[2]) for k in r2s if k[0] == stage_before and k[3] == arm}
+            for render, corpus in combos:
+                before = r2s.get((stage_before, render, corpus, arm))
+                after = r2s.get((stage_after, render, corpus, arm))
                 if before is None or after is None:
                     continue
                 delta = after - before
