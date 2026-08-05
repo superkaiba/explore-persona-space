@@ -8545,8 +8545,8 @@
     "2103": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2103",
-      "status": "planning",
+      "path": "tasks/approved/2103",
+      "status": "approved",
       "title": "workflow-fix: verify pinned one-off installs resolve + dist-name != import-name"
     },
     "212": {
