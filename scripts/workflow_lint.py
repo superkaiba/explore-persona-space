@@ -1523,16 +1523,6 @@ AGENT_TOOLS_MENTION_EXCEPTIONS: dict[tuple[str, str], str] = {
         "'Both spawned from a single Agent(...) call' describes the "
         "orchestrator's ensemble spawn, not a wrapper instruction"
     ),
-    ("codex-reviewer.md", "Agent"): (
-        "DEPRECATED file (2026-05-13, never spawned); the Agent(...) mention "
-        "describes the historical ensemble spawn pattern"
-    ),
-    ("workflow-improver.md", "Agent"): (
-        "DEPRECATED/frozen file (#678, never spawned; "
-        "--check-no-workflow-improver-spawn bans it); Agent( appears only in "
-        "historical examples of the retired auto-spawn pattern and a "
-        "grep-target example"
-    ),
     ("critic-lean.md", "WebFetch"): (
         "lean twin (#2062): the body's `no WebSearch/WebFetch` line NEGATES "
         "the tool — descriptive-not-instructive; the lean drops WebFetch by "
@@ -2897,7 +2887,7 @@ def _resolve_autonomous_ask_target_files(roots: list[Path] | None) -> list[Path]
     """The autonomous-asks check is narrower than ``check_asks``: it only
     scopes to ``.claude/skills/issue/SKILL.md`` (the per-issue orchestrator
     that ever runs in autonomous mode) and the agents it dispatches. Other
-    skills (``/daily``, ``/weekly``, ``/pm``, etc.) never run under
+    skills (``/daily``, ``/pm``, etc.) never run under
     ``EPM_AUTONOMOUS_SESSION``, so an AskUserQuestion in them is fine
     without the autonomous-mode annotation.
     """
@@ -9792,8 +9782,9 @@ def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
     fence, ANY fence line with the SAME token CLOSES it (the closer's tag is
     ignored), while a DIFFERENT-token fence line is body content (the
     CommonMark reading). The naive "closer = same token with EMPTY tag" rule
-    demonstrably desyncs on the live nested-fence shape at
-    ``.claude/skills/weekly/SKILL.md:196-204`` (an outer ```` ```markdown ````
+    demonstrably desyncs on the nested-fence shape formerly at
+    ``.claude/skills/weekly/SKILL.md:196-204`` (skill retired 2026-08-05;
+    the shape is preserved in the fixture test) (an outer ```` ```markdown ````
     fence whose body contains an inner ```` ```diff ```` fence): the inner
     tagged line must CLOSE the outer fence, or the bare ```` ``` ```` two
     lines later opens a phantom fence that swallows the git-bearing
@@ -12002,8 +11993,9 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # contract: lens rubrics from clean-result-critic-lens-reference.md,
     # report schema from the slim agent spec), 73,000 — measured
     # 72,229 B post-#1056, 72,000 post-#1050 r2, 71,000 post-#1050 r1,
-    # 60,554 B pre-#1050)
-    "codex-clean-result-critic.md": 75_200,
+    # 60,554 B pre-#1050; 75,200 pre-description-rewrite — measured
+    # 71,784 B after the 2026-08-05 frontmatter-description compaction)
+    "codex-clean-result-critic.md": 74_784,
     # measured 61,503 B post-#1805 (Step 4 copy-list bullet extension:
     # round-new-script no-flags lint duty, no-uv static hub-verify
     # adaptation — plan-mandated growth; cap = measured + ~1.3 KB. Prior:
