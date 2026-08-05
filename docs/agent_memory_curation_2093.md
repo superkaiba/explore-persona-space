@@ -1,5 +1,16 @@
 # Agent-memory index curation — task #2093
 
+## Summary (all three units)
+
+| agent | before (bytes / rows) | after (bytes / rows) | merge groups | retires |
+|---|---|---|---|---|
+| experiment-implementer | 19,697 / 118 | 14,449 / 83 | 3 | 32 |
+| experimenter | 19,303 / 96 | 15,578 / 71 | 6 | 19 |
+| reconciler | 19,300 / 79 | 17,784 / 62 | 11 | 0 |
+
+Bodies deleted: **0** across all three agents (curation is index-row-level
+only; every body stays on disk and loads on demand).
+
 Per-agent curation manifests for the three near-ceiling agent-memory indexes
 (`.claude/agent-memory/<agent>/MEMORY.md`). Curation happens at the INDEX-ROW
 level only: ZERO feedback bodies were deleted — every retired/merged row's
@@ -303,3 +314,218 @@ covering rules.
 - `workflow_lint.py --check-agent-memory-index-size` (the same check the
   no-flags bundle runs): **PASS** — no agent-memory WARN/FAIL for
   experimenter (or any other agent) at curation time.
+
+## reconciler
+
+**Before:** 19,300 bytes / 79 index rows (77 distinct bodies; two exact
+duplicate-row pairs). **After:** 17,784 bytes / 62 rows, still referencing
+all 77 bodies. **Classification:** 51 KEEP (byte-verbatim) · 11 MERGE groups
+(28 rows → 11 rows: 2 exact-duplicate dedupes + 9 multi-link family rows) ·
+0 RETIRE. Every surviving pointer resolves on disk (`test -f` loop: 77/77);
+zero previously-referenced bodies lost a direct index pointer (set
+difference old-referenced ∖ new-referenced = ∅).
+
+### Merges (rows in → row out; all original bodies stay directly linked)
+
+1. **Exact-duplicate dedupe:** the two "Claude misses when the plan's
+   HEADLINE decision statistic isn't produced" rows (same body; `(#841)` vs
+   `(#841, #922)` tails) → ONE row keeping the richer `(#841, #922)` text
+   verbatim
+   (`feedback_claude_misses_headline_decision_statistic_not_produced.md`).
+2. **Exact-duplicate dedupe:** the two "Claude under-classes silent
+   failures" rows (same body; one tail carried "incl (#1098)", the other
+   "11-incident ledger + defenses") → ONE union row
+   (`feedback_claude_underclasses_silent_failures.md`).
+3. **"Grep the consumer/writer surface before crediting a plan claim"** ←
+   daemon-interface route filter (#956) + state-rewrite safety claims
+   (#908, #919) + reroute consumer-pointer trace (#564 r1). Same trap/fix
+   class: Claude APPROVEs a plan's topology/state claim without grepping
+   the actual consumer/writer surface. Bodies linked inline:
+   `feedback_claude_approves_daemon_interface_read_missing_route_filter.md`,
+   `feedback_claude_accepts_plan_state_rewrite_safety_claim.md`,
+   `feedback_claude_approves_reroute_without_consumer_pointer_trace.md`.
+4. **"Claude credits claims without the direct probe"** ← per-item disk
+   assumption framed as a code claim (#724) + caller-topology claims
+   without wrapper trace (#868) + labeled-split over disjoint registries
+   (#901). Same fix class: run the direct probe (per-folder ls /
+   live-execute the predicate / intersect the key sets) instead of a code
+   read. Bodies linked inline:
+   `feedback_claude_trusts_disk_assumption_framed_as_code_claim.md`,
+   `feedback_claude_trusts_caller_topology_claims_without_wrapper_trace.md`,
+   `feedback_claude_approves_labeled_split_over_disjoint_registries.md`.
+5. **"Same name, different quantity → FAIL not Nit"** ← predictor formula
+   mismatch as Nit (#518) + plan-vs-parent semantic refinement (#506 r3) +
+   estimand divergence via plan pseudocode (#539). Same trap class: the
+   implementation computes a different quantity than the plan's named
+   construct, under the construct's name. Bodies linked inline:
+   `feedback_claude_treats_predictor_formula_mismatch_as_nit.md`,
+   `feedback_claude_inherits_parent_with_plan_semantic_refinement.md`,
+   `feedback_claude_excuses_estimand_divergence_via_plan_pseudocode.md`.
+6. **"Claude accepts insufficient smoke evidence (smoke-gate family)"** ←
+   missing tiny-N smoke (#492, #551) + dry-run misses CUDA init (#488) +
+   synthetic-fixture masks args-grid bug (#517 r2). Same trap class: smoke
+   evidence that cannot exercise what production exercises. Bodies linked
+   inline: `feedback_claude_concerns_on_smoke_gate.md`,
+   `feedback_claude_dry_run_smoke_misses_cuda_init.md`,
+   `feedback_claude_synthetic_fixture_smoke_masks_args_grid_bug.md`.
+7. **"Read the named gate's ACTUAL semantics before crediting it"** ←
+   trusts green tests over verifier semantics (#454, #608) + cites
+   nonexistent backstop semantics (#594). Same fix class: read the gate's
+   check bodies / fail condition before crediting it. Bodies linked
+   inline: `feedback_claude_trusts_green_tests_over_verifier_semantics.md`,
+   `feedback_claude_cites_nonexistent_backstop_semantics.md`.
+8. **"Claude misses built-but-not-wired production paths"** ←
+   dispatcher-wiring correctness bugs (#504/#517/#520) +
+   scaffolded-but-not-plumbed pipelines (#397, #508). Same fix class: grep
+   the production wiring/invocation site. Bodies linked inline:
+   `feedback_claude_misses_dispatcher_wire_bugs.md`,
+   `feedback_claude_scaffolded_pipeline_not_plumbed.md`.
+9. **"Codex misreads git/worktree state (git-provenance family)"** ←
+   litigates pre-existing/stale state in round N (#922) + gitignored
+   worktree artifacts as production state (#543, #570) + raw-branch-diff
+   misses the Step 10d surgical merge (#511 r1). Same trap class: Codex
+   FAILs on repo/worktree state the round's diff did not introduce. Bodies
+   linked inline: `feedback_codex_litigates_pre_existing_in_round_n.md`,
+   `feedback_codex_gitignored_artifacts_as_production_state.md`,
+   `feedback_codex_raw_branch_diff_misses_surgical_merge.md`.
+10. **"Codex re-litigates adjudicated content"** ← grandfathered re-gate
+    prose (#464) + plain-English replacement after a keyword ban (#715).
+    Same trap class: re-flagging content a prior round already
+    adjudicated. Bodies linked inline:
+    `feedback_codex_relitigates_grandfathered_regate_prose.md`,
+    `feedback_codex_relitigates_replacement_register_after_keyword_ban.md`.
+11. **"Numeric claims: re-derive from the pinned artifacts yourself"** ←
+    recount with silent matcher variant (#833 r2) + fix WORDING vs
+    artifact TRUTH (#778) + wrong statistic / JSON-only artifact search
+    (#920). Same fix class: adjudicate numeric disputes by re-deriving
+    from the pinned artifacts under the plainest rule. Bodies linked
+    inline: `feedback_codex_recount_with_silent_normalization.md`,
+    `feedback_codex_verifies_fix_wording_not_artifact_truth.md`,
+    `feedback_codex_fails_correct_numeric_claim_wrong_statistic_or_artifact.md`.
+
+### Retires — none (0)
+
+The reconciler index was already curated once by #1891 (commit
+`28bb5842dc`, 2026-07-30, 24,479 → 19,300 B), which stripped it to dense
+single-incident calibration rows. Every retire candidate evaluated this
+round failed the airtight-supersession bar (§ Considered and kept below);
+per the plan's "when in doubt → KEEP; never drop a live lesson for bytes",
+zero rows were retired.
+
+### Considered and kept (retire candidates rejected)
+
+- `feedback_claude_approves_unwired_lint_check_plans.md` (#842, #891) —
+  candidate covering surface `verify_plan.py` check 37 is WARN-only AND
+  claim-verb-anchored (fires only when the plan makes a no-flags bundling
+  CLAIM; `scripts/verify_plan.py:6664-6708`): a check-addition plan with
+  unpinned wiring that makes no bundling claim escapes it entirely. KEPT.
+- `feedback_codex_conflates_marker_format_with_code.md` — the CLAUDE.md
+  § Codex ensemble review mechanical-contract strip covers TAGGED
+  `marker-shape` blockers at the ORCHESTRATOR; untagged cosmetic nits
+  still reach the reconciler, which is this row's audience. KEPT.
+- `feedback_claude_misses_comment_tail_spoof_on_rawscan_guards.md` (#897)
+  — `grep -n 'waiver\|replay\|comment-tail'
+  .claude/rules/trigger-dense-review.md` → 0 hits; no covering clause.
+  KEPT.
+- `feedback_cross_lens_defect_refiled_per_lens.md` (#546) +
+  `feedback_codex_plan_section_in_scope.md` (#505 r6) —
+  `.claude/agents/reconciler.md` encodes neither the lens-scope nor the
+  round-scope judgment (grep over the spec: no covering span). KEPT.
+- `feedback_clean_result_bare_issue_refs_and_reuse_path.md` (#722) —
+  reconciler.md rule 10 forces SPEC-quoting on a structure-lens override
+  but does not encode these two grounded finding classes; the row saves
+  the SPEC lookup at exactly the adjudication moment. KEPT.
+- `feedback_codex_litigates_pre_existing_in_round_n.md` — the evidence-based
+  git-provenance strip (CLAUDE.md § Codex ensemble review) covers TAGGED
+  blockers at the orchestrator, same residual argument as the marker-shape
+  row; MERGED into family row 9 above instead of retired.
+
+### Intentionally-unreferenced bodies (47 — all pre-existing; 0 new this round)
+
+This curation created NO newly-unreferenced bodies (all 28 merged-away
+rows' bodies stay directly linked from their family rows). The dir
+carries 47 bodies that were ALREADY index-unreferenced on `origin/main`
+before this round, in two classes, verified against EVERY historical
+revision of the index (`git log --all --follow --format=%H --
+.claude/agent-memory/reconciler/MEMORY.md`, each revision's blob grepped
+for each filename; 10 revisions checked):
+
+**(a) Never referenced by ANY index revision (40)** — bodies written by
+reconciler invocations that never added an index row; each remains
+readable on demand (self-describing frontmatter/title), and some are
+cited directly from rule files (e.g.
+`.claude/rules/selection-symmetric-nulls.md` § Files of record cites
+`feedback_layer_selection_asymmetry_is_alternatives_finding.md`).
+Re-indexing dormant bodies is additive work outside this task's
+merge/retire scope and would breach the byte cap (~40 rows ≈ +8 KB):
+feedback_claude_approves_infra_plan_with_unpinned_required_behaviors.md,
+feedback_claude_approves_plan_test_scope_omits_sibling_behavior_tests.md,
+feedback_claude_asserts_link_confinement_without_grep.md,
+feedback_claude_asserts_resident_loop_on_oneshot_poller.md,
+feedback_claude_bounded_argument_covers_only_half_the_predicate.md,
+feedback_claude_conflates_adjacent_smoke_carveout_sections.md,
+feedback_claude_credits_fix_to_wrong_surface.md,
+feedback_claude_credits_test_without_tracing_falsification_path.md,
+feedback_claude_downgrades_validation_gate_logic_and_gauge_blindness.md,
+feedback_claude_fileexistence_pass_misses_named_deliverable_absence.md,
+feedback_claude_generalizes_panel_validity_across_unread_behaviors.md,
+feedback_claude_interp_critic_verify_body_fail_out_of_scope.md,
+feedback_claude_misses_symmetric_failure_path_after_pivot_fix.md,
+feedback_claude_passes_rulea_deferral_and_dropped_headline_deliverable.md,
+feedback_claude_round_n_walkdown_misses_registered_operand_mismatch.md,
+feedback_claude_self_flags_then_excuses_feature_defeating_bug.md,
+feedback_claude_underclasses_idempotency_breach_as_perinvariant_reframe.md,
+feedback_claude_underclasses_vacuous_regression_test.md,
+feedback_claude_unregistered_null_for_argmax_winmatrix_as_nonblocking.md,
+feedback_claude_walkdown_omits_unlisted_grouping_parser.md,
+feedback_codex_approves_by_not_engaging_anchored_reproduction_target.md,
+feedback_codex_catches_comment_promised_reraise_and_logp_sibling.md,
+feedback_codex_catches_mismatched_question_contrastive_negatives.md,
+feedback_codex_catches_registered_bar_wired_to_wrong_harness_baseline.md,
+feedback_codex_clean_result_cosmetic_nits_and_prior_pass_relitigation.md,
+feedback_codex_default_value_assumed_to_be_intended_dose.md,
+feedback_codex_flags_step5a_specfreshness_sync_as_scope_violation.md,
+feedback_codex_isolation_review_misses_stale_base_merge_collision.md,
+feedback_codex_misreads_permutation_null_as_same_sample_optimism.md,
+feedback_codex_per_machine_capability_divergence_unsupported.md,
+feedback_codex_reads_followup_round_delta_note_as_missing_smoke.md,
+feedback_codex_real_defect_off_the_actual_run_path.md,
+feedback_codex_real_gap_with_regressing_fix_is_recoverable.md,
+feedback_codex_reapplies_v3_check_to_v2_body.md,
+feedback_codex_rope_leftpad_position_ids_blocker.md,
+feedback_foreign_tasks_union_merge_dup_propagation.md,
+feedback_g0_base_recompute_gate_does_not_validate_theta_plus_apply.md,
+feedback_layer_selection_asymmetry_is_alternatives_finding.md,
+feedback_preregistered_verdict_grid_miscalibrated_vs_own_clean_exemplar.md,
+feedback_worked_example_excerpt_rank_vs_ranking_dv.md.
+
+**(b) Index row existed only on branch-side revisions (7)** — their rows
+were appended on issue branches and dropped when stale branch-side index
+copies were aligned to main's #1891-curated version (commits
+`038a42ec6c`, `0aaf39acac`); the bodies survived (the add/add
+resurrection shape). Restoring 7 rows ≈ +1.6 KB against the byte cap and
+sits outside the approved merge/retire scope — flagged as a candidate for
+a future curation round rather than done here:
+feedback_claude_credits_plan_machine_claim_without_intent_map.md,
+feedback_claude_downgrades_deliverable_corrupting_deviation_to_minor.md,
+feedback_claude_misses_static_default_empty_filter_resample_order.md,
+feedback_claude_recoverable_vs_unsatisfiable_registered_analysis_launch.md,
+feedback_codex_catches_production_only_crash_claude_smoke_skips.md,
+feedback_codex_catches_unwired_cron_and_silent_auth_pass.md,
+feedback_codex_interp_roundN_misses_new_prose_regressions.md.
+
+### Verification
+
+- Bytes: 19,300 → **17,784** (hard cap 18,000 met; ~2,800 B above the
+  ~15,000 soft target — kill-criterion residual per plan §6: the 51 kept
+  rows are post-#1891 single-incident calibration lessons, each live and
+  unsuperseded; reaching ~15,000 would require dropping live lessons or
+  fusing unrelated trap classes. Reported, not forced).
+- Rows: 79 → 62; 124 body files on disk, 0 deleted.
+- Link-resolution loop over surviving rows: 77/77 referenced bodies exist;
+  previously-referenced-now-unreferenced set = ∅.
+- KEEP rows byte-verbatim: verified by set difference — new rows not
+  byte-identical to an old row = exactly the 10 rewritten merge rows (the
+  11th merge survivor keeps an old row's text verbatim).
+- `workflow_lint.py` (no-flags bundle): 0 agent-memory findings for the
+  three curated agents.
