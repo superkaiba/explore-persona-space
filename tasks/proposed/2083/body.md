@@ -10,77 +10,32 @@ origin_prompt: 'Orchestrator observation on #2054 (2026-08-05): an untracked scr
   root_draft_pass is scoped to top-level root *.py and never saw it.'
 workflow: v1
 ---
-## Overview / Motivation
+ARCHIVED as a false-premise filing (self-caught within minutes of filing, before
+any session was dispatched — the filer reported "infra dispatch cap (5) full,
+NOT dispatching", so zero pipeline time was burned).
 
-Auto-filed by the workflow-fix-on-bug protocol from an orchestrator observation
-on task #2054 (2026-08-05).
+The filing claimed the watcher's root-draft observer is "scoped to TOP-LEVEL
+root *.py" and therefore blind to an untracked stray under `scripts/`. That is
+FALSE. Verified in the code, not the docstring:
 
-## Goal
+- `ROOT_DRAFT_PATHSPEC: tuple[str, ...] = ("*.py",)`
+  (`scripts/autonomous_session_watch.py:6487`) — a git PATHSPEC glob, which
+  matches at ANY depth, not just the root.
+- `git --no-optional-locks status --porcelain -- '*.py'` at the repo root
+  returns `scripts/issue1482_blind_read_api.py` today: the pass sees it.
+- `.claude/cache/root-draft-events.jsonl` ALREADY carries a row naming
+  `issue1482_blind_read_api.py` — it has been escalating.
 
-Widen the watcher's root-draft observer so an untracked stray under `scripts/`
-(not only a top-level root `*.py`) is escalated — it poisons the repo-root
-`workflow_lint.py` oracle identically.
+My error: I read the docstring prose ("stale untracked `*.py` drafts at the
+SHARED repo root") as a path SCOPE and filed without grepping
+`ROOT_DRAFT_PATHSPEC`. The workflow-fix filer duties require binding the claim
+to the code at compose time; the `verified-at-filing` line I wrote verified the
+STRAY's untracked status (correct) but never the observer's scope (the actual
+load-bearing claim). Recording it so the pattern is visible.
 
-## Workflow gap
-
-- **Bug observed:** an untracked `scripts/issue1482_blind_read_api.py`
-  (10,875 B, mtime 2026-08-04 13:19) in the SHARED repo-root working tree made
-  `uv run python scripts/workflow_lint.py` exit rc=1
-  (`--check-api-dispatch-routing`) for every session linting from the repo
-  root, while `origin/main` in a clean throwaway worktree lints rc=0 PASS. The
-  #2054 session spent a diagnosis cycle on a "main is RED" hypothesis and
-  briefly shipped that wrong claim in a durable marker before the clean-tree
-  probe refuted it.
-- **Why it is a workflow gap:** `autonomous_session_watch.py`'s `root_draft_pass`
-  (#1341) exists for exactly this failure mode — stale untracked `*.py`
-  poisoning the step9c / lint oracle — but is scoped to TOP-LEVEL root `*.py`.
-  `scripts/` is the single largest lint-scanned directory
-  (`workflow_lint.py` walks `scripts/**/*.py` for the upload-as-file,
-  api-dispatch-routing, dispatcher-CVD-pin, scripts-import-guard and
-  jsonl-splitlines checks), so an untracked stray there has strictly MORE
-  oracle-poisoning reach than one at the root, with zero escalation today.
-- **Confidence (emitter):** medium
-- verified-at-filing: `git status --porcelain -- scripts/issue1482_blind_read_api.py`
-  -> `?? scripts/issue1482_blind_read_api.py`; `git ls-files --error-unmatch`
-  -> not tracked; `git log --all -1 --` -> no commit anywhere;
-  `git cat-file -e origin/main:<path>` -> fails. Clean `origin/main` worktree
-  lint -> rc=0 PASS; repo-root lint -> rc=1 naming exactly that file.
-  `grep -n 'root_draft' scripts/autonomous_session_watch.py` -> 24 hits, pass
-  present and live (2026-08-05 UTC).
-
-## Proposed change (candidate diff sketch — refine in planning)
-
-    # scripts/autonomous_session_watch.py — root_draft_pass
-    - enumerate untracked *.py at the repo ROOT only
-    + enumerate untracked *.py at the repo ROOT **and** under scripts/
-    +   (same age gate, same escalate-only contract: sidecar row in
-    +    .claude/cache/root-draft-events.jsonl + one deduped push;
-    +    NEVER delete — a stray is a live sibling session's work)
-
-Escalate-only is load-bearing: the correct disposition is to TELL a human /
-the owning session, never to remove another session's uncommitted file.
-
-## Scope / surfaces
-
-- Primary target: `scripts/autonomous_session_watch.py`
-- Grep the workflow surface for the pattern before editing
-  (`grep -rn --exclude-dir=worktrees 'root_draft' .claude/ scripts/`) and update
-  every hit; list them in the plan. `.claude/rules/background-automation.md`
-  documents the pass and needs the scope line updated alongside.
-
-## Constraints / invariants
-
-- Workflow-surface only — never experiment code, `configs/`, or `tasks/`.
-- Escalate-only: no delete arm, no auto-stash, no `git clean`.
-- Age-gate the same way the existing pass does, so a session's in-flight
-  scratch is not flagged the second it appears.
-- `scripts/workflow_lint.py --check-asks` passes; ruff on touched files passes.
-
-## Provenance
-
-- workflow_fix_target: scripts/autonomous_session_watch.py
-- fingerprint: (computed by the filer wrapper)
-
-Orchestrator observation on #2054, 2026-08-05: untracked stray under scripts/
-silently reddens the repo-root lint oracle; the #1341 root-draft observer is
-root-only and does not see it.
+The residual is real but already tracked and is NOT this: the observer escalates
+correctly and nobody acts on it. Open task #1761 ("daily-held: untracked
+scripts/issue823_single_split_protocol") is exactly that held decision — an
+untracked `scripts/*.py` escalated daily for ~12 days, parked because
+committing-or-deleting another session's draft is a user call. The #1482 stray
+is a second instance of the same held class, not a new observability gap.
