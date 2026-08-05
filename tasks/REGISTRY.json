@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2089,
+  "highest_id": 2090,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8434,6 +8434,13 @@
       "path": "tasks/completed/209",
       "status": "completed",
       "title": "Prompt-vs-content dissociation for non-persona triggers"
+    },
+    "2090": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2090",
+      "status": "proposed",
+      "title": "workflow-fix: wire the both-arms mapping rule into Statistics lens item 15"
     },
     "21": {
       "has_clean_result": false,
