@@ -1,0 +1,134 @@
+{
+  "commit": "a4f445bf36",
+  "created": "2026-08-05T11:26:21Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.5349314136527941,
+      "series": "32B WildChat point (mixed capture batch sizes 8/4/2)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.5644583416498625,
+      "series": "LMSYS test (in-distribution)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.6183419910830359,
+      "series": "LMSYS test (in-distribution)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.6833027870691005,
+      "series": "LMSYS test (in-distribution)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.7250873220237553,
+      "series": "LMSYS test (in-distribution)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.7208959113702713,
+      "series": "LMSYS test (in-distribution)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.6452054952195454,
+      "series": "LMSYS test (in-distribution)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.46570091460549445,
+      "series": "WildChat test (corpus transfer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.5214550504079848,
+      "series": "WildChat test (corpus transfer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.5942396862405537,
+      "series": "WildChat test (corpus transfer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.6230470637958416,
+      "series": "WildChat test (corpus transfer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.6150997601665223,
+      "series": "WildChat test (corpus transfer)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "in-distribution vs corpus-transfer predictability",
+        "xlabel": "model size (Qwen2.5-Instruct, parameters)",
+        "ylabel": "ridge held-out test R\u00b2 (variance-weighted)",
+        "legend_labels": [
+          "LMSYS test (in-distribution)",
+          "WildChat test (corpus transfer)",
+          "32B WildChat point (mixed capture batch sizes 8/4/2)"
+        ],
+        "xticklabels": [
+          "0.5B",
+          "1.5B",
+          "3B",
+          "7B",
+          "14B",
+          "32B"
+        ],
+        "yticklabels": [
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75"
+        ]
+      }
+    ],
+    "series": [
+      "LMSYS test (in-distribution)",
+      "WildChat test (corpus transfer)",
+      "32B WildChat point (mixed capture batch sizes 8/4/2)"
+    ]
+  }
+}

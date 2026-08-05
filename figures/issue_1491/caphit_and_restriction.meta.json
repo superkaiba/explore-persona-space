@@ -1,0 +1,710 @@
+{
+  "commit": "a4f445bf36",
+  "created": "2026-08-05T11:26:20Z",
+  "figsize": [
+    10.5,
+    4.0
+  ],
+  "points": [
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "generations hitting the 1024-token cap (%)": 4.75,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "generations hitting the 1024-token cap (%)": 4.75,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "generations hitting the 1024-token cap (%)": 8.5,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "generations hitting the 1024-token cap (%)": 6.25,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "generations hitting the 1024-token cap (%)": 4.75,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "generations hitting the 1024-token cap (%)": 4.25,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "generations hitting the 1024-token cap (%)": 6.388888888888888,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "generations hitting the 1024-token cap (%)": 5.916666666666667,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "generations hitting the 1024-token cap (%)": 8.222222222222223,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "generations hitting the 1024-token cap (%)": 7.805555555555556,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "generations hitting the 1024-token cap (%)": 5.638888888888889,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "generations hitting the 1024-token cap (%)": 4.472222222222221,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "generations hitting the 1024-token cap (%)": 5.4,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "generations hitting the 1024-token cap (%)": 4.2,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "generations hitting the 1024-token cap (%)": 6.6000000000000005,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "generations hitting the 1024-token cap (%)": 6.3,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "generations hitting the 1024-token cap (%)": 4.7,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "generations hitting the 1024-token cap (%)": 4.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "generations hitting the 1024-token cap (%)": 5.4,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "generations hitting the 1024-token cap (%)": 4.8,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "generations hitting the 1024-token cap (%)": 6.6000000000000005,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "generations hitting the 1024-token cap (%)": 6.3,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "generations hitting the 1024-token cap (%)": 4.3,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "generations hitting the 1024-token cap (%)": 3.5999999999999996,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "generations hitting the 1024-token cap (%)": 6.660000000000001,
+      "series": "train (25,000 rows)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "generations hitting the 1024-token cap (%)": 6.188,
+      "series": "train (25,000 rows)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "generations hitting the 1024-token cap (%)": 8.803999999999998,
+      "series": "train (25,000 rows)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "generations hitting the 1024-token cap (%)": 8.288,
+      "series": "train (25,000 rows)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "generations hitting the 1024-token cap (%)": 5.96,
+      "series": "train (25,000 rows)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "generations hitting the 1024-token cap (%)": 5.140000000000001,
+      "series": "train (25,000 rows)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "generations hitting the 1024-token cap (%)": 5.0,
+      "series": "test (1,000 rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "generations hitting the 1024-token cap (%)": 4.3,
+      "series": "test (1,000 rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "generations hitting the 1024-token cap (%)": 7.1,
+      "series": "test (1,000 rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "generations hitting the 1024-token cap (%)": 5.6000000000000005,
+      "series": "test (1,000 rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "generations hitting the 1024-token cap (%)": 4.7,
+      "series": "test (1,000 rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "generations hitting the 1024-token cap (%)": 3.5999999999999996,
+      "series": "test (1,000 rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "generations hitting the 1024-token cap (%)": 6.306306306306306,
+      "series": "WildChat test (999 rows)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "generations hitting the 1024-token cap (%)": 4.504504504504505,
+      "series": "WildChat test (999 rows)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "generations hitting the 1024-token cap (%)": 8.708708708708707,
+      "series": "WildChat test (999 rows)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "generations hitting the 1024-token cap (%)": 8.90890890890891,
+      "series": "WildChat test (999 rows)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "generations hitting the 1024-token cap (%)": 4.804804804804805,
+      "series": "WildChat test (999 rows)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "generations hitting the 1024-token cap (%)": 3.4034034034034035,
+      "series": "WildChat test (999 rows)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2": 0.5644583416498618,
+      "error": 0.016685198063727535,
+      "series": "all rows",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2": 0.6183419910830361,
+      "error": 0.014435472677134353,
+      "series": "all rows",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2": 0.6833027870690999,
+      "error": 0.011330259700434941,
+      "series": "all rows",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2": 0.7250873220237555,
+      "error": 0.009733945398144261,
+      "series": "all rows",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2": 0.7208959113702715,
+      "error": 0.009697128819532386,
+      "series": "all rows",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2": 0.6452054952195454,
+      "error": 0.01205272326018747,
+      "series": "all rows",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2": 0.5667706557549418,
+      "error": 0.016685198063727535,
+      "series": "untruncated test rows only",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2": 0.6187193526126049,
+      "error": 0.014435472677134353,
+      "series": "untruncated test rows only",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2": 0.6803619071042337,
+      "error": 0.011330259700434941,
+      "series": "untruncated test rows only",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2": 0.7213546151173198,
+      "error": 0.009733945398144261,
+      "series": "untruncated test rows only",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2": 0.7158262412725803,
+      "error": 0.009697128819532386,
+      "series": "untruncated test rows only",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2": 0.6407844699965255,
+      "error": 0.01205272326018747,
+      "series": "untruncated test rows only",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2": 0.5644583416498618,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2": 0.6183419910830361,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2": 0.6833027870690999,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2": 0.7250873220237555,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2": 0.7208959113702715,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2": 0.6452054952195454,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2": 0.5467262583755204,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2": 0.6018079124026412,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2": 0.6706501371848079,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2": 0.7153906212609854,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2": 0.7112154690228353,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2": 0.6324414285387633,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2": 0.5810465248957226,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2": 0.6336334827180515,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2": 0.6938524722932189,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2": 0.7342481629141749,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2": 0.7302580690234564,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2": 0.6568383720188259,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2": 0.5667706557549418,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2": 0.6187193526126049,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2": 0.6803619071042337,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2": 0.7213546151173198,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2": 0.7158262412725803,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2": 0.6407844699965255,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2": 0.5495864468518591,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2": 0.603710261478651,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2": 0.6683076972426918,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2": 0.7112178623274733,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2": 0.7064467046394091,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2": 0.6278852847606117,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2": 0.5829568429793142,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2": 0.6325812068329197,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2": 0.6909682166435617,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2": 0.7306857531237618,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2": 0.7258409622784738,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2": 0.6519907312809866,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2": 0.5682733056476011,
+      "series": "refit + evaluated on untruncated rows",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2": 0.6201604808554129,
+      "series": "refit + evaluated on untruncated rows",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2": 0.6819963502801678,
+      "series": "refit + evaluated on untruncated rows",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2": 0.7214708158985437,
+      "series": "refit + evaluated on untruncated rows",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2": 0.716128090758763,
+      "series": "refit + evaluated on untruncated rows",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2": 0.6845072965255921,
+      "series": "refit + evaluated on untruncated rows",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 96,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "cap-hit rate per split (from finish_reason)",
+        "xlabel": "model size (Qwen2.5-Instruct, parameters)",
+        "ylabel": "generations hitting the 1024-token cap (%)",
+        "legend_labels": [
+          "other splits (validation, layer-sweep, ceiling draws)",
+          "train (25,000 rows)",
+          "test (1,000 rows)",
+          "WildChat test (999 rows)"
+        ],
+        "xticklabels": [
+          "0.5B",
+          "1.5B",
+          "3B",
+          "7B",
+          "14B",
+          "32B"
+        ],
+        "yticklabels": [
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10"
+        ]
+      },
+      {
+        "title_left": "scale trend restricted to untruncated generations",
+        "xlabel": "model size (Qwen2.5-Instruct, parameters)",
+        "ylabel": "ridge held-out test R\u00b2",
+        "legend_labels": [
+          "refit + evaluated on untruncated rows",
+          "all rows",
+          "untruncated test rows only"
+        ],
+        "xticklabels": [
+          "0.5B",
+          "1.5B",
+          "3B",
+          "7B",
+          "14B",
+          "32B"
+        ],
+        "yticklabels": [
+          "0.525",
+          "0.550",
+          "0.575",
+          "0.600",
+          "0.625",
+          "0.650",
+          "0.675",
+          "0.700",
+          "0.725",
+          "0.750"
+        ]
+      }
+    ],
+    "series": [
+      "other splits (validation, layer-sweep, ceiling draws)",
+      "train (25,000 rows)",
+      "test (1,000 rows)",
+      "WildChat test (999 rows)",
+      "refit + evaluated on untruncated rows",
+      "all rows",
+      "untruncated test rows only"
+    ]
+  }
+}
