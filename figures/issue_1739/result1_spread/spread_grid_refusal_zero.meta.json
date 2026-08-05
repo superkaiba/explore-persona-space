@@ -1,10 +1,12 @@
 {
-  "commit": "76ca9c80+dirty",
-  "git_commit": "76ca9c80",
+  "commit": "9465d7a2+dirty",
+  "git_commit": "9465d7a2",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/skills/issue/SKILL.md",
+    ".claude/agent-memory/code-reviewer/MEMORY.md",
+    ".claude/agent-memory/critic/MEMORY.md",
     "eval_results/issue_1482/context_extremes/context_extremes.json",
+    "eval_results/issue_2054/shared_fold_map.json",
     "figures/issue_1482/context_category_by_arm.meta.json",
     "figures/issue_1482/context_category_by_arm.pdf",
     "figures/issue_1482/context_category_by_arm.png",
@@ -17,20 +19,18 @@
     "figures/issue_1482/context_category_query_notrunc.meta.json",
     "figures/issue_1482/context_category_query_notrunc.pdf",
     "figures/issue_1482/context_category_query_notrunc.png",
-    "scripts/_happy_patch_check.py",
+    "figures/issue_1739/result1_spread/spread_grid_simple.meta.json",
+    "figures/issue_1739/result1_spread/spread_grid_simple.pdf",
+    "figures/issue_1739/result1_spread/spread_grid_simple.png",
+    "scripts/hooks/on-stop-429-retry.sh",
     "scripts/issue1482_arm_drop_by_predictor.py",
     "scripts/issue1482_context_extremes_dashboard.py",
-    "scripts/issue1739_result1_spread_fig_v2.py",
-    "scripts/issue1739_result2_method_fig.py",
-    "scripts/issue1739_result2_method_fig_v2.py",
-    "scripts/patch_happy_daemon.py",
-    "scripts/spawn_session.py",
-    "tests/test_happy_patch_check.py"
+    "scripts/issue1739_result1_spread_fig_v2.py"
   ],
-  "created": "2026-08-04T21:17:40Z",
+  "created": "2026-08-05T15:40:51Z",
   "figsize": [
     13.0,
-    9.6
+    11.6
   ],
   "points": [
     {
@@ -123,7 +123,7 @@
   "text": {
     "suptitle": "Judged behavior score in every evaluation setting: distribution and spread",
     "fig_texts": [
-      "Evil only: a judge REFUSAL verdict (the evaluated model declined the query) is scored 0 rather than dropped; sycophancy and hallucination are unchanged. Hallucination's held-out TriviaQA / NQ-Open / SimpleQA rows (above the dashed line) score fabrication rate x100, a different construct from the 0-100 trait rubric in every other row."
+      "Evil only: a judge REFUSAL verdict (the evaluated model declined the query) is scored 0 rather than dropped; sycophancy and hallucination are unchanged.\nEach row is labelled with the role it plays in the design, then the dataset it actually is. An in-distribution row is that behavior's FULL labeled\npool, scored out-of-fold under 5 group-level folds \u2014 'out-of-fold' is how the predictor is read, not a held-out data split. Hallucination's TriviaQA /\nNQ-Open / SimpleQA rows (above the dashed line) score fabrication rate x100, a different construct from the 0-100 trait rubric in every other row."
     ],
     "axes": [
       {
@@ -139,11 +139,11 @@
           "120"
         ],
         "yticklabels": [
-          "held-out train\n(DAN x forbidden-q)\nn=8,000",
-          "hh-rlhf red-team\n(OOD)\nn=1,995",
-          "ToxicChat\n(OOD)\nn=671",
-          "random WildChat\n(ordinary traffic)\nn=2,000",
-          "persona-vectors\nsynthetic suite\nn=200"
+          "in-distribution (out-of-fold)\njailbreak prompts x forbidden Qs\nn=8,000",
+          "OOD transfer\nhh-rlhf red-team attempts\nn=1,995",
+          "OOD transfer\nToxicChat (flagged)\nn=671",
+          "deployment-like traffic\nrandom WildChat conversations\nn=2,000",
+          "synthetic elicitation suite\npersona-vectors eval grid\nn=200"
         ]
       },
       {
@@ -172,10 +172,10 @@
           "120"
         ],
         "yticklabels": [
-          "held-out train\nn=16,000",
-          "AITA (OOD)\nn=1,304",
-          "random WildChat\n(ordinary traffic)\nn=1,982",
-          "persona-vectors\nsynthetic suite\nn=200"
+          "in-distribution (out-of-fold)\nReddit personal-advice posts\nn=16,000",
+          "OOD transfer (same platform)\nheld-out Reddit r/socialskills\nn=1,304",
+          "deployment-like traffic\nrandom WildChat conversations\nn=1,982",
+          "synthetic elicitation suite\npersona-vectors eval grid\nn=200"
         ]
       },
       {
@@ -202,11 +202,11 @@
           "120"
         ],
         "yticklabels": [
-          "held-out TriviaQA\nn=16,000",
-          "NQ-Open (OOD)\nn=3,167",
-          "SimpleQA (OOD)\nn=4,021",
-          "random WildChat\n(ordinary traffic)\nn=1,967",
-          "persona-vectors\nsynthetic suite\nn=200"
+          "in-distribution (out-of-fold)\nTriviaQA (rc.nocontext)\nn=16,000",
+          "OOD transfer\nNQ-Open\nn=3,167",
+          "OOD transfer\nSimpleQA\nn=4,021",
+          "deployment-like traffic\nrandom WildChat conversations\nn=1,967",
+          "synthetic elicitation suite\npersona-vectors eval grid\nn=200"
         ]
       },
       {
