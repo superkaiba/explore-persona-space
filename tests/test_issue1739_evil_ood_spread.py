@@ -722,3 +722,121 @@ def test_holdout_rung_production_wires_pre_phase_rss_guard() -> None:
     assert "whitening_map_components" in src and "cell_solve_components" in src
     # the guard must see the LOADED-map regime (map_fit=False: no map fit here)
     assert "map_fit=False" in src
+
+
+# ---------------------------------------------------------------------------
+# Pilot-judge selection + spread-instrument pins (task #1739 item-A gate).
+#
+# The round hit THREE instances of a silent-zero-work class (a selection
+# predicate returns zero rows and the script reports success at rc=0; recorded
+# on the task at 2026-08-05T17:18:31Z). These pin the pilot judge's
+# non-empty-selection assertion and the plan-§7 spread instrument.
+# ---------------------------------------------------------------------------
+def _pilot_judge_module():
+    pilot = REPO_ROOT / "scripts" / "issue1739_pilot_judge.py"
+    if not pilot.exists():
+        pytest.skip("issue1739_pilot_judge.py not present")
+    sys.path.insert(0, str(REPO_ROOT))
+    try:
+        from scripts import issue1739_pilot_judge as pj  # type: ignore[import-not-found]
+    except ImportError as exc:  # pragma: no cover - env guard
+        pytest.skip(f"pilot judge module import failed: {exc}")
+    return pj
+
+
+def test_pilot_load_rollouts_raises_on_missing_dir(tmp_path: Path) -> None:
+    """A missing rollout dir RAISES — never a warn-and-continue rc=0 no-op."""
+    pj = _pilot_judge_module()
+    with pytest.raises(RuntimeError, match="rollout dir missing"):
+        pj._load_rollouts(tmp_path / "nope" / "rollouts" / "pilot")
+
+
+def test_pilot_load_rollouts_raises_on_empty_selection(tmp_path: Path) -> None:
+    """An EMPTY selection is a failure, not a successful zero-row run."""
+    pj = _pilot_judge_module()
+    empty = tmp_path / "rollouts" / "pilot"
+    empty.mkdir(parents=True)
+    (empty / "_manifest.json").write_text("{}")  # underscore files are excluded
+    with pytest.raises(RuntimeError, match="zero rollout JSONs"):
+        pj._load_rollouts(empty)
+
+
+def test_pilot_load_rollouts_raises_on_missing_required_key(tmp_path: Path) -> None:
+    """A rollout missing a judged-item key RAISES at load, not mid-judge."""
+    pj = _pilot_judge_module()
+    d = tmp_path / "rollouts" / "pilot"
+    d.mkdir(parents=True)
+    (d / "ctx0_seed0.json").write_text(json.dumps({"context_id": "ctx0", "rollout_k": 0}))
+    with pytest.raises(RuntimeError, match="missing required keys"):
+        pj._load_rollouts(d)
+
+
+def test_pilot_expected_rollout_count_from_manifest() -> None:
+    """n_kept x k_rollouts is the expected-count basis; absent shape -> None."""
+    pj = _pilot_judge_module()
+    assert pj._expected_rollout_count({"n_kept": 200, "k_rollouts": 5}) == 1000
+    assert pj._expected_rollout_count({"n_contexts": 200, "k_rollouts": 5}) == 1000
+    assert pj._expected_rollout_count({"context_ids": ["a", "b"], "k_rollouts": 3}) == 6
+    assert pj._expected_rollout_count({"k_rollouts": 5}) is None
+
+
+def test_pilot_context_means_aggregates_per_context_and_reports_unscored() -> None:
+    """Plan-§7 primary unit: one value per CONTEXT (mean over its rollouts)."""
+    pj = _pilot_judge_module()
+    item_context = {"c1_k00": "c1", "c1_k01": "c1", "c2_k00": "c2", "c3_k00": "c3"}
+    scores = {"c1_k00": 20.0, "c1_k01": 40.0, "c2_k00": 90.0, "c3_k00": None}
+    means, n_empty = pj._context_means(scores, item_context)
+    assert sorted(means) == [30.0, 90.0]  # c1 -> mean(20,40); c2 -> 90; c3 unscored
+    assert n_empty == 1
+
+
+def test_pilot_context_means_truncation_filter_censors_and_reports() -> None:
+    """The non-truncated sensitivity read drops contexts left with no rollout."""
+    pj = _pilot_judge_module()
+    item_context = {"c1_k00": "c1", "c1_k01": "c1", "c2_k00": "c2"}
+    scores = {"c1_k00": 10.0, "c1_k01": 50.0, "c2_k00": 80.0}
+    means, n_empty = pj._context_means(scores, item_context, keep_items={"c1_k01"})
+    assert means == [50.0]
+    assert n_empty == 1  # c2's only rollout was truncated-excluded
+
+
+def test_pilot_spread_uses_sample_sd_and_strict_bottom_bin() -> None:
+    """Instrument match with issue1739_k1_floor.rung_table: ddof=1 + strict `<`.
+
+    A value sitting exactly ON the bottom edge (10.0) is NOT bottom-bin under
+    the plan-§7 `mean_score < threshold` rule; the inclusive count is reported
+    separately so neither convention is hidden.
+    """
+    pj = _pilot_judge_module()
+    import statistics as _st
+
+    vals = [10.0, 20.0, 30.0, 40.0]
+    rep = pj._score_spread(vals, unit="context")
+    assert rep["unit"] == "context"
+    assert rep["sd"] == pytest.approx(_st.stdev(vals))  # ddof=1
+    assert rep["sd_pop"] == pytest.approx(_st.pstdev(vals))  # ddof=0, reported
+    assert rep["sd"] != pytest.approx(rep["sd_pop"])
+    assert rep["bottom_frac"] == 0.0  # 10.0 is NOT < 10.0
+    assert rep["bottom_frac_inclusive"] == 0.25  # but it IS <= 10.0
+
+
+def test_pilot_spread_gate_is_two_sided_ceiling_fails() -> None:
+    """A high-SD but CEILING-saturated rung FAILS (two-sided gate, plan §4.4)."""
+    pj = _pilot_judge_module()
+    vals = [100.0] * 8 + [0.0] * 2  # sd huge, top_frac 0.8 -> not < 0.80
+    rep = pj._score_spread(vals, unit="context")
+    assert rep["sd"] >= pj.SPREAD_SD_MIN
+    assert rep["ceiling_frac"] == pytest.approx(0.8)
+    assert rep["spread_gate_pass"] is False
+    assert "top_frac" in rep["failed_criteria"]
+    # floor fraction is reported alongside the ceiling regardless of outcome
+    assert rep["bottom_frac"] is not None and rep["ceiling_frac"] is not None
+
+
+def test_pilot_spread_gate_passes_on_genuine_spread() -> None:
+    """A well-spread rung PASSES all three criteria."""
+    pj = _pilot_judge_module()
+    vals = [float(v) for v in range(0, 100, 5)]
+    rep = pj._score_spread(vals, unit="context")
+    assert rep["spread_gate_pass"] is True
+    assert rep["failed_criteria"] == []
