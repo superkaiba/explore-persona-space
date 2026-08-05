@@ -2089,7 +2089,7 @@ def _account_key_preflight(pod_label: str) -> None:
         sys.exit(1)
 
 
-def cmd_provision(args: argparse.Namespace) -> None:
+def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequential pre-flight guard chain (one independent refusal branch per hazard); the function sat AT the cap and #1997's plan-mandated stopped-collision refusal branch tips it; splitting the per-candidate loop would separate the two refusal branches from their shared same-named scan (annotated-noqa precedent: dispatch_issue.py _launch_extra_from_args).
     """Create a fresh pod for issue #N, wait for SSH, register it, bootstrap it."""
     if args.list_intents:
         print(list_intents())

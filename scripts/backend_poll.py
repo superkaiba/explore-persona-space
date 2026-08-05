@@ -4819,7 +4819,7 @@ def _provision_failure_evidence(exc: BaseException) -> tuple[str, int | None]:
     return evidence_text, returncode
 
 
-def _failover_gcp_to_runpod(
+def _failover_gcp_to_runpod(  # noqa: C901 — one except branch per typed rung outcome by design; the shared failover core sat AT the cap and #1997's plan-mandated RunPodStoppedPodCollisionError branch tips it (annotated-noqa precedent: dispatch_issue.py _launch_extra_from_args).
     *,
     issue: int,
     handle,
