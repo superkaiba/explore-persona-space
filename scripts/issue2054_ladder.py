@@ -84,7 +84,11 @@ load_dotenv()
 import numpy as np  # noqa: E402
 
 import issue2054_forms as forms  # noqa: E402
-from issue2054_pilot import FleetWallExceeded, fleet_projection_update  # noqa: E402
+from issue2054_pilot import (  # noqa: E402
+    FleetWallExceeded,
+    fleet_projection_update,
+    require_prior_wall_seconds,
+)
 from issue2054_resume import regime_values_equal  # noqa: E402
 from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
     identity_bias_predict,
@@ -1098,11 +1102,15 @@ def _run_ladder_pilot_gate(
             if prior_matches:
                 _log(f"pilot gate: prior report matches ({_rel(report_path)}); skipping")
                 # Re-derive the fleet projection for THIS run's pending count
-                # from the prior MEASURED wall (resume-aware, M-R2-1).
+                # from the prior MEASURED wall (resume-aware, M-R2-1). r3
+                # Minor 1: a prior report lacking the measured wall FAILS
+                # LOUD — a silent 0.0 default would project a fleet wall of
+                # 0 and disarm the fence.
+                prior_wall = require_prior_wall_seconds(prior, report_path)
                 fleet_projection_update(
                     report_path,
                     prior,
-                    wall_seconds=float(prior.get("wall_seconds", 0.0)),
+                    wall_seconds=prior_wall,
                     n_fleet_units=n_pending_units,
                     fold_k=fold_k,
                     log=_log,
@@ -1264,10 +1272,19 @@ def run_phase(args: argparse.Namespace) -> int:
         f"{n_full_product}); per-class: {pair_class_counts}"
     )
     if not is_smoke and len(cells) >= 2 and not ordered_pairs:
-        _log(
-            "WARN pair-class restriction matched ZERO pairs across >=2 located "
-            "cells — check --pair-classes against the located cell axes"
+        # r3 Minor 2: a production run that would compute NOTHING must not
+        # exit 0 with an empty digest — "ran fine" and "computed nothing"
+        # have to differ in rc. Exit 2 = the missing-input class (same as
+        # the no-activations refusals above); smoke keeps its self-transfer
+        # fallback and never reaches here.
+        print(
+            f"ERROR: pair-class restriction matched ZERO pairs across {len(cells)} "
+            f"located cells (pair-classes={','.join(args.pair_classes)}) — a non-smoke "
+            "ladder run that would compute nothing must not exit 0; check "
+            "--pair-classes against the located cell axes",
+            file=sys.stderr,
         )
+        return 2
 
     pair_paths: list[Path] = []
     pair_summaries: list[dict] = []
@@ -1618,6 +1635,10 @@ def main() -> int:
     )
     args = p.parse_args()
     valid_classes = set(PLAN6_PAIR_CLASSES) | {"all"}
+    if not args.pair_classes:
+        # r3 Minor 2: an empty --pair-classes '' parses to () and would pass
+        # the unknown-class check below vacuously, then enumerate zero pairs.
+        p.error("--pair-classes must name at least one class (or 'all'); got an empty value")
     unknown = [c for c in args.pair_classes if c not in valid_classes]
     if unknown:
         p.error(f"unknown --pair-classes {unknown} (expected {sorted(valid_classes)})")
