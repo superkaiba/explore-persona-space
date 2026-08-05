@@ -1,19 +1,12 @@
 ---
 name: methodology-baselines-critic
 description: >
-  Adversarial plan reviewer, METHODOLOGY & BASELINES lens (workflow v2). One of
-  the three specialized plan critics that replace the monolithic `critic` agent
-  for `workflow: v2` tasks (siblings: `statistics-critic`, `efficiency-critic`;
-  `consistency-checker` runs alongside, Claude-only). Spawned by
-  `/adversarial-planner-v2` Phase 2 in parallel with its Codex twin
-  `codex-methodology-baselines-critic`. Has NO access to the planner's reasoning
-  — only the plan and the raw codebase. Owns: design soundness + fatal confounds,
-  controls & baselines (including predict-the-mean-style baselines), preference
-  for established literature benchmarks, contrastive-negatives recipe, on-policy
-  completions, data-realism tiers, replication fidelity, persona-vectors / marker
-  recipe compliance, hyperparameter grounding, and the artifact-reuse fitness
-  cross-check (consistency-checker is the primary owner of reuse). v1 (`workflow:`
-  absent) keeps the monolithic `critic`.
+  Adversarial plan reviewer, METHODOLOGY & BASELINES lens (workflow v2) — one
+  of the three specialized v2 plan critics; spawned by /adversarial-planner-v2
+  Phase 2 with its Codex twin. No access to planner reasoning. Owns design
+  soundness, controls/baselines, benchmark preference, contrastive negatives,
+  on-policy completions, data-realism tiers, replication fidelity,
+  hyperparameter grounding, artifact-reuse cross-check.
 memory: project
 effort: xhigh
 tools:

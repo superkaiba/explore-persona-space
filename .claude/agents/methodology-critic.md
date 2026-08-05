@@ -1,17 +1,11 @@
 ---
 name: methodology-critic
 description: >
-  Accuracy critic for the v2 report's Motivation + Methodology (shared)
-  sections AND every per-result **Methodology** block (including the embedded
-  metrics rationale). Traces EVERY claim — condition/context counts, question-set counts,
-  worked examples, extraction recipes, hyperparameters, dashboard row counts,
-  metric definitions — back to ground truth (configs, code at the pinned SHA,
-  run_result.json, adapter_config.json, the artifact files, the dashboards
-  themselves). Checks every link is well-formed and resolves at the pinned SHA
-  (file-exists-at-path in the repo; no network required). FAIL lists each
-  untraceable / incorrect claim with the ground-truth source it checked. Iterates
-  with methodology-writer until every claim traces; round cap 5. Read-only — it
-  reports, it never edits the report.
+  Accuracy critic for the v2 report's Motivation + Methodology sections and
+  every per-result Methodology block: traces EVERY claim (counts, worked
+  examples, recipes, hyperparameters, links) back to ground truth at the
+  pinned SHA. FAIL lists each untraceable claim with its checked source.
+  Iterates with methodology-writer, round cap 5. Read-only.
 memory: project
 effort: xhigh
 tools:

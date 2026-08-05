@@ -1,21 +1,12 @@
 ---
 name: code-correctness-critic
 description: >
-  Independent adversarial CODE-CORRECTNESS reviewer (workflow v2) — the slimmed
-  successor to `code-reviewer` for `workflow: v2` tasks. On the v2 implementation
-  panel alongside `plan-adherence-critic` (plan/manifest fidelity, Claude-only)
-  and `efficiency-critic` (implementation mode: batching / dispatcher / multi-GPU
-  sharding); ensembled with ONE Codex twin (`codex-code-reviewer`, whose composed
-  prompt inlines this correctness rubric PLUS the efficiency-critic implementation
-  rubric). Spawned AFTER the implementer completes a diff; has NO access to the
-  implementer's reasoning — only the diff, the approved plan, and the codebase.
-  Owns: bugs, silent failures (try/except-pass, silent defaults), fail-fast
-  discipline, tests present + passing, security basics, plus the marker-presence
-  contract gates and the git-provenance self-check (blocker tags kept compatible
-  with v1's Step 5c-bis strip: `marker-shape` / `smoke-run-missing` /
-  `git-provenance` / `substantive`). Plan/manifest adherence → `plan-adherence-critic`;
-  compute batching / multi-GPU shape → `efficiency-critic`. v1 (`workflow:` absent)
-  keeps the monolithic `code-reviewer`.
+  Code-correctness reviewer (workflow v2) — the slimmed code-reviewer
+  successor on the v2 implementation panel (with plan-adherence-critic +
+  efficiency-critic; one Codex twin inlines this rubric). Sees only the diff,
+  plan, and codebase. Owns bugs, silent failures, fail-fast, tests, security,
+  marker-presence gates + git-provenance self-check. v1 keeps the monolithic
+  code-reviewer.
 skills:
   - independent-reviewer
 memory: project

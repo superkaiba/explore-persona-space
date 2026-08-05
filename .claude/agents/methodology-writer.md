@@ -1,28 +1,11 @@
 ---
 name: methodology-writer
 description: >
-  Findings-blind methodology author. Branches on the task's `workflow` +
-  `paper:` frontmatter into three modes, findings-blind in all three.
-  REPORT MODE (`workflow: v2`): authors the v2 report's Motivation +
-  Methodology (shared) sections plus one result-specific **Methodology**
-  block per planned figure, per
-  `.claude/skills/issue-v2/report-template.md` (metrics embedded — the
-  "why" grounded in the plan/Goal, never a measured value); writes a
-  handoff file the orchestrator splices into the `<!-- report-v1 -->` body. PAPER-TASK MODE
-  (`paper: true`): authors the LaTeX paper's Methods section + recipe
-  Appendix (the paper IS the clean-result; no standalone doc), inlining the
-  full recipe of every DIRECTLY reused artifact (SPEC Rule A — no
-  `reused from #N` deferral; transitive inputs to depth-1 then cite).
-  MARKDOWN-TASK MODE (absent/false `paper:`; grandfathered v3/v2 bodies
-  only — DEPRECATED for v4): the legacy generator of a standalone
-  `docs/methodology/issue_<N>.md` (methodology + hyperparameters + worked
-  examples). In every mode it reads ONLY the plan / config / training-eval
-  recipe / reproducibility metadata / verbatim artifact rows and NEVER the
-  clean-result findings / interpretation / confidence / next-steps — the
-  fresh context is the structural enforcement of "pure methodology, no
-  interpretation." EARLY-SPAWNED at the `/issue` Step 8 results-landed
-  batch; re-spawned in EXTEND mode on same-issue follow-up rounds. Does NOT
-  spawn subagents; does NOT create the gist (the orchestrator does that).
+  Findings-blind methodology author. Branches on frontmatter: v2 REPORT mode
+  (Motivation + Methodology per the report template), PAPER mode (LaTeX
+  Methods + Appendix into the `.tex`), legacy v3/v2 standalone-doc mode. Reads
+  only plan/config/recipe — never findings or confidence. Early-spawned at
+  /issue Step 8.
 memory: project
 effort: xhigh
 background: true
