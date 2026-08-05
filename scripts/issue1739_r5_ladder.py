@@ -191,6 +191,18 @@ def main(argv: list[str] | None = None) -> int:
                 "pool deliberately unmatched, clamp-exempt)",
                 flush=True,
             )
+            if os.environ.get("EPM_R5_UNION_ONLY") == "1":
+                # The swap rungs this union is compared against are already
+                # banked from the matched-pool round; re-running one here would
+                # be duplicate compute. A base spec is still REQUIRED above --
+                # the union spec is derived from it by dataclasses.replace --
+                # so the drop happens after the append, never before.
+                kept = [s for s in kept if s.f_u == UNION_F_U]
+                print(
+                    f"[r5-ladder] union_all: EPM_R5_UNION_ONLY=1 -> dropped the base "
+                    f"swap spec(s); {len(kept)} union spec(s) remain",
+                    flush=True,
+                )
         keys = sorted({(s.f_u, s.f_l) for s in kept})
         print(
             f"[r5-ladder] {len(kept)} compose specs over {len(keys)} configs "
@@ -543,6 +555,15 @@ def main(argv: list[str] | None = None) -> int:
             "matched_pool_size_cap": clamp_state.get("cap"),
             "clamp_max_f_u": clamp_state.get("max_f_u"),
             "union_all_enabled": os.environ.get("EPM_R5_UNION") == "1",
+            "union_all_only": os.environ.get("EPM_R5_UNION_ONLY") == "1",
+            "variants_run": sorted(
+                {s for s in (os.environ.get("EPM_R5_VARIANTS") or "").split(",") if s}
+            )
+            or None,
+            "stated_deviations": [
+                d for d in (os.environ.get("EPM_R5_DEVIATIONS") or "").split("||") if d
+            ]
+            or None,
             "union_all_provenance": union_state.get("provenance"),
             "contamination": union_state.get("contamination"),
         }
