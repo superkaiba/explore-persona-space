@@ -5,6 +5,7 @@ kind: experiment
 tags:
 - context-geometry
 - scale
+- keep-running
 created_at: '2026-07-18T01:29:58Z'
 has_clean_result: true
 parent_id: 779
