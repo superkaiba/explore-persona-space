@@ -1,6 +1,7 @@
 ---
-title: Does the context→answer map get more predictable with model scale? (Qwen-2.5-Instruct
-  0.5B→32B)
+title: 'Scale makes the answer profile more reliable, not more predictable from context:
+  ceiling-normalized map R² is near-flat from 1.5B to 14B and drops at 32B (MODERATE
+  confidence)'
 kind: experiment
 tags:
 - context-geometry

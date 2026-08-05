@@ -3831,7 +3831,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1491",
       "status": "interpreting",
-      "title": "Does the context\u2192answer map get more predictable with model scale? (Qwen-2.5-Instruct 0.5B\u219232B)"
+      "title": "Scale makes the answer profile more reliable, not more predictable from context: ceiling-normalized map R\u00b2 is near-flat from 1.5B to 14B and drops at 32B (MODERATE confidence)"
     },
     "1492": {
       "has_clean_result": false,
