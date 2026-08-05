@@ -1064,7 +1064,7 @@ def _upload_scaffold_files(out_dir: Path, files: list[Path], *, fail_loud: bool)
         return
     expected = [f"{TASK_PREFIX}/scaffolds/{rel}" for rel in allow]
     try:
-        _upload_folder_filtered(
+        url = _upload_folder_filtered(
             out_dir,
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
@@ -1072,6 +1072,14 @@ def _upload_scaffold_files(out_dir: Path, files: list[Path], *, fail_loud: bool)
             allow_patterns=allow,
             expected_repo_paths=expected,
         )
+        if not url:
+            # _upload_folder_filtered is fail-soft by RETURN on every failure
+            # shape (missing token, incomplete verify, terminal exception ->
+            # "") — an empty return is a failed upload, not a success.
+            raise RuntimeError(
+                f"scaffold bulk upload failed or incomplete -> {TASK_PREFIX}/scaffolds/ "
+                "(returned no path; local files kept)"
+            )
         _log(f"uploaded {len(allow)} scaffold file(s) in one bulk commit")
     except Exception as exc:  # noqa: BLE001
         if fail_loud:
@@ -1086,13 +1094,20 @@ def _upload_fold_map(fold_map_path: Path, *, fail_loud: bool) -> None:
         return
     # UPLOAD_LOOP_EXEMPT: single fold-map file, not a loop — direct _upload
     try:
-        _upload(
+        url = _upload(
             fold_map_path,
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
             path_in_repo=f"{TASK_PREFIX}/shared_fold_map.json",
             upload_as_file=True,
         )
+        if not url:
+            # _upload returns "" on failure — an empty return is a failed
+            # upload, not a success.
+            raise RuntimeError(
+                f"fold-map upload returned no path (failed) -> "
+                f"{TASK_PREFIX}/shared_fold_map.json (local file kept)"
+            )
         _log("uploaded shared_fold_map.json")
     except Exception as exc:  # noqa: BLE001
         if fail_loud:

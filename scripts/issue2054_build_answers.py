@@ -69,6 +69,7 @@ import json
 import os
 import shutil
 import sys
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -194,7 +195,14 @@ def _stage_sharded_jsonl(dest_dir: Path, base_prefix: str, stem: str) -> Path:
         )
         got = hashlib.sha256(lp.read_bytes()).hexdigest()
         exp = want_sha.get(name)
-        if exp and exp != got:
+        if not exp:
+            # The r6 writer always records per-shard shas; an absent entry
+            # signals a foreign/malformed manifest — refuse the unverified shard.
+            raise RuntimeError(
+                f"shard manifest carries no sha256 for {name} "
+                f"({base_prefix}/{stem}.manifest.json) — refusing unverified shard"
+            )
+        if exp != got:
             raise RuntimeError(
                 f"shard {name} sha mismatch: {got[:12]}... != manifest {str(exp)[:12]}..."
             )
@@ -465,7 +473,12 @@ def _manifest_answers(
 def _upload_pool(out_dir: Path, files: list[Path]) -> None:
     """Mirror the pool to HF in ONE bulk commit under
     ``issue2054_lattice/answers/`` (the ``_upload_scaffold_files`` pattern;
-    >9.5 MB JSONLs ride the sharded form)."""
+    >9.5 MB JSONLs ride the sharded form). Fail-loud: ``_upload_folder_filtered``
+    is fail-soft by RETURN on every failure shape (missing token, incomplete
+    expected-set verify, terminal exception -> ``""``), so the return is
+    captured and an empty return raises — the hub.py canonical caller pattern
+    (``upload_raw_completions_to_data_repo``) — making the documented
+    exit-1 upload-failure contract reachable."""
     from explore_persona_space.orchestrate.hub import _upload_folder_filtered
 
     files = pa._shard_large_jsonl_for_upload(files)
@@ -473,7 +486,7 @@ def _upload_pool(out_dir: Path, files: list[Path]) -> None:
     if not allow:
         raise RuntimeError(f"upload set resolved EMPTY against declared outputs: {files}")
     expected = [f"{ANSWERS_PREFIX}/{rel}" for rel in allow]
-    _upload_folder_filtered(
+    url = _upload_folder_filtered(
         out_dir,
         repo_id=pa.HF_DATA_REPO,
         repo_type="dataset",
@@ -481,6 +494,11 @@ def _upload_pool(out_dir: Path, files: list[Path]) -> None:
         allow_patterns=allow,
         expected_repo_paths=expected,
     )
+    if not url:
+        raise RuntimeError(
+            f"answers-pool HF mirror failed or incomplete -> {ANSWERS_PREFIX}/ "
+            "(bulk upload returned no path; local files kept)"
+        )
     _log(f"uploaded {len(allow)} pool file(s) in one bulk commit -> {ANSWERS_PREFIX}/")
 
 
@@ -538,7 +556,16 @@ def run(args: argparse.Namespace) -> int:
     scaffold_pool, scaffold_counters = _scaffold_answers(
         staging_root, variants, required, args.smoke_kept_cap
     )
-    draw_q = _draw_questions(staging_root, {x for x in required if x.startswith("mt_")})
+    mt_required = {x for x in required if x.startswith("mt_")}
+    draw_q = _draw_questions(staging_root, mt_required)
+    missing_draw = sorted(mt_required - draw_q.keys())
+    if missing_draw:
+        raise RuntimeError(
+            f"{len(missing_draw)} required mt_* conv_id(s) absent from "
+            f"shared_question_draw.jsonl (first ids: {missing_draw[:5]}) — the "
+            "admitted set is not a subset of the draw (inconsistent kept.json / "
+            "draw pair), so the question-equality seal cannot bind for those rows"
+        )
     manifest_pool, manifest_counters = _manifest_answers(
         staging_root,
         revision,
@@ -562,8 +589,11 @@ def run(args: argparse.Namespace) -> int:
 
     covered = {r["conv_id"] for r in rows}
     missing = sorted(required - covered)
-    if not smoke and len(missing) > args.allow_missing_required:
+    if missing:
+        # Persist whenever non-empty (a tolerated 0 < missing <= N run keeps
+        # the id list too, matching the --allow-missing-required help text).
         pa._atomic_write_json(out_dir / "missing_required_conv_ids.json", {"missing": missing})
+    if not smoke and len(missing) > args.allow_missing_required:
         print(
             f"ERROR: pool misses {len(missing)} required conv_id(s) "
             f"(> --allow-missing-required {args.allow_missing_required}); ids "
@@ -665,6 +695,7 @@ def main() -> int:
     try:
         return run(args)
     except Exception as exc:  # noqa: BLE001
+        traceback.print_exc()
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
