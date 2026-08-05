@@ -54,14 +54,18 @@ principled comparison.
    generic LMSYS. Result 2 explicitly contrasts generic vs trait-eliciting, so that comparison IS
    controlling for dataset and the reuse note does not cover it. ~2,000 contexts per behavior ×
    setting, one greedy decode + capture each.
-3. **Per-behavior maps, not per-setting maps.** $d = 3{,}584$ and only the three train rungs clear
-   $n_{\text{train}} > d$ (sycophancy 16,000; hallucination 16,000; evil ~5,900). Every eval / OOD /
-   WildChat rung is under-determined (671–4,021) and a fit there is estimator-degenerate (#1701).
-   So: one map per behavior, fit on that behavior's train rung, applied to its other rungs.
-   **Evil's map is the thin one** ($n/d \approx 1.6$, crossed prefix × question with only 1,348
-   distinct prefixes) — dof-capped ridge, never pure GCV (#1887), and its numbers carry a caveat.
-   Report the frozen 963k generic map (#779/#1092, `map963k_reuse`) as a reference line so
-   "is a per-behavior map worth fitting" is answerable.
+3. **No map is ever fit on trait-eliciting data alone.** Every map pool is generic-dominated with a
+   target-domain admixture (decision 4). This is what makes the fits well-posed: fitting a map on a
+   single trait rung would be under-determined almost everywhere — $d = 3{,}584$ against 671–4,021
+   contexts on every eval / OOD / WildChat rung, and $n/d \approx 1.6$ even on evil's train rung
+   (crossed prefix × question, only 1,348 distinct prefixes) — and every held-out R² in that regime
+   is estimator-degenerate, not a signal read (#1701). The generic half of the pool removes the
+   problem entirely, so **there is no thin-map caveat and no per-behavior-map-vs-frozen-map
+   decision to make.** Report the frozen 963k generic map (#779/#1092, `map963k_reuse`) as a
+   reference line — it is the $f_u = 0$ end of the same axis, so it comes free and makes the
+   admixture's contribution readable.
+   Ridge hygiene still binds: dof-capped, never pure GCV (#1887), with the per-fit selector and
+   selected λ reported alongside every read.
 4. **OOD protocol = generic + OOD in the map pool, evaluated on held-out OOD.** This is #1739's R5
    machinery (replace a fraction $f_u$ of the generic WildChat pool with unlabeled target-domain
    contexts; verified inert at $f_u = 0$). Default $f_u = 0.5$. It also dissolves the $n < d$
@@ -74,6 +78,13 @@ principled comparison.
      set $L$. Mixing $L$ too is a second variable.
    - R5's own caveat is that it has no OOD cells ("none of this is a transfer claim"). This design
      fills exactly that gap.
+   - **Size the U rung to the available target-domain pool, do not force $f_u = 0.5$ at large U.**
+     R5 swept U at 250 / 2,500 / 18,793; at U = 18,793 an $f_u = 0.5$ admixture needs ~9,400
+     target-domain pairs, which evil's OOD rungs do not have (hhrt 1,995, toxicchat 671). Pick the
+     largest U each rung can supply at the registered $f_u$, and report the realized (U, $f_u$) per
+     cell rather than silently degrading the fraction.
+   - The admixed pool contexts must be **disjoint from the held-out eval contexts** — the admixture
+     is unlabeled map data, never a peek at the eval set.
    - Held-out OOD split is **group-level** on `group_key`, never row-level.
 
 ### Deviation (stated) — context-end state only
@@ -105,7 +116,8 @@ Most of this is 0 GPU on banked artifacts. Verify each against
 | R5 pool-composition machinery | #1739 `gapfold/` | the OOD protocol above |
 
 **New compute is only:** the greedy arm on trait-eliciting data (~20k generations, 1–2 GPU-h under
-vLLM) + its judge wave (~60k Batch-API calls), and optionally a K=20 subsample (Result 5).
+vLLM) + its judge wave (~60k Batch-API calls). **That is the complete new-compute budget for this
+round** — no other generation is in scope (see Result 5: the K=20 subsample is explicitly excluded).
 
 ### Pre-registrations and standing assumptions
 
@@ -352,24 +364,24 @@ mean-quintile against the ceiling — three distinct shapes:
   lattice before believing it. On its **own** rungs P ≈ 1 by construction (per-rollout 3-way
   categorical), which is definitional and not a finding.
 
-**Optional extension (the part that needs new generation).** K=5 cannot classify an individual
-context — $f_{\text{mid}}$ takes only 6 values and P has ~35% relative SE. If we want per-context
-claims: ~500 contexts per behavior, **20 fresh draws**.
+**OUT OF SCOPE — do NOT run the K=20 subsample** (user directive, 2026-08-05). Result 5 is answered
+at the banked K=5 grain only. Do not generate additional rollouts for it, do not propose it as a
+follow-up in this round, and do not let a planner or critic reintroduce it as a Must-Fix.
 
-- **Selection trap, must be designed around:** selecting contexts because their K=5 mean was
-  middling is selection on a noisy statistic. For evil, where ~99% of contexts sit at the floor, the
-  only way to reach the middle band at K=5 is to have high within-context variance — so the selected
-  set is enriched for polarization **by construction** and would manufacture the finding. Fix:
-  **select on the banked K=5, measure only on the 20 fresh draws**; never let a selection draw enter
-  an estimate.
-- Three reads off the same 20 draws: (a) split 20 into two 10s and correlate — is polarization a
-  stable context property or draw noise; (b) correlate the K=5 estimate against the K=20 one — this
-  is also the moderator reliability Result 3 plot 3 needs, so it pays for itself; (c) ridge from
-  $v_C$ → P, held-out R² against a shuffle null — #1073 got 0.41–0.49 predicting *geometric*
-  dispersion from the context vector, so the behavioral analogue turns this into a monitoring
-  result: flag, before generating, the contexts where the model is a coin flip.
-- Pre-registered verdict rule: a behavior is called polarized if mean $f_{\text{mid}} < 0.4$ with a
-  cluster-bootstrap CI excluding 0.5.
+The cost of that scope call, stated so it is not rediscovered later: K=5 cannot classify an
+*individual* context — $f_{\text{mid}}$ takes only 6 values and P carries ~35% relative SE. So
+Result 5's claims are **population-level only** ("across middling contexts of behavior X, the draws
+look like Y"), never per-context, and the plot's caption says so. Two downstream consequences to
+carry rather than fix:
+
+- The Result 3 plot 3 moderators ($\sigma_A$ and P) stay noisy at K=5, which attenuates both axes of
+  the commonality decomposition. If its two unique segments come out close, report that the
+  comparison is underpowered — **do not call a winner**, and do not reach for more draws.
+- The polarization-predictability read (ridge from $v_C$ → P against a shuffle null, the monitoring
+  angle) is not run here. It is a legitimate future follow-up, but not in this round.
+
+Pre-registered verdict rule for the population-level claim: a behavior is called polarized if mean
+$f_{\text{mid}} < 0.4$ with a cluster-bootstrap CI excluding 0.5.
 
 ## Provenance
 
