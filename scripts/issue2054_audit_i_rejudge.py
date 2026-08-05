@@ -168,22 +168,38 @@ def _discover_digest_files(
     ``judge_results_paired_<arm>.jsonl`` file and pairs it with the matching
     ``raw_stories_paired_<arm>.jsonl`` primary + ``_retry*`` siblings.
     """
+    from explore_persona_space.orchestrate.hub import retry_transient
+
     variant_files: dict[str, list[tuple[str, str, list[str]]]] = {}
-    for entry in api.list_repo_tree(
-        repo_id=repo, path_in_repo=prefix, repo_type="dataset", recursive=False
-    ):
+    # Needs RepoFolder entries (depth-1 variant dirs), so the raw tree call
+    # stays — MATERIALIZED inside retry_transient (lazy-generator gotcha) so a
+    # transient 504 on a cursor page retries instead of crashing the audit.
+    top_entries = retry_transient(
+        lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient (materialized list)
+            api.list_repo_tree(
+                repo_id=repo, path_in_repo=prefix, repo_type="dataset", recursive=False
+            )
+        ),
+        what=f"list_repo_tree({prefix})",
+    )
+    for entry in top_entries:
         if type(entry).__name__ != "RepoFolder":
             continue
         variant = entry.path.rsplit("/", 1)[-1]
         if not (variant.endswith("_op") or variant.endswith("_op_base")):
             continue
-        files = [
-            e
-            for e in api.list_repo_tree(
-                repo_id=repo, path_in_repo=entry.path, repo_type="dataset", recursive=True
-            )
-            if type(e).__name__ == "RepoFile"
-        ]
+        entry_path = entry.path
+        variant_entries = retry_transient(
+            lambda p=entry_path: list(
+                # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient (materialized list)
+                api.list_repo_tree(
+                    repo_id=repo, path_in_repo=p, repo_type="dataset", recursive=True
+                )
+            ),
+            what=f"list_repo_tree({entry_path})",
+        )
+        files = [e for e in variant_entries if type(e).__name__ == "RepoFile"]
         # Index by basename for arm/retry lookup.
         by_base: dict[str, str] = {f.path.rsplit("/", 1)[-1]: f.path for f in files}
         triples: list[tuple[str, str, list[str]]] = []
@@ -260,6 +276,8 @@ def run_audit(args) -> int:
     load_dotenv()
     from huggingface_hub import HfApi, hf_hub_download
 
+    from explore_persona_space.orchestrate.hub import retry_transient
+
     api = HfApi()
     variant_files = _discover_digest_files(api, args.parent_repo, args.parent_prefix)
 
@@ -281,8 +299,11 @@ def run_audit(args) -> int:
             # retries carry the rewritten attempt for the same conv_id).
             raw_by_conv: dict[str, dict] = {}
             for rp in raw_paths:
-                local_raw = hf_hub_download(
-                    repo_id=args.parent_repo, repo_type="dataset", filename=rp
+                local_raw = retry_transient(
+                    lambda p=rp: hf_hub_download(
+                        repo_id=args.parent_repo, repo_type="dataset", filename=p
+                    ),
+                    what=f"hf_hub_download({rp})",
                 )
                 with open(local_raw, encoding="utf-8") as f:
                     for line in f:
@@ -296,8 +317,11 @@ def run_audit(args) -> int:
                         cid = r.get("conv_id")
                         if cid is not None:
                             raw_by_conv[cid] = r
-            local = hf_hub_download(
-                repo_id=args.parent_repo, repo_type="dataset", filename=judge_path
+            local = retry_transient(
+                lambda p=judge_path: hf_hub_download(
+                    repo_id=args.parent_repo, repo_type="dataset", filename=p
+                ),
+                what=f"hf_hub_download({judge_path})",
             )
             with open(local, encoding="utf-8") as f:
                 for line in f:

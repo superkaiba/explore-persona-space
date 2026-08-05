@@ -73,6 +73,8 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
 
+import issue2054_resume as resume  # noqa: E402
+
 # Default cell subset (plan §4 v4 lattice character panel + assistant scope);
 # the CLI --variants flag overrides.
 DEFAULT_VARIANTS = (
@@ -752,13 +754,34 @@ def _run_judge_pilot(variant_rows: dict[str, list[dict]], args, cache_root: Path
     return rep if isinstance(rep, dict) else {"verdict": str(rep)}
 
 
+def _judge_regime(variant: str, args, rubric: str) -> dict:
+    """Output-affecting regime for one variant's judge admission (C9/M6)."""
+    return {
+        "stage": "judge-admission",
+        "variant": variant,
+        "rubric_sha256": hashlib.sha256(rubric.encode()).hexdigest()[:16],
+        "judge_draws": max(1, args.judge_draws),
+        "max_tokens": int(args.max_tokens),
+        "threshold": float(args.judge_keep_threshold),
+    }
+
+
 def _judge_admission(
     variant_rows: dict[str, list[dict]], args, out_dir: Path
-) -> tuple[dict[str, list[dict]], dict]:
+) -> tuple[dict[str, list[dict]], dict, dict[str, Path]]:
     """Per-row judge admission over every variant (recovered + generated).
 
-    Returns ({variant: admitted rows}, judge_record). Pilot-gates any
-    >=5,000-call wave (rule 26) — a FAIL raises PilotGateRefusal (exit 7).
+    Returns ({variant: admitted rows}, judge_record, {variant: admitted
+    path}). Pilot-gates any >=5,000-call wave (rule 26) — a FAIL raises
+    PilotGateRefusal (exit 7).
+
+    Partial-judge resume ACROSS variants (C9/M6, Unit D flag): each
+    variant's admitted JSONL + admission sidecar persist the moment its
+    judging completes (checkpoint-per-phase), so a crash on variant 4/6
+    re-judges only the remainder; a resumed variant whose sidecar matches
+    the regime + prejudge identity loads from disk and skips the judge
+    dispatch entirely (the rubric-keyed judge cache stays the API-call-level
+    resume within a variant).
     """
     from explore_persona_space.eval.graded_judge import judge_graded
 
@@ -766,8 +789,31 @@ def _judge_admission(
     cache_root.mkdir(parents=True, exist_ok=True)
     rubric = _scaffold_judge_rubric()
 
+    # Resume pass FIRST — resumed variants leave the pilot-gate arithmetic.
+    admitted: dict[str, list[dict]] = {}
+    admitted_paths: dict[str, Path] = {}
+    resumed_records: dict[str, dict] = {}
+    to_judge: dict[str, list[dict]] = {}
+    for v, rows in variant_rows.items():
+        admitted_path = out_dir / v / f"scaffolds_{v}.jsonl"
+        regime = _judge_regime(v, args, rubric)
+        pj_path = _prejudge_path(out_dir, v)
+        inputs = {"prejudge_sha256": resume.file_sha256(pj_path) if pj_path.is_file() else None}
+        ok, reason = resume.soft_resume_ok(admitted_path, regime, inputs)
+        if ok:
+            admitted[v] = _read_jsonl(admitted_path)
+            admitted_paths[v] = admitted_path
+            done = resume.read_done(admitted_path) or {}
+            resumed_records[v] = dict((done.get("extra") or {}).get("record") or {})
+            resumed_records[v]["resumed"] = True
+            _log(f"variant={v} judge admission RESUME skip ({reason})")
+        else:
+            if reason not in ("output missing or empty", "no done sidecar"):
+                _log(f"variant={v} judge admission recompute: {reason}")
+            to_judge[v] = rows
+
     per_variant_items: dict[str, tuple[list, list, int]] = {
-        v: _variant_judge_items(v, rows) for v, rows in variant_rows.items()
+        v: _variant_judge_items(v, rows) for v, rows in to_judge.items()
     }
     total_calls = sum(len(items) for items, _r, _n in per_variant_items.values()) * max(
         1, args.judge_draws
@@ -776,7 +822,7 @@ def _judge_admission(
     pilot_report: dict | None = None
     if total_calls >= 5000:
         _log(f"judge wave {total_calls} calls >= 5000 — running rule-26 pilot gate")
-        pilot_report = _run_judge_pilot(variant_rows, args, cache_root)
+        pilot_report = _run_judge_pilot(to_judge, args, cache_root)
         verdict = str(pilot_report.get("verdict", "")).upper()
         if verdict not in {"PASS", "PASS_WAIVED"}:
             raise PilotGateRefusal(
@@ -784,7 +830,6 @@ def _judge_admission(
                 f"(report: {_rel(cache_root / 'pilot_gate_report.json')})"
             )
 
-    admitted: dict[str, list[dict]] = {}
     record: dict = {
         "judge_model": None,
         "max_tokens": args.max_tokens,
@@ -792,8 +837,9 @@ def _judge_admission(
         "threshold": args.judge_keep_threshold,
         "rubric_sha256": hashlib.sha256(rubric.encode()).hexdigest()[:16],
         "n_calls": total_calls,
+        "n_variants_resumed": len(resumed_records),
         "pilot": pilot_report,
-        "variants": {},
+        "variants": dict(resumed_records),
     }
     from explore_persona_space.eval.graded_judge import DEFAULT_JUDGE_MODEL
 
@@ -801,6 +847,7 @@ def _judge_admission(
     raw_dir = out_dir / "judge_raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
     for variant, (items, judged_rows, n_no_question) in per_variant_items.items():
+        admitted_path = out_dir / variant / f"scaffolds_{variant}.jsonl"
         if not items:
             admitted[variant] = []
             record["variants"][variant] = {
@@ -821,7 +868,7 @@ def _judge_admission(
             judged_rows, items, result, args.judge_keep_threshold
         )
         admitted[variant] = kept_rows
-        record["variants"][variant] = {
+        rec = {
             "judged": len(items),
             "admitted": len(kept_rows),
             "structural_no_question": n_no_question,
@@ -835,11 +882,23 @@ def _judge_admission(
                 "stop_reason_tally": result.stop_reason_tally,
             },
         }
+        record["variants"][variant] = rec
+        # Checkpoint THIS variant the moment its admission completes (C9/M6):
+        # admitted JSONL first, sidecar (regime + prejudge pin + record) last.
+        _atomic_write_jsonl(admitted_path, kept_rows)
+        admitted_paths[variant] = admitted_path
+        pj_path = _prejudge_path(out_dir, variant)
+        resume.write_done(
+            admitted_path,
+            _judge_regime(variant, args, rubric),
+            inputs={"prejudge_sha256": resume.file_sha256(pj_path) if pj_path.is_file() else None},
+            extra={"record": rec},
+        )
         _log(
             f"variant={variant} judge admission: {len(kept_rows)}/{len(items)} kept "
-            f"(drops={drops}, no_question={n_no_question})"
+            f"(drops={drops}, no_question={n_no_question}) -> {_rel(admitted_path)}"
         )
-    return admitted, record
+    return admitted, record, admitted_paths
 
 
 # ---------------------------------------------------------------------------
@@ -970,29 +1029,126 @@ def _upload_fold_map(fold_map_path: Path, *, fail_loud: bool) -> None:
         _log(f"WARN fold-map upload failed: {exc}")
 
 
-def _load_prejudge(out_dir: Path, variants: list[str], *, from_hf: bool) -> dict[str, list[dict]]:
+def _prejudge_path(out_dir: Path, variant: str) -> Path:
+    return out_dir / variant / f"scaffolds_{variant}_prejudge.jsonl"
+
+
+def _gen_regime(variant: str, args) -> dict:
+    """Output-affecting regime for one variant's gen-stage prejudge pool
+    (C9/M6 — the #722-r3 every-regime-key rule)."""
+    return {
+        "stage": "gen",
+        "variant": variant,
+        "seed": int(args.seed),
+        "target_conv_ids": int(args.target_conv_ids),
+        "gen_model": str(args.gen_model),
+        "gen_mock": bool(args.gen_mock),
+        "no_generate": bool(args.no_generate),
+    }
+
+
+def _write_prejudge_sidecars(
+    prejudge_paths: dict[str, Path], args, n_rows: dict[str, int]
+) -> list[Path]:
+    """Done sidecars for the gen-stage prejudge pools: the gen-side resume
+    predicate AND the judge-side staleness anchor (the recorded content sha —
+    Unit D flag: `--stage judge` must not silently consume a stale local
+    prejudge from an older gen run)."""
+    sidecars: list[Path] = []
+    for v, p in prejudge_paths.items():
+        sidecars.append(
+            resume.write_done(
+                p,
+                _gen_regime(v, args),
+                extra={"prejudge_sha256": resume.file_sha256(p), "n_rows": n_rows.get(v, 0)},
+            )
+        )
+    return sidecars
+
+
+def _prejudge_resume_ok(prejudge_path: Path, regime: dict) -> tuple[bool, str]:
+    """(skip?, reason) for one variant's prejudge pool: sidecar present +
+    regime match + the recorded content sha matches the file on disk."""
+    if not prejudge_path.is_file() or prejudge_path.stat().st_size == 0:
+        return False, "prejudge missing or empty"
+    payload = resume.read_done(prejudge_path)
+    if payload is None:
+        return False, "no prejudge sidecar"
+    diff = resume.regime_diff(payload.get("regime") or {}, regime)
+    if diff:
+        return False, f"regime changed: {diff}"
+    recorded_sha = (payload.get("extra") or {}).get("prejudge_sha256")
+    if recorded_sha != resume.file_sha256(prejudge_path):
+        return False, "prejudge content drifted from its sidecar"
+    return True, "prejudge complete under matching regime"
+
+
+def _verify_prejudge_staleness(out_dir: Path, variants: list[str], args) -> None:
+    """--stage judge staleness gate (Unit D flag): every consumed prejudge
+    must carry a sidecar whose recorded sha matches the file AND whose seed /
+    target_conv_ids match this judge invocation — a stale local pool from an
+    older gen run fails LOUD, never silently judged."""
+    for v in variants:
+        p = _prejudge_path(out_dir, v)
+        payload = resume.read_done(p)
+        if payload is None:
+            raise RuntimeError(
+                f"prejudge for {v} has no done sidecar ({resume.sidecar_path(p)}) — "
+                "re-run --stage gen (the sidecar is the staleness anchor) or "
+                "re-stage with --prejudge-from-hf"
+            )
+        recorded_sha = (payload.get("extra") or {}).get("prejudge_sha256")
+        actual_sha = resume.file_sha256(p)
+        if recorded_sha != actual_sha:
+            raise RuntimeError(
+                f"prejudge for {v} is STALE: content sha {actual_sha[:12]}… != "
+                f"sidecar-recorded {str(recorded_sha)[:12]}… — re-run --stage gen "
+                "or re-stage with --prejudge-from-hf"
+            )
+        rec_regime = payload.get("regime") or {}
+        for key, want in (
+            ("seed", int(args.seed)),
+            ("target_conv_ids", int(args.target_conv_ids)),
+        ):
+            if rec_regime.get(key) != want:
+                raise RuntimeError(
+                    f"prejudge for {v} was generated under {key}="
+                    f"{rec_regime.get(key)!r}, judge invocation wants {want!r} — "
+                    "cross-regime judging refused; re-run --stage gen"
+                )
+        if rec_regime.get("gen_mock"):
+            _log(f"WARN variant={v}: prejudge pool is a --gen-mock (smoke) pool")
+
+
+def _load_prejudge(
+    out_dir: Path, variants: list[str], *, from_hf: bool, args
+) -> dict[str, list[dict]]:
     """Load per-variant prejudge pools for --stage judge (staging from HF on
-    request — the gen pod uploaded them; fail-loud when absent)."""
-    missing = [v for v in variants if not (out_dir / v / f"scaffolds_{v}_prejudge.jsonl").is_file()]
+    request — the gen pod uploaded them; fail-loud when absent or STALE)."""
+    missing = [v for v in variants if not _prejudge_path(out_dir, v).is_file()]
     if missing and from_hf:
         from explore_persona_space.orchestrate.hub import stage_hub_file
 
         for v in missing:
-            stage_hub_file(
-                HF_DATA_REPO,
-                f"{TASK_PREFIX}/scaffolds/{v}/scaffolds_{v}_prejudge.jsonl",
-                out_dir / v / f"scaffolds_{v}_prejudge.jsonl",
-                repo_type="dataset",
-            )
-        missing = [
-            v for v in variants if not (out_dir / v / f"scaffolds_{v}_prejudge.jsonl").is_file()
-        ]
+            for name in (
+                f"scaffolds_{v}_prejudge.jsonl",
+                # The staleness-anchor sidecar rides the same HF prefix.
+                f"scaffolds_{v}_prejudge.jsonl.done.json",
+            ):
+                stage_hub_file(
+                    HF_DATA_REPO,
+                    f"{TASK_PREFIX}/scaffolds/{v}/{name}",
+                    out_dir / v / name,
+                    repo_type="dataset",
+                )
+        missing = [v for v in variants if not _prejudge_path(out_dir, v).is_file()]
     if missing:
         raise FileNotFoundError(
             f"prejudge inputs missing for {missing}: run --stage gen first "
             f"(uploads to {TASK_PREFIX}/scaffolds/) or pass --prejudge-from-hf"
         )
-    return {v: _read_jsonl(out_dir / v / f"scaffolds_{v}_prejudge.jsonl") for v in variants}
+    _verify_prejudge_staleness(out_dir, variants, args)
+    return {v: _read_jsonl(_prejudge_path(out_dir, v)) for v in variants}
 
 
 # ---------------------------------------------------------------------------
@@ -1014,62 +1170,101 @@ def run_phase(args: argparse.Namespace) -> int:
     gen_counts: dict[str, dict] = {}
     question_record: dict | None = None
     shared_recovered: set[str] = set()
+    gen_stage_resumed = False
     if args.stage in ("all", "gen"):
-        _log("recover: strip parent stories -> scaffolds")
-        variant_rows = _recover_scaffolds_from_hf(variants, api)
-        n_total_recovered = sum(len(rs) for rs in variant_rows.values())
-        _log(f"recovered {n_total_recovered} scaffolds across {len(variant_rows)} variants")
-
-        shared_recovered = _shared_recovered_intersection(variant_rows)
-        n_gen = max(0, args.target_conv_ids - len(shared_recovered))
-        _log(
-            f"shared recovered intersection={len(shared_recovered)} "
-            f"-> shared generation draw n={n_gen}"
-        )
-        if args.pilot or args.no_generate or n_gen == 0:
+        # Phase-level skip-completed (C9/M6, Unit D flag: recovery re-downloads
+        # parent stories every run). ALL-OR-NOTHING by design: the shared
+        # question draw spans the shared recovered intersection of EVERY
+        # variant, so a partial per-variant skip would break the shared-draw
+        # invariant — when every variant's prejudge pool + regime-matching
+        # sidecar are present, the whole recover+generate leg is skipped
+        # (the generator's own fingerprint-gated per-chunk resume + the
+        # question-pool fingerprint cache already absorb mid-gen crashes).
+        prejudge_status = {
+            v: _prejudge_resume_ok(_prejudge_path(out_dir, v), _gen_regime(v, args))
+            for v in variants
+        }
+        if all(ok for ok, _ in prejudge_status.values()) and variants:
+            gen_stage_resumed = True
+            variant_rows = {v: _read_jsonl(_prejudge_path(out_dir, v)) for v in variants}
             _log(
-                f"generation SKIPPED (pilot={args.pilot} no_generate={args.no_generate} "
-                f"n_gen={n_gen})"
+                "gen stage RESUME skip: every variant's prejudge pool is complete "
+                f"under the matching regime — { {v: len(r) for v, r in variant_rows.items()} }"
             )
         else:
-            questions, question_record = _ensure_question_pool(args, n_gen, out_dir)
-            for v in variants:
-                gen_rows, counts = _generate_shortfall(
-                    v,
-                    questions,
-                    out_dir,
-                    seed=args.seed,
-                    mock=args.gen_mock,
-                    gen_model=args.gen_model,
+            for v, (ok, reason) in prejudge_status.items():
+                if not ok:
+                    _log(f"gen stage runs (variant={v}: {reason})")
+            _log("recover: strip parent stories -> scaffolds")
+            variant_rows = _recover_scaffolds_from_hf(variants, api)
+            n_total_recovered = sum(len(rs) for rs in variant_rows.values())
+            _log(f"recovered {n_total_recovered} scaffolds across {len(variant_rows)} variants")
+
+            shared_recovered = _shared_recovered_intersection(variant_rows)
+            n_gen = max(0, args.target_conv_ids - len(shared_recovered))
+            _log(
+                f"shared recovered intersection={len(shared_recovered)} "
+                f"-> shared generation draw n={n_gen}"
+            )
+            if args.pilot or args.no_generate or n_gen == 0:
+                _log(
+                    f"generation SKIPPED (pilot={args.pilot} no_generate={args.no_generate} "
+                    f"n_gen={n_gen})"
                 )
-                variant_rows[v] = variant_rows[v] + gen_rows
-                gen_counts[v] = counts
-        # One conversation per row within each variant (plan assumption 29).
+            else:
+                questions, question_record = _ensure_question_pool(args, n_gen, out_dir)
+                for v in variants:
+                    gen_rows, counts = _generate_shortfall(
+                        v,
+                        questions,
+                        out_dir,
+                        seed=args.seed,
+                        mock=args.gen_mock,
+                        gen_model=args.gen_model,
+                    )
+                    variant_rows[v] = variant_rows[v] + gen_rows
+                    gen_counts[v] = counts
+        # One conversation per row within each variant (plan assumption 29) —
+        # asserted on the resumed pools too.
         for v, rows in variant_rows.items():
             cids = [str(r.get("conv_id")) for r in rows]
             n_dupes = len(cids) - len(set(cids))
             assert n_dupes == 0, f"variant {v}: {n_dupes} duplicate conv_ids in pool"
 
-        prejudge_paths = _write_scaffolds_local(variant_rows, out_dir, suffix="_prejudge")
+        if gen_stage_resumed:
+            prejudge_paths = {v: _prejudge_path(out_dir, v) for v in variants}
+        else:
+            prejudge_paths = _write_scaffolds_local(variant_rows, out_dir, suffix="_prejudge")
+            # Gen-side resume predicate + judge-side staleness anchor (C9/M6).
+            prejudge_sidecars = _write_prejudge_sidecars(
+                prejudge_paths, args, {v: len(r) for v, r in variant_rows.items()}
+            )
 
         if args.stage == "gen":
-            # Pod leg ends here: persist the seam the VM judge stage consumes
-            # (fail-loud — #1482 off-pod read class), plus the gen raws +
-            # question draw (raw completions upload ALWAYS).
-            upload_files = list(prejudge_paths.values())
-            for v in variants:
-                upload_files.extend(sorted((out_dir / v / "gen").glob("*.jsonl")))
-                upload_files.extend(sorted((out_dir / v / "gen").glob("*.json")))
-            for name in (
-                "shared_question_draw.jsonl",
-                "shared_question_draw.meta.json",
-            ):
-                if (out_dir / name).is_file():
-                    upload_files.append(out_dir / name)
-            _upload_scaffold_files(out_dir, upload_files, fail_loud=True)
+            if gen_stage_resumed:
+                _log("gen stage resumed — prior gen leg already uploaded; skipping re-upload")
+            elif str(out_dir).startswith("/tmp/") or args.skip_upload:
+                _log("gen leg upload skipped (smoke /tmp tree or --skip-upload)")
+            else:
+                # Pod leg ends here: persist the seam the VM judge stage consumes
+                # (fail-loud — #1482 off-pod read class), plus the gen raws +
+                # question draw (raw completions upload ALWAYS). The prejudge
+                # sidecars ride along (the judge leg's staleness anchor).
+                upload_files = list(prejudge_paths.values()) + prejudge_sidecars
+                for v in variants:
+                    upload_files.extend(sorted((out_dir / v / "gen").glob("*.jsonl")))
+                    upload_files.extend(sorted((out_dir / v / "gen").glob("*.json")))
+                for name in (
+                    "shared_question_draw.jsonl",
+                    "shared_question_draw.meta.json",
+                ):
+                    if (out_dir / name).is_file():
+                        upload_files.append(out_dir / name)
+                _upload_scaffold_files(out_dir, upload_files, fail_loud=True)
             digest = {
                 "phase": "phase_a",
                 "stage": "gen",
+                "resumed": gen_stage_resumed,
                 "target_conv_ids": args.target_conv_ids,
                 "recovered_per_variant": {
                     v: sum(1 for r in rows if r.get("provenance") == "recovered")
@@ -1091,7 +1286,7 @@ def run_phase(args: argparse.Namespace) -> int:
             sys.stdout.flush()
             sys.exit(0)
     else:  # stage == "judge"
-        variant_rows = _load_prejudge(out_dir, variants, from_hf=args.prejudge_from_hf)
+        variant_rows = _load_prejudge(out_dir, variants, from_hf=args.prejudge_from_hf, args=args)
         _log(f"loaded prejudge pools: { {v: len(r) for v, r in variant_rows.items()} }")
 
     cache_root = out_dir / "_judge_cache"
@@ -1112,10 +1307,10 @@ def run_phase(args: argparse.Namespace) -> int:
         sys.stdout.flush()
         sys.exit(0 if verdict in {"PASS", "PASS_WAIVED"} else 7)
 
-    # Full per-row judge admission (C8(ii)).
-    admitted, judge_record = _judge_admission(variant_rows, args, out_dir)
+    # Full per-row judge admission (C8(ii)) — per-variant checkpoint + resume
+    # inside (C9/M6); admitted JSONLs are written in-loop, not re-written here.
+    admitted, judge_record, admitted_paths = _judge_admission(variant_rows, args, out_dir)
 
-    admitted_paths = _write_scaffolds_local(admitted, out_dir)
     # Unit A carry-forward: every admitted row must carry the q-fields the
     # chat/bare renderers consume (question, or the stripper's q_start/q_end).
     for v, rows in admitted.items():
@@ -1188,10 +1383,22 @@ def run_phase(args: argparse.Namespace) -> int:
     _atomic_write_json(fold_map_path, payload)
     _log(f"wrote shared_fold_map.json (n_conv_ids={len(fold_map)}) -> {_rel(fold_map_path)}")
 
-    upload_files = [kept_path, *admitted_paths.values()]
-    upload_files.extend(sorted((out_dir / "judge_raw").glob("*.json")))
-    _upload_scaffold_files(out_dir, upload_files, fail_loud=False)
-    _upload_fold_map(fold_map_path, fail_loud=False)
+    # FATAL on failure (M2): kept.json + the admitted scaffolds + the shared
+    # fold map are the plan-declared downstream inputs of EVERY later phase —
+    # `[phase=done]` must never report done with them un-persisted. The
+    # admission sidecars ride along (the resume anchors). Smoke trees under
+    # /tmp/ (and --skip-upload runs) never mirror to the shared data repo.
+    is_smoke = str(out_dir).startswith("/tmp/")
+    if not is_smoke and not args.skip_upload:
+        upload_files = [kept_path, *admitted_paths.values()]
+        upload_files.extend(
+            resume.sidecar_path(p)
+            for p in admitted_paths.values()
+            if resume.sidecar_path(p).is_file()
+        )
+        upload_files.extend(sorted((out_dir / "judge_raw").glob("*.json")))
+        _upload_scaffold_files(out_dir, upload_files, fail_loud=True)
+        _upload_fold_map(fold_map_path, fail_loud=True)
 
     digest = {
         "phase": "phase_a",
@@ -1299,6 +1506,11 @@ def main() -> int:
         "--prejudge-from-hf",
         action="store_true",
         help="--stage judge: stage missing prejudge inputs from the HF scaffolds prefix",
+    )
+    p.add_argument(
+        "--skip-upload",
+        action="store_true",
+        help="skip the HF mirror steps (smoke use; sibling drivers' convention)",
     )
     args = p.parse_args()
     if args.stage == "gen" and args.pilot:

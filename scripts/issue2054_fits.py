@@ -22,18 +22,29 @@ Reports, per fold + pooled across folds:
   via `analysis/mapping_baselines.knn_retrieval`.
 - Shuffled-answer matched-capacity null R²: refit the same ridge with the
   training answer rows PERMUTED (breaks the context→answer pairing while
-  keeping capacity fixed); ``--n-null-draws`` (default 200) draws, batched via
-  a shared factorization (never a per-draw serial fit; `.claude/rules/vectorize-many-cell-fits.md`).
+  keeping capacity fixed); ``--n-null-draws`` (default 100 — plan §6 DV 4 /
+  §9 sizing) draws, batched via a shared factorization (never a per-draw
+  serial fit; `.claude/rules/vectorize-many-cell-fits.md`).
 - Reduced-basis (train-fold PCA k=1024) diagnostic R² per cell (the #1887
   recipe) alongside the ambient fit, so the writeup can contrast estimators.
 - Per-comparison bootstrap CI over CONVERSATIONS within the equalized-down
   intersection (NOT K=5 fold-resample — statistics-critic concern #2).
 
+Equalize-down is PER COMPARISON (plan req 8 / §"equalize-down policy"; M1):
+cells group by (character, model) — the (a,b,c,d) 2x2's identity pair, with
+`char_X`/`char_X_op`/`char_X_op_base` mapping to one character — and every
+cell fits on the conv_id intersection of its OWN group (never the global
+intersection across all located cells, which over-discards for every cell
+and empties every fit when the assistant scope's conv_id space is disjoint
+from the character scopes'). Per-group equalize manifests land under
+``<output-dir>/equalize/``.
+
 Kill-gate outcomes (v7→v8 statistics-critic Must-Fix, plan §4/§7):
 
-- **Kill gate 4** — min conv_id intersection across compared cells < 4,480:
-  refuses to fit and reports; equalize-down at n<4480 pushes n_train=0.8·n
-  below d=3,584 and re-enters the estimator-degenerate regime.
+- **Kill gate 4** — min conv_id intersection across the compared cells of a
+  (character, model) pair < 4,480 (plan §7: per-pair, M1): reported per pair;
+  equalize-down at n<4480 pushes n_train=0.8·n below d=3,584 and re-enters
+  the estimator-degenerate regime.
 - **Kill gate 5** — (b) vs (d) answer-length KS D > 0.30 OR mean-ratio outside
   [0.25, 4.0] within a (character, model) pair: refuses to fit and reports;
   length-stratified refit is not tractable at the row count.
@@ -52,6 +63,7 @@ input.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -72,6 +84,7 @@ load_dotenv()
 import numpy as np  # noqa: E402
 
 import issue2054_forms as forms  # noqa: E402
+import issue2054_resume as resume  # noqa: E402
 from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
     identity_bias_predict,
     knn_retrieval,
@@ -135,6 +148,33 @@ DEFAULT_FORMS = forms.FORMS
 # Kill-gate 5 pairs cell (b) with cell (d): SAME (variant, form, model), the
 # inserted vs on_policy conditions. cell_c cells have no length-parity peer.
 _GATE5_PEER_CONDITION = {"inserted": "on_policy", "on_policy": "inserted"}
+
+# Plan §9 pilot-gate cell: assistant × chat × inserted × instruct — the FIRST
+# fit-battery leg runs this one cell at production shape and records measured
+# wall + peak RSS BEFORE the fleet (M5; plan-compute-sizing.md § Per-cell fit
+# phases). Falls back to the first located cell when absent.
+PILOT_PREFERRED_CELL = (
+    "conversation_paired_stories_assistant",
+    "inserted",
+    "chat",
+    "qwen2.5-7b-instruct",
+)
+PILOT_RSS_ROUTE_OFF_VM_GIB = 16.0
+
+
+def _base_character(variant: str) -> str:
+    """Map an on-policy variant to its base character (`char_X_op[_base]` ->
+    `char_X`); non-op variants pass through."""
+    for tail in ("_op_base", "_op"):
+        if variant.endswith(tail):
+            return variant[: -len(tail)]
+    return variant
+
+
+def _comparison_group_key(variant: str, model: str) -> tuple[str, str]:
+    """The (character, model) comparison-group key (plan req 8 / §7 gate 4 —
+    the (a,b,c,d) 2x2 lives within one character × model pair; M1)."""
+    return (_base_character(variant), model)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -828,9 +868,12 @@ def _evaluate_kill_gates(
 ) -> dict:
     """Return kill-gate outcomes for this (variant, condition, form, model) cell.
 
-    peer_cells_conv_ids: {peer_cell_key: conv_ids} for the 2x2 (a,b,c,d) pair;
-      when None (single-cell driver run), gate 4 reports a single-cell floor
-      check against the ambient-basis n_train ≥ d requirement.
+    peer_cells_conv_ids: {peer_cell_key: conv_ids} for the cell's OWN
+      (character, model) comparison group (plan §7: gate 4 is per pair — M1;
+      never the global cell set). When None/empty (single-cell group — the
+      smoke path), gate 4 REPORTS the cell's own size and never fires (a
+      lone cell has no comparison to equalize; the gate-calibration rule:
+      a production-n gate must not kill a smoke leg).
     peer_diag: the (b)<->(d) length-parity peer's capture diagnostics — the
       SAME (variant, form, model) under the paired condition (inserted <->
       on_policy); None for cell_c cells (no length-parity peer) or when the
@@ -838,13 +881,13 @@ def _evaluate_kill_gates(
     gate5_peer_cell: the peer's cell key, for the report (None when N/A).
     """
     intersection_size = len(conv_ids_this_cell)
-    peer_report: dict = {}
+    peer_report: dict = {"single_cell_group": not peer_cells_conv_ids}
     if peer_cells_conv_ids:
         peer_report["peer_cells"] = sorted(peer_cells_conv_ids.keys())
         intersection_size = _min_pair_intersection(
             {"this": conv_ids_this_cell, **peer_cells_conv_ids}
         )
-    gate4_fire = intersection_size < KILL_GATE_4_MIN_INTERSECTION
+    gate4_fire = bool(peer_cells_conv_ids) and intersection_size < KILL_GATE_4_MIN_INTERSECTION
     ks_d, ratio, ks_info = _answer_length_ks_from_diagnostics(diag_this, peer_diag)
     gate5_fire = False
     if np.isfinite(ks_d):
@@ -876,15 +919,15 @@ def _evaluate_kill_gates(
 
 
 def _upload_to_hf(fits_by_cell: dict[str, Path], model: str) -> None:
-    """Best-effort mirror of fit JSONs — ONE bulk `upload_folder` commit."""
+    """Mirror fit JSONs — ONE bulk `upload_folder` commit. FATAL on failure
+    (M2): a swallowed upload + `[phase=done]` silently strands the fits."""
     from explore_persona_space.orchestrate.hub import _upload_folder_filtered
 
     if not fits_by_cell:
         return
     parents = {p.parent.resolve() for p in fits_by_cell.values()}
     if len(parents) != 1:
-        _log(f"WARN heterogeneous fit roots; skipping bulk upload: {parents}")
-        return
+        raise RuntimeError(f"heterogeneous fit roots — cannot compose one bulk upload: {parents}")
     root = next(iter(parents))
     allow_patterns: list[str] = []
     expected_paths: list[str] = []
@@ -898,19 +941,18 @@ def _upload_to_hf(fits_by_cell: dict[str, Path], model: str) -> None:
         allow_patterns.append(rel)
         expected_paths.append(f"{TASK_PREFIX}/fits/{rel}")
     if not allow_patterns:
-        return
-    try:
-        _upload_folder_filtered(
-            root,
-            repo_id=HF_DATA_REPO,
-            repo_type="dataset",
-            path_in_repo=f"{TASK_PREFIX}/fits",
-            allow_patterns=allow_patterns,
-            expected_repo_paths=expected_paths,
+        raise RuntimeError(
+            f"upload set resolved EMPTY against declared fit JSONs: {sorted(fits_by_cell)}"
         )
-        _log(f"uploaded {len(allow_patterns)} fit JSON(s) in one bulk commit (model={model})")
-    except Exception as exc:  # noqa: BLE001
-        _log(f"WARN fit upload failed (model={model}): {exc}")
+    _upload_folder_filtered(
+        root,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{TASK_PREFIX}/fits",
+        allow_patterns=allow_patterns,
+        expected_repo_paths=expected_paths,
+    )
+    _log(f"uploaded {len(allow_patterns)} fit JSON(s) in one bulk commit (model={model})")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -923,6 +965,132 @@ def _write_json(path: Path, payload: dict) -> None:
     with tmp.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, sort_keys=True, default=str)
     os.replace(tmp, path)
+
+
+# Regime keys a resumed cell must match EXACTLY against its existing fit JSON
+# (C9/M6 — every output-affecting key, incl. the equalized restriction set +
+# npz identity; the #722-r3 rule).
+_CELL_RESUME_KEYS = (
+    "cell",
+    "arms",
+    "layer",
+    "seed",
+    "n_null_draws",
+    "bootstrap_draws",
+    "reduced_basis_k",
+    "pilot",
+    "dry_run",
+    "restrict_sha256",
+    "npz_sha256",
+)
+_CELL_RESUME_FOLD_KEYS = {
+    "fold_map_k": "k",
+    "fold_map_seed": "seed",
+    "fold_map_n_conv_ids": "n_conv_ids",
+}
+
+
+def _cell_resume_check(out_path: Path, expected: dict) -> tuple[bool, str]:
+    """(skip?, reason) for one cell against its existing fit JSON.
+
+    Fit JSONs are self-describing, so a mismatch RECOMPUTES (with the reason
+    logged by the caller) — no separate sidecar and no refusal needed.
+    """
+    if not out_path.is_file():
+        return False, ""
+    try:
+        with out_path.open(encoding="utf-8") as f:
+            existing = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return False, "existing fit JSON unreadable"
+    mismatched = [k for k in _CELL_RESUME_KEYS if existing.get(k) != expected.get(k)]
+    fm = existing.get("fold_map") or {}
+    mismatched += [
+        ek for ek, fk in _CELL_RESUME_FOLD_KEYS.items() if fm.get(fk) != expected.get(ek)
+    ]
+    ok = existing.get("arm_reports") and all(
+        (existing["arm_reports"].get(a) or {}).get("status") == "ok"
+        for a in expected.get("arms", [])
+    )
+    if mismatched:
+        return False, f"regime keys changed: {mismatched}"
+    if not ok:
+        return False, "existing fit JSON has non-ok arm status"
+    return True, "fit JSON complete under matching regime"
+
+
+def _run_fits_pilot_gate(
+    activations_by_cell: dict,
+    groups: dict,
+    group_restrict: dict,
+    fold_map: dict,
+    args: argparse.Namespace,
+    output_dir: Path,
+) -> None:
+    """Pilot-before-fleet (M5; plan §9 pilot-gate): ONE cell (preferring the
+    plan's named assistant × chat × inserted × instruct cell), ONE fold, at
+    PRODUCTION draw counts, measured (wall + peak RSS) and persisted to
+    `<output-dir>/pilot_gate_report.json` BEFORE the fleet loop runs.
+
+    RSS >= 16 GiB is the plan's route-off-the-shared-VM boundary — the driver
+    WARNs (routing is the dispatcher's call); it never blocks.
+    """
+    import resource
+
+    report_path = output_dir / "pilot_gate_report.json"
+    if report_path.is_file() and not args.overwrite:
+        try:
+            with report_path.open(encoding="utf-8") as f:
+                prior = json.load(f)
+            if prior.get("n_null_draws") == int(args.n_null_draws):
+                _log(f"pilot gate: prior report matches ({_rel(report_path)}); skipping")
+                return
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    pilot_key = (
+        PILOT_PREFERRED_CELL
+        if PILOT_PREFERRED_CELL in activations_by_cell
+        else next(iter(activations_by_cell))
+    )
+    variant, condition, form, model = pilot_key
+    gkey = _comparison_group_key(variant, model)
+    _log(f"pilot gate: 1-cell 1-fold measured pilot on {forms.cell_key(*pilot_key)}")
+    t0 = time.time()
+    pilot_report = _fit_arm_cell(
+        variant=variant,
+        model=model,
+        arm=args.arms[0],
+        activations=activations_by_cell[pilot_key],
+        fold_map=fold_map,
+        restrict_ids=group_restrict[gkey],
+        n_null_draws=int(args.n_null_draws),
+        seed=int(args.seed),
+        pilot=True,  # 1 fold — production shape otherwise
+        bootstrap_draws=int(args.bootstrap_draws),
+    )
+    wall = time.time() - t0
+    peak_rss_gib = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024**2)
+    payload = {
+        "phase": "fits-pilot-gate",
+        "cell": forms.cell_key(*pilot_key),
+        "arm": args.arms[0],
+        "n_null_draws": int(args.n_null_draws),
+        "bootstrap_draws": int(args.bootstrap_draws),
+        "wall_seconds": round(wall, 3),
+        "peak_rss_gib": round(peak_rss_gib, 3),
+        "rss_route_off_vm_gib": PILOT_RSS_ROUTE_OFF_VM_GIB,
+        "status": pilot_report.get("status"),
+        "utc": datetime.now(tz=timezone.utc).isoformat(),
+    }
+    _write_json(report_path, payload)
+    _log(f"pilot gate: wall={wall:.1f}s peak_rss={peak_rss_gib:.2f} GiB -> {_rel(report_path)}")
+    if peak_rss_gib >= PILOT_RSS_ROUTE_OFF_VM_GIB:
+        _log(
+            f"WARN pilot peak RSS {peak_rss_gib:.2f} GiB >= "
+            f"{PILOT_RSS_ROUTE_OFF_VM_GIB} GiB — plan §9 routes this fit family "
+            "OFF the shared VM (cpu-mid / cpu-bigmem); dispatcher decision"
+        )
 
 
 def _resolve_cells(
@@ -1044,36 +1212,76 @@ def run_phase(args: argparse.Namespace) -> int:
         print("ERROR: every located activation .npz is empty (dry-run shell)", file=sys.stderr)
         return 2
 
-    # Restriction to the intersection of fold_map keys × the shared conv_id set
-    # across cells. For gate 4, we compare cells within the panel (equalize-down
-    # applied per comparison — smoke path may only have ONE cell, so the gate
-    # reports single-cell size instead).
+    # PER-COMPARISON equalize-down (plan req 8 / M1): cells group by
+    # (character, model); each cell's fold rows restrict to ITS group's
+    # conv_id intersection (∩ fold-map membership) — never a global
+    # intersection across all located cells (which over-discards everywhere
+    # and empties every fit when the assistant scope's conv_id space is
+    # disjoint from the character scopes').
     fold_conv_ids = set(fold_of.keys())
-    shared_conv_ids: set[str] | None = None
-    for cell_key, ids in conv_ids_by_cell.items():
-        s = set(ids) & fold_conv_ids
-        shared_conv_ids = s if shared_conv_ids is None else shared_conv_ids & s
+    groups: dict[tuple[str, str], list[tuple[str, str, str, str]]] = {}
+    for variant, condition, form, model in activations_by_cell:
+        groups.setdefault(_comparison_group_key(variant, model), []).append(
+            (variant, condition, form, model)
+        )
 
-    intersection_size = len(shared_conv_ids) if shared_conv_ids else 0
+    group_restrict: dict[tuple[str, str], set[str]] = {}
+    group_reports: dict[str, dict] = {}
+    equalize_dir = output_dir / "equalize"
+    for gkey, members in sorted(groups.items()):
+        inter: set[str] | None = None
+        per_cell_n: dict[str, int] = {}
+        for member in members:
+            ids = set(activations_by_cell[member]["conv_ids"]) & fold_conv_ids
+            per_cell_n[forms.cell_key(*member)] = len(ids)
+            inter = ids if inter is None else inter & ids
+        inter = inter or set()
+        group_restrict[gkey] = inter
+        gate4_fire = len(members) > 1 and len(inter) < KILL_GATE_4_MIN_INTERSECTION
+        gname = f"{gkey[0]}{forms.CELL_KEY_SEP}{gkey[1]}"
+        report = {
+            "comparison": {"character": gkey[0], "model": gkey[1]},
+            "cells": sorted(per_cell_n),
+            "per_cell_n_in_folds": per_cell_n,
+            "n_equalized": len(inter),
+            "kill_gate_4_threshold": KILL_GATE_4_MIN_INTERSECTION,
+            "kill_gate_4_fire": bool(gate4_fire),
+            "single_cell_group": len(members) == 1,
+            "utc": datetime.now(tz=timezone.utc).isoformat(),
+        }
+        group_reports[gname] = report
+        # Equalize manifest per comparison (plan §"equalize-down policy").
+        _write_json(equalize_dir / f"{gname}.json", report)
+        if gate4_fire:
+            _log(
+                f"KILL GATE 4 fires for pair {gname}: n_equalized={len(inter)} "
+                f"< {KILL_GATE_4_MIN_INTERSECTION} (reported; the analyzer/user "
+                "pauses on a fired gate before shipping the headline)"
+            )
 
-    # Kill gate 4 evaluation:
-    #   - single-cell mode (only ONE cell located): report size, do NOT block
-    #     the fit (the ambient-basis n_train ≥ d floor rides pooled-across-
-    #     folds n = 0.8·n_conv; a single smoke cell often has fewer rows by
-    #     construction).
-    #   - multi-cell mode: fire the kill gate if the shared conv_id intersection
-    #     falls below 4,480. The comparison is per (variant, model) pair; we
-    #     emit a per-pair report AND a global report of the min-intersection.
+    multi_cell_intersections = [
+        len(group_restrict[g]) for g, members in groups.items() if len(members) > 1
+    ]
     per_variant_reports: list[dict] = []
     fits_by_cell: dict[str, Path] = {}
     kill_gate_summary = {
-        "min_pair_intersection": int(intersection_size),
-        "kill_gate_4_threshold": KILL_GATE_4_MIN_INTERSECTION,
-        "kill_gate_4_fire": bool(
-            len(activations_by_cell) > 1 and intersection_size < KILL_GATE_4_MIN_INTERSECTION
+        # Min over MULTI-cell comparison groups (per-pair semantics, plan §7).
+        "min_pair_intersection": (
+            int(min(multi_cell_intersections)) if multi_cell_intersections else 0
         ),
+        "kill_gate_4_threshold": KILL_GATE_4_MIN_INTERSECTION,
+        "kill_gate_4_fire": bool(any(r["kill_gate_4_fire"] for r in group_reports.values())),
         "n_cells": len(activations_by_cell),
+        "n_comparison_groups": len(groups),
+        "per_comparison": group_reports,
     }
+
+    # Pilot-before-fleet (M5; plan §9 pilot-gate): ONE cell, 1 fold, at
+    # production draw counts, measuring wall + peak RSS BEFORE the fleet.
+    if not args.dry_run and not args.pilot and not args.skip_pilot_gate:
+        _run_fits_pilot_gate(
+            activations_by_cell, groups, group_restrict, fold_map, args, output_dir
+        )
 
     # We fit anyway on ALL cells that PASS a per-cell size floor. Kill gate 4
     # is REPORTED; the driver's contract with the plan is to persist the outcome
@@ -1082,6 +1290,59 @@ def run_phase(args: argparse.Namespace) -> int:
     t0 = time.time()
     for (variant, condition, form, model), activations in activations_by_cell.items():
         cell_key = forms.cell_key(variant, condition, form, model)
+        gkey = _comparison_group_key(variant, model)
+        group_members = groups[gkey]
+        restrict_ids = group_restrict[gkey]
+        restrict_sha = hashlib.sha256("\n".join(sorted(restrict_ids)).encode()).hexdigest()
+
+        # Resume (C9/M6): a cell whose fit JSON already carries this exact
+        # regime (incl. the equalized restriction set + the npz identity) is
+        # skipped — the >~1h serial CPU loop no longer refits every cell on a
+        # re-run. Fit JSONs are self-describing, so a regime mismatch simply
+        # RECOMPUTES (logged) — no silent-mixing hazard.
+        out_path = output_dir / f"{cell_key}.json"
+        npz_path = None
+        for v2, c2, f2, m2, p2 in cells:
+            if (v2, c2, f2, m2) == (variant, condition, form, model):
+                npz_path = p2
+                break
+        npz_sha = resume.file_sha256(npz_path) if npz_path is not None else None
+        expected_regime = {
+            "cell": cell_key,
+            "arms": list(args.arms),
+            "layer": int(args.layer),
+            "seed": int(args.seed),
+            "n_null_draws": int(args.n_null_draws),
+            "bootstrap_draws": int(args.bootstrap_draws),
+            "reduced_basis_k": REDUCED_BASIS_K,
+            "pilot": bool(args.pilot),
+            "dry_run": bool(args.dry_run),
+            "restrict_sha256": restrict_sha,
+            "npz_sha256": npz_sha,
+            "fold_map_k": int(fold_map["k"]),
+            "fold_map_seed": int(fold_map.get("seed", -1)),
+            "fold_map_n_conv_ids": int(fold_map.get("n_conv_ids", len(fold_of))),
+        }
+        if not args.overwrite and not args.dry_run and not args.pilot:
+            skip, why = _cell_resume_check(out_path, expected_regime)
+            if skip:
+                fits_by_cell[cell_key] = out_path
+                per_variant_reports.append(
+                    {
+                        "cell": cell_key,
+                        "variant": variant,
+                        "condition": condition,
+                        "form": form,
+                        "model": model,
+                        "path": _rel(out_path),
+                        "status": "resumed",
+                    }
+                )
+                _log(f"cell {cell_key} RESUME skip ({why})")
+                continue
+            if why:
+                _log(f"cell {cell_key} recompute: {why}")
+
         arm_reports: dict[str, dict] = {}
         # Answer-length parity for the KS gate — the plan §7 "(b) vs (d)"
         # comparison: SAME (variant, form, model), inserted <-> on_policy
@@ -1096,8 +1357,12 @@ def run_phase(args: argparse.Namespace) -> int:
             gate5_peer_cell = forms.cell_key(variant, peer_condition, form, model)
             peer_diag = _load_capture_diagnostics(variant, peer_condition, form, model)
 
+        # Gate 4 peers = the OTHER cells of this cell's OWN comparison group
+        # (per-pair semantics — plan §7 / M1; never the global cell set).
         peer_cells_conv_ids = {
-            other_key: ids for other_key, ids in conv_ids_by_cell.items() if other_key != cell_key
+            forms.cell_key(*member): activations_by_cell[member]["conv_ids"]
+            for member in group_members
+            if member != (variant, condition, form, model)
         } or None
 
         gate_report = _evaluate_kill_gates(
@@ -1112,7 +1377,8 @@ def run_phase(args: argparse.Namespace) -> int:
             gate5_peer_cell=gate5_peer_cell,
         )
 
-        # Run per-arm fits (context AND prefix — CLAUDE.md standing rule).
+        # Run per-arm fits (context AND prefix — CLAUDE.md standing rule),
+        # restricted to the cell's OWN comparison group's equalized set (M1).
         for arm in args.arms:
             arm_report = _fit_arm_cell(
                 variant=variant,
@@ -1120,7 +1386,7 @@ def run_phase(args: argparse.Namespace) -> int:
                 arm=arm,
                 activations=activations,
                 fold_map=fold_map,
-                restrict_ids=shared_conv_ids,
+                restrict_ids=restrict_ids,
                 n_null_draws=int(args.n_null_draws),
                 seed=int(args.seed),
                 pilot=bool(args.pilot),
@@ -1140,7 +1406,16 @@ def run_phase(args: argparse.Namespace) -> int:
             "arms": list(args.arms),
             "arm_reports": arm_reports,
             "kill_gate_report": gate_report,
-            "shared_conv_id_intersection": int(len(shared_conv_ids or set())),
+            "comparison_group": {
+                "character": gkey[0],
+                "model": gkey[1],
+                "cells": sorted(forms.cell_key(*m) for m in group_members),
+            },
+            # The cell's own comparison-group equalized intersection (M1; the
+            # legacy `shared_conv_id_intersection` name is kept for readers).
+            "shared_conv_id_intersection": int(len(restrict_ids)),
+            "restrict_sha256": restrict_sha,
+            "npz_sha256": npz_sha,
             "n_null_draws": int(args.n_null_draws),
             "bootstrap_draws": int(args.bootstrap_draws),
             "reduced_basis_k": REDUCED_BASIS_K,
@@ -1154,7 +1429,6 @@ def run_phase(args: argparse.Namespace) -> int:
             "dry_run": bool(args.dry_run),
             "utc": datetime.now(tz=timezone.utc).isoformat(),
         }
-        out_path = output_dir / f"{cell_key}.json"
         _write_json(out_path, cell_payload)
         fits_by_cell[cell_key] = out_path
         per_variant_reports.append(
@@ -1179,17 +1453,16 @@ def run_phase(args: argparse.Namespace) -> int:
             f"-> {_rel(out_path)} elapsed={elapsed:.1f}s"
         )
 
-    # Uploads (real runs only; smoke tree stays under /tmp/).
+    # Uploads (real runs only; smoke tree stays under /tmp/). FATAL on
+    # failure (M2): `[phase=done]` must never report done with the fit JSONs
+    # un-persisted. No try/except.
     if not is_smoke and not args.skip_upload and not args.dry_run:
-        try:
-            for model in args.models:
-                # Model is the LAST cell-key axis, so the __-anchored suffix
-                # match is exact (C6: `_{model}` would also match substrings).
-                suffix = f"{forms.CELL_KEY_SEP}{model}"
-                model_fits = {k: v for k, v in fits_by_cell.items() if k.endswith(suffix)}
-                _upload_to_hf(model_fits, model)
-        except Exception as exc:  # noqa: BLE001
-            _log(f"WARN upload stage failed: {exc}")
+        for model in args.models:
+            # Model is the LAST cell-key axis, so the __-anchored suffix
+            # match is exact (C6: `_{model}` would also match substrings).
+            suffix = f"{forms.CELL_KEY_SEP}{model}"
+            model_fits = {k: v for k, v in fits_by_cell.items() if k.endswith(suffix)}
+            _upload_to_hf(model_fits, model)
 
     # Digest.
     digest = {
@@ -1276,8 +1549,11 @@ def main() -> int:
     p.add_argument(
         "--n-null-draws",
         type=int,
-        default=200,
-        help="Shuffled-answer matched-capacity null draws per fold (plan §6 DV 4).",
+        default=100,
+        help=(
+            "Shuffled-answer matched-capacity null draws per fold (plan §6 DV 4 "
+            "+ §9 sizing pin BOTH say 100 — reconciled from the round-1 200)."
+        ),
     )
     p.add_argument(
         "--bootstrap-draws",
@@ -1296,6 +1572,22 @@ def main() -> int:
         "--pilot",
         action="store_true",
         help="1-cell 1-fold pilot mode: exercise the full pipeline on one cell/one fold.",
+    )
+    p.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=(
+            "refit cells even when a regime-matching fit JSON exists "
+            "(default resumes completed cells — C9/M6)"
+        ),
+    )
+    p.add_argument(
+        "--skip-pilot-gate",
+        action="store_true",
+        help=(
+            "skip the automatic 1-cell measured pilot leg before the fleet "
+            "(M5/plan §9; only when a standalone pilot already ran)"
+        ),
     )
     args = p.parse_args()
     return run_phase(args)

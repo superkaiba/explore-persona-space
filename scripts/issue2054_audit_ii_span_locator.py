@@ -124,16 +124,23 @@ def _load_jsonl(path: Path) -> list[dict]:
 def run_audit(args: argparse.Namespace) -> int:
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate.hub import retry_transient
+
     api = HfApi()
     repo_id = args.parent_repo
     prefix = args.parent_prefix
 
-    # Enumerate variant subdirs under the parent prefix.
+    # Enumerate variant subdirs under the parent prefix (RepoFolder entries,
+    # so the raw tree call stays — retry-wrapped + materialized, #920 class).
     try:
-        top = list(
-            api.list_repo_tree(
-                repo_id=repo_id, path_in_repo=prefix, repo_type="dataset", recursive=False
-            )
+        top = retry_transient(
+            lambda: list(
+                # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient (materialized list)
+                api.list_repo_tree(
+                    repo_id=repo_id, path_in_repo=prefix, repo_type="dataset", recursive=False
+                )
+            ),
+            what=f"list_repo_tree({prefix})",
         )
     except Exception as exc:
         print(f"ERROR enumerating {repo_id}:{prefix}: {exc}", file=sys.stderr)
@@ -173,10 +180,14 @@ def run_audit(args: argparse.Namespace) -> int:
         if variant in {"analysis_tensors", "assistant_named_story"}:
             continue
         try:
-            files = list(
-                api.list_repo_tree(
-                    repo_id=repo_id, path_in_repo=variant_path, repo_type="dataset", recursive=True
-                )
+            files = retry_transient(
+                lambda p=variant_path: list(
+                    # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient (materialized list)
+                    api.list_repo_tree(
+                        repo_id=repo_id, path_in_repo=p, repo_type="dataset", recursive=True
+                    )
+                ),
+                what=f"list_repo_tree({variant_path})",
             )
         except Exception as exc:
             print(f"WARN listing {variant_path}: {exc}", file=sys.stderr)
@@ -200,7 +211,12 @@ def run_audit(args: argparse.Namespace) -> int:
                 continue
             # Download judge_results and enumerate FAIL rows.
             try:
-                jr_local = api.hf_hub_download(repo_id=repo_id, repo_type="dataset", filename=path)
+                jr_local = retry_transient(
+                    lambda p=path: api.hf_hub_download(
+                        repo_id=repo_id, repo_type="dataset", filename=p
+                    ),
+                    what=f"hf_hub_download({path})",
+                )
             except Exception as exc:
                 print(f"WARN downloading {path}: {exc}", file=sys.stderr)
                 continue
@@ -225,8 +241,11 @@ def run_audit(args: argparse.Namespace) -> int:
                 if not rs_path:
                     continue
                 try:
-                    rs_local = api.hf_hub_download(
-                        repo_id=repo_id, repo_type="dataset", filename=rs_path
+                    rs_local = retry_transient(
+                        lambda p=rs_path: api.hf_hub_download(
+                            repo_id=repo_id, repo_type="dataset", filename=p
+                        ),
+                        what=f"hf_hub_download({rs_path})",
                     )
                 except Exception as exc:
                     print(f"WARN downloading {rs_path}: {exc}", file=sys.stderr)

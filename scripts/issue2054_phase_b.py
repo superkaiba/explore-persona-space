@@ -62,7 +62,10 @@ def _rel(path: Path) -> str:
 
 
 def _read_jsonl(path: Path) -> list[dict]:
+    """Tolerant JSONL reader; undecodable lines are COUNTED + warned (M3 —
+    never silently skipped)."""
     rows: list[dict] = []
+    n_bad = 0
     with path.open(encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -71,7 +74,9 @@ def _read_jsonl(path: Path) -> list[dict]:
             try:
                 rows.append(json.loads(line))
             except json.JSONDecodeError:
-                continue
+                n_bad += 1
+    if n_bad:
+        _log(f"WARN {n_bad} undecodable JSONL line(s) skipped in {path}")
     return rows
 
 
@@ -90,9 +95,12 @@ def _index_answers(rows: list[dict]) -> dict[str, str]:
 
 
 def _char_name_from_scaffold_row(row: dict, variant: str) -> str:
-    """Recover the character name for the splice attrib template."""
-    # Parent's stripper wrote `character` on every row; fall back to variant
-    # lookup so byte-exact round-trip splices still work on legacy rows.
+    """Recover the character name for the splice attrib template.
+
+    Parent's stripper wrote `character` on every row; fall back to variant
+    lookup so byte-exact round-trip splices still work on legacy rows.
+    Fail-loud on an unknown variant with no row-level `character` (M3 — the
+    silent "ARIA" default corrupted splices for unmapped variants)."""
     ch = str(row.get("character") or "").strip()
     if ch:
         return ch
@@ -104,7 +112,13 @@ def _char_name_from_scaffold_row(row: dict, variant: str) -> str:
         "conversation_paired_stories_assistant": "Assistant",
         "conversation_paired_stories": "ARIA",
     }
-    return from_variant.get(variant, "ARIA")
+    mapped = from_variant.get(variant)
+    if mapped is None:
+        raise ValueError(
+            f"cannot resolve character name: variant {variant!r} is not in the "
+            f"variant map and row {row.get('scaffold_id')!r} carries no 'character' field"
+        )
+    return mapped
 
 
 def _splice_one(row: dict, answer: str, variant: str, form: str) -> dict | None:
@@ -148,8 +162,12 @@ def _process_variant(
     answers_by_key: dict[str, str],
     out_dir: Path,
     form: str,
-) -> tuple[int, int, Path]:
-    """Splice every scaffold whose conv_id has an answer; return (n_in, n_out, out_path)."""
+) -> tuple[dict, Path]:
+    """Splice every scaffold whose conv_id has an answer.
+
+    Returns (counts, out_path); counts carries the per-variant answer-source
+    split (M3): n_answer_from_pool vs n_answer_from_scaffold_fallback.
+    """
     scaffolds = _read_jsonl(scaffolds_path)
     n_in = len(scaffolds)
     vdir = out_dir / variant
@@ -159,30 +177,57 @@ def _process_variant(
 
     tmp = out_path.with_suffix(".jsonl.tmp")
     n_out = 0
+    n_from_pool = 0
+    n_from_scaffold_fallback = 0
     with tmp.open("w", encoding="utf-8") as f:
         for row in scaffolds:
             key = str(row.get("conv_id") or row.get("scaffold_id") or "")
             if not key:
                 continue
             answer = answers_by_key.get(key)
+            # Per-row answer provenance (M3): the 2x2 authorship axis rides on
+            # WHO wrote the spliced answer — a pool miss falling back to the
+            # scaffold's own recovered original answer is a MIXED-authorship
+            # cell unless counted + recorded per row.
+            answer_source = "answers_pool"
             if not answer:
                 # Fall back to the scaffold's own recorded original answer
                 # (stripper preserves it) — the strict "brought by the user"
                 # answer pool wins whenever it has a hit.
                 answer = str(row.get("answer") or "")
+                answer_source = "scaffold_original_fallback"
             if not answer:
                 continue
             spliced = _splice_one(row, answer, variant, form)
             if spliced is None:
                 continue
+            spliced["answer_source"] = answer_source
+            if answer_source == "answers_pool":
+                n_from_pool += 1
+            else:
+                n_from_scaffold_fallback += 1
             f.write(json.dumps(spliced, ensure_ascii=False) + "\n")
             n_out += 1
     os.replace(tmp, out_path)
-    return n_in, n_out, out_path
+    if n_from_scaffold_fallback:
+        frac = n_from_scaffold_fallback / max(1, n_out)
+        _log(
+            f"WARN variant={variant} {n_from_scaffold_fallback}/{n_out} rows "
+            f"({frac:.3f}) fell back to the scaffold's own answer (pool miss) — "
+            "mixed-authorship cell; per-row answer_source records the split"
+        )
+    counts = {
+        "n_in": n_in,
+        "n_out": n_out,
+        "n_answer_from_pool": n_from_pool,
+        "n_answer_from_scaffold_fallback": n_from_scaffold_fallback,
+    }
+    return counts, out_path
 
 
 def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path) -> None:
-    """Best-effort mirror of spliced JSONLs — ONE bulk upload_folder commit.
+    """Mirror spliced JSONLs — ONE bulk upload_folder commit. FATAL on failure
+    (M2): a swallowed upload + `[phase=done]` silently strands the splices.
 
     Per the #664/#1481 per-file storm class, batch all variants into a single
     `_upload_folder_filtered` commit against the shared `<TASK_PREFIX>/spliced_inserted`
@@ -202,19 +247,20 @@ def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path) -> None:
         allow_patterns.append(rel)
         expected_paths.append(f"{TASK_PREFIX}/spliced_inserted/{rel}")
     if not allow_patterns:
+        if paths_by_variant:
+            raise RuntimeError(
+                f"upload set resolved EMPTY against declared outputs: {paths_by_variant}"
+            )
         return
-    try:
-        _upload_folder_filtered(
-            out_dir,
-            repo_id=HF_DATA_REPO,
-            repo_type="dataset",
-            path_in_repo=f"{TASK_PREFIX}/spliced_inserted",
-            allow_patterns=allow_patterns,
-            expected_repo_paths=expected_paths,
-        )
-        _log(f"uploaded {len(allow_patterns)} spliced file(s) in one bulk commit")
-    except Exception as exc:  # noqa: BLE001
-        _log(f"WARN spliced bulk upload failed: {exc}")
+    _upload_folder_filtered(
+        out_dir,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{TASK_PREFIX}/spliced_inserted",
+        allow_patterns=allow_patterns,
+        expected_repo_paths=expected_paths,
+    )
+    _log(f"uploaded {len(allow_patterns)} spliced file(s) in one bulk commit")
 
 
 def run_phase(args: argparse.Namespace) -> int:
@@ -263,24 +309,26 @@ def run_phase(args: argparse.Namespace) -> int:
     out_paths: dict[str, Path] = {}
     counts: dict[str, dict] = {}
     for variant, sp in per_variant_paths.items():
-        n_in, n_out, op = _process_variant(variant, sp, answers_by_key, out_dir, args.form)
-        counts[variant] = {"n_in": n_in, "n_out": n_out}
+        vcounts, op = _process_variant(variant, sp, answers_by_key, out_dir, args.form)
+        counts[variant] = vcounts
         out_paths[variant] = op
-        _log(f"variant={variant} spliced {n_out}/{n_in} -> {_rel(op)}")
+        _log(
+            f"variant={variant} spliced {vcounts['n_out']}/{vcounts['n_in']} "
+            f"(pool={vcounts['n_answer_from_pool']} "
+            f"fallback={vcounts['n_answer_from_scaffold_fallback']}) -> {_rel(op)}"
+        )
 
     total_out = sum(c["n_out"] for c in counts.values())
     if total_out == 0:
         print("ERROR: phase_b produced ZERO spliced rows", file=sys.stderr)
         return 1
 
-    # HF upload (best-effort). Skipped when the output tree is a smoke tmp
-    # dir (never mirror /tmp outputs to the shared data repo).
+    # HF upload — FATAL on failure (M2): `[phase=done]` must never report done
+    # with the splices un-persisted. Skipped when the output tree is a smoke
+    # tmp dir (never mirror /tmp outputs to the shared data repo).
     is_smoke = str(out_dir).startswith("/tmp/")
     if not is_smoke and not args.skip_upload:
-        try:
-            _upload_to_hf(out_paths, out_dir)
-        except Exception as exc:  # noqa: BLE001
-            _log(f"WARN upload stage failed: {exc}")
+        _upload_to_hf(out_paths, out_dir)
 
     digest = {
         "phase": "phase_b",
