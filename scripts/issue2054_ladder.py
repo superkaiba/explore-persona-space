@@ -77,6 +77,7 @@ load_dotenv()
 import numpy as np  # noqa: E402
 
 import issue2054_forms as forms  # noqa: E402
+from issue2054_resume import regime_values_equal  # noqa: E402
 from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
     identity_bias_predict,
     knn_retrieval,
@@ -938,10 +939,18 @@ def _pair_resume_check(out_path: Path, expected: dict) -> tuple[bool, str]:
             existing = json.load(f)
     except (OSError, json.JSONDecodeError):
         return False, "existing rung JSON unreadable"
-    mismatched = [k for k in _PAIR_RESUME_KEYS if existing.get(k) != expected.get(k)]
+    # NaN-aware equality (issue2054_resume.regime_values_equal): the regime's
+    # target_ceiling is legitimately NaN when the target cell's own ceiling is
+    # degenerate, and bare != marks EVERY re-run "regime changed" (nan != nan)
+    # so the pair recomputes forever (Unit F smoke catch).
+    mismatched = [
+        k for k in _PAIR_RESUME_KEYS if not regime_values_equal(existing.get(k), expected.get(k))
+    ]
     fm = existing.get("fold_map") or {}
     mismatched += [
-        ek for ek, fk in _PAIR_RESUME_FOLD_KEYS.items() if fm.get(fk) != expected.get(ek)
+        ek
+        for ek, fk in _PAIR_RESUME_FOLD_KEYS.items()
+        if not regime_values_equal(fm.get(fk), expected.get(ek))
     ]
     if mismatched:
         return False, f"regime keys changed: {mismatched}"

@@ -95,10 +95,25 @@ def clear_done(out_path: Path) -> None:
         sp.unlink()
 
 
+def regime_values_equal(a, b) -> bool:
+    """Value equality with NaN == NaN (floats only).
+
+    A regime float can legitimately be NaN (e.g. the ladder's
+    ``target_ceiling`` when the target cell's own ceiling is degenerate at
+    smoke n); Python/JSON round-trip NaN as ``float('nan')`` and
+    ``nan != nan``, so bare ``!=`` marks EVERY re-run "regime changed" and the
+    unit recomputes forever (Unit F smoke: the ladder re-ran all pairs on
+    re-entry with "regime keys changed: ['target_ceiling']").
+    """
+    if isinstance(a, float) and isinstance(b, float) and a != a and b != b:
+        return True  # both NaN
+    return a == b
+
+
 def regime_diff(recorded: dict, expected: dict) -> list[str]:
     """Keys whose values differ between the recorded and expected regimes."""
     keys = sorted(set(recorded) | set(expected))
-    return [k for k in keys if recorded.get(k) != expected.get(k)]
+    return [k for k in keys if not regime_values_equal(recorded.get(k), expected.get(k))]
 
 
 def soft_resume_ok(out_path: Path, regime: dict, inputs: dict | None = None) -> tuple[bool, str]:

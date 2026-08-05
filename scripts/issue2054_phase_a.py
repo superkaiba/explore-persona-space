@@ -261,6 +261,27 @@ def _conv_grouped_folds(conv_ids: list[str], k: int, seed: int) -> dict[str, int
     return fold_map
 
 
+def _recovery_story_files(all_paths: list[str]) -> list[str]:
+    """The parent story JSONLs recovery may ingest: KEPT, NON-op only.
+
+    The parent stores kept + raw + retry + judge files side by side
+    (`kept_stories_paired_instruct.jsonl`, `raw_stories_paired_instruct*.jsonl`,
+    `judge_results_*.jsonl`, and for the assistant variant also the op-mode
+    `kept_stories_paired_op_instruct.jsonl`). Recovery ingests ONLY the kept
+    non-op stories: raw files duplicate every kept story (Unit F smoke:
+    char_helios read 806 duplicate conv_ids and the plan-assumption-29 assert
+    killed the gen leg) and additionally contain the parent's judge-REJECTED
+    stories — the wrong pool; the `_op_` stories are cell (c) source material
+    (phase_d's), not lattice scaffolds. Sorted for deterministic strip order.
+    """
+    out = []
+    for p in all_paths:
+        name = p.rsplit("/", 1)[-1]
+        if p.endswith(".jsonl") and name.startswith("kept_stories_") and "_op_" not in name:
+            out.append(p)
+    return sorted(out)
+
+
 def _recover_scaffolds_from_hf(variants: list[str], api) -> dict[str, list[dict]]:
     """Download parent kept-stories JSONLs per variant and strip → scaffolds.
 
@@ -290,12 +311,10 @@ def _recover_scaffolds_from_hf(variants: list[str], api) -> dict[str, list[dict]
             _log(f"variant={variant} story-prefix listing FAILED: {exc}")
             recovered[variant] = []
             continue
-        # ONLY *_stories_*.jsonl files carry the `story` key the stripper
-        # needs; judge_results_*.jsonl in the same dir carry judge metadata
-        # (no story text) and blow up the stripper with KeyError('story').
-        story_files = [
-            p for p in all_paths if p.endswith(".jsonl") and "_stories_" in p.rsplit("/", 1)[-1]
-        ]
+        # KEPT non-op story files only — see _recovery_story_files (raw files
+        # duplicate every kept story AND carry the parent's judge-rejected
+        # stories; judge_results_*.jsonl have no `story` key at all).
+        story_files = _recovery_story_files(all_paths)
         if not story_files:
             _log(f"variant={variant} no story JSONLs at {story_prefix}")
             recovered[variant] = []
