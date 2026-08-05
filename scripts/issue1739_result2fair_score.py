@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """#1739 Result-2 FAIR-PROTOCOL refit: one readout training set for every method.
 
-User-directed same-issue follow-up (2026-08-05). The committed Result-2 rows
-train the label-consuming readout on the trait-eliciting train set only; this
-round re-fits it on ALL the judged training data and re-scores the four
-Result-2 methods under one shared protocol:
+User-directed same-issue follow-up (2026-08-05; spec revision: 7 methods). The
+committed Result-2 rows train the label-consuming readouts on the
+trait-eliciting train set only; this round re-fits them on ALL the judged
+training data and re-scores SEVEN methods under one shared protocol:
 
   every predictor gets
     - the generic UNJUDGED WildChat pool  -> the context->answer MAP fit pool
@@ -15,33 +15,43 @@ Result-2 methods under one shared protocol:
     - a JUDGED WildChat train split       -> readout training rows (NEW)
     - the trait-eliciting train set       -> readout training rows (as before;
       the train setting reads it out-of-fold under 5 group-level folds)
-    - the synthetic persona-vectors judged extraction set -> r_B (the three
+    - the synthetic persona-vectors judged extraction set -> r_B (the
       projection arms already consume it through the E1 direction; the
-      REGRESSION arm deliberately does NOT train on pvsynth rows — that would
-      cannibalise the pvsynth evaluation setting. Recorded protocol deviation.)
+      REGRESSION/MLP readouts deliberately do NOT train on pvsynth rows —
+      that would cannibalise the pvsynth evaluation setting. Recorded
+      protocol deviation.)
 
-  and is evaluated on four setting roles
-    - pvsynth              the persona-vectors eval grid (200 held-out contexts)
-    - wildchat_rung        a FIXED held-out WildChat eval split (sha1 bucket;
-                           the readout never trains on these contexts)
-    - train                out-of-fold over the eliciting train rows
-    - OOD rungs            the behaviour's committed OOD rungs (hhrt/toxicchat,
-                           aita, nqopen/simpleqa)
+METHODS (7, user list): PV on context (arm1_ctx_e1), PV on mapped answer
+under the LINEAR map (arm6_map_proj_e1) and under the MLP map (same arm,
+map_kind=mlp), PV on real answer (arm11_oracle_proj), regression from mapped
+answer (arm7_map_ridge_pred), MLP from mapped answer (arm19_map_mlp_pred —
+NEW ARM, added this round: the arm-5 recipe with input mp), and regression
+from context (arm4_ridge_ctx). Label-consuming readouts: arms 4/7/19.
 
-METHODS (4): arm1_ctx_e1 (PV on context), arm6_map_proj_e1 (PV on mapped
-answer, LINEAR map), arm11_oracle_proj (PV on real answer),
-arm4_ridge_ctx (regression context -> behaviour expression). Only arm4
-consumes DV labels at fit time; arms 1/6/11 are pure projections, re-scored
-here so every bar shares the ADD-pool whitening + the same eval subsets.
+MAP-KIND RESOLUTION (recorded): the primary mapped-answer READOUT cells
+(arm7/arm19) run under the LINEAR map, matching the PV-on-mapped-answer
+method, so readout family is the only thing varying between them and arm4;
+the MLP-map pass ({arm6, arm7, arm19} under map_kind=mlp) runs on the same
+pool as separate cells — map kinds are never averaged within a bar. The
+linear+linear composition arm7 is deliberately KEPT (not collapsed into
+arm4): max |rho(arm7) - rho(arm4)| across linear cells is the empirical
+collapse check.
+
+Settings (4 roles): pvsynth grid, WildChat held-out eval split, train
+out-of-fold, and the behaviour's committed OOD rungs.
+
+FROZEN LAYERS: committed modal train-grid layers for the arms that have them
+under the linear map (arm1/4/6/7/11); arms without a committed convention
+(arm19, and every MLP-map cell) freeze on THIS run's own train-OOF per-layer
+rho (own-pool selection — never on eval outcome). Per-arm source recorded.
 
 NO LEAKAGE is the point: hard asserts that no context in the readout training
-set appears in any evaluation setting (the train setting is fold-disjoint by
-the shared group-fold machinery). Realized counts are recorded in meta.
+set appears in any evaluation setting. Realized counts recorded in meta.
 
 Structural sibling of ``issue1739_jobd_r2aug.py`` — every scoring primitive is
-IMPORTED from the reviewed production modules (no fit, metric, or fold logic
-of its own). Safety rails inherited: no judge module may be imported, DV
-inputs sha-verified after scoring, git-tracked outputs refused.
+IMPORTED from the reviewed production modules. Safety rails inherited: no
+judge module may be imported, DV inputs sha-verified after scoring,
+git-tracked outputs refused.
 
 VARIANT SCOPE: context_end ONLY (user directive 2026-08-05 — the recorded
 deviation from the prefix+context both-arms rule; basis: R5 measured the
@@ -85,13 +95,29 @@ PV_RUNG = "pvsynth"
 WC_SPLIT_MOD = 5
 WC_EVAL_BUCKET = 4
 
-ROSTER_FAIR = (
+# Per-map-kind rosters. The linear pass carries the map-independent arms
+# (1/4/11) alongside the linear-map cells; the mlp pass re-scores ONLY the
+# map-consuming arms (6/7/19) under map_kind=mlp.
+ROSTER_LINEAR = (
     "arm1_ctx_e1",
     "arm4_ridge_ctx",
     "arm6_map_proj_e1",
+    "arm7_map_ridge_pred",
+    "arm11_oracle_proj",
+    "arm19_map_mlp_pred",
+)
+ROSTER_MLPMAP = ("arm6_map_proj_e1", "arm7_map_ridge_pred", "arm19_map_mlp_pred")
+ROSTER_BY_KIND = {"linear": ROSTER_LINEAR, "mlp": ROSTER_MLPMAP}
+# Arms whose frozen layer comes from the committed modal train-grid convention
+# (linear-map pass only; everything else freezes on this run's own train OOF).
+COMMITTED_FROZEN_ARMS = (
+    "arm1_ctx_e1",
+    "arm4_ridge_ctx",
+    "arm6_map_proj_e1",
+    "arm7_map_ridge_pred",
     "arm11_oracle_proj",
 )
-LABEL_CONSUMING = ("arm4_ridge_ctx",)
+LABEL_CONSUMING = ("arm4_ridge_ctx", "arm7_map_ridge_pred", "arm19_map_mlp_pred")
 
 DEFAULT_OUT_ROOT = Path("eval_results/issue_1739/result2_fair")
 DEFAULT_MAIN_ROOT = Path("eval_results/issue_1739")
@@ -99,12 +125,12 @@ DEFAULT_TENSORS_ROOT = Path("analysis_tensors/issue_1739")
 DEFAULT_STORE_ROOT = Path("data/issue_1739/hf_dl")
 
 PVSYNTH_READOUT_DEVIATION = (
-    "protocol item 4 (pvsynth judged data) is satisfied for the three projection arms "
-    "through r_B — the E1 direction is built from the judge-filtered pvsynth extraction "
-    "set — but the REGRESSION arm does NOT train on pvsynth rows: the only judged pvsynth "
-    "rows are the 200 split=eval grid contexts that ARE the pvsynth evaluation setting "
-    "(no judged pvsynth train rows exist), so training on them would evaluate the readout "
-    "on its own training contexts. Recorded protocol deviation."
+    "protocol item 4 (pvsynth judged data) is satisfied for the projection arms through "
+    "r_B — the E1 direction is built from the judge-filtered pvsynth extraction set — but "
+    "the REGRESSION/MLP readouts (arms 4/7/19) do NOT train on pvsynth rows: the only "
+    "judged pvsynth rows are the 200 split=eval grid contexts that ARE the pvsynth "
+    "evaluation setting (no judged pvsynth train rows exist), so training on them would "
+    "evaluate the readout on its own training contexts. Recorded protocol deviation."
 )
 
 
@@ -191,6 +217,46 @@ def leakage_report(loaded, tbl_pv, wc_train_rows, wc_eval_rows, elic_rows) -> di
     }
 
 
+def fit_add_maps(args, loaded, variant: str, layers: list[int]):
+    """Whitening ONCE on the ADD pool, then one map fit per requested kind."""
+    from explore_persona_space.experiments.issue_1739 import fits
+    from scripts.issue1739_fits import _fit_map
+    from scripts.issue1739_jobd_r2aug import build_pool
+
+    x, y, u_label, n_u, pool_meta = build_pool(args, loaded, variant, layers, "add")
+    t0 = time.time()
+    wh = fits.fit_whitening(x, device=args.device, seed=args.seed)
+    x_w = fits.apply_whitening(x, wh)
+    y_w = fits.apply_whitening(y, wh)
+    del x, y
+    wh_s = round(time.time() - t0, 1)
+    mapfits: dict[str, object] = {}
+    diags: dict[str, dict] = {}
+    for kind in args.map_kinds:
+        ns = argparse.Namespace(
+            map_kind=kind,
+            device=args.device,
+            seeds=(args.seed,),
+            mlp_map_width=None,
+            krr_map_centers=None,
+        )
+        t1 = time.time()
+        mapfits[kind] = _fit_map(ns, x_w, y_w)
+        diags[kind] = {
+            **mapfits[kind].diagnostics,
+            "map_kind": kind,
+            "map_source": "refit",
+            "map_fit_s": round(time.time() - t1, 1),
+            "whitening_fit_s": wh_s,
+            "n_u": int(n_u),
+            "u_pool_label": u_label,
+            **pool_meta,
+        }
+        print(f"[fair] map fit kind={kind}: {diags[kind]['map_fit_s']}s", flush=True)
+    del x_w, y_w
+    return wh, mapfits, diags, u_label, n_u
+
+
 def run_fair(args, loaded, tbl_pv, behavior: str, layers: list[int]) -> dict:
     import numpy as np
 
@@ -200,9 +266,7 @@ def run_fair(args, loaded, tbl_pv, behavior: str, layers: list[int]) -> dict:
         LMAX,
         _free_cuda,
         _pool_zscored_dv,
-        build_pool,
         committed_frozen,
-        fit_pool_map,
         per_layer_rows_for,
         transfer_rows_for,
     )
@@ -212,17 +276,11 @@ def run_fair(args, loaded, tbl_pv, behavior: str, layers: list[int]) -> dict:
     rows_all: list[dict] = []
     skips_all: list[dict] = []
     per_layer_all: list[dict] = []
+    frozen_sources: dict[str, dict[str, str]] = {}
 
-    frozen, src = committed_frozen(args, loaded, behavior, variant, layers, ROSTER_FAIR)
-
-    # --- the ADD/union map + its whitening (the fair MAP condition) ---------
-    x, y, u_label, n_u, pool_meta = build_pool(args, loaded, variant, layers, "add")
-    wh, mapfit, diag = fit_pool_map(args, x, y)
-    del x, y
-    diag.update({"n_u": int(n_u), "u_pool_label": u_label, **pool_meta})
+    wh, mapfits, map_diags, u_label, n_u = fit_add_maps(args, loaded, variant, layers)
 
     n_tr = len(loaded.tbl.ctx_order)
-    n_wc = len(loaded.tbl_wc.ctx_order)
     ev_mask = _wc_eval_mask(loaded.tbl_wc.ctx_order)
     wc_eval_rows = np.flatnonzero(ev_mask)
     wc_train_rows = np.flatnonzero(~ev_mask)
@@ -256,38 +314,21 @@ def run_fair(args, loaded, tbl_pv, behavior: str, layers: list[int]) -> dict:
     )
     readout_rows = np.concatenate([elic_cell.row_idx, n_tr + wc_train_rows]).astype(np.int64)
     dv_z = _pool_zscored_dv(dv_m, elic_cell.row_idx, n_tr + wc_train_rows)
-    data = arms.CellData(
-        z_ctx=z_ctx,
-        z_ans=z_ans,
-        dv=dv_z,
-        rb=np.einsum("ld,lde->le", loaded.rb, wh.w),
-        mapfit=mapfit,
-        layers=tuple(layers),
-    )
-    prov = {
-        "mode": "fair",
-        "behavior": behavior,
-        "variant": variant,
-        "regime": args.regime,
-        "u_rung": int(n_u),
-        "u_rung_label": u_label,
-        "config": "config_a",
-        "budget_l": lmax,
-        "map_condition": "add",
-        "readout_train": "union: eliciting train (budget cell) + judged WildChat train split",
-        "n_readout_eliciting": int(len(elic_cell.row_idx)),
-        "n_readout_wc_train": int(len(wc_train_rows)),
-        "wc_split_mod": WC_SPLIT_MOD,
-        "wc_eval_bucket": WC_EVAL_BUCKET,
-        "dv_scaling": "per_pool_zscore_train_targets_v1",
-    }
-    kwargs = {"n_boot": args.n_boot} if args.n_boot else {}
+    rb_w = np.einsum("ld,lde->le", loaded.rb, wh.w)
+    n_el = len(elic_cell.row_idx)
+    dv_el = np.asarray(loaded.tbl.dv, dtype=np.float64)[elic_cell.row_idx]
 
-    # --- setting A: train, out-of-fold over the eliciting rows --------------
-    # WildChat train rows join every fold's TRAINING side via their own
-    # hash-assigned folds (a wc row is never evaluated here); the eliciting
-    # rows keep the committed group-level folds, so the out-of-fold read is
-    # fold-disjoint exactly as in the committed grid.
+    # eval-side whitened arrays, shared across passes
+    z_wc_ev = np.ascontiguousarray(z_ctx[:, n_tr + wc_eval_rows])
+    za_wc_ev = np.ascontiguousarray(z_ans[:, n_tr + wc_eval_rows])
+    dv_wc_ev = np.asarray(loaded.tbl_wc.dv, dtype=np.float64)[wc_eval_rows]
+    z_pv = fits.apply_whitening(tbl_pv.z_by_variant[variant], wh)
+    za_pv = fits.apply_whitening(tbl_pv.z_ans, wh)
+    dv_pv = np.asarray(tbl_pv.dv, dtype=np.float64)
+    z_ood = fits.apply_whitening(loaded.tbl_ev.z_by_variant[variant], wh)
+    za_ood = fits.apply_whitening(loaded.tbl_ev.z_ans, wh)
+    dv_ood = np.asarray(loaded.tbl_ev.dv, dtype=np.float64)
+
     wcf = _wc_fold_ids([str(loaded.tbl_wc.ctx_order[i]) for i in wc_train_rows], elic_cell.n_folds)
     cell_oof = fits.BudgetCell(
         row_idx=readout_rows,
@@ -298,37 +339,7 @@ def run_fair(args, loaded, tbl_pv, behavior: str, layers: list[int]) -> dict:
         seed=args.seed,
         fold_scheme=f"fair-union-{elic_cell.fold_scheme}",
     )
-    n_el = len(elic_cell.row_idx)
     assert bool(np.all(cell_oof.row_idx[:n_el] == elic_cell.row_idx))
-    scores_tr, tr_skips = arms.run_cell(data, cell_oof, arms=list(ROSTER_FAIR), device=args.device)
-    scores_el = {s: np.ascontiguousarray(sc[:, :n_el]) for s, sc in scores_tr.items()}
-    dv_el = np.asarray(loaded.tbl.dv, dtype=np.float64)[elic_cell.row_idx]
-    rows_tr, skips_tr = arms.evaluate_transfer(
-        scores_el,
-        dv_el,
-        np.asarray(["train"] * n_el),
-        frozen,
-        provenance={**prov, "rung_kind_note": "in_split_oof_union_readout"},
-        cell=cell_oof,
-        layers=tuple(layers),
-        min_n=args.min_n,
-        **kwargs,
-    )
-    skips_all += skips_tr + [
-        {"arm": s, "reason": f"train oof: {r}", "variant": variant}
-        for s, r in sorted(tr_skips.items())
-    ]
-    skips_all += arms.roster_accounting_skips(
-        list(ROSTER_FAIR), scores_tr, tr_skips, variant=variant, eval_rung="train"
-    )
-    per_layer_all += per_layer_rows_for(
-        scores_el, dv_el, frozen, {**prov, "eval_rung": "train"}, layers, src
-    )
-    rows_all += rows_tr
-    del scores_tr, scores_el
-    print(f"[fair] {behavior}: train OOF done ({len(rows_tr)} rows)", flush=True)
-
-    # --- transfer settings: one full-union fit, frozen predictors -----------
     cell_full = fits.BudgetCell(
         row_idx=readout_rows,
         fold_ids=np.zeros(len(readout_rows), dtype=np.int64),
@@ -338,77 +349,147 @@ def run_fair(args, loaded, tbl_pv, behavior: str, layers: list[int]) -> dict:
         seed=args.seed,
         fold_scheme="fair-union-full",
     )
+    kwargs = {"n_boot": args.n_boot} if args.n_boot else {}
 
-    def _transfer(z_ev, dv_ev, za_ev, rungs, tag: str, extra_prov: dict) -> None:
-        nonlocal rows_all, skips_all, per_layer_all
-        p = {**prov, **extra_prov}
-        rows, skips, scores = transfer_rows_for(
-            data,
-            cell_full,
-            z_ev,
-            dv_ev,
-            za_ev,
-            rungs,
-            frozen,
-            p,
-            layers,
-            ROSTER_FAIR,
-            device=args.device,
-            n_boot=args.n_boot,
-            min_n=args.min_n,
+    for kind in args.map_kinds:
+        roster = ROSTER_BY_KIND[kind]
+        data = arms.CellData(
+            z_ctx=z_ctx,
+            z_ans=z_ans,
+            dv=dv_z,
+            rb=rb_w,
+            mapfit=mapfits[kind],
+            layers=tuple(layers),
         )
-        diag[f"recon_{tag}"] = _eval_rung_reconstruction(
-            mapfit, z_ev, za_ev, rungs=list(rungs), knn=True
+        prov = {
+            "mode": "fair",
+            "behavior": behavior,
+            "variant": variant,
+            "regime": args.regime,
+            "map_kind": kind,
+            "u_rung": int(n_u),
+            "u_rung_label": u_label,
+            "config": "config_a",
+            "budget_l": lmax,
+            "map_condition": "add",
+            "readout_train": ("union: eliciting train (budget cell) + judged WildChat train split"),
+            "n_readout_eliciting": int(n_el),
+            "n_readout_wc_train": int(len(wc_train_rows)),
+            "wc_split_mod": WC_SPLIT_MOD,
+            "wc_eval_bucket": WC_EVAL_BUCKET,
+            "dv_scaling": "per_pool_zscore_train_targets_v1",
+        }
+
+        # --- setting A: train, out-of-fold over the eliciting rows ----------
+        t0 = time.time()
+        scores_tr, tr_skips = arms.run_cell(data, cell_oof, arms=list(roster), device=args.device)
+        scores_el = {s: np.ascontiguousarray(sc[:, :n_el]) for s, sc in scores_tr.items()}
+        print(f"[fair] {behavior}/{kind}: train OOF fit {time.time() - t0:.0f}s", flush=True)
+
+        # frozen layers: committed convention where it exists (linear pass),
+        # own train-OOF argmax for everything else (never on eval outcome).
+        frozen: dict[str, int] = {}
+        src_by_arm: dict[str, str] = {}
+        committed_subset = [a for a in roster if a in COMMITTED_FROZEN_ARMS and kind == "linear"]
+        if committed_subset:
+            frz, src = committed_frozen(
+                args, loaded, behavior, variant, layers, tuple(committed_subset)
+            )
+            frozen.update(frz)
+            for a in committed_subset:
+                src_by_arm[a] = src
+        for a in roster:
+            if a in frozen or a not in scores_el:
+                continue
+            rhos = arms.spearman_rows(np.asarray(scores_el[a], dtype=np.float64), dv_el)
+            frozen[a] = arms.frozen_layer_idx([float(r) for r in rhos])
+            src_by_arm[a] = "own-train-oof-argmax (fair pass; no committed convention)"
+        frozen_sources[kind] = src_by_arm
+
+        rows_tr, skips_tr = arms.evaluate_transfer(
+            scores_el,
+            dv_el,
+            np.asarray(["train"] * n_el),
+            frozen,
+            provenance={**prov, "rung_kind_note": "in_split_oof_union_readout"},
+            cell=cell_oof,
+            layers=tuple(layers),
+            min_n=args.min_n,
+            **kwargs,
+        )
+        skips_all += skips_tr + [
+            {"arm": s, "reason": f"train oof: {r}", "variant": variant, "map_kind": kind}
+            for s, r in sorted(tr_skips.items())
+        ]
+        skips_all += arms.roster_accounting_skips(
+            list(roster), scores_tr, tr_skips, variant=variant, map_kind=kind, eval_rung="train"
         )
         per_layer_all += per_layer_rows_for(
-            scores, dv_ev, frozen, {**p, "eval_rung": tag}, layers, src
+            scores_el, dv_el, frozen, {**prov, "eval_rung": "train"}, layers, "mixed-see-meta"
         )
-        rows_all += rows
-        skips_all += skips
-        print(f"[fair] {behavior}: transfer {tag} done ({len(rows)} rows)", flush=True)
-        del scores
+        rows_all += rows_tr
+        del scores_tr, scores_el
+        print(f"[fair] {behavior}/{kind}: train OOF done ({len(rows_tr)} rows)", flush=True)
 
-    # (B) WildChat held-out eval split
-    _transfer(
-        np.ascontiguousarray(z_ctx[:, n_tr + wc_eval_rows]),
-        np.asarray(loaded.tbl_wc.dv, dtype=np.float64)[wc_eval_rows],
-        np.ascontiguousarray(z_ans[:, n_tr + wc_eval_rows]),
-        np.asarray([WC_RUNG] * len(wc_eval_rows)),
-        WC_RUNG,
-        {"wc_eval_split": True, "n_wc_eval": int(len(wc_eval_rows))},
-    )
-    # (C) pvsynth grid
-    z_pv = fits.apply_whitening(tbl_pv.z_by_variant[variant], wh)
-    za_pv = fits.apply_whitening(tbl_pv.z_ans, wh)
-    _transfer(
-        z_pv,
-        np.asarray(tbl_pv.dv, dtype=np.float64),
-        za_pv,
-        np.asarray(tbl_pv.row_rungs),
-        PV_RUNG,
-        {},
-    )
-    del z_pv, za_pv
-    # (D) the behaviour's OOD rungs
-    z_ev = fits.apply_whitening(loaded.tbl_ev.z_by_variant[variant], wh)
-    za_ev = fits.apply_whitening(loaded.tbl_ev.z_ans, wh)
-    _transfer(
-        z_ev,
-        np.asarray(loaded.tbl_ev.dv, dtype=np.float64),
-        za_ev,
-        np.asarray(loaded.tbl_ev.row_rungs),
-        "ood",
-        {},
-    )
-    del z_ev, za_ev, z_ctx, z_ans
+        # --- transfer settings: one full-union fit, frozen predictors -------
+        def _transfer(
+            z_ev, dv_ev, za_ev, rungs, tag, extra_prov, _d=data, _p=prov, _k=kind, _f=frozen
+        ):
+            nonlocal rows_all, skips_all, per_layer_all
+            p = {**_p, **extra_prov}
+            t1 = time.time()
+            rows, skips, scores = transfer_rows_for(
+                _d,
+                cell_full,
+                z_ev,
+                dv_ev,
+                za_ev,
+                rungs,
+                _f,
+                p,
+                layers,
+                ROSTER_BY_KIND[_k],
+                device=args.device,
+                n_boot=args.n_boot,
+                min_n=args.min_n,
+            )
+            map_diags[_k][f"recon_{tag}"] = _eval_rung_reconstruction(
+                mapfits[_k], z_ev, za_ev, rungs=list(rungs), knn=True
+            )
+            per_layer_all += per_layer_rows_for(
+                scores, dv_ev, _f, {**p, "eval_rung": tag}, layers, "mixed-see-meta"
+            )
+            rows_all += rows
+            skips_all += skips
+            print(
+                f"[fair] {behavior}/{_k}: transfer {tag} done "
+                f"({len(rows)} rows, {time.time() - t1:.0f}s)",
+                flush=True,
+            )
+            del scores
+
+        _transfer(
+            z_wc_ev,
+            dv_wc_ev,
+            za_wc_ev,
+            np.asarray([WC_RUNG] * len(wc_eval_rows)),
+            WC_RUNG,
+            {"wc_eval_split": True, "n_wc_eval": int(len(wc_eval_rows))},
+        )
+        _transfer(z_pv, dv_pv, za_pv, np.asarray(tbl_pv.row_rungs), PV_RUNG, {})
+        _transfer(z_ood, dv_ood, za_ood, np.asarray(loaded.tbl_ev.row_rungs), "ood", {})
+        del data
+        _free_cuda(args.device)
+
+    del z_ctx, z_ans, z_wc_ev, za_wc_ev, z_pv, za_pv, z_ood, za_ood
     _free_cuda(args.device)
 
     return {
         "rows": rows_all,
         "skips": skips_all,
         "per_layer": per_layer_all,
-        "map_diagnostics": {f"{variant}|add|{u_label}": diag},
-        "frozen_source": {variant: src},
+        "map_diagnostics": {f"{variant}|add|{k}|{u_label}": d for k, d in map_diags.items()},
+        "frozen_sources": frozen_sources,
         "budget_l": lmax,
         "leakage": leak,
     }
@@ -423,6 +504,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=["context_end", "prefix_end"],
         help="DEFAULT context_end ONLY (user directive 2026-08-05 — recorded deviation "
         "from the both-arms mapping rule)",
+    )
+    ap.add_argument(
+        "--map-kinds",
+        nargs="+",
+        default=["linear", "mlp"],
+        choices=["linear", "mlp"],
+        help="map kinds to fit + score (the linear pass carries the map-independent arms)",
     )
     ap.add_argument("--regime", default="e1", choices=("e1",))
     ap.add_argument("--layers", type=int, nargs="+", default=None)
@@ -467,21 +555,18 @@ def main(argv: list[str] | None = None) -> int:
 
     _assert_no_judge_modules("at entry")
     if args.import_check:
-        from explore_persona_space.experiments.issue_1739 import (  # noqa: F401
-            arms,
-            fits,
-            store_io,
-        )
+        from explore_persona_space.experiments.issue_1739 import arms as _arms
+        from explore_persona_space.experiments.issue_1739 import fits, store_io  # noqa: F401
         from explore_persona_space.orchestrate.env import load_dotenv  # noqa: F401
         from scripts.issue1739_fits import (  # noqa: F401
             _eval_rung_reconstruction,
+            _fit_map,
             _git_commit,
             _load_labeled,
         )
         from scripts.issue1739_jobd_r2aug import (  # noqa: F401
             build_pool,
             committed_frozen,
-            fit_pool_map,
             load_behavior,
             per_layer_rows_for,
             transfer_rows_for,
@@ -492,6 +577,9 @@ def main(argv: list[str] | None = None) -> int:
             resolve_wcrung_store,
         )
 
+        assert "arm19_map_mlp_pred" in _arms.ARM_REGISTRY, (
+            "arm19 registry entry missing — pull the fair-round commit on this checkout"
+        )
         _assert_no_judge_modules("after --import-check imports")
         print("[fair] import-check OK", flush=True)
         sys.stdout.flush()
@@ -505,6 +593,8 @@ def main(argv: list[str] | None = None) -> int:
     from scripts.issue1739_wcrung_arms import _git_tracked, _verify_input_shas
 
     load_dotenv()
+    if "arm19_map_mlp_pred" not in arms.ARM_REGISTRY:
+        raise SystemExit("arm19_map_mlp_pred missing from ARM_REGISTRY — stale checkout")
     for b in args.behaviors:
         out = args.out_root / b / "all_arms_spearman.json"
         if _git_tracked(out) and not args.allow_overwrite_committed:
@@ -538,14 +628,29 @@ def main(argv: list[str] | None = None) -> int:
                 "regimes": [args.regime],
                 "variants": [args.variant],
                 "variant_scope": VARIANT_SCOPE_NOTE,
-                "arms": sorted(ROSTER_FAIR),
+                "arms": sorted(set(ROSTER_LINEAR) | set(ROSTER_MLPMAP)),
+                "map_kinds": list(args.map_kinds),
+                "rosters_by_map_kind": {k: list(v) for k, v in ROSTER_BY_KIND.items()},
                 "label_consuming_arms": sorted(LABEL_CONSUMING),
                 "map_condition": "add",
+                "map_kind_resolution": (
+                    "primary mapped-answer readout cells (arm7/arm19) run under the LINEAR "
+                    "map, matching the PV-on-mapped-answer method; the mlp pass re-scores "
+                    "arms 6/7/19 under map_kind=mlp as separate cells — never averaged"
+                ),
                 "map_reuse_note": (
                     "the ADD/union map re-runs the committed result2_trait_aug 'add' recipe "
                     "(same pool composition, same seed, same reviewed compose+fit path); "
                     "map weights are not persisted anywhere, so the deterministic re-fit IS "
-                    "the reuse — never a new map condition"
+                    "the reuse — never a new map condition. The mlp map is the nonlinear-map "
+                    "round's recipe (fits.fit_nonlinear_map, #779 N1M fitters) on the same "
+                    "ADD pool"
+                ),
+                "arm19_note": (
+                    "arm19_map_mlp_pred is NEW this round: the arm-5 MLP recipe "
+                    "(vectorized_mlp_skill.fit_batched_loco_mlp_multihead, same "
+                    "hyperparameters) with input mp — differs from arm5 in input only, "
+                    "from arm7 in readout family only; pinned by tests/test_issue1739_arm19.py"
                 ),
                 "readout_protocol": {
                     "training_set": (
@@ -557,14 +662,13 @@ def main(argv: list[str] | None = None) -> int:
                     "wc_split": f"sha1(ctx_id) mod {WC_SPLIT_MOD} == {WC_EVAL_BUCKET} -> eval",
                 },
                 "leakage": res["leakage"],
+                "frozen_layer_sources": res["frozen_sources"],
                 "n_train_contexts": len(loaded.tbl.ctx_order),
                 "n_eval_contexts": len(loaded.tbl_ev.ctx_order),
                 "n_wildchat_contexts": len(loaded.tbl_wc.ctx_order),
                 "n_pvsynth_contexts": len(tbl_pv.ctx_order),
                 "eval_rungs": sorted(set(loaded.tbl_ev.rungs) | {WC_RUNG, PV_RUNG, "train"}),
-                "map_kind": "linear",
                 "map_source": "refit-in-process",
-                "frozen_layer_source": res["frozen_source"],
                 "transfer_min_n": int(args.min_n),
                 "rb": loaded.rb_meta,
                 "dv_scaling_note": (

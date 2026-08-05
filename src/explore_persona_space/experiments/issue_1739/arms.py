@@ -192,6 +192,17 @@ ARM_REGISTRY: dict[str, dict] = {
         "layered": True,
         "rb_dep": False,
     },
+    # Result-2 fair-protocol round (#1739, 2026-08-05): MLP readout on the
+    # MAPPED answer — the arm-5 recipe (same batched helper, same
+    # hyperparameters) with input mp instead of z, so it differs from arm 5
+    # in INPUT only and from arm 7 in READOUT FAMILY only. rb-INDEPENDENT
+    # (regression on mp -> dv; no regime direction anywhere).
+    "arm19_map_mlp_pred": {
+        "label": "Map-MLP predicted answer",
+        "family": "map",
+        "layered": True,
+        "rb_dep": False,
+    },
 }
 
 HEADLINE_PAIR = ("arm6_map_proj_e1", "arm2_ctx_native")  # plan §6 pre-selected pair
@@ -658,6 +669,7 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
         "arm10_stacked",
         "arm13_shuffled_map",
         "arm14_shuffled_pt",
+        "arm19_map_mlp_pred",
     }
     need_mp = base.mapfit is not None and bool(mp_arms & set(want))
     mp = apply_map(z, base.mapfit) if need_mp else None
@@ -718,6 +730,7 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             "arm10_stacked",
             "arm13_shuffled_map",
             "arm14_shuffled_pt",
+            "arm19_map_mlp_pred",
         ):
             _skip(slug, "no mapfit")
     if za is not None:
@@ -1010,6 +1023,45 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             _put_shared(
                 "arm17_oracle_mlp",
                 np.stack([res17.preds_by_key[("arm17", li)][:, 0] for li in range(n_layers)]),
+            )
+
+    # ---- arm 19: MLP on the MAPPED answer (rb-independent — shared) ----
+    # Result-2 fair-protocol round: mirrors the arm-5 dispatch block with
+    # X = mp (the mapped answer) — same batched helper, same hyperparameters,
+    # same ddof-1 fold floor — differing from arm 5 in INPUT only and from
+    # arm 7 in readout family only. The mapfit-absent case is recorded by the
+    # "no mapfit" skip block above.
+    if "arm19_map_mlp_pred" in want and mp is not None:
+        if (n_l - int(ev_masks.sum(axis=1).max())) < 2:
+            _skip(
+                "arm19_map_mlp_pred",
+                f"mlp fold floor: largest fold holds {int(ev_masks.sum(axis=1).max())} "
+                f"of {n_l} rows (< 2 train rows)",
+            )
+        else:
+            from explore_persona_space.analysis.vectorized_mlp_skill import (
+                MLPGroup,
+                fit_batched_loco_mlp_multihead,
+            )
+
+            if str(device).startswith("cuda"):
+                import torch
+
+                torch.cuda.empty_cache()  # same honest-free-bytes read as arm 5
+            kw = {"hidden": MLP_HIDDEN, "max_epochs": MLP_MAX_EPOCHS, "device": device}
+            kw.update(mlp_kwargs or {})
+            groups19 = [
+                MLPGroup(
+                    key=("arm19", li),
+                    X=mp[li].astype(np.float32),
+                    Y=dv[:, None].astype(np.float32),
+                )
+                for li in range(n_layers)
+            ]
+            res19 = fit_batched_loco_mlp_multihead(groups19, row_groups=folds, **kw)
+            _put_shared(
+                "arm19_map_mlp_pred",
+                np.stack([res19.preds_by_key[("arm19", li)][:, 0] for li in range(n_layers)]),
             )
 
     # ---- arm 18: oracle Nystrom KRR on TRUE answer acts (rb-independent) ----
