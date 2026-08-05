@@ -486,7 +486,7 @@ def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path) -> None:
                 f"upload set resolved EMPTY against declared outputs: {paths_by_variant}"
             )
         return
-    _upload_folder_filtered(
+    url = _upload_folder_filtered(
         out_dir,
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
@@ -494,6 +494,14 @@ def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path) -> None:
         allow_patterns=allow_patterns,
         expected_repo_paths=expected_paths,
     )
+    if not url:
+        # _upload_folder_filtered is fail-soft by RETURN on every failure
+        # shape (missing token, incomplete verify, terminal exception -> "")
+        # — an empty return is a failed upload, not a success (M2).
+        raise RuntimeError(
+            f"cell_c bulk upload failed or incomplete -> {TASK_PREFIX}/cell_c/ "
+            "(returned no path; local files kept)"
+        )
     _log(f"uploaded {len(allow_patterns)} cell_c file(s) in one bulk commit")
 
 

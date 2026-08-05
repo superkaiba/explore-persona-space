@@ -647,7 +647,9 @@ def run(args: argparse.Namespace) -> int:
         f"scaffold={len(scaffold_pool)}) missing_required={len(missing)} "
         f"manifest_counters={manifest_counters} scaffold_counters={scaffold_counters}"
     )
-    print("[phase=done]", flush=True)  # noqa: phase-done-reserved
+    # phase-done terminal line (poller contract). No scripts/*.sh dispatcher
+    # invokes this builder, so no workflow_lint phase-done waiver is needed.
+    print("[phase=done]", flush=True)
     return 0
 
 

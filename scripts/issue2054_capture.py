@@ -940,7 +940,7 @@ def _upload_to_hf(activations_by_variant: dict[str, Path], model_slug: str) -> N
         raise RuntimeError(
             f"upload set resolved EMPTY against declared activations: {activations_by_variant}"
         )
-    _upload_folder_filtered(
+    url = _upload_folder_filtered(
         root,
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
@@ -948,6 +948,14 @@ def _upload_to_hf(activations_by_variant: dict[str, Path], model_slug: str) -> N
         allow_patterns=allow_patterns,
         expected_repo_paths=expected_paths,
     )
+    if not url:
+        # _upload_folder_filtered is fail-soft by RETURN on every failure
+        # shape (missing token, incomplete verify, terminal exception -> "")
+        # — an empty return is a failed upload, not a success (M2).
+        raise RuntimeError(
+            f"activation bulk upload failed or incomplete -> {TASK_PREFIX}/activations/ "
+            "(returned no path; local files kept)"
+        )
     _log(
         f"uploaded {len(allow_patterns)} activation file(s) in one bulk commit (model={model_slug})"
     )

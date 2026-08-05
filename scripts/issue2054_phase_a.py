@@ -1491,6 +1491,10 @@ def run_phase(args: argparse.Namespace) -> int:
                 f"{ {v: len(r) for v, r in variant_rows.items()} }",
                 flush=True,
             )
+            # workflow_lint --check-phase-done-reserved waiver (NOT a ruff
+            # code; ruff's "invalid noqa" warning here is a known cosmetic
+            # collision): exec'd by scripts/issue2054_dispatch.sh, so this IS
+            # the dispatcher's single terminal line.
             print("[phase=done]", flush=True)  # noqa: phase-done-reserved
             sys.stdout.flush()
             sys.exit(0)
@@ -1512,6 +1516,9 @@ def run_phase(args: argparse.Namespace) -> int:
         }
         _atomic_write_json(out_dir / "phase_a_pilot_digest.json", digest)
         print(f"[phase=phase_a] pilot verdict={verdict}", flush=True)
+        # workflow_lint --check-phase-done-reserved waiver (NOT a ruff code;
+        # ruff's "invalid noqa" warning here is a known cosmetic collision):
+        # exec'd by scripts/issue2054_dispatch.sh — dispatcher-terminal line.
         print("[phase=done]", flush=True)  # noqa: phase-done-reserved
         sys.stdout.flush()
         sys.exit(0 if verdict in {"PASS", "PASS_WAIVED"} else 7)
@@ -1630,6 +1637,9 @@ def run_phase(args: argparse.Namespace) -> int:
         f"n_conv_ids={len(fold_map)} judge_calls={judge_record.get('n_calls', 0)}",
         flush=True,
     )
+    # workflow_lint --check-phase-done-reserved waiver (NOT a ruff code;
+    # ruff's "invalid noqa" warning here is a known cosmetic collision):
+    # exec'd by scripts/issue2054_dispatch.sh — dispatcher-terminal line.
     print("[phase=done]", flush=True)  # noqa: phase-done-reserved
     sys.stdout.flush()
     sys.exit(0)  # explicit exit before finalize-time C-extension teardown

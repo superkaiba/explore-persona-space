@@ -946,7 +946,7 @@ def _upload_to_hf(fits_by_cell: dict[str, Path], model: str) -> None:
         raise RuntimeError(
             f"upload set resolved EMPTY against declared fit JSONs: {sorted(fits_by_cell)}"
         )
-    _upload_folder_filtered(
+    url = _upload_folder_filtered(
         root,
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
@@ -954,6 +954,14 @@ def _upload_to_hf(fits_by_cell: dict[str, Path], model: str) -> None:
         allow_patterns=allow_patterns,
         expected_repo_paths=expected_paths,
     )
+    if not url:
+        # _upload_folder_filtered is fail-soft by RETURN on every failure
+        # shape (missing token, incomplete verify, terminal exception -> "")
+        # — an empty return is a failed upload, not a success (M2).
+        raise RuntimeError(
+            f"fit-JSON bulk upload failed or incomplete -> {TASK_PREFIX}/fits/ "
+            "(returned no path; local files kept)"
+        )
     _log(f"uploaded {len(allow_patterns)} fit JSON(s) in one bulk commit (model={model})")
 
 
