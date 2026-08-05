@@ -977,6 +977,37 @@ def run_phase(args: argparse.Namespace) -> int:
         )
         return 2
 
+    # GPU sharding (Unit F): stride the SORTED resolved variant list. Per-cell
+    # writes are disjoint BY CONSTRUCTION ({variant}/{cell_key}.npz +
+    # capture_diagnostics/{cell_key}.json — C6), so concurrent shards of one
+    # (phase, form, model) invocation never collide on cell outputs; the
+    # per-(phase, form, model) DIGEST is the one shared write, so it gains a
+    # shard suffix below when shard_count > 1.
+    if args.shard_count < 1 or not (0 <= args.shard_index < args.shard_count):
+        print(
+            f"ERROR: invalid shard spec --shard-index={args.shard_index} "
+            f"--shard-count={args.shard_count} (need 0 <= index < count, count >= 1)",
+            file=sys.stderr,
+        )
+        return 2
+    if args.shard_count > 1:
+        all_resolved = sorted(input_paths)
+        shard_variants = all_resolved[args.shard_index :: args.shard_count]
+        input_paths = {v: input_paths[v] for v in shard_variants}
+        _log(
+            f"shard {args.shard_index}/{args.shard_count}: variants={shard_variants} "
+            f"(resolved pool={all_resolved})"
+        )
+        if not input_paths:
+            # A composition bug (more shards than resolved variants) — fail
+            # loud rather than exit 0 with a vacuous digest.
+            print(
+                f"ERROR: shard {args.shard_index}/{args.shard_count} resolved EMPTY "
+                f"against variants={all_resolved} — size --shard-count <= variant count",
+                file=sys.stderr,
+            )
+            return 2
+
     _log(
         f"start: phase={args.phase} form={args.form} model={args.model} layer={args.layer} "
         f"dry_run={args.dry_run} variants={list(input_paths.keys())}"
@@ -1048,16 +1079,27 @@ def run_phase(args: argparse.Namespace) -> int:
         "model": args.model,
         "layer": args.layer,
         "dry_run": bool(args.dry_run),
+        "shard_index": int(args.shard_index),
+        "shard_count": int(args.shard_count),
         "per_variant": per_variant_reports,
         "n_total_ok": total_ok,
         "seed": args.seed,
         "utc": datetime.now(tz=timezone.utc).isoformat(),
     }
     # Digest keyed on (condition, form, model) — C6: two runs differing only in
-    # --phase/--form must not overwrite each other's digest either.
+    # --phase/--form must not overwrite each other's digest either. Under
+    # sharding the digest additionally carries a shard suffix (Unit F): two
+    # concurrent shards of ONE (phase, form, model) invocation must not both
+    # write capture_digest__{phase}__{form}__{model}.json — the composer
+    # (scripts/issue2054_shard_launch.py) aggregates the shard digests into
+    # the canonical un-suffixed name post-hoc.
     sep = forms.CELL_KEY_SEP
+    shard_suffix = (
+        f"{sep}shard{args.shard_index}of{args.shard_count}" if args.shard_count > 1 else ""
+    )
     digest_path = (
-        output_dir / f"capture_digest{sep}{args.phase}{sep}{args.form}{sep}{args.model}.json"
+        output_dir
+        / f"capture_digest{sep}{args.phase}{sep}{args.form}{sep}{args.model}{shard_suffix}.json"
     )
     tmp = digest_path.with_suffix(".json.tmp")
     with tmp.open("w", encoding="utf-8") as f:
@@ -1117,6 +1159,27 @@ def main() -> int:
     )
     p.add_argument("--skip-upload", action="store_true", help="skip HF mirror step")
     p.add_argument("--upload", action="store_true", help="force HF mirror step (default when GPU)")
+    p.add_argument(
+        "--shard-index",
+        type=int,
+        default=0,
+        help=(
+            "0-based shard id (Unit F GPU sharding): this invocation captures "
+            "sorted(resolved variants)[index::count]; per-cell writes are "
+            "disjoint by construction, the digest gains a shard suffix"
+        ),
+    )
+    p.add_argument(
+        "--shard-count",
+        type=int,
+        default=1,
+        help=(
+            "total concurrent shards over the resolved variant list (default 1 "
+            "= unsharded, byte-identical legacy behavior). Launch one process "
+            "per shard with CUDA_VISIBLE_DEVICES pinned per GPU — see "
+            "scripts/issue2054_shard_launch.py"
+        ),
+    )
     p.add_argument(
         "--dry-run",
         action="store_true",

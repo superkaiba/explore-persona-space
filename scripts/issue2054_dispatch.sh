@@ -120,6 +120,12 @@ build_cmd() {
       # REQUIRES --form <framing> per cell (plan §4 framing axis; no default).
       # Model + variants pass through; --dry-run skips vLLM for CPU-side smokes.
       # max_new_tokens 2048 per plan §11 (>=2x longest trained completion).
+      # TWO-MODEL RUNS: compose DISTINCT --output-dir roots per model (the
+      # resume sidecar regime carries the model axis, the filename does not —
+      # a second model into ONE dir is REFUSED). Multi-GPU: use the composer,
+      # which appends the model slug to the output dir and shards variants:
+      #   uv run python scripts/issue2054_shard_launch.py --driver phase_c \
+      #     --form F --model M --gpus 0,..,7
       CMD=(
         uv run python scripts/issue2054_phase_c.py
         --scaffolds-dir data/issue_2054/scaffolds/
@@ -158,7 +164,12 @@ build_cmd() {
       # --input-dir / --variants / --phase / --form / --model pass through
       # per-cell (--phase AND --form are REQUIRED by the driver; the default
       # --input-dir matches --phase inserted — override it for on_policy /
-      # cell_c captures).
+      # cell_c captures, or use the multi-GPU composer, which maps
+      # phase -> input-dir and shards variants across GPUs:
+      #   uv run python scripts/issue2054_shard_launch.py --driver capture \
+      #     --condition <inserted|on_policy|cell_c> --form F --model M --gpus 0,..,7
+      # (Unit F: --shard-index/--shard-count stride the variant list; per-cell
+      # writes are disjoint by construction; shard digests aggregate post-hoc.)
       # --dry-run exercises the CLI + tokenization on <=3 rows without GPU.
       # max_new_tokens is irrelevant here (teacher-forced, no generation).
       CMD=(

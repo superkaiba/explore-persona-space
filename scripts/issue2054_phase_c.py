@@ -470,6 +470,36 @@ def run_phase(args: argparse.Namespace) -> int:
         )
         return 1
 
+    # GPU sharding (Unit F): stride the SORTED resolved variant list. Per-variant
+    # outputs ({variant}/on_policy_{variant}__{form}.jsonl + sidecars) are
+    # disjoint across shards by construction; the per-(form) DIGEST gains a
+    # shard suffix below when shard_count > 1 (aggregated post-hoc by
+    # scripts/issue2054_shard_launch.py). NOTE two --model runs still need
+    # DISTINCT --output-dir roots (the sidecar regime refusal) — the composer
+    # appends the model slug to the output dir per invocation.
+    if args.shard_count < 1 or not (0 <= args.shard_index < args.shard_count):
+        print(
+            f"ERROR: invalid shard spec --shard-index={args.shard_index} "
+            f"--shard-count={args.shard_count} (need 0 <= index < count, count >= 1)",
+            file=sys.stderr,
+        )
+        return 1
+    if args.shard_count > 1:
+        all_resolved = sorted(per_variant_paths)
+        shard_variants = all_resolved[args.shard_index :: args.shard_count]
+        per_variant_paths = {v: per_variant_paths[v] for v in shard_variants}
+        _log(
+            f"shard {args.shard_index}/{args.shard_count}: variants={shard_variants} "
+            f"(resolved pool={all_resolved})"
+        )
+        if not per_variant_paths:
+            print(
+                f"ERROR: shard {args.shard_index}/{args.shard_count} resolved EMPTY "
+                f"against variants={all_resolved} — size --shard-count <= variant count",
+                file=sys.stderr,
+            )
+            return 1
+
     _log(
         f"start: target_conv_ids={args.target_conv_ids} model={args.model} "
         f"form={args.form} dry_run={args.dry_run} variants={list(per_variant_paths.keys())}"
@@ -505,6 +535,8 @@ def run_phase(args: argparse.Namespace) -> int:
         "temperature": args.temperature,
         "max_new_tokens": args.max_new_tokens,
         "dry_run": bool(args.dry_run),
+        "shard_index": int(args.shard_index),
+        "shard_count": int(args.shard_count),
         "counts": counts,
         "n_total_out": total_out,
         "cap_hit": {
@@ -519,7 +551,14 @@ def run_phase(args: argparse.Namespace) -> int:
         "utc": datetime.now(tz=timezone.utc).isoformat(),
     }
     # Form-keyed digest name (C6): the digest is per (condition, form) run.
-    digest_path = out_dir / f"phase_c_digest{forms.CELL_KEY_SEP}{args.form}.json"
+    # Shard-suffixed under sharding (Unit F) — two concurrent shards of one
+    # (form, model) invocation must not both write the canonical digest; the
+    # composer aggregates shard digests post-hoc.
+    sep = forms.CELL_KEY_SEP
+    shard_suffix = (
+        f"{sep}shard{args.shard_index}of{args.shard_count}" if args.shard_count > 1 else ""
+    )
+    digest_path = out_dir / f"phase_c_digest{sep}{args.form}{shard_suffix}.json"
     tmp = digest_path.with_suffix(".json.tmp")
     with tmp.open("w", encoding="utf-8") as f:
         json.dump(digest, f, indent=2, sort_keys=True)
@@ -574,6 +613,27 @@ def main() -> int:
     p.add_argument("--skip-upload", action="store_true", help="skip HF mirror step")
     p.add_argument(
         "--upload", action="store_true", help="force HF mirror step (default when not dry-run)"
+    )
+    p.add_argument(
+        "--shard-index",
+        type=int,
+        default=0,
+        help=(
+            "0-based shard id (Unit F GPU sharding): this invocation generates "
+            "sorted(resolved variants)[index::count]; per-variant outputs are "
+            "disjoint by construction, the digest gains a shard suffix"
+        ),
+    )
+    p.add_argument(
+        "--shard-count",
+        type=int,
+        default=1,
+        help=(
+            "total concurrent shards over the resolved variant list (default 1 "
+            "= unsharded, byte-identical legacy behavior). Launch one process "
+            "per shard with CUDA_VISIBLE_DEVICES pinned per GPU — see "
+            "scripts/issue2054_shard_launch.py"
+        ),
     )
     p.add_argument(
         "--dry-run",
