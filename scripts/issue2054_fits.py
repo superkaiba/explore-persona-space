@@ -88,6 +88,7 @@ import numpy as np  # noqa: E402
 import issue2054_forms as forms  # noqa: E402
 import issue2054_resume as resume  # noqa: E402
 from issue2054_pilot import fleet_projection_update as _fleet_projection_update  # noqa: E402
+from issue2054_pilot import require_prior_wall_seconds as _require_prior_wall_seconds  # noqa: E402
 from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
     identity_bias_predict,
     knn_retrieval,
@@ -1057,10 +1058,14 @@ def _run_fits_pilot_gate(
             )
             if prior_matches:
                 _log(f"pilot gate: prior report matches ({_rel(report_path)}); skipping")
+                # r3 Minor 1: a prior report lacking the measured wall FAILS
+                # LOUD — a silent 0.0 default would project a fleet wall of 0
+                # and disarm the fence (ladder sibling site fixed identically).
+                prior_wall = _require_prior_wall_seconds(prior, report_path)
                 _fleet_projection_update(
                     report_path,
                     prior,
-                    wall_seconds=float(prior.get("wall_seconds", 0.0)),
+                    wall_seconds=prior_wall,
                     n_fleet_units=n_fleet_units,
                     fold_k=fold_k,
                     log=_log,

@@ -24,6 +24,7 @@ report with the pilot-extrapolated fleet wall and enforces a budget:
 from __future__ import annotations
 
 import json
+import math
 import os
 from collections.abc import Callable
 from pathlib import Path
@@ -37,6 +38,37 @@ FLEET_WALL_WARN_HOURS = 12.0
 
 class FleetWallExceeded(RuntimeError):
     """Projected fleet wall exceeds the armed budget (designed halt, exit 7)."""
+
+
+def require_prior_wall_seconds(prior: dict, report_path: Path) -> float:
+    """Fail-loud read of a prior pilot report's measured 1-unit 1-fold wall.
+
+    The prior-report skip path feeds this value straight into the fleet-wall
+    fence (``projected = wall x fold_k x n_units``), so a missing
+    ``wall_seconds`` silently defaulting to 0.0 would project a fleet wall of
+    0 and DISARM the fence guarding the production run (code-review r3
+    Minor 1 on #2054). A non-positive / non-finite stored value is the same
+    silent-disarm class (0 projects 0; NaN makes ``projected > budget``
+    False) and raises too. Remedies: delete the stale report, or re-run with
+    --overwrite — both re-measure the pilot.
+    """
+    wall = prior.get("wall_seconds")
+    if isinstance(wall, bool) or not isinstance(wall, (int, float)):
+        raise RuntimeError(
+            f"pilot gate: prior report {report_path} matches the measurement knobs but "
+            f"carries no measured 'wall_seconds' (got {wall!r}) — refusing to project the "
+            "fleet wall from a missing pilot measurement; delete the report or re-run "
+            "with --overwrite to re-measure"
+        )
+    wall_f = float(wall)
+    if not math.isfinite(wall_f) or wall_f <= 0.0:
+        raise RuntimeError(
+            f"pilot gate: prior report {report_path} carries a non-positive/non-finite "
+            f"measured 'wall_seconds' ({wall!r}) — that fence input would project a "
+            "0/NaN fleet wall and disarm the budget; delete the report or re-run with "
+            "--overwrite to re-measure"
+        )
+    return wall_f
 
 
 def fleet_projection_update(

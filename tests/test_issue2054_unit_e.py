@@ -846,3 +846,105 @@ def test_recover_scaffolds_unknown_variant_fails_loud():
     The raise fires BEFORE any HF listing (no network in this test)."""
     with pytest.raises(ValueError, match="cannot resolve character name"):
         phase_a._recover_scaffolds_from_hf(["char_new_unmapped"], api=None)
+
+
+def test_pilot_prior_report_missing_wall_seconds_fails_loud(tmp_path):
+    """r3 Minor 1 (fails-pre-fix): a prior pilot report that matches the knob
+    compare but LACKS the measured `wall_seconds` must RAISE, not project a
+    fleet wall of 0 — a silent-zero default on a fence input disarms the
+    fleet-wall budget guarding the production run. Both sibling sites (the
+    ladder + fits prior-report skip paths — the reviewer's bug-class sweep
+    found exactly these two)."""
+    # Ladder skip path (pre-fix: prior.get("wall_seconds", 0.0) -> projects 0).
+    out_dir = tmp_path / "ladder_out"
+    out_dir.mkdir()
+    (out_dir / "pilot_gate_report.json").write_text(
+        json.dumps({"bootstrap_draws": 8, "arm": "context", "seed": 137}),
+        encoding="utf-8",
+    )
+    args = SimpleNamespace(
+        bootstrap_draws=8,
+        arms=["context", "prefix"],
+        seed=137,
+        overwrite=False,
+        max_fleet_wall_hours=12.0,
+    )
+    with pytest.raises(RuntimeError, match="wall_seconds"):
+        ladder._run_ladder_pilot_gate(
+            [], {}, {"k": 5}, tmp_path / "fits", args, out_dir, n_pending_units=4
+        )
+    # Fits skip path (same silent-zero shape at issue2054_fits' prior branch).
+    fits_out = tmp_path / "fits_out"
+    fits_out.mkdir()
+    (fits_out / "pilot_gate_report.json").write_text(
+        json.dumps({"n_null_draws": 4, "bootstrap_draws": 8, "arm": "context", "seed": 137}),
+        encoding="utf-8",
+    )
+    fits_args = SimpleNamespace(
+        n_null_draws=4,
+        bootstrap_draws=8,
+        arms=["context", "prefix"],
+        seed=137,
+        overwrite=False,
+    )
+    with pytest.raises(RuntimeError, match="wall_seconds"):
+        fits._run_fits_pilot_gate({"cell": {}}, {}, {}, {"k": 5}, fits_args, fits_out)
+    # A stored zero / non-finite wall is the same silent-disarm class
+    # (0 projects 0; NaN makes `projected > budget` False) — raises too.
+    with pytest.raises(RuntimeError, match="non-positive/non-finite"):
+        pilot.require_prior_wall_seconds({"wall_seconds": 0.0}, tmp_path / "r.json")
+    with pytest.raises(RuntimeError, match="non-positive/non-finite"):
+        pilot.require_prior_wall_seconds({"wall_seconds": float("nan")}, tmp_path / "r.json")
+
+
+def test_ladder_zero_pair_production_enumeration_exits_2(monkeypatch, capsys):
+    """r3 Minor 2 (fails-pre-fix): a NON-smoke ladder run whose --pair-classes
+    matches ZERO pairs across >=2 located cells exits 2 (missing-input class)
+    with no digest — never 0-with-empty-digest ("ran fine" and "computed
+    nothing" must differ in rc); and an empty `--pair-classes ''` is rejected
+    at parse instead of passing the unknown-class validation vacuously."""
+    root = _vartmp_dir("i2054_zero_pair_")
+    try:
+        rng = np.random.default_rng(3)
+        # Two assistant cells (chat vs bare_text, same model): their only §6
+        # class is cross_framing, so restricting to cross_character yields 0.
+        cells = [
+            _cell(_ASSISTANT, "inserted", "chat", _INSTRUCT),
+            _cell(_ASSISTANT, "inserted", "bare_text", _INSTRUCT),
+        ]
+        acts_dir, fm_path, fits_dir = _write_ladder_fixture(root, rng, cells)
+        out_dir = root / "ladder_out"
+        base_argv = [
+            "issue2054_ladder.py",
+            "--activations-dir",
+            str(acts_dir),
+            "--fits-dir",
+            str(fits_dir),
+            "--fold-map",
+            str(fm_path),
+            "--output-dir",
+            str(out_dir),
+            "--seed",
+            "137",
+            "--bootstrap-draws",
+            "8",
+            "--skip-upload",
+            "--variants",
+            _ASSISTANT,
+            "--models",
+            _INSTRUCT,
+        ]
+        monkeypatch.setattr(sys, "argv", [*base_argv, "--pair-classes", "cross_character"])
+        rc = ladder.main()
+        assert rc == 2
+        assert "ZERO pairs" in capsys.readouterr().err
+        assert not (out_dir / "ladder_digest.json").exists(), (
+            "a zero-pair production run must not write an empty 'success' digest"
+        )
+        # Vacuous empty value: rejected at parse (argparse error -> exit 2).
+        monkeypatch.setattr(sys, "argv", [*base_argv, "--pair-classes", ""])
+        with pytest.raises(SystemExit) as ei:
+            ladder.main()
+        assert ei.value.code == 2
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
