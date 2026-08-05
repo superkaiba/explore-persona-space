@@ -171,3 +171,135 @@ feedback_write_tool_lands_in_session_cwd.md, feedback_zero_width_span_bpe_delimi
 - Link-resolution loop over surviving rows: 89/89 referenced bodies exist.
 - No residual: legitimate curation reached the soft target; no live lesson
   was dropped to hit the byte number.
+
+## experimenter
+
+**Before:** 19,303 bytes / 96 index rows (95 distinct bodies; one row was an
+exact duplicate). **After:** 15,578 bytes / 71 rows referencing 77 bodies.
+**Classification:** 65 KEEP (verbatim) · 6 MERGE groups (12 rows → 6
+multi-link rows) · 19 RETIRE rows (18 distinct bodies; includes the
+duplicate-row pair). Every surviving pointer resolves on disk (`test -f`
+loop: 77/77). Structural fixes riding along: the one row that sat ABOVE the
+`# Experimenter Memory` H1 was resolved by its retire (R1); the trailing
+section was renamed `## Project results (durable) + run forensics` to match
+the forensics rows it hosts.
+
+### Merges (rows in → row out; all original bodies stay reachable)
+
+1. **"Preflight fetch-timeout false-negative" (#664) + "Preflight
+   wandb-reachability HANG" (#778)** → one "Preflight false-negative probes
+   on fresh pods" row linking `feedback_preflight_fetch_timeout_false_negative.md`
+   + `feedback_preflight_wandb_reachability_hang.md`. Same trap class:
+   preflight's OWN network probes false-fail/hang on first-touch pods.
+2. **"Load .env explicitly in nohup" (#260, #923) + "RunPod lane .env not
+   sourced via nohup bash driver" (#657)** → one row linking
+   `feedback_load_env_in_nohup.md` +
+   `feedback_runpod_lane_env_not_sourced_via_nohup.md`. Same trap class:
+   detached/non-login launches missing API keys.
+3. **"GCP lane is git-clone-only — local data/ doesn't reach the VM" (#634)
+   + "Reused parent train-mix is local-only" (#734)** → one row linking
+   `feedback_gcp_lane_git_clone_only_data.md` +
+   `feedback_reused_train_mix_local_only_gcp_lane.md`. Same trap class:
+   git-clone-only lanes cannot stage VM-local inputs.
+4. **"Carry-over data claims lie ~half the time" (#186, #368) + "Carry-over
+   artifacts local-disk gate" (#504)** → one row linking
+   `feedback_carryover_data_assumption.md` +
+   `feedback_carryover_artifacts_local_disk_gate.md`. Same trap class:
+   verify claimed carry-over inputs (HF leg AND local staging) before spend.
+5. **"Liger + PEFT/LoRA = 2x regression" (#36) + "TRL rejects Liger DPO +
+   precompute" (#36)** → one row linking `feedback_liger_peft.md` +
+   `feedback_trl_dpo_liger_precompute.md`. Same trap class: Liger fused
+   kernels don't compose with the LoRA/DPO paths.
+6. **"Stale procs steal log + GPU + checkpoints" (#399 v8) + "SSH timeout ≠
+   child dead — pgrep before relaunch" (#383, #399)** → one "Relaunch
+   hygiene" row linking `feedback_stale_eval_proc_steals_log.md` +
+   `feedback_ssh_bash_lc_backgrounding.md`. Same trap class: relaunching
+   without confirming the prior instance's state.
+
+### Retires (19 rows / 18 bodies) — verbatim row + quoted covering clause
+
+Format matches the experiment-implementer section: original row, then the
+superseding surface (line numbers from the curation-time worktree copy).
+13 of the 18 retired bodies remain CITED from `.claude/rules/` entries, so
+they stay reachable from the covering rule itself. Bodies retained on disk
+in all cases.
+
+1. `- [Foreign GPU allocation invisible to compute-apps](feedback_gpu_foreign_allocation_no_compute_apps.md) — fresh RunPod GPU held ~72GB by a host-level tenant; gate on memory.used per GPU, never compute-apps alone (#825 r11)`
+   → gotchas.md:145: "A FRESH pod can arrive with a GPU already held by a FOREIGN tenant — `--query-compute-apps` reads EMPTY … GPU-free gates must read per-GPU `memory.used`, never compute-apps alone" (body cited in the entry).
+2. `- [Pod git HTTPS 403 with VALID token — bundle sideload](feedback_pod_git_https_403_bundle_sideload.md) — pod fetch can 403 with a verified-valid token + correct helper (likely egress-IP git-http block) (#1315)`
+   → gotchas.md:465: "Pod git fetch 403 with a VERIFIED-VALID token — after ONE helper-recovery attempt, stop debugging auth and sideload the commit delta via `git bundle`" (body cited in the entry).
+3. `- [Pod `git pull` silent on stale `.git/index.lock`](feedback_pod_git_pull_silent_index_lock.md) — A crashed mid-git workload leaves a 0-byte `.git/index.lock` (#653)` **plus its exact-duplicate sibling row** (same body, `(#653, #1336)` tail) — the one duplicate-referenced body in the pre-curation index.
+   → gotchas.md:464: "Same-pod relaunch: `git pull --ff-only` exits 0 on a stale `.git/index.lock` but HEAD does NOT advance — a SILENT-success sibling of the two pull-ABORT entries above" (body cited in the entry). The run-END half of the trap keeps its own row (`feedback_stale_index_lock_pre_launch_probe.md`, #1336).
+4. `- [Fan-out handshake timeout masks a single fast-crashing unit](feedback_fanout_handshake_timeout_masks_single_unit_crash.md) — "ALL units hit the vLLM 5-min front-end handshake timeout" is usually the SYMPTOM of one unit crashing instantly (#1112)`
+   → gotchas.md:190: "ALL fan-out units dumping the vLLM 5-minute front-end handshake timeout … is usually the MASK of ONE unit crashing instantly — read the earliest/smallest unit log's traceback BEFORE classifying infra"; entry names the body as "Long-form twin".
+5. `- [vLLM zombie GPU: pkill -f misses the orphan EngineCore](feedback_vllm_zombie_gpu_pkill_reaper.md) — after killing a hung vLLM dispatcher tree (#664)`
+   → gotchas.md:135: "Crashed/killed/HUNG vLLM parents leave orphaned `VLLM::EngineCore` workers that OOM the RELAUNCH — and `pgrep -f <script-name>` / `pkill -f <script-name>` cannot see them" (full reap recipe; body cited at gotchas.md:142); the teardown family is also named always-on in CLAUDE.md § Gotchas.
+6. `- [CUDA OOM on Qwen-7B teacher-forced capture — workload-cmd hot-fix, no code change](feedback_cuda_oom_expandable_segments.md) — multi-layer activation capture on Qwen-2.5-7B OOMs at the lm_head after ~6000 forwards on PyTorch CUDA-allocator (#761)`
+   → gotchas.md:224 (expandable-segments entry): "Cross-ref (long-form recipe): `.claude/agent-memory/experimenter/feedback_cuda_oom_expandable_segments.md`. (Incident #761 r3 relaunch …)".
+7. `- [HF Hub pinned-revision 404](feedback_hf_hub_pinned_rev_404.md) — hf_hub_download(revision, filename) 404s when the pair doesn't coexist (#477)`
+   → artifact-reuse.md:88-89: "run the probe at that revision … existence at `main` does not imply existence at the pin (#1345 — 2/4 stems returned 0 files at the plan's pin after a default-branch probe read CONFIRMED)"; mechanized plan-side by `verify_plan.py` c35 (`c35_pinned_revision_reuse`, "revision-pinned reuse verified at pin").
+8. `- [Bank vs R-artifact schema drift](feedback_bank_r_artifact_schema_drift.md) — issue_472 bank + R_eval not pinned to one snapshot (#477)`
+   → artifact-reuse.md:382 check (j): "Pairwise provenance coherence (mutually-dependent artifact PAIRS) … a question/prompt bank vs activations / teacher-forced reads captured under it; … checks (e)/(f) pin each member's CURRENT bytes individually but say nothing about whether the members come from the SAME generation"; the same clause rides the always-on CLAUDE.md reuse bullet.
+9. `- [RunPod overlay HF cache trap](feedback_runpod_overlay_hf_cache.md) — /root/.cache/huggingface as REAL dir overflows the 50G overlay on eval (#356)`
+   → mechanized at source: `scripts/bootstrap_pod.sh:377` `export HF_HOME=/workspace/.cache/huggingface` runs on every provision; CLAUDE.md § Pods "Hard requirements" item 4: "Bootstrap on provision — runs `bootstrap_pod.sh` (uv, repo clone, .env push, HF cache redirect, preflight)"; preflight additionally checks `HF_HOME`.
+10. `- [Preflight feature-branch false positive](feedback_preflight_feature_branch_false_positive.md) — FIXED at source by #554 (2026-06-12, branch-aware preflight); tolerance/pre-clear is LEGACY for pre-#554 pods only (#383, #550)`
+    → fixed at source (the row's own text declares it): `src/explore_persona_space/orchestrate/preflight.py:308` "Check git working tree is clean and up to date — branch-aware (#554)"; pods are ephemeral (7-day TTL), so no pre-#554 pod remains; body also cited from `pod-side-reporting.md:659`.
+11. `- [Detached-spawn launchers cannot be &&-chained into waves](feedback_detached_spawn_launcher_cannot_chain_waves.md) — a fan-out script that setsid-detaches shards (reparented to init) exits after its spawn loop (#1738)`
+    → gotchas.md:87: "Chained waves on a detached-spawn launcher fan out CONCURRENTLY — a launcher that `setsid`-detaches its shards exits right after its spawn loop, so `wave2 && wave3 && wave4` is NOT sequential"; entry names the body as "Long-form".
+12. `- [Divergent .claude/** spec files block ff-only pull](feedback_pod_git_sync_diverged_spec_files.md) — same-pod relaunch of a branch carrying a spec-freshness sync commit aborts `git pull --ff-only` (#653)`
+    → gotchas.md:441: "Same-pod relaunch: divergent `.claude/**` spec files block `git pull --ff-only`" (full 4-step recovery recipe; body cited at gotchas.md:463).
+13. `- [CUDA_VISIBLE_DEVICES clobber family](feedback_cuda_visible_devices.md) — set CVD before torch import; module-level writes poison importers (#269); train_lora/merge_lora stomp shell CVD (#192)`
+    → CLAUDE.md § Gotchas (always-on): "the **`+gpu_id=N` CUDA_VISIBLE_DEVICES clobber** for parallel launches"; LESSONS.md gotchas trigger binds it at every launch: "launch GPU workers / multi-GPU/vLLM fan-outs, incl. via train_lora/merge_lora (CVD clobber, …)"; gotchas.md carries the full entries (7 CVD hits).
+14. `- [Sonnet model id -20251001 is invalid](feedback_anthropic_sonnet_4_5_20251001_invalid_model.md) — 404 NotFoundError ~40s in; alias is claude-sonnet-4-5; grep all judge sites, code-class, never retry (#489)`
+    → CLAUDE.md LLM-judge bullet (always-on): "Set via `DEFAULT_JUDGE_MODEL` / `JUDGE_MODEL=claude-sonnet-4-5-20250929`; never graft a `-20251001` suffix (that is Haiku 4.5)"; mechanized by `workflow_lint.py --check-judge-model-pins` (bundled into the no-flags default run).
+15. `- [MooseFS FUSE wedge on .venv imports](feedback_moosefs_fuse_wedge_venv_import.md) — silent launch hang (zero stderr, wchan=request_wait_answer, GPU 0 MiB) = wedged /workspace FUSE mount (#779)`
+    → gotchas.md:85: "MooseFS FUSE READ-wedge on the pod `/workspace` `.venv` — the silent launch hang (zero stderr)" (full discriminator probe + remediation; entry names the body as "Long-form runbook"); ALSO named always-on in CLAUDE.md § Gotchas: "the **MooseFS FUSE read-wedge on the pod `.venv`** (silent launch hang — see the discriminator probe in the rule)".
+16. `- [vLLM H100 IMA under heavy shared-prefix caching](feedback_vllm_h100_prefix_cache_ima.md) — A100-clean + short-probe-clean differential pins the class (#1092)`
+    → gotchas.md:189: "vLLM-on-H100 CUDA illegal-memory-access under heavy shared-prefix caching at long-prompt production shapes — run the A100-clean + short-probe-clean differential BEFORE any code hunt" (body cited in the entry).
+17. `- [Pod git auth can go stale mid-lifecycle](feedback_pod_git_auth_stale_midlifecycle.md) — #1239 credential-helper recovery works on RunPod too; pod sync = single-statement git -C calls (#1315)`
+    → gotchas.md:465 (same entry as retire 2): the entry owns the helper-recovery-then-bundle-sideload ladder for pod git auth failures and cites this body directly.
+18. `- [hf-xet download wedge — kill + replay with HF_HUB_DISABLE_XET=1](feedback_hf_xet_download_wedge_kill_replay.md) — du frozen + ss empty + py-spy xet_get frame = native xet hang; retry wrappers cannot fire (#1345)`
+    → gotchas.md:427: "hf-xet DOWNLOAD wedge — the native `xet_get` call can hang FOREVER with ZERO TCP connections and no exception; per-file retry wrappers structurally cannot fire; recover by kill + replay with `HF_HUB_DISABLE_XET=1` inline" (body cited in the entry).
+
+### Considered and kept (retire candidates rejected)
+
+- `feedback_vllm_teardown_sigabrt_resume.md` — gotchas.md:196 only cites it
+  as a DISCRIMINATOR ("… vs a vLLM engine (<body>)"); the entry itself
+  teaches the HF-datasets shutdown-SIGABRT sibling, not this lesson's
+  verify-outputs/plain-relaunch/resume recipe. KEPT.
+- `feedback_shallow_clone_fix_commit_verification.md` — no covering entry:
+  `grep -n "shallow\|depth-1" .claude/rules/crash-fix-rounds.md` → 0 hits.
+  KEPT.
+- `feedback_hf_rate_limit.md` — upload-policy.md:343 covers the rate limit +
+  bulk-commit halves, but the "NEVER upload_large_folder (0-file bug)"
+  residual appears in no covering surface (`grep upload_large_folder
+  .claude/rules/upload-policy.md` → 0 hits). KEPT.
+- `feedback_archive_script_path.md` — target still exists (`scripts/archive/`
+  is populated). KEPT.
+- `feedback_vllm0110_transformers5_breakage.md` — `uv.lock` pins vllm
+  `>=0.6,<1.0`, so the 0.11.x combo remains reachable. KEPT.
+- `feedback_uv_sync_moosefs_stale_handle_persistent.md` — gotchas.md:85
+  mentions it only to DISTINGUISH it ("Also distinct from the `uv sync`
+  errno-116 stale-handle trap"); the fix recipe lives in the body alone.
+  KEPT.
+
+### Intentionally-unreferenced bodies (18 — the retired set; no others)
+
+Post-curation reconcile: every body in
+`.claude/agent-memory/experimenter/` is referenced by a surviving row
+EXCEPT exactly the 18 retired bodies listed above (retires 1-18), each
+justified there; 13 of the 18 remain cited from `.claude/rules/`
+(gotchas.md / pod-side-reporting.md), so they stay reachable from the
+covering rules.
+
+### Verification
+
+- Bytes: 19,303 → **15,578** (hard cap 18,000 met with margin; ~600 B above
+  the ~15,000 soft target — the residual is 65 KEEP rows that are live,
+  unique, and unsuperseded; per the plan §6 kill criterion nothing further
+  was dropped to chase the byte number).
+- Rows: 96 → 71; 95 body files on disk, 0 deleted.
+- Link-resolution loop over surviving rows: 77/77 referenced bodies exist.
+- `workflow_lint.py --check-agent-memory-index-size` (the same check the
+  no-flags bundle runs): **PASS** — no agent-memory WARN/FAIL for
+  experimenter (or any other agent) at curation time.
