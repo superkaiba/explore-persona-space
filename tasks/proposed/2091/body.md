@@ -17,6 +17,8 @@ goal: Measure how the answer-decoding regime (single greedy vs K-rollout-average
   mapping quality and its cross-regime transfer, and behavioral-expression prediction
   accuracy for sycophancy / hallucination / evil, on generic held-out data versus
   trait-eliciting data.
+relates_to:
+- spec-context-as-vector
 ---
 ## Goal
 
