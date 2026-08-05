@@ -104,22 +104,39 @@ build_cmd() {
       # so it under-draws whenever per-variant recovery exceeds the shared
       # intersection (measured: ~2,155/variant recovered vs 1,055 shared).
       # --gen-draw-n sizes the shared draw directly:
-      #   min recovered / variant (post casing fix) = 2,152
-      #   min verbatim-keep, single-line + <400ch   =  36.0%
-      #   pre-judge pool @ D=14,000  = 2,152 + 0.360*14,000 = 7,192 = 1.61x
-      #   the 4,480 gate-4 floor — headroom for the judge admission leg (not
-      #   yet measured on this instrument) + phase b/c/d attrition; the gate is
-      #   missed only if combined downstream retention drops below ~62%.
-      #   Eligible pool after the new filters ~57.8k (79,606 * 72.6%), so a
-      #   14,000 draw is ~24% of it.
-      # Wall: 5 variants * 14,000 = 70,000 scaffolds @ ~0.068 s each (measured
-      # 39,965 in ~45 min on 1xH100, 2026-08-05) = ~80 min, sequential
-      # per-variant subprocesses on ONE GPU — under the ~2 h shardable-width
-      # threshold, so 1xH100 is right-sized.
+      # RESIZED at r7 on the MEASURED judge-admission rate. r5 sized on an
+      # assumed ~80% retention (never measurable before — no judge wave had
+      # run on this instrument); realized 50.4-59.6%, so every variant landed
+      # 480-1,262 short of gate 4 despite clearing it 1.43-1.55x PRE-judge.
+      #   admitted per DRAWN question, measured 2026-08-05 (binding = char_vex):
+      #     char_vex 13.83% | char_dana 15.09% | char_wren 16.27%
+      #     char_helios 18.51% | assistant 18.59%
+      #   recovered-admitted floor / variant ~1,273-1,408 (the recovered half is
+      #   fully consumed — all of parent #1345's kept stories)
+      #   @ D=32,000: char_vex 1,282 + 0.1383*32,000 = 5,708 = 1.27x the 4,480
+      #   gate-4 floor; every other variant 1.36-1.64x. The 1.27x absorbs a
+      #   ~21% phase-b/c/d loss (phase_b is 100%-keep by construction; the real
+      #   exposure is phase_c on-policy generation, still unmeasured).
+      #   Sizing to the gate exactly would need 23,126 and leave ZERO headroom.
+      #   Eligible pool after the r5 filters = 56,911 measured, so a 32,000
+      #   draw is 56% of it.
+      # Wall: the r5 run did 5 x 14,000 = 70,000 scaffolds end-to-end in
+      # 36m45s on 1x H100 (engine load + recovery + manifest staging included).
+      # Scaling the draw 32,000/14,000 = 2.29x gives ~84 min. Sequential
+      # per-variant subprocesses on ONE GPU: still under the ~2 h
+      # shardable-width threshold, so 1x H100 stays right-sized.
+      # The shardable axis (variant) is NOT used, and the justification binds
+      # to THIS phase: five concurrent per-variant processes would each stage
+      # the same ~455 MB #1738 manifest and each open a vLLM engine, racing one
+      # shared staging dest (the #1315 fan-out class) and stacking HF API calls
+      # against the org-wide 2,500-req/5-min quota that already killed one
+      # launch of this very phase at the tokenizer load. GPU-HOURS are
+      # identical either way (~1.4 GPU-h at 1x84min vs 5x~17min), so sharding
+      # buys wall-clock only, at real correctness risk.
       CMD=(
         uv run python scripts/issue2054_phase_a.py
         --target-conv-ids 8000
-        --gen-draw-n 14000
+        --gen-draw-n 32000
         --output-dir data/issue_2054/scaffolds/
         --seed 137
       )
