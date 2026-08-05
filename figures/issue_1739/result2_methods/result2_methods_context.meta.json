@@ -1,24 +1,29 @@
 {
-  "commit": "f63c50f8+dirty",
-  "git_commit": "f63c50f8",
+  "commit": "1aa3827a+dirty",
+  "git_commit": "1aa3827a",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_1482/context_extremes/category_r2_by_arm.json",
-    "figures/issue_1482/concordance/writeup_concordance_matched.pdf",
-    "figures/issue_1482/concordance/writeup_concordance_pooled.pdf",
-    "figures/issue_1482/concordance/writeup_concordance_tails.pdf",
-    "figures/issue_1482/concordance/writeup_concordance_tails.png",
+    "eval_results/issue_1482/context_extremes/context_extremes.json",
     "figures/issue_1482/context_category_by_arm.meta.json",
     "figures/issue_1482/context_category_by_arm.pdf",
     "figures/issue_1482/context_category_by_arm.png",
-    "scripts/issue1482_concordance_writeup_figs.py",
-    "scripts/issue1482_context_category_by_arm.py",
-    "scripts/issue1739_result1_spread_fig_v2.py",
+    "figures/issue_1482/context_category_context_notrunc.meta.json",
+    "figures/issue_1482/context_category_context_notrunc.pdf",
+    "figures/issue_1482/context_category_context_notrunc.png",
+    "figures/issue_1482/context_category_prefix_notrunc.meta.json",
+    "figures/issue_1482/context_category_prefix_notrunc.pdf",
+    "figures/issue_1482/context_category_prefix_notrunc.png",
+    "figures/issue_1482/context_category_query_notrunc.meta.json",
+    "figures/issue_1482/context_category_query_notrunc.pdf",
+    "figures/issue_1482/context_category_query_notrunc.png",
+    "scripts/issue1482_arm_drop_by_predictor.py",
+    "scripts/issue1482_context_extremes_dashboard.py",
+    "scripts/issue1739_r5_collect.py",
+    "scripts/issue1739_r5_ladder.py",
     "scripts/issue1739_result2_method_fig.py",
-    "scripts/issue1739_result2_method_fig_v2.py",
-    "tasks/planning/1995/plans/v2.md"
+    "scripts/issue1739_result2_method_fig_v2.py"
   ],
-  "created": "2026-08-04T17:24:44Z",
+  "created": "2026-08-05T03:08:48Z",
   "figsize": [
     17.0,
     9.0
@@ -4077,21 +4082,21 @@
     {
       "x": 0.0,
       "y": 0.07984155667920469,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 144
     },
     {
       "x": 1.0,
       "y": 0.18786469940667938,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 144
     },
     {
       "x": 2.0,
       "y": 0.3313621567244776,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 144
     },
@@ -4112,21 +4117,21 @@
     {
       "x": 0.0,
       "y": 0.13556308240607884,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 145
     },
     {
       "x": 1.0,
       "y": 0.07018188005872844,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 145
     },
     {
       "x": 2.0,
       "y": 0.06169811922102283,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 145
     },
@@ -4147,21 +4152,21 @@
     {
       "x": 0.0,
       "y": 0.6014263472104027,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 146
     },
     {
       "x": 1.0,
       "y": 0.40344237594475457,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 146
     },
     {
       "x": 2.0,
       "y": 0.34502917310830095,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 146
     },
@@ -4182,21 +4187,21 @@
     {
       "x": 0.0,
       "y": 0.2640632548555279,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 147
     },
     {
       "x": 1.0,
       "y": null,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 147
     },
     {
       "x": 2.0,
       "y": null,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 147
     },
@@ -4217,21 +4222,21 @@
     {
       "x": 0.0,
       "y": 0.1699101879276409,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 148
     },
     {
       "x": 1.0,
       "y": null,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 148
     },
     {
       "x": 2.0,
       "y": null,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 148
     },
@@ -4252,21 +4257,21 @@
     {
       "x": 0.0,
       "y": 0.079817501259242,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 149
     },
     {
       "x": 1.0,
       "y": 0.18786469940667938,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 149
     },
     {
       "x": 2.0,
       "y": 0.3313621567244776,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 149
     },
@@ -4287,21 +4292,21 @@
     {
       "x": 0.0,
       "y": 0.5207472304224443,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 150
     },
     {
       "x": 1.0,
       "y": 0.3130221601422588,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 150
     },
     {
       "x": 2.0,
       "y": 0.09891475000581586,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 150
     },
@@ -4322,21 +4327,21 @@
     {
       "x": 0.0,
       "y": 0.584406385930022,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 151
     },
     {
       "x": 1.0,
       "y": 0.3946929373667987,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 151
     },
     {
       "x": 2.0,
       "y": 0.4015969606201843,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 151
     },
@@ -4357,21 +4362,21 @@
     {
       "x": 0.0,
       "y": 0.5297127556987286,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 152
     },
     {
       "x": 1.0,
       "y": 0.3225294407691031,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 152
     },
     {
       "x": 2.0,
       "y": 0.2317512039733626,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 152
     },
@@ -4392,21 +4397,21 @@
     {
       "x": 0.0,
       "y": 0.14540151973961546,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 153
     },
     {
       "x": 1.0,
       "y": 0.20037684151671312,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 153
     },
     {
       "x": 2.0,
       "y": 0.2697751588330829,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 153
     },
@@ -4427,21 +4432,21 @@
     {
       "x": 0.0,
       "y": 0.6015078932734528,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 154
     },
     {
       "x": 1.0,
-      "y": null,
-      "error": 0.03345719343782645,
+      "y": 0.4024595000026812,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 154
     },
     {
       "x": 2.0,
-      "y": null,
-      "error": 0.02463369649455599,
+      "y": 0.34401805529858087,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 154
     },
@@ -4462,21 +4467,21 @@
     {
       "x": 0.0,
       "y": 0.3745650555860464,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 155
     },
     {
       "x": 1.0,
-      "y": null,
-      "error": 0.03345719343782645,
+      "y": 0.3074293782317317,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 155
     },
     {
       "x": 2.0,
-      "y": null,
-      "error": 0.02463369649455599,
+      "y": -0.13165415854940987,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 155
     },
@@ -4497,21 +4502,21 @@
     {
       "x": 0.0,
       "y": 0.6015072210591165,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 156
     },
     {
       "x": 1.0,
       "y": 0.40349466508156023,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 156
     },
     {
       "x": 2.0,
       "y": 0.343979625886709,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 156
     },
@@ -4532,21 +4537,21 @@
     {
       "x": 0.0,
       "y": 0.5840018677855806,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 157
     },
     {
       "x": 1.0,
       "y": 0.39474698109965495,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 157
     },
     {
       "x": 2.0,
       "y": 0.4050557395012824,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 157
     },
@@ -4567,21 +4572,21 @@
     {
       "x": 0.0,
       "y": 0.03785169029788441,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 158
     },
     {
       "x": 1.0,
       "y": 0.11726174750035231,
-      "error": 0.03345719343782645,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 158
     },
     {
       "x": 2.0,
       "y": 0.5833743626146888,
-      "error": 0.02463369649455599,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 158
     },
@@ -4602,21 +4607,21 @@
     {
       "x": 0.0,
       "y": 0.6524820336342536,
-      "error": 0.0097169950782785,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 159
     },
     {
       "x": 1.0,
-      "y": null,
-      "error": 0.03345719343782645,
+      "y": 0.49624754933173965,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 159
     },
     {
       "x": 2.0,
-      "y": null,
-      "error": 0.02463369649455599,
+      "y": 0.5363634929706044,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 159
     },
@@ -4636,22 +4641,22 @@
     },
     {
       "x": 0.0,
-      "y": null,
-      "error": 0.0097169950782785,
+      "y": 0.6117967952747454,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 160
     },
     {
       "x": 1.0,
-      "y": null,
-      "error": 0.03345719343782645,
+      "y": 0.48382645298032523,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 160
     },
     {
       "x": 2.0,
-      "y": null,
-      "error": 0.02463369649455599,
+      "y": 0.5580249407527721,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 160
     },
@@ -4671,22 +4676,22 @@
     },
     {
       "x": 0.0,
-      "y": null,
-      "error": 0.0097169950782785,
+      "y": 0.660173635497632,
+      "error": 0.00942667415970272,
       "_kind": "errorbar",
       "_group": 161
     },
     {
       "x": 1.0,
-      "y": null,
-      "error": 0.03345719343782645,
+      "y": 0.5084351227694588,
+      "error": 0.026817233747604863,
       "_kind": "errorbar",
       "_group": 161
     },
     {
       "x": 2.0,
-      "y": null,
-      "error": 0.02463369649455599,
+      "y": 0.47667561376399076,
+      "error": 0.02673552280989422,
       "_kind": "errorbar",
       "_group": 161
     },
@@ -5612,13 +5617,13 @@
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.4024595000026812,
       "_kind": "line",
       "_group": 192
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": 0.34401805529858087,
       "_kind": "line",
       "_group": 192
     },
@@ -5642,13 +5647,13 @@
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.37323273724344036,
       "_kind": "line",
       "_group": 193
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": 0.3153818913349959,
       "_kind": "line",
       "_group": 193
     },
@@ -5672,13 +5677,13 @@
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.431792166125401,
       "_kind": "line",
       "_group": 194
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": 0.3719978617232668,
       "_kind": "line",
       "_group": 194
     },
@@ -5702,13 +5707,13 @@
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.3074293782317317,
       "_kind": "line",
       "_group": 195
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": -0.13165415854940987,
       "_kind": "line",
       "_group": 195
     },
@@ -5732,13 +5737,13 @@
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.27650256886683927,
       "_kind": "line",
       "_group": 196
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": -0.16155100975019673,
       "_kind": "line",
       "_group": 196
     },
@@ -5762,13 +5767,13 @@
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.3388631782927258,
       "_kind": "line",
       "_group": 197
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": -0.10216043597294087,
       "_kind": "line",
       "_group": 197
     },
@@ -6062,13 +6067,13 @@
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.49624754933173965,
       "_kind": "line",
       "_group": 207
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": 0.5363634929706044,
       "_kind": "line",
       "_group": 207
     },
@@ -6092,13 +6097,13 @@
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.46894587423185363,
       "_kind": "line",
       "_group": 208
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": 0.5114146753531781,
       "_kind": "line",
       "_group": 208
     },
@@ -6122,13 +6127,13 @@
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.5230350215927186,
       "_kind": "line",
       "_group": 209
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": 0.5603968781457986,
       "_kind": "line",
       "_group": 209
     },
@@ -6146,19 +6151,19 @@
     },
     {
       "x": 0.0,
-      "y": null,
+      "y": 0.6117967952747454,
       "_kind": "line",
       "_group": 210
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.48382645298032523,
       "_kind": "line",
       "_group": 210
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": 0.5580249407527721,
       "_kind": "line",
       "_group": 210
     },
@@ -6176,19 +6181,19 @@
     },
     {
       "x": 0.0,
-      "y": null,
+      "y": 0.601280415230178,
       "_kind": "line",
       "_group": 211
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.4555949304810393,
       "_kind": "line",
       "_group": 211
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": 0.5338122154693612,
       "_kind": "line",
       "_group": 211
     },
@@ -6206,19 +6211,19 @@
     },
     {
       "x": 0.0,
-      "y": null,
+      "y": 0.622588923989263,
       "_kind": "line",
       "_group": 212
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.5112339512929497,
       "_kind": "line",
       "_group": 212
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": 0.5818709395256705,
       "_kind": "line",
       "_group": 212
     },
@@ -6236,19 +6241,19 @@
     },
     {
       "x": 0.0,
-      "y": null,
+      "y": 0.660173635497632,
       "_kind": "line",
       "_group": 213
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.5084351227694588,
       "_kind": "line",
       "_group": 213
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": 0.47667561376399076,
       "_kind": "line",
       "_group": 213
     },
@@ -6266,19 +6271,19 @@
     },
     {
       "x": 0.0,
-      "y": null,
+      "y": 0.6507949212847906,
       "_kind": "line",
       "_group": 214
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.4814445450195377,
       "_kind": "line",
       "_group": 214
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": 0.4498835449762476,
       "_kind": "line",
       "_group": 214
     },
@@ -6296,19 +6301,19 @@
     },
     {
       "x": 0.0,
-      "y": null,
+      "y": 0.669648269604196,
       "_kind": "line",
       "_group": 215
     },
     {
       "x": 1.0,
-      "y": null,
+      "y": 0.5350790125147474,
       "_kind": "line",
       "_group": 215
     },
     {
       "x": 2.0,
-      "y": null,
+      "y": 0.503354590596036,
       "_kind": "line",
       "_group": 215
     },

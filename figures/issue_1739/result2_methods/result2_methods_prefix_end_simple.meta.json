@@ -1,17 +1,22 @@
 {
-  "commit": "f63c50f8+dirty",
-  "git_commit": "f63c50f8",
+  "commit": "1aa3827a+dirty",
+  "git_commit": "1aa3827a",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_1482/context_extremes/category_r2_by_arm.json",
+    "eval_results/issue_1482/context_extremes/context_extremes.json",
     "eval_results/issue_1739/result2_methods/result2_points.json",
-    "figures/issue_1482/concordance/writeup_concordance_matched.pdf",
-    "figures/issue_1482/concordance/writeup_concordance_pooled.pdf",
-    "figures/issue_1482/concordance/writeup_concordance_tails.pdf",
-    "figures/issue_1482/concordance/writeup_concordance_tails.png",
     "figures/issue_1482/context_category_by_arm.meta.json",
     "figures/issue_1482/context_category_by_arm.pdf",
     "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1482/context_category_context_notrunc.meta.json",
+    "figures/issue_1482/context_category_context_notrunc.pdf",
+    "figures/issue_1482/context_category_context_notrunc.png",
+    "figures/issue_1482/context_category_prefix_notrunc.meta.json",
+    "figures/issue_1482/context_category_prefix_notrunc.pdf",
+    "figures/issue_1482/context_category_prefix_notrunc.png",
+    "figures/issue_1482/context_category_query_notrunc.meta.json",
+    "figures/issue_1482/context_category_query_notrunc.pdf",
+    "figures/issue_1482/context_category_query_notrunc.png",
     "figures/issue_1739/result2_methods/result2_methods_bare_query.meta.json",
     "figures/issue_1739/result2_methods/result2_methods_bare_query.pdf",
     "figures/issue_1739/result2_methods/result2_methods_bare_query.png",
@@ -24,14 +29,14 @@
     "figures/issue_1739/result2_methods/result2_methods_prefix_end.meta.json",
     "figures/issue_1739/result2_methods/result2_methods_prefix_end.pdf",
     "figures/issue_1739/result2_methods/result2_methods_prefix_end.png",
-    "scripts/issue1482_concordance_writeup_figs.py",
-    "scripts/issue1482_context_category_by_arm.py",
-    "scripts/issue1739_result1_spread_fig_v2.py",
+    "scripts/issue1482_arm_drop_by_predictor.py",
+    "scripts/issue1482_context_extremes_dashboard.py",
+    "scripts/issue1739_r5_collect.py",
+    "scripts/issue1739_r5_ladder.py",
     "scripts/issue1739_result2_method_fig.py",
-    "scripts/issue1739_result2_method_fig_v2.py",
-    "tasks/planning/1995/plans/v2.md"
+    "scripts/issue1739_result2_method_fig_v2.py"
   ],
-  "created": "2026-08-04T17:25:12Z",
+  "created": "2026-08-05T03:09:17Z",
   "figsize": [
     19.0,
     8.6
@@ -1187,8 +1192,22 @@
     },
     {
       "x": -0.167222,
-      "y": 0.054425,
-      "error": 0.015276000000000001,
+      "y": 0.054246,
+      "error": 0.015292499999999997,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 0.832778,
+      "y": -0.043506,
+      "error": 0.0349,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 1.832778,
+      "y": -0.18393,
+      "error": 0.028403499999999998,
       "_kind": "bar",
       "_group": 41
     },
@@ -1208,8 +1227,22 @@
     },
     {
       "x": -0.119444,
-      "y": 0.022034,
-      "error": 0.0153515,
+      "y": 0.021962,
+      "error": 0.0153385,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 0.880556,
+      "y": -0.013773,
+      "error": 0.0344875,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 1.880556,
+      "y": -0.048463,
+      "error": 0.029429499999999997,
       "_kind": "bar",
       "_group": 42
     },
@@ -1340,6 +1373,20 @@
       "_group": 46
     },
     {
+      "x": 1.071667,
+      "y": 0.4901,
+      "error": 0.026932999999999985,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 2.071667,
+      "y": 0.542152,
+      "error": 0.024056000000000022,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
       "x": 3.071667,
       "y": 0.257148,
       "error": 0.04332649999999999,
@@ -1354,127 +1401,169 @@
       "_group": 46
     },
     {
+      "x": 0.119444,
+      "y": 0.610185,
+      "error": 0.010601499999999986,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 1.119444,
+      "y": 0.497024,
+      "error": 0.027633500000000005,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 2.119444,
+      "y": 0.557096,
+      "error": 0.024331500000000006,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 0.167222,
+      "y": 0.662011,
+      "error": 0.009347999999999967,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 1.167222,
+      "y": 0.509568,
+      "error": 0.026875499999999997,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 2.167222,
+      "y": 0.490556,
+      "error": 0.026266499999999998,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
       "x": 0.215,
       "y": 0.052078,
       "error": 0.0152335,
       "_kind": "bar",
-      "_group": 47
+      "_group": 49
     },
     {
       "x": 1.215,
       "y": -0.050174,
       "error": 0.0343995,
       "_kind": "bar",
-      "_group": 47
+      "_group": 49
     },
     {
       "x": 2.215,
       "y": -0.166036,
       "error": 0.02898450000000001,
       "_kind": "bar",
-      "_group": 47
+      "_group": 49
     },
     {
       "x": 3.215,
       "y": -0.063635,
       "error": 0.044147000000000006,
       "_kind": "bar",
-      "_group": 47
+      "_group": 49
     },
     {
       "x": 4.215,
       "y": 0.58259,
       "error": 0.09585450000000001,
       "_kind": "bar",
-      "_group": 47
+      "_group": 49
     },
     {
       "x": 0.262778,
       "y": 0.045278,
       "error": 0.015277,
       "_kind": "bar",
-      "_group": 48
+      "_group": 50
     },
     {
       "x": 1.262778,
       "y": -0.034566,
       "error": 0.034619,
       "_kind": "bar",
-      "_group": 48
+      "_group": 50
     },
     {
       "x": 2.262778,
       "y": -0.131481,
       "error": 0.02891400000000001,
       "_kind": "bar",
-      "_group": 48
+      "_group": 50
     },
     {
       "x": 3.262778,
       "y": -0.017953,
       "error": 0.043972,
       "_kind": "bar",
-      "_group": 48
+      "_group": 50
     },
     {
       "x": 4.262778,
       "y": 0.119978,
       "error": 0.15182850000000003,
       "_kind": "bar",
-      "_group": 48
+      "_group": 50
     },
     {
       "x": 0.310556,
       "y": 0.05443,
       "error": 0.015301499999999999,
       "_kind": "bar",
-      "_group": 49
+      "_group": 51
     },
     {
       "x": 1.310556,
       "y": -0.040931,
       "error": 0.03494800000000001,
       "_kind": "bar",
-      "_group": 49
+      "_group": 51
     },
     {
       "x": 2.310556,
       "y": -0.18226,
       "error": 0.027947999999999987,
       "_kind": "bar",
-      "_group": 49
+      "_group": 51
     },
     {
       "x": 3.310556,
       "y": 0.047478,
       "error": 0.047248,
       "_kind": "bar",
-      "_group": 49
+      "_group": 51
     },
     {
       "x": 4.310556,
       "y": 0.520999,
       "error": 0.10190250000000001,
       "_kind": "bar",
-      "_group": 49
+      "_group": 51
     },
     {
       "x": 0.358333,
       "y": 0.264063,
       "error": 0.014784500000000006,
       "_kind": "bar",
-      "_group": 50
+      "_group": 52
     },
     {
       "x": 0.406111,
       "y": 0.16991,
       "error": 0.015501000000000001,
       "_kind": "bar",
-      "_group": 51
+      "_group": 53
     }
   ],
-  "n_series": 52,
-  "total_points": 205,
+  "n_series": 54,
+  "total_points": 217,
   "text": {
     "suptitle": "Input state: prefix-end state -> answer",
     "fig_texts": [
