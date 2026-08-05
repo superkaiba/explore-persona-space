@@ -186,6 +186,35 @@ def tar_url(behavior: str, revision: str) -> str:
     )
 
 
+def _replace_with_retry(tmp, out, size: int, attempts: int = 6) -> None:
+    """``os.replace`` hardened for runpodfs/MooseFS FUSE lag (2026-08-05).
+
+    Three single-writer legs crashed ENOENT at this rename on RunPod volumes
+    (the tmp file written+closed moments earlier was transiently invisible;
+    never observed on GCE local disk across ~144 GB in the wcrung leg). The
+    write path now fsyncs before close; this retries the rename with backoff,
+    and accepts an ``out`` that already exists at the right size (the rename
+    may have completed server-side despite the client error). Persistent
+    failure still raises — fail loud, never a silent skip.
+    """
+    delay = 0.5
+    last: Exception | None = None
+    for _ in range(attempts):
+        try:
+            os.replace(tmp, out)
+            return
+        except FileNotFoundError as exc:
+            last = exc
+            try:
+                if out.is_file() and out.stat().st_size == size:
+                    return  # rename landed despite the error
+            except OSError:
+                pass
+            time.sleep(delay)
+            delay = min(delay * 2, 8.0)
+    raise last  # type: ignore[misc]
+
+
 def stream_slice(
     behavior: str,
     dest: Path,
@@ -238,7 +267,9 @@ def stream_slice(
                         if not chunk:
                             break
                         fh.write(chunk)
-                os.replace(tmp, out)
+                    fh.flush()
+                    os.fsync(fh.fileno())
+                _replace_with_retry(tmp, out, member.size)
                 kept += 1
                 kept_bytes += member.size
                 if kept % 20 == 0:
