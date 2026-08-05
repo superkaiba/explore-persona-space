@@ -7680,8 +7680,8 @@
     "1992": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1992",
-      "status": "running",
+      "path": "tasks/reviewing/1992",
+      "status": "reviewing",
       "title": "workflow-fix: flaky settle-sleep equality assert in inline-l"
     },
     "1993": {
