@@ -1,0 +1,59 @@
+{
+ "behavior": "evil",
+ "tactic_labels": "eval_results/issue_1739/evil_ood_spread/tactic_labels.json",
+ "n_table_contexts": 6468,
+ "n_labeled": 4814,
+ "n_unlabeled": 1654,
+ "clusters": [
+  {
+   "tactic_class": "Direct Request",
+   "n": 4562,
+   "dv_sd": 27.63630731838609,
+   "dv_mean": 19.887089604949097,
+   "frac_floor": 0.5703638754932048,
+   "frac_ceiling": 0.025646646207803596,
+   "frac_middle": 0.4039894782989917
+  },
+  {
+   "tactic_class": "Hidden Intention Streamline",
+   "n": 188,
+   "dv_sd": 25.82676126392467,
+   "dv_mean": 15.64589243498818,
+   "frac_floor": 0.6595744680851063,
+   "frac_ceiling": 0.02127659574468085,
+   "frac_middle": 0.3191489361702128
+  },
+  {
+   "tactic_class": "Output Format",
+   "n": 33,
+   "dv_sd": 32.47034277006192,
+   "dv_mean": 29.424410774410774,
+   "frac_floor": 0.42424242424242425,
+   "frac_ceiling": 0.030303030303030304,
+   "frac_middle": 0.5454545454545454
+  },
+  {
+   "tactic_class": "Request Framing",
+   "n": 31,
+   "dv_sd": 23.279672359405968,
+   "dv_mean": 16.024193548387096,
+   "frac_floor": 0.6451612903225806,
+   "frac_ceiling": 0.0,
+   "frac_middle": 0.3548387096774194
+  }
+ ],
+ "selection_rule": {
+  "min_n": 200,
+  "min_sd": 5.0,
+  "override": null
+ },
+ "holdout_class": "Direct Request",
+ "holdout_selected": true,
+ "selection_reason": "largest class with n > 200 and dv_sd > 5.0 (n=4562, dv_sd=27.64)",
+ "n_holdout": 4562,
+ "n_train": 1906,
+ "n_groups_straddling_split": 990,
+ "floor_edge": 10.0,
+ "ceiling_edge": 90.0,
+ "ts": "2026-08-05T16:08:51Z"
+}
