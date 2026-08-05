@@ -3413,6 +3413,49 @@ def _runpod_terminal_rung(
     equivalent (:func:`_translated_runpod_intent`) before the launch, so the
     rung actually fires instead of dying in ``gpu_heuristics.resolve_intent``.
     """
+    # Per-dispatch fallback opt-out (#1997): a launch composed with
+    # --no-runpod-fallback (spec.extra["no_runpod_fallback"], threaded by
+    # dispatch_issue._launch_extra_from_args) declares the work DEFERRABLE —
+    # when every free lane is exhausted it should FAIL TYPED instead of
+    # spending RunPod money. Decline at the TOP of the rung, BEFORE the
+    # CPU-intent guard / intent translation / the per-issue flock / any
+    # RunPod API work, minting the STANDARD re-drivable no_compute_available
+    # terminal (the watcher's capacity-retry pass re-drives once a lane
+    # frees; the re-driven launch re-carries the flag from the plan's launch
+    # command). This rung is the single paid-fallback convergence point —
+    # the auto chain's capacity fall-through AND the GCP failover legs all
+    # pass through it — so the flag binds every fallback path. The explicit
+    # `backend: runpod` pin (_override_runpod) never reaches this rung and
+    # deliberately ignores the flag (an explicit pin IS a decision to spend;
+    # the CLI additionally refuses the contradictory flag combination at
+    # parse time).
+    if (spec.extra or {}).get("no_runpod_fallback"):
+        attempts.append(
+            RouteAttempt(
+                kind="runpod",
+                cluster=None,
+                est_start_seconds_raw=0.0,
+                est_start_seconds_clamped=0.0,
+                outcome="runpod_fallback_declined",
+                detail=(
+                    "runpod terminal fallback DECLINED by --no-runpod-fallback "
+                    f"(deferrable dispatch); residual_gap: {residual_gap}"
+                ),
+                elapsed_seconds=now_fn() - started_at,
+            )
+        )
+        _post_terminal_failure_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_NO_COMPUTE,
+            chosen_kind="runpod",
+            attempts=attempts,
+        )
+        raise NoComputeAvailableError(
+            "every cheaper lane exhausted and the RunPod terminal fallback is "
+            "declined by --no-runpod-fallback (deferrable dispatch)",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        )
     # CPU-intent guard (#677, RELAXED for mapped intents #747/#2028). RunPod's
     # GPU mutation (podFindAndDeployOnDemand) is GPU-only, BUT #747 added a
     # RunPod CPU lane (deployCpuPod) for the CPU intents in

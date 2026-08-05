@@ -9502,6 +9502,68 @@ def test_runpod_terminal_rung_stopped_collision_exit76_raises_typed(
     assert ei.value.attempts[-1]["outcome"] == "runpod_stopped_pod_collision"
 
 
+def test_runpod_terminal_rung_declines_on_no_runpod_fallback(
+    lease_store, marker_poster, captured_markers
+):
+    """#1997 (c3): a spec carrying extra['no_runpod_fallback'] declines the
+    terminal rung at the TOP — NoComputeAvailableError raised (the STANDARD
+    re-drivable terminal, so the watcher's capacity-retry pass re-drives once
+    a lane frees), attempt outcome runpod_fallback_declined, the RunPod
+    launch NEVER attempted (pre-flock, pre-API), and no lease written."""
+    from dataclasses import replace
+
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        _runpod_terminal_rung,
+    )
+
+    rp = _StoppedCollisionRunpod()  # any launch attempt would be recorded
+    attempts: list[RouteAttempt] = []
+    clock = _clock()
+    spec = replace(_spec(backend="auto"), extra={"no_runpod_fallback": True})
+    with pytest.raises(NoComputeAvailableError) as ei:
+        _runpod_terminal_rung(
+            spec=spec,
+            runpod_backend=rp,
+            store=lease_store,
+            attempts=attempts,
+            started_at=clock(),
+            now_fn=clock,
+            marker_poster=marker_poster,
+            on_launched=None,
+            residual_gap="test: every cheaper rung exhausted",
+        )
+    # Declined BEFORE any launch/API work.
+    assert rp.launches == []
+    assert attempts[-1].outcome == "runpod_fallback_declined"
+    assert "residual_gap: test: every cheaper rung exhausted" in attempts[-1].detail
+    # The STANDARD re-drivable terminal marker (reason: no_compute_available).
+    assert _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    # NO lease write — nothing provisioned, nothing billing.
+    assert lease_store.read(137) is None
+    assert "declined by --no-runpod-fallback" in str(ei.value)
+
+
+def test_override_runpod_ignores_no_runpod_fallback(lease_store):
+    """#1997 (c4): the explicit `backend: runpod` pin path (_override_runpod)
+    never reaches the terminal rung, so a programmatic
+    extra['no_runpod_fallback'] is deliberately IGNORED there — an explicit
+    pin IS a decision to spend on RunPod (the CLI separately refuses the
+    contradictory flag combination at parse time)."""
+    from dataclasses import replace
+
+    rp = _PrepareRecordingRunpod()
+    result = route(
+        replace(_spec(backend="runpod"), extra={"no_runpod_fallback": True}),
+        runpod_backend=rp,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert rp.calls == ["prepare", "launch"]
+
+
 def test_runpod_stopped_pod_collision_reason_cross_module_parity():
     """#1997 (SR1 pattern, mirrors #954): the router constant equals the
     ``backend_poll.py`` async-leg literal, and the reason is NOT in the
