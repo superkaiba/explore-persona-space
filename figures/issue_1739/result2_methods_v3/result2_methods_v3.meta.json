@@ -1,0 +1,446 @@
+{
+  "commit": "3ed2f5e2+dirty",
+  "git_commit": "3ed2f5e2",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/code-reviewer/MEMORY.md",
+    ".claude/agent-memory/critic/MEMORY.md",
+    "eval_results/issue_1482/context_extremes/context_extremes.json",
+    "eval_results/issue_1739/result2_methods_v3/result2_v3_points.json",
+    "eval_results/issue_2054/shared_fold_map.json",
+    "figures/issue_1482/context_category_by_arm.meta.json",
+    "figures/issue_1482/context_category_by_arm.pdf",
+    "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1482/context_category_context_notrunc.meta.json",
+    "figures/issue_1482/context_category_context_notrunc.pdf",
+    "figures/issue_1482/context_category_context_notrunc.png",
+    "figures/issue_1482/context_category_prefix_notrunc.meta.json",
+    "figures/issue_1482/context_category_prefix_notrunc.pdf",
+    "figures/issue_1482/context_category_prefix_notrunc.png",
+    "figures/issue_1482/context_category_query_notrunc.meta.json",
+    "figures/issue_1482/context_category_query_notrunc.pdf",
+    "figures/issue_1482/context_category_query_notrunc.png",
+    "figures/issue_1739/result2_methods_v3/result2_methods_v3.meta.json",
+    "figures/issue_1739/result2_methods_v3/result2_methods_v3.pdf",
+    "figures/issue_1739/result2_methods_v3/result2_methods_v3.png",
+    "scripts/issue1482_arm_drop_by_predictor.py",
+    "scripts/issue1482_context_extremes_dashboard.py",
+    "scripts/issue1739_result2_method_fig_v3.py"
+  ],
+  "created": "2026-08-05T16:40:03Z",
+  "figsize": [
+    21.0,
+    9.6
+  ],
+  "points": [
+    {
+      "x": -0.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.797612,
+      "error": 0.0486065,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.68,
+      "Spearman rho, prediction vs judged behaviour expression": 0.041878,
+      "error": 0.049983,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.68,
+      "Spearman rho, prediction vs judged behaviour expression": 0.535817,
+      "error": 0.01750449999999998,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.68,
+      "Spearman rho, prediction vs judged behaviour expression": 0.009678,
+      "error": 0.047975000000000004,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.68,
+      "Spearman rho, prediction vs judged behaviour expression": 0.136978,
+      "error": 0.09375549999999999,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": -0.16,
+      "Spearman rho, prediction vs judged behaviour expression": 0.801447,
+      "error": 0.044845000000000024,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.84,
+      "Spearman rho, prediction vs judged behaviour expression": 0.14957952577617506,
+      "error": 0.03519460849226679,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.84,
+      "Spearman rho, prediction vs judged behaviour expression": 0.6712108952070648,
+      "error": 0.013658647086443265,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.84,
+      "Spearman rho, prediction vs judged behaviour expression": 0.06470666693570033,
+      "error": 0.04819459709088568,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 3.84,
+      "Spearman rho, prediction vs judged behaviour expression": 0.25083424306392416,
+      "error": 0.08296045890606359,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "in-distribution (out-of-fold)\njailbreak prompts x forbidden Qs",
+      "Spearman rho, prediction vs judged behaviour expression": 0.27663683764370217,
+      "error": 0.022925279060948073,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.16,
+      "Spearman rho, prediction vs judged behaviour expression": 0.4054131673656708,
+      "error": 0.0212096893018979,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 0.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.844668,
+      "error": 0.043462500000000015,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.155769,
+      "error": 0.041601500000000007,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.708179,
+      "error": 0.012124499999999983,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.082067,
+      "error": 0.0398855,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 4.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.301972,
+      "error": 0.07920350000000001,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "evaluation setting": -0.32,
+      "y": 0.786108,
+      "error": 0.04775600000000002,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "evaluation setting": 0.68,
+      "y": 0.01276,
+      "error": 0.0440475,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "evaluation setting": 1.68,
+      "y": 0.142763,
+      "error": 0.015359499999999998,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "evaluation setting": 2.68,
+      "y": 0.309578,
+      "error": 0.050147,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "evaluation setting": -0.16,
+      "y": 0.168289,
+      "error": 0.1306315,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "evaluation setting": 0.84,
+      "y": 0.11480501703575743,
+      "error": 0.047037927182594245,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "evaluation setting": 1.84,
+      "y": 0.2887620479734463,
+      "error": 0.015372623902776522,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "evaluation setting": 2.84,
+      "y": 0.2398471924190651,
+      "error": 0.05248973152078737,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "evaluation setting": "in-distribution (out-of-fold)\nReddit personal-advice posts",
+      "y": 0.3029214163700137,
+      "error": 0.014915662152651055,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "evaluation setting": 2.16,
+      "y": 0.3296800540687329,
+      "error": 0.013853429744170753,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "evaluation setting": 0.32,
+      "y": 0.766525,
+      "error": 0.0515215,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "evaluation setting": 1.32,
+      "y": 0.084268,
+      "error": 0.043094499999999994,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "evaluation setting": 2.32,
+      "y": 0.311556,
+      "error": 0.015327000000000007,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "evaluation setting": 3.32,
+      "y": 0.25182,
+      "error": 0.05334549999999999,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": -0.32,
+      "y": 0.653474,
+      "error": 0.079932,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 0.68,
+      "y": -0.106565,
+      "error": 0.042372,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 1.68,
+      "y": 0.079818,
+      "error": 0.015155000000000002,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 2.68,
+      "y": 0.187865,
+      "error": 0.0336075,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 3.68,
+      "y": 0.331362,
+      "error": 0.028506000000000004,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": -0.16,
+      "y": 0.628514,
+      "error": 0.0863815,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": 0.84,
+      "y": 0.10989177135412127,
+      "error": 0.047937945125758975,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 1.84,
+      "y": -0.05517856685711229,
+      "error": 0.014786174515671796,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 2.84,
+      "y": -0.033518388618036826,
+      "error": 0.0363806611126253,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 3.84,
+      "y": 0.46298969856968547,
+      "error": 0.028154792859018174,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "category": "in-distribution (out-of-fold)\nTriviaQA (rc.nocontext)",
+      "y": 0.03592617172253414,
+      "error": 0.015626261450891972,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 2.16,
+      "y": 0.12482163866427486,
+      "error": 0.016299643318370215,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 0.32,
+      "y": 0.736388,
+      "error": 0.07423749999999996,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 1.32,
+      "y": 0.177625,
+      "error": 0.046599,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 2.32,
+      "y": 0.037852,
+      "error": 0.015193,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 3.32,
+      "y": 0.117262,
+      "error": 0.0334575,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 4.32,
+      "y": 0.583374,
+      "error": 0.02463350000000003,
+      "_kind": "bar",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 48,
+  "text": {
+    "suptitle": "Result 2: persona-vector projection onto context -> mapped answer -> real answer",
+    "fig_texts": [
+      "Missing bar = that method was not run at that setting (the two nonlinear maps ran at the out-of-fold train rung only); never a zero.   Hallucination's in-distribution / NQ-Open / SimpleQA settings (right of the dashed line) score fabrication rate x100, a different construct from the 0-100 trait rubric everywhere else."
+    ],
+    "axes": [
+      {
+        "title_left": "evil",
+        "ylabel": "Spearman rho, prediction vs judged behaviour expression",
+        "xticklabels": [
+          "synthetic elicitation suite\npersona-vectors eval grid",
+          "deployment-like traffic\nrandom WildChat conversations",
+          "in-distribution (out-of-fold)\njailbreak prompts x forbidden Qs",
+          "OOD transfer\nhh-rlhf red-team attempts",
+          "OOD transfer\nToxicChat (flagged)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "evaluation setting",
+        "xticklabels": [
+          "synthetic elicitation suite\npersona-vectors eval grid",
+          "deployment-like traffic\nrandom WildChat conversations",
+          "in-distribution (out-of-fold)\nReddit personal-advice posts",
+          "OOD transfer\nheld-out Reddit r/socialskills"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xticklabels": [
+          "synthetic elicitation suite\npersona-vectors eval grid",
+          "deployment-like traffic\nrandom WildChat conversations",
+          "in-distribution (out-of-fold)\nTriviaQA (rc.nocontext)",
+          "OOD transfer\nNQ-Open",
+          "OOD transfer\nSimpleQA"
+        ]
+      },
+      {
+        "legend_labels": [
+          "dashed edge: map fit on the GENERIC WildChat pool only\n(no ADD cell at that setting)",
+          "open circle: single replicate\n(CI is a within-draw bootstrap over eval contexts)"
+        ],
+        "legend_title": "reading the marks",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

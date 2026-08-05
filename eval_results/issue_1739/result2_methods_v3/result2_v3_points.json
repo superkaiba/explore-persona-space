@@ -1,0 +1,1339 @@
+{
+ "metric": "Spearman rho_frozen (prediction vs judged behaviour expression)",
+ "metric_note": "the spec's prose says R^2, its Plot line says rho; the Plot line wins",
+ "operating_slice": {
+  "regime": "e1",
+  "variant": "context_end",
+  "u_rung_label": "full",
+  "budget_l": {
+   "evil": 8000,
+   "sycophancy": 16000,
+   "hallucination": 16000
+  }
+ },
+ "add_rung_alias": {
+  "train": "train_in_split"
+ },
+ "labelling": "setting row labels are the Result 1 distribution figure's two-part ROLE + IDENTITY strings, imported from scripts/issue1739_result1_spread_fig_v2.py (SETTING_ROLE / SETTING_IDENTITY) at its current working-tree state so the two figures agree",
+ "map_independent_methods": {
+  "methods": [
+   "pv_context",
+   "oracle"
+  ],
+  "evidence": "src/explore_persona_space/experiments/issue_1739/arms.py L684 'projection arms (constant across folds; OOF == the projection)', L726 arm11 = _proj(za, rb) -- neither consumes the map, so the map condition cannot move them"
+ },
+ "matched_target_check": "every joined (behaviour, setting) pair has identical n_eval across the committed-root and ADD rows (evil 6468/1868/519/1987, sycophancy 16000/1304/1982, hallucination 16000/3167/4021/1967)",
+ "labelled_budget_check": "the labelled budget matches on every joined pair except evil's WildChat and persona-vectors-synthetic columns, where the committed leg is tagged L=6468 and the ADD row L=8000. Both exceed-or-equal evil's full labelled pool (n_train_contexts = 6468, `result2_trait_aug/evil/...json` meta), and the fit engine realizes identical row sets whenever budget_l >= n_ctx, so the two tags name the SAME 6468 labelled rows",
+ "ci_semantics": "multi-replicate bars: the committed bootstrap ci_frozen averaged over replicates. single-replicate bars (every map bar, and the WildChat / persona-vectors-synthetic columns): a within-draw paired bootstrap over EVAL CONTEXTS -- it carries no replicate-level uncertainty",
+ "coverage": [
+  {
+   "behavior": "evil",
+   "setting": "pvsynth",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 1 replicate(s)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "pvsynth",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 1 replicate(s)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "pvsynth",
+   "method": "map_linear",
+   "status": "EXISTS (generic map)",
+   "reason": "no ADD cell at this setting; generic-map value, marked"
+  },
+  {
+   "behavior": "evil",
+   "setting": "pvsynth",
+   "method": "map_kernel",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "pvsynth",
+   "method": "map_mlp",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "wildchat_rung",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 1 replicate(s)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "wildchat_rung",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 1 replicate(s)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "wildchat_rung",
+   "method": "map_linear",
+   "status": "EXISTS",
+   "reason": "ADD map condition (add25261_gen18793_elic6468), 1 replicate"
+  },
+  {
+   "behavior": "evil",
+   "setting": "wildchat_rung",
+   "method": "map_kernel",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "wildchat_rung",
+   "method": "map_mlp",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "train",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "train",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "train",
+   "method": "map_linear",
+   "status": "EXISTS",
+   "reason": "ADD map condition (add25261_gen18793_elic6468), 1 replicate"
+  },
+  {
+   "behavior": "evil",
+   "setting": "train",
+   "method": "map_kernel",
+   "status": "EXISTS (generic map)",
+   "reason": "kernel map on the generic pool, 1 replicate"
+  },
+  {
+   "behavior": "evil",
+   "setting": "train",
+   "method": "map_mlp",
+   "status": "EXISTS (generic map)",
+   "reason": "mlp map on the generic pool, 1 replicate"
+  },
+  {
+   "behavior": "evil",
+   "setting": "hhrt",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "hhrt",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "hhrt",
+   "method": "map_linear",
+   "status": "EXISTS",
+   "reason": "ADD map condition (add25261_gen18793_elic6468), 1 replicate"
+  },
+  {
+   "behavior": "evil",
+   "setting": "hhrt",
+   "method": "map_kernel",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "hhrt",
+   "method": "map_mlp",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "toxicchat",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "toxicchat",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "toxicchat",
+   "method": "map_linear",
+   "status": "EXISTS",
+   "reason": "ADD map condition (add25261_gen18793_elic6468), 1 replicate"
+  },
+  {
+   "behavior": "evil",
+   "setting": "toxicchat",
+   "method": "map_kernel",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "evil",
+   "setting": "toxicchat",
+   "method": "map_mlp",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "pvsynth",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 1 replicate(s)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "pvsynth",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 1 replicate(s)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "pvsynth",
+   "method": "map_linear",
+   "status": "EXISTS (generic map)",
+   "reason": "no ADD cell at this setting; generic-map value, marked"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "pvsynth",
+   "method": "map_kernel",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "pvsynth",
+   "method": "map_mlp",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "wildchat_rung",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 1 replicate(s)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "wildchat_rung",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 1 replicate(s)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "wildchat_rung",
+   "method": "map_linear",
+   "status": "EXISTS",
+   "reason": "ADD map condition (add34793_gen18793_elic16000), 1 replicate"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "wildchat_rung",
+   "method": "map_kernel",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "wildchat_rung",
+   "method": "map_mlp",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "train",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "train",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "train",
+   "method": "map_linear",
+   "status": "EXISTS",
+   "reason": "ADD map condition (add34793_gen18793_elic16000), 1 replicate"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "train",
+   "method": "map_kernel",
+   "status": "EXISTS (generic map)",
+   "reason": "kernel map on the generic pool, 1 replicate"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "train",
+   "method": "map_mlp",
+   "status": "EXISTS (generic map)",
+   "reason": "mlp map on the generic pool, 1 replicate"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "aita",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "aita",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "aita",
+   "method": "map_linear",
+   "status": "EXISTS",
+   "reason": "ADD map condition (add34793_gen18793_elic16000), 1 replicate"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "aita",
+   "method": "map_kernel",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "aita",
+   "method": "map_mlp",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "pvsynth",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 1 replicate(s)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "pvsynth",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 1 replicate(s)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "pvsynth",
+   "method": "map_linear",
+   "status": "EXISTS (generic map)",
+   "reason": "no ADD cell at this setting; generic-map value, marked"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "pvsynth",
+   "method": "map_kernel",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "pvsynth",
+   "method": "map_mlp",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "wildchat_rung",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 1 replicate(s)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "wildchat_rung",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 1 replicate(s)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "wildchat_rung",
+   "method": "map_linear",
+   "status": "EXISTS",
+   "reason": "ADD map condition (add34793_gen18793_elic16000), 1 replicate"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "wildchat_rung",
+   "method": "map_kernel",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "wildchat_rung",
+   "method": "map_mlp",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "train",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "train",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "train",
+   "method": "map_linear",
+   "status": "EXISTS",
+   "reason": "ADD map condition (add34793_gen18793_elic16000), 1 replicate"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "train",
+   "method": "map_kernel",
+   "status": "EXISTS (generic map)",
+   "reason": "kernel map on the generic pool, 1 replicate"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "train",
+   "method": "map_mlp",
+   "status": "EXISTS (generic map)",
+   "reason": "mlp map on the generic pool, 1 replicate"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "nqopen",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "nqopen",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "nqopen",
+   "method": "map_linear",
+   "status": "EXISTS",
+   "reason": "ADD map condition (add34793_gen18793_elic16000), 1 replicate"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "nqopen",
+   "method": "map_kernel",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "nqopen",
+   "method": "map_mlp",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "simpleqa",
+   "method": "pv_context",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "simpleqa",
+   "method": "oracle",
+   "status": "EXISTS",
+   "reason": "committed root, 15 replicate(s)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "simpleqa",
+   "method": "map_linear",
+   "status": "EXISTS",
+   "reason": "ADD map condition (add34793_gen18793_elic16000), 1 replicate"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "simpleqa",
+   "method": "map_kernel",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "simpleqa",
+   "method": "map_mlp",
+   "status": "MISSING",
+   "reason": "nonlinear-map arm6 was only run at the out-of-fold train rung (its transfer legs cover other arms)"
+  }
+ ],
+ "n_points": 48,
+ "points": [
+  {
+   "behavior": "evil",
+   "setting": "pvsynth",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.797612,
+   "ci": [
+    0.742072,
+    0.839285
+   ],
+   "n_replicates": 1,
+   "n_eval": 200,
+   "layer": 15,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/pvsynth/evil/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "pvsynth",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.844668,
+   "ci": [
+    0.796482,
+    0.883407
+   ],
+   "n_replicates": 1,
+   "n_eval": 200,
+   "layer": 22,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/pvsynth/evil/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "pvsynth",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.801447,
+   "ci": [
+    0.752624,
+    0.842314
+   ],
+   "n_replicates": 1,
+   "n_eval": 200,
+   "layer": 22,
+   "map_condition": "generic (no ADD cell at this setting)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/pvsynth/evil/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "wildchat_rung",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.041878,
+   "ci": [
+    -0.010078,
+    0.089888
+   ],
+   "n_replicates": 1,
+   "n_eval": 1987,
+   "layer": 15,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/wildchat_rung/evil/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "wildchat_rung",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.155769,
+   "ci": [
+    0.112439,
+    0.195642
+   ],
+   "n_replicates": 1,
+   "n_eval": 1987,
+   "layer": 22,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/wildchat_rung/evil/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "wildchat_rung",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.14957952577617506,
+   "ci": [
+    0.1128600272963003,
+    0.1832492442808339
+   ],
+   "n_replicates": 1,
+   "n_eval": 1987,
+   "layer": 22,
+   "map_condition": "add (add25261_gen18793_elic6468)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_trait_aug/evil/all_arms_spearman.add_generic_matched_swap.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "train",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.535817,
+   "ci": [
+    0.518205,
+    0.553214
+   ],
+   "n_replicates": 15,
+   "n_eval": 6468,
+   "layer": 15,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/evil/arm_results/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "train",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.708179,
+   "ci": [
+    0.696059,
+    0.720308
+   ],
+   "n_replicates": 15,
+   "n_eval": 6468,
+   "layer": 22,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/evil/arm_results/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "train",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.6712108952070648,
+   "ci": [
+    0.6574229573512688,
+    0.6847402515241553
+   ],
+   "n_replicates": 1,
+   "n_eval": 6468,
+   "layer": 22,
+   "map_condition": "add (add25261_gen18793_elic6468)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_trait_aug/evil/all_arms_spearman.add_generic_matched_swap.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "train",
+   "method": "map_kernel",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.27663683764370217,
+   "ci": [
+    0.25207987504256146,
+    0.2979304331644576
+   ],
+   "n_replicates": 1,
+   "n_eval": null,
+   "layer": 16,
+   "map_condition": "generic (kernel map, u_fit_rows=18793)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/new_arm_round/nlood/evil/kernel/arm_results/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "train",
+   "method": "map_mlp",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.4054131673656708,
+   "ci": [
+    0.38316484821062846,
+    0.42558422681442426
+   ],
+   "n_replicates": 1,
+   "n_eval": null,
+   "layer": 22,
+   "map_condition": "generic (mlp map, u_fit_rows=18793)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/new_arm_round/nlood/evil/mlp/arm_results/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "hhrt",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.009678,
+   "ci": [
+    -0.038367,
+    0.057583
+   ],
+   "n_replicates": 15,
+   "n_eval": 1868,
+   "layer": 15,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide_ood/evil_transfer.jsonl"
+  },
+  {
+   "behavior": "evil",
+   "setting": "hhrt",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.082067,
+   "ci": [
+    0.040881,
+    0.120652
+   ],
+   "n_replicates": 15,
+   "n_eval": 1868,
+   "layer": 22,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide_ood/evil_transfer.jsonl"
+  },
+  {
+   "behavior": "evil",
+   "setting": "hhrt",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.06470666693570033,
+   "ci": [
+    0.016368507417190085,
+    0.11275770159896145
+   ],
+   "n_replicates": 1,
+   "n_eval": 1868,
+   "layer": 22,
+   "map_condition": "add (add25261_gen18793_elic6468)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_trait_aug/evil/all_arms_spearman.add_generic_matched_swap.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "toxicchat",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.136978,
+   "ci": [
+    0.042475,
+    0.229986
+   ],
+   "n_replicates": 15,
+   "n_eval": 519,
+   "layer": 15,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide_ood/evil_transfer.jsonl"
+  },
+  {
+   "behavior": "evil",
+   "setting": "toxicchat",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.301972,
+   "ci": [
+    0.218779,
+    0.377186
+   ],
+   "n_replicates": 15,
+   "n_eval": 519,
+   "layer": 22,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide_ood/evil_transfer.jsonl"
+  },
+  {
+   "behavior": "evil",
+   "setting": "toxicchat",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.25083424306392416,
+   "ci": [
+    0.17155469785997393,
+    0.3374756156721011
+   ],
+   "n_replicates": 1,
+   "n_eval": 519,
+   "layer": 22,
+   "map_condition": "add (add25261_gen18793_elic6468)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_trait_aug/evil/all_arms_spearman.add_generic_matched_swap.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "pvsynth",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.786108,
+   "ci": [
+    0.727479,
+    0.822991
+   ],
+   "n_replicates": 1,
+   "n_eval": 200,
+   "layer": 16,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/pvsynth/sycophancy/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "pvsynth",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.766525,
+   "ci": [
+    0.708493,
+    0.811536
+   ],
+   "n_replicates": 1,
+   "n_eval": 200,
+   "layer": 11,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/pvsynth/sycophancy/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "pvsynth",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.168289,
+   "ci": [
+    0.029575,
+    0.290838
+   ],
+   "n_replicates": 1,
+   "n_eval": 200,
+   "layer": 11,
+   "map_condition": "generic (no ADD cell at this setting)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/pvsynth/sycophancy/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "wildchat_rung",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.01276,
+   "ci": [
+    -0.032229,
+    0.055866
+   ],
+   "n_replicates": 1,
+   "n_eval": 1982,
+   "layer": 16,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/wildchat_rung/sycophancy/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "wildchat_rung",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.084268,
+   "ci": [
+    0.040716,
+    0.126905
+   ],
+   "n_replicates": 1,
+   "n_eval": 1982,
+   "layer": 11,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/wildchat_rung/sycophancy/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "wildchat_rung",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.11480501703575743,
+   "ci": [
+    0.06839306713211622,
+    0.1624689214973047
+   ],
+   "n_replicates": 1,
+   "n_eval": 1982,
+   "layer": 11,
+   "map_condition": "add (add34793_gen18793_elic16000)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_trait_aug/sycophancy/all_arms_spearman.add_swap.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "train",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.142763,
+   "ci": [
+    0.127508,
+    0.158227
+   ],
+   "n_replicates": 15,
+   "n_eval": 16000,
+   "layer": 16,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "train",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.311556,
+   "ci": [
+    0.296269,
+    0.326923
+   ],
+   "n_replicates": 15,
+   "n_eval": 16000,
+   "layer": 11,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "train",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.2887620479734463,
+   "ci": [
+    0.27332207423467225,
+    0.3040673220402253
+   ],
+   "n_replicates": 1,
+   "n_eval": 16000,
+   "layer": 11,
+   "map_condition": "add (add34793_gen18793_elic16000)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_trait_aug/sycophancy/all_arms_spearman.add_swap.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "train",
+   "method": "map_kernel",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.3029214163700137,
+   "ci": [
+    0.28833730291718784,
+    0.31816862722248995
+   ],
+   "n_replicates": 1,
+   "n_eval": null,
+   "layer": 14,
+   "map_condition": "generic (kernel map, u_fit_rows=18793)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/new_arm_round/nlood/sycophancy/kernel/arm_results/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "train",
+   "method": "map_mlp",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.3296800540687329,
+   "ci": [
+    0.315901482242139,
+    0.3436083417304805
+   ],
+   "n_replicates": 1,
+   "n_eval": null,
+   "layer": 11,
+   "map_condition": "generic (mlp map, u_fit_rows=18793)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/new_arm_round/nlood/sycophancy/mlp/arm_results/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "aita",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.309578,
+   "ci": [
+    0.25851,
+    0.358804
+   ],
+   "n_replicates": 15,
+   "n_eval": 1304,
+   "layer": 16,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide_ood/sycophancy_transfer.jsonl"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "aita",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.25182,
+   "ci": [
+    0.197693,
+    0.304384
+   ],
+   "n_replicates": 15,
+   "n_eval": 1304,
+   "layer": 11,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide_ood/sycophancy_transfer.jsonl"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "aita",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.2398471924190651,
+   "ci": [
+    0.18933593426715917,
+    0.2943153973087339
+   ],
+   "n_replicates": 1,
+   "n_eval": 1304,
+   "layer": 11,
+   "map_condition": "add (add34793_gen18793_elic16000)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_trait_aug/sycophancy/all_arms_spearman.add_swap.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "pvsynth",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.653474,
+   "ci": [
+    0.564106,
+    0.72397
+   ],
+   "n_replicates": 1,
+   "n_eval": 200,
+   "layer": 24,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/pvsynth/hallucination/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "pvsynth",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.736388,
+   "ci": [
+    0.654167,
+    0.802642
+   ],
+   "n_replicates": 1,
+   "n_eval": 200,
+   "layer": 27,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/pvsynth/hallucination/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "pvsynth",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.628514,
+   "ci": [
+    0.528761,
+    0.701524
+   ],
+   "n_replicates": 1,
+   "n_eval": 200,
+   "layer": 23,
+   "map_condition": "generic (no ADD cell at this setting)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/pvsynth/hallucination/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "wildchat_rung",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": -0.106565,
+   "ci": [
+    -0.146623,
+    -0.061879
+   ],
+   "n_replicates": 1,
+   "n_eval": 1967,
+   "layer": 24,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/wildchat_rung/hallucination/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "wildchat_rung",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.177625,
+   "ci": [
+    0.128979,
+    0.222177
+   ],
+   "n_replicates": 1,
+   "n_eval": 1967,
+   "layer": 27,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/wide/wildchat_rung/hallucination/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "wildchat_rung",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.10989177135412127,
+   "ci": [
+    0.06135202105745423,
+    0.15722791130897218
+   ],
+   "n_replicates": 1,
+   "n_eval": 1967,
+   "layer": 23,
+   "map_condition": "add (add34793_gen18793_elic16000)",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_trait_aug/hallucination/all_arms_spearman.add_swap.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "train",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.079818,
+   "ci": [
+    0.064468,
+    0.094778
+   ],
+   "n_replicates": 15,
+   "n_eval": 16000,
+   "layer": 24,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/hallucination/arm_results/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "train",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.037852,
+   "ci": [
+    0.022748,
+    0.053134
+   ],
+   "n_replicates": 15,
+   "n_eval": 16000,
+   "layer": 27,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/hallucination/arm_results/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "train",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": -0.05517856685711229,
+   "ci": [
+    -0.07113853815563008,
+    -0.04156618912428649
+   ],
+   "n_replicates": 1,
+   "n_eval": 16000,
+   "layer": 23,
+   "map_condition": "add (add34793_gen18793_elic16000)",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/result2_trait_aug/hallucination/all_arms_spearman.add_swap.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "train",
+   "method": "map_kernel",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.03592617172253414,
+   "ci": [
+    0.019770281444950927,
+    0.051022804346734875
+   ],
+   "n_replicates": 1,
+   "n_eval": null,
+   "layer": 0,
+   "map_condition": "generic (kernel map, u_fit_rows=18793)",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/new_arm_round/nlood/hallucination/kernel/arm_results/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "train",
+   "method": "map_mlp",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.12482163866427486,
+   "ci": [
+    0.10802173817471845,
+    0.14062102481145888
+   ],
+   "n_replicates": 1,
+   "n_eval": null,
+   "layer": 23,
+   "map_condition": "generic (mlp map, u_fit_rows=18793)",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/new_arm_round/nlood/hallucination/mlp/arm_results/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "nqopen",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.187865,
+   "ci": [
+    0.154246,
+    0.221461
+   ],
+   "n_replicates": 15,
+   "n_eval": 3167,
+   "layer": 24,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/wide_ood/hallucination_transfer.jsonl"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "nqopen",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.117262,
+   "ci": [
+    0.084114,
+    0.151029
+   ],
+   "n_replicates": 15,
+   "n_eval": 3167,
+   "layer": 27,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/wide_ood/hallucination_transfer.jsonl"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "nqopen",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": -0.033518388618036826,
+   "ci": [
+    -0.07126316413727529,
+    0.0014981580879753092
+   ],
+   "n_replicates": 1,
+   "n_eval": 3167,
+   "layer": 23,
+   "map_condition": "add (add34793_gen18793_elic16000)",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/result2_trait_aug/hallucination/all_arms_spearman.add_swap.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "simpleqa",
+   "method": "pv_context",
+   "arm_id": "arm1_ctx_e1",
+   "rho": 0.331362,
+   "ci": [
+    0.302739,
+    0.359751
+   ],
+   "n_replicates": 15,
+   "n_eval": 4021,
+   "layer": 24,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/wide_ood/hallucination_transfer.jsonl"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "simpleqa",
+   "method": "oracle",
+   "arm_id": "arm11_oracle_proj",
+   "rho": 0.583374,
+   "ci": [
+    0.557896,
+    0.607163
+   ],
+   "n_replicates": 15,
+   "n_eval": 4021,
+   "layer": 27,
+   "map_condition": "n/a (map-independent projection)",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/wide_ood/hallucination_transfer.jsonl"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "simpleqa",
+   "method": "map_linear",
+   "arm_id": "arm6_map_proj_e1",
+   "rho": 0.46298969856968547,
+   "ci": [
+    0.43673462778167554,
+    0.4930442134997119
+   ],
+   "n_replicates": 1,
+   "n_eval": 4021,
+   "layer": 23,
+   "map_condition": "add (add34793_gen18793_elic16000)",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/result2_trait_aug/hallucination/all_arms_spearman.add_swap.json"
+  }
+ ]
+}
