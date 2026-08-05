@@ -93,12 +93,62 @@ SAE_REPO = "EleutherAI/sae-llama-3.1-8b-64x"
 OUTPUT_PREFIX = "issue2061"
 
 
+# Realized #1336 store naming (LIVE-enumerated 2026-08-05; 55 turnstores):
+#     turnstore_[v2_]<stage>_<render>_<corpus>
+# Stage tokens as REALIZED in the store: base|sft|dpo|rlvr|rlvr_long —
+# `rlvr_long` IS the plan's "longer-rlvr" 5th ladder stage, normalized to the
+# canonical hyphenated token because every downstream stem LEFT-parses the
+# stage as underscore-free (issue2061_turnstore.parse_encoded_stem /
+# parse_r2_stem; null.py STAGE_PAIRS / fitness.py STAGES already use
+# "longer-rlvr"). The optional `v2_` prefix marks #1336's second capture
+# generation; the two generations' corpus sets are DISJOINT today (v1:
+# gsm8k_test1319/gsm8k_train5k/lmsys5k; v2: gsm8k_train_full/if11k/lmsys23k/
+# math7500/sft11k/uf11k), asserted collision-free at enumeration. A naive
+# `split("_", 2)` mis-buckets 35/55 realized names (the round-2 unit-E live
+# probe finding — the C1 fabricated-schema class at the NAMING level).
+STORE_STAGE_TOKENS: dict[str, str] = {
+    "base": "base",
+    "sft": "sft",
+    "dpo": "dpo",
+    "rlvr": "rlvr",
+    "rlvr_long": "longer-rlvr",
+}
+CANONICAL_TO_STORE_STAGE = {v: k for k, v in STORE_STAGE_TOKENS.items()}
+RENDER_TOKENS = ("chat", "naturalistic")
+
+
+def parse_turnstore_name(name: str) -> tuple[str, str, str] | None:
+    """(canonical stage, render, corpus) from a REALIZED turnstore dir name.
+
+    Vocabulary-based LEFT parse (longest stage token first, so `rlvr_long`
+    wins over `rlvr`); returns None for a non-turnstore / unrecognized name
+    (the caller WARNs — a silent drop is the M2 vanishing-cell class).
+    """
+    if not name.startswith("turnstore_"):
+        return None
+    core = name.removeprefix("turnstore_").removeprefix("v2_")
+    for store_tok in sorted(STORE_STAGE_TOKENS, key=len, reverse=True):
+        if not core.startswith(store_tok + "_"):
+            continue
+        rest = core[len(store_tok) + 1 :]
+        for render in RENDER_TOKENS:
+            if rest.startswith(render + "_") and len(rest) > len(render) + 1:
+                return STORE_STAGE_TOKENS[store_tok], render, rest[len(render) + 1 :]
+        return None
+    return None
+
+
 def _stage_render_corpus_turnstores(revision: str | None = None) -> list[dict[str, str]]:
-    """Enumerate #1336's banked turnstores as (stage, render, corpus) triples.
+    """Enumerate #1336's banked turnstores as CANONICAL (stage, render, corpus).
 
     Reads `list_repo_tree(path_in_repo="issue1336_rlvr_ladder/analysis_tensors")`
-    and matches the `turnstore_<stage>_<render>_<corpus>` directory pattern.
-    Returns a list of dicts with keys: stage, render, corpus, tree_path.
+    and parses the realized `turnstore_[v2_]<stage>_<render>_<corpus>` names
+    (see STORE_STAGE_TOKENS above). Returns dicts with keys: stage, render,
+    corpus, tree_path — `tree_path` keeps the REALIZED repo path (what gets
+    fetched); the identity keys are canonical. Unparseable turnstore names
+    are WARNed (never silently dropped); two realized trees mapping to one
+    canonical cell fail loud (a v1/v2 corpus-family collision would make the
+    cell ambiguous).
     """
     api = HfApi()
     # list() INSIDE the retried thunk: list_repo_tree is a LAZY generator —
@@ -116,24 +166,55 @@ def _stage_render_corpus_turnstores(revision: str | None = None) -> list[dict[st
         what=f"list_repo_tree({BANKED_PREFIX})",
     )
     turnstores: list[dict[str, str]] = []
+    seen: dict[tuple[str, str, str], str] = {}
+    unparsed: list[str] = []
     for e in entries:
         name = Path(e.path).name
         if not name.startswith("turnstore_"):
             continue
-        # turnstore_<stage>_<render>_<corpus>
-        parts = name.removeprefix("turnstore_").split("_", 2)
-        if len(parts) != 3:
+        parsed = parse_turnstore_name(name)
+        if parsed is None:
+            unparsed.append(name)
             continue
-        stage, render, corpus = parts
-        turnstores.append(
-            {
-                "stage": stage,
-                "render": render,
-                "corpus": corpus,
-                "tree_path": e.path,
-            }
+        stage, render, corpus = parsed
+        key = (stage, render, corpus)
+        if key in seen:
+            raise ValueError(
+                f"Ambiguous turnstore cell {key}: BOTH {seen[key]} and {e.path} parse to it "
+                "— the v1/v2 capture generations now overlap on a corpus; pin the family "
+                "explicitly before consuming."
+            )
+        seen[key] = e.path
+        turnstores.append({"stage": stage, "render": render, "corpus": corpus, "tree_path": e.path})
+    if unparsed:
+        print(
+            f"[WARN] {len(unparsed)} turnstore name(s) under {BANKED_PREFIX} did not parse "
+            f"against the realized naming vocabulary and were SKIPPED: {unparsed}"
         )
     return turnstores
+
+
+def resolve_turnstore_tree(
+    stage: str, render: str, corpus: str, revision: str | None = None
+) -> str:
+    """REALIZED repo tree path for one canonical (stage, render, corpus) cell.
+
+    Resolved against the live enumeration (so consumers never hand-build a
+    `turnstore_{stage}_...` name — the realized store carries `v2_` prefixes
+    and the `rlvr_long` stage token, and a hand-built canonical name 404s;
+    the unit-E live probe caught fitness.py doing exactly that for lmsys23k).
+    Fail-loud FileNotFoundError names the realized combos for the render.
+    """
+    stores = _stage_render_corpus_turnstores(revision=revision)
+    for t in stores:
+        if (t["stage"], t["render"], t["corpus"]) == (stage, render, corpus):
+            return t["tree_path"]
+    available = sorted((t["stage"], t["corpus"]) for t in stores if t["render"] == render)
+    raise FileNotFoundError(
+        f"No realized #1336 turnstore for (stage={stage!r}, render={render!r}, "
+        f"corpus={corpus!r}); realized (stage, corpus) combos for render={render!r}: "
+        f"{available}"
+    )
 
 
 def hub_shard_files(tree_path: str, revision: str | None = None) -> list[str]:
@@ -437,6 +518,14 @@ def main() -> int:
     parser.add_argument(
         "--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu"
     )
+    parser.add_argument(
+        "--upload",
+        action="store_true",
+        help="After encoding, upload --output-dir to the HF data repo "
+        "(issue2061_hub_io 'sae-encoded' prefix) with an exact-set verify — "
+        "plan §9 off_pod_phases: P1's outputs MUST land on HF before its GPU "
+        "pod terminates (the #521/#1482 downstream-input loss class).",
+    )
     args = parser.parse_args()
 
     # Smoke gate first, ALWAYS when --smoke-only or --smoke-then-encode.
@@ -528,6 +617,17 @@ def main() -> int:
             )
 
     print(f"\n[done] Manifest: {manifest_path}")
+
+    if args.upload:
+        # Cross-machine handoff (plan §9 off_pod_phases): the encoded targets
+        # are P2/P3's inputs on OTHER machines — verified upload before the
+        # pod terminates, fail-loud on any missing dest. delete_local=False:
+        # a same-pod P4 (or debugging) may still read them; the pod's local
+        # copies die with the pod either way.
+        import issue2061_hub_io as hio
+
+        hio.upload_dir(args.output_dir, "sae-encoded")
+
     return 0
 
 

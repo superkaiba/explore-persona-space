@@ -67,7 +67,7 @@ if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
 import issue2061_turnstore as ts  # noqa: E402
-from issue2061_sae_encode import BANKED_PREFIX, iter_local_shards  # noqa: E402
+from issue2061_sae_encode import iter_local_shards, resolve_turnstore_tree  # noqa: E402
 
 LAYER = 29
 STAGES = ["base", "sft", "dpo", "rlvr", "longer-rlvr"]
@@ -110,7 +110,12 @@ def load_lmsys_validation_activations(
     just delete the first 8 conversations. The recipe's outlier-norm filter
     below IS applied unchanged (well-defined on rows).
     """
-    tree_path = f"{BANKED_PREFIX}/turnstore_{stage}_{render}_lmsys23k"
+    # Resolve the REALIZED tree name (never hand-build it: lmsys23k lives
+    # under the store's `v2_` capture-generation prefix and the 5th stage is
+    # realized `rlvr_long` — a hand-built canonical name 404s; unit-E live
+    # probe finding, see issue2061_sae_encode.STORE_STAGE_TOKENS).
+
+    tree_path = resolve_turnstore_tree(stage, render, "lmsys23k", revision=data_revision)
     # Margin above the target so outlier drops still leave ~n_val_rows.
     x, _conv_ids = ts.load_state_from_shards(
         iter_local_shards(tree_path, revision=data_revision),
@@ -274,6 +279,14 @@ def main() -> int:
     parser.add_argument(
         "--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu"
     )
+    parser.add_argument(
+        "--upload",
+        action="store_true",
+        help="After the verdicts, upload --output-dir to the HF data repo "
+        "(analysis_tensors/fitness/) — declared v6 in plan §9 off_pod_phases: "
+        "the fitness JSONs ride an ephemeral eval pod (the #1738 fit-summary-"
+        "JSON loss class) and P5 reads this prefix.",
+    )
     args = parser.parse_args()
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -344,6 +357,13 @@ def main() -> int:
         print(f"[write] {summary_path}")
     else:
         print("\n[summary] BASE stage missing/errored — cannot compute relative-FVE verdicts")
+
+    if args.upload:
+        # Upload runs UNCONDITIONALLY on the flag — a HALT_HARD_DRIFT verdict
+        # is a report artifact that must persist BEFORE the pod terminates.
+        import issue2061_hub_io as hio
+
+        hio.upload_dir(args.output_dir, "fitness")
 
     return 0
 

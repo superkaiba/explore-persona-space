@@ -836,7 +836,31 @@ def main() -> int:
     parser.add_argument("--null-dir", type=Path, default=Path("eval_results/issue_2061/null"))
     parser.add_argument("--fitness-dir", type=Path, default=Path("eval_results/issue_2061/fitness"))
     parser.add_argument("--output-dir", type=Path, default=Path("figures/issue_2061"))
+    parser.add_argument(
+        "--stage-from-hub",
+        action="store_true",
+        help="VM-local P5 fetch (plan §9 off_pod_phases): stage the P2/P3/P4 "
+        "outputs from the HF data repo and read them from the staged mirrors, "
+        "overriding --r2-dir/--null-dir/--fitness-dir.",
+    )
+    parser.add_argument(
+        "--staging-dir",
+        type=Path,
+        default=Path("data/issue_2061/hf_dl"),
+        help="Hub staging root for --stage-from-hub (cleaned at Step 8).",
+    )
     args = parser.parse_args()
+
+    if args.stage_from_hub:
+        import issue2061_hub_io as hio  # sibling import (script-dir sys.path insert)
+
+        args.r2_dir = hio.stage_dir("per-feature-r2", args.staging_dir)
+        args.null_dir = hio.stage_dir("null", args.staging_dir)
+        args.fitness_dir = hio.stage_dir("fitness", args.staging_dir)
+        print(
+            f"[stage] figure inputs staged from hub: r2={args.r2_dir} "
+            f"null={args.null_dir} fitness={args.fitness_dir}"
+        )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     which = (

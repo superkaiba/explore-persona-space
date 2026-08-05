@@ -722,6 +722,54 @@ def main() -> int:
     )
     parser.add_argument("--encoded-dir", type=Path, default=Path("data/issue_2061/sae_encoded"))
     parser.add_argument("--output-dir", type=Path, default=Path("eval_results/issue_2061/null"))
+    parser.add_argument(
+        "--stage-r2-from-hub",
+        action="store_true",
+        help="Stage P2's per-feature R² files (the true-delta verdict input, "
+        "plan §9 off_pod_phases v5) from the HF data repo instead of --r2-dir.",
+    )
+    parser.add_argument(
+        "--stage-encoded-from-hub",
+        action="store_true",
+        help="Stage P1's TopK-sparse encoded targets (~300 MB total) from the "
+        "HF data repo instead of --encoded-dir.",
+    )
+    parser.add_argument(
+        "--stage-context-from-hub",
+        action="store_true",
+        help="LAZY per-corpus staging of the #1336 turnstore X shards through "
+        "a SHARED per-pod cache (plan §9 P3 staging, v6): the ≤5 stage-"
+        "turnstores of one (render, corpus) stay resident while its cells "
+        "run, reaped when the last consuming cell completes — never "
+        "per-worker copies (the ~130 GB MooseFS quota bound on the RunPod "
+        "fallback). Fan-out workers share --staging-dir; combos are worker-"
+        "disjoint so the reap is safe per process.",
+    )
+    parser.add_argument(
+        "--staging-dir",
+        type=Path,
+        default=Path("data/issue_2061/hf_dl"),
+        help="Shared hub-staging root (turnstores under <staging-dir>/turnstores/).",
+    )
+    parser.add_argument("--data-revision", type=str, default=None)
+    parser.add_argument(
+        "--keep-staged",
+        action="store_true",
+        help="Keep staged turnstores (fellows node-local scratch may stage-all).",
+    )
+    parser.add_argument(
+        "--skip-global",
+        action="store_true",
+        help="Skip the GLOBAL null aggregation + write (fan-out WORKERS pass "
+        "this; the single aggregation pass owns GLOBAL_L29.json — concurrent "
+        "workers must never race on it).",
+    )
+    parser.add_argument(
+        "--upload",
+        action="store_true",
+        help="After the GLOBAL null, upload --output-dir to the HF data repo "
+        "(analysis_tensors/null/) — plan §9: before the job releases the node.",
+    )
     parser.add_argument("--n-draws", type=int, default=N_DRAWS)
     parser.add_argument("--draw-block", type=int, default=DRAW_BLOCK)
     parser.add_argument("--gcv-feature-subsample", type=int, default=GCV_FEATURE_SUBSAMPLE)
@@ -730,6 +778,25 @@ def main() -> int:
     args = parser.parse_args()
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
+
+    import issue2061_hub_io as hio  # sibling import (script-dir sys.path insert)
+
+    # Cross-machine input staging (plan §9 off_pod_phases P3 reads): P1
+    # encoded targets + P2 per-feature R² are tiny (staged whole up front);
+    # the #1336 turnstore X shards (~18-24 GB fp32-dense for lmsys23k-class
+    # corpora) stage LAZILY per corpus through the shared cache below.
+    r2_dir = args.r2_dir
+    encoded_dir = args.encoded_dir
+    context_shard_dir = args.context_shard_dir
+    if args.stage_r2_from_hub:
+        r2_dir = hio.stage_dir("per-feature-r2", args.staging_dir)
+        print(f"[stage] per-feature R² staged from hub -> {r2_dir}")
+    if args.stage_encoded_from_hub:
+        encoded_dir = hio.stage_dir("sae-encoded", args.staging_dir)
+        print(f"[stage] encoded targets staged from hub -> {encoded_dir}")
+    if args.stage_context_from_hub:
+        context_shard_dir = args.staging_dir / "turnstores"
+        print(f"[stage] turnstores lazy-staged under shared cache {context_shard_dir}")
 
     seeds = draw_seed_schedule(args.n_draws)
     print(f"[setup] Shared draw_seed_schedule: {len(seeds)} seeds, base={DRAW_SEED_BASE}")
@@ -748,7 +815,7 @@ def main() -> int:
         render_corpora = [(args.render, args.corpus)]
     elif args.all_cells:
         combos: set[tuple[str, str]] = set()
-        for path in sorted(args.r2_dir.glob(f"*_L{LAYER}.jsonl")):
+        for path in sorted(r2_dir.glob(f"*_L{LAYER}.jsonl")):
             _stage, render, corpus, _arm = ts.parse_r2_stem(path.stem, LAYER)
             combos.add((render, corpus))
         render_corpora = sorted(c for c in combos if args.render is None or c[0] == args.render)
@@ -762,8 +829,13 @@ def main() -> int:
 
     per_cell_max_j: dict[tuple[str, str, str, str, str], np.ndarray] = {}
     skipped_cells: list[tuple[str, str]] = []  # (cell label, reason) — see WARN summary
-    for pair in pairs:
-        for render, corpus in render_corpora:
+    # CORPUS-MAJOR loop (v6 staging shape): all cells of one (render, corpus)
+    # run consecutively against its ≤5 staged stage-turnstores (arms/pairs
+    # share them — the SHARED cache dedup), reaped when the block's LAST
+    # consuming cell completes. Cell outputs/aggregation are order-invariant.
+    for render, corpus in render_corpora:
+        staged_stages: set[str] = set()
+        for pair in pairs:
             for arm in arms:
                 pair_str = f"{pair[0]}_{pair[1]}"
                 cell_key = (pair_str, render, corpus, arm, f"L{LAYER}")
@@ -781,25 +853,38 @@ def main() -> int:
                     )
                     continue
 
-                r2_before = _load_r2_file(args.r2_dir, pair[0], render, corpus, arm)
-                r2_after = _load_r2_file(args.r2_dir, pair[1], render, corpus, arm)
+                r2_before = _load_r2_file(r2_dir, pair[0], render, corpus, arm)
+                r2_after = _load_r2_file(r2_dir, pair[1], render, corpus, arm)
                 if r2_before is None or r2_after is None:
                     print(f"[skip] Missing R² for {cell_label}")
                     skipped_cells.append((cell_label, "missing P2 R² file(s)"))
                     continue
-                if args.context_shard_dir is None:
+                if context_shard_dir is None:
                     print(
-                        f"[error] {cell_key}: null output missing and --context-shard-dir "
-                        "not given — cannot refit. Pass the turnstore root."
+                        f"[error] {cell_key}: null output missing — pass "
+                        "--context-shard-dir or --stage-context-from-hub to refit."
                     )
                     return 1
+                if args.stage_context_from_hub:
+                    # Lazy shared-cache staging: a stage-turnstore is fetched
+                    # ONCE per corpus block however many pairs/arms consume it.
+                    for st in pair:
+                        if st not in staged_stages:
+                            hio.stage_turnstore(
+                                st,
+                                render,
+                                corpus,
+                                context_shard_dir,
+                                revision=args.data_revision,
+                            )
+                            staged_stages.add(st)
 
                 try:
                     xb, yib, yvb, cb, dsb = _load_cell_stage_inputs(
-                        args.context_shard_dir, args.encoded_dir, pair[0], render, corpus, arm
+                        context_shard_dir, encoded_dir, pair[0], render, corpus, arm
                     )
                     xa, yia, yva, ca, dsa = _load_cell_stage_inputs(
-                        args.context_shard_dir, args.encoded_dir, pair[1], render, corpus, arm
+                        context_shard_dir, encoded_dir, pair[1], render, corpus, arm
                     )
                 except FileNotFoundError as e:
                     print(f"[skip] Missing raw inputs for {cell_label}: {e}")
@@ -891,6 +976,11 @@ def main() -> int:
                     f"argmax={true_argmax} local_p97.5={np.percentile(null_max_j, 97.5):.4f} "
                     f"({elapsed:.1f}s)"
                 )
+        # Last consumer of this (render, corpus) completed — reap its staged
+        # stage-turnstores (≤5 resident per corpus; shared-cache contract).
+        if args.stage_context_from_hub and not args.keep_staged:
+            for st in sorted(staged_stages):
+                hio.reap_turnstore(context_shard_dir, st, render, corpus)
 
     if skipped_cells:
         print(
@@ -900,6 +990,12 @@ def main() -> int:
         )
         for cell_label, reason in skipped_cells:
             print(f"  [WARN] skipped {cell_label}: {reason}")
+
+    if args.skip_global:
+        # Fan-out WORKER mode: per-cell outputs are on disk; the single
+        # aggregation pass owns GLOBAL_L29.json (never raced by workers).
+        print(f"[worker] {len(per_cell_max_j)} cell(s) done; GLOBAL left to aggregation pass")
+        return 0
 
     if not per_cell_max_j:
         print("[error] No per-cell nulls computed — cannot form GLOBAL null")
@@ -913,6 +1009,11 @@ def main() -> int:
     print(f"\n[global] GLOBAL null (p97.5): {global_null['global_null_quantiles']['p97.5']:.4f}")
     print(f"[global] Wrote {global_path}")
     print(f"[global] n_cells={global_null['n_cells']} n_draws={global_null['n_draws']}")
+
+    if args.upload:
+        # Plan §9: upload analysis_tensors/null/ before the job releases the
+        # node (per-cell JSONLs + GLOBAL_L29.json; exact-set verified).
+        hio.upload_dir(args.output_dir, "null")
     return 0
 
 

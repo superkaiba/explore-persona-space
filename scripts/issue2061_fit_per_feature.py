@@ -534,10 +534,47 @@ def main() -> int:
     parser.add_argument(
         "--context-shard-dir",
         type=Path,
-        required=True,
-        help="Directory holding #1336 context shards (staged locally).",
+        default=None,
+        help="Directory holding #1336 context shards (staged locally). Required "
+        "unless --stage-context-from-hub streams them per cell.",
     )
     parser.add_argument("--encoded-dir", type=Path, default=Path("data/issue_2061/sae_encoded"))
+    parser.add_argument(
+        "--stage-encoded-from-hub",
+        action="store_true",
+        help="Stage P1's encoded targets from the HF data repo (plan §9 "
+        "off_pod_phases P2 reads; TopK-sparse, ~300 MB total) and read them "
+        "from the staged mirror instead of --encoded-dir.",
+    )
+    parser.add_argument(
+        "--stage-context-from-hub",
+        action="store_true",
+        help="Per-shard STREAM-FETCH-DELETE of the #1336 turnstores (registered "
+        "v6): fetch one (stage, render, corpus) shard set, fit the arm cells "
+        "that consume it, delete before the next fetch — resident staging "
+        "stays ≤ ~1 turnstore (≤ ~25 GB), never the full ~store.",
+    )
+    parser.add_argument(
+        "--staging-dir",
+        type=Path,
+        default=Path("data/issue_2061/hf_dl"),
+        help="Root for hub staging (mirror for encoded targets; turnstores "
+        "land under <staging-dir>/turnstores/).",
+    )
+    parser.add_argument("--data-revision", type=str, default=None)
+    parser.add_argument(
+        "--keep-staged",
+        action="store_true",
+        help="Keep staged turnstores instead of the stream-fetch-DELETE reap "
+        "(smoke chains reuse them across phases; fellows node-local scratch).",
+    )
+    parser.add_argument(
+        "--upload",
+        action="store_true",
+        help="After the fits, upload --output-dir to the HF data repo "
+        "(analysis_tensors/per_feature_r2/) — plan §9: P3 reads it as the "
+        "true-delta verdict input, so it MUST land before this pod terminates.",
+    )
     parser.add_argument(
         "--output-dir", type=Path, default=Path("eval_results/issue_2061/per_feature_r2")
     )
@@ -556,15 +593,35 @@ def main() -> int:
     args = parser.parse_args()
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
+
+    import issue2061_hub_io as hio  # sibling import (script-dir sys.path insert)
+
+    encoded_dir = args.encoded_dir
+    if args.stage_encoded_from_hub:
+        encoded_dir = hio.stage_dir("sae-encoded", args.staging_dir)
+        print(f"[stage] encoded targets staged from hub -> {encoded_dir}")
+    if args.stage_context_from_hub:
+        context_root = args.staging_dir / "turnstores"
+        print(f"[stage] turnstores stream-fetch-delete under {context_root}")
+    else:
+        if args.context_shard_dir is None:
+            print("[error] Pass --context-shard-dir OR --stage-context-from-hub")
+            return 1
+        context_root = args.context_shard_dir
+
     # Y targets are the ANSWER-state encodes only (plan §Design target Y).
     # `--max-rows` debug encodes carry a `_rows{N}` suffix and never match
     # this glob (review M3).
-    encoded_files = sorted(args.encoded_dir.glob(f"*_answer_L{LAYER}.pt"))
+    encoded_files = sorted(encoded_dir.glob(f"*_answer_L{LAYER}.pt"))
     if not encoded_files:
-        print(f"[error] No '*_answer_L{LAYER}.pt' encoded targets in {args.encoded_dir}")
+        print(f"[error] No '*_answer_L{LAYER}.pt' encoded targets in {encoded_dir}")
         return 1
 
-    targets: list[tuple[Path, str, str, str, str]] = []
+    # Group by (stage, render, corpus) so the stream-fetch-delete staging
+    # fetches ONE turnstore shard set, fits the arm cells that consume it,
+    # then deletes it before the next fetch (plan §9 P2 staging shape, v6).
+    arms = ["prefix", "context"] if args.arm is None else [args.arm]
+    cells: list[tuple[Path, str, str, str]] = []
     for enc_path in encoded_files:
         stage, render, corpus = ts.parse_encoded_stem(enc_path.stem, "answer", LAYER)
         if not args.all_cells:
@@ -574,33 +631,53 @@ def main() -> int:
                 continue
             if args.corpus and corpus != args.corpus:
                 continue
-        for arm in ["prefix", "context"] if args.arm is None else [args.arm]:
-            targets.append((enc_path, stage, render, corpus, arm))
+        cells.append((enc_path, stage, render, corpus))
 
-    if not targets:
+    if not cells:
         print("[error] No cell matches filters")
         return 1
-    print(f"[setup] Fitting {len(targets)} (cell, arm) combos")
+    print(f"[setup] Fitting {len(cells)} cells x {len(arms)} arm(s)")
 
-    for i, (enc_path, stage, render, corpus, arm) in enumerate(targets, start=1):
-        print(f"\n=== [{i}/{len(targets)}] {stage}/{render}/{corpus}/{arm} ===")
-        turnstore_dir = args.context_shard_dir / f"turnstore_{stage}_{render}_{corpus}"
-        if not turnstore_dir.is_dir():
-            print(f"[skip] Missing turnstore dir: {turnstore_dir}")
+    for i, (enc_path, stage, render, corpus) in enumerate(cells, start=1):
+        outputs = {
+            arm: args.output_dir / f"{stage}_{render}_{corpus}_{arm}_L{LAYER}.jsonl" for arm in arms
+        }
+        pending = [arm for arm in arms if not outputs[arm].exists()]
+        for arm in arms:
+            if arm not in pending:
+                print(f"[skip] Exists: {outputs[arm]}")
+        if not pending:
             continue
-        output_path = args.output_dir / f"{stage}_{render}_{corpus}_{arm}_L{LAYER}.jsonl"
-        if output_path.exists():
-            print(f"[skip] Exists: {output_path}")
-            continue
-        fit_cell(
-            turnstore_dir=turnstore_dir,
-            encoded_shard=enc_path,
-            arm=arm,
-            output_path=output_path,
-            device=args.device,
-            skip_parity_gate=args.skip_parity_gate,
-            feature_chunk=args.feature_chunk,
-        )
+
+        if args.stage_context_from_hub:
+            turnstore_dir = hio.stage_turnstore(
+                stage, render, corpus, context_root, revision=args.data_revision
+            )
+        else:
+            turnstore_dir = context_root / f"turnstore_{stage}_{render}_{corpus}"
+            if not turnstore_dir.is_dir():
+                print(f"[skip] Missing turnstore dir: {turnstore_dir}")
+                continue
+        try:
+            for arm in pending:
+                print(f"\n=== [{i}/{len(cells)}] {stage}/{render}/{corpus}/{arm} ===")
+                fit_cell(
+                    turnstore_dir=turnstore_dir,
+                    encoded_shard=enc_path,
+                    arm=arm,
+                    output_path=outputs[arm],
+                    device=args.device,
+                    skip_parity_gate=args.skip_parity_gate,
+                    feature_chunk=args.feature_chunk,
+                )
+        finally:
+            # DELETE before the next fetch — resident staging ≤ ~1 turnstore.
+            # Only ever a staging copy (never --context-shard-dir source trees).
+            if args.stage_context_from_hub and not args.keep_staged:
+                hio.reap_turnstore(context_root, stage, render, corpus)
+
+    if args.upload:
+        hio.upload_dir(args.output_dir, "per-feature-r2")
     return 0
 
 
