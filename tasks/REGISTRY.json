@@ -7715,8 +7715,8 @@
     "1997": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1997",
-      "status": "planning",
+      "path": "tasks/approved/1997",
+      "status": "approved",
       "title": "daily-fix: RunPod fallback rung pod lifecycle: orphans + sto"
     },
     "1998": {
