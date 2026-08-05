@@ -1523,16 +1523,6 @@ AGENT_TOOLS_MENTION_EXCEPTIONS: dict[tuple[str, str], str] = {
         "'Both spawned from a single Agent(...) call' describes the "
         "orchestrator's ensemble spawn, not a wrapper instruction"
     ),
-    ("codex-reviewer.md", "Agent"): (
-        "DEPRECATED file (2026-05-13, never spawned); the Agent(...) mention "
-        "describes the historical ensemble spawn pattern"
-    ),
-    ("workflow-improver.md", "Agent"): (
-        "DEPRECATED/frozen file (#678, never spawned; "
-        "--check-no-workflow-improver-spawn bans it); Agent( appears only in "
-        "historical examples of the retired auto-spawn pattern and a "
-        "grep-target example"
-    ),
     ("critic-lean.md", "WebFetch"): (
         "lean twin (#2062): the body's `no WebSearch/WebFetch` line NEGATES "
         "the tool — descriptive-not-instructive; the lean drops WebFetch by "
