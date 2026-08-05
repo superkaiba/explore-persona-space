@@ -271,7 +271,13 @@ def phase_capture(args) -> dict:
     if not paths:
         raise FileNotFoundError(f"no rollout JSONs under {rollout_dir}")
     logger.info("[phase=capture] rollout_files=%d", len(paths))
-    model, tokenizer = capture.load_capture_model(device=args.device)
+    # load_capture_model returns the MODEL only; the tokenizer comes from the
+    # generation module's cached loader (same pinned name + revision, so the
+    # capture render matches the render generation wrote into the rollout JSON).
+    from explore_persona_space.experiments.issue_1739 import generation
+
+    model = capture.load_capture_model(device=args.device)
+    tokenizer = generation.get_tokenizer()
     manifest = capture.capture_rollout_files(
         paths,
         store_dir=args.store_dir,
