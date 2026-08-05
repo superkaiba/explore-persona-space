@@ -137,13 +137,19 @@ COMMITTED_ARM4_SOURCES = {
 }
 
 
+# Full labelled pool per behaviour: evil's committed wide rows are tagged
+# L=6468 while the ADD rows say L=8000 — both realize the identical full row
+# set (budget_l >= n_ctx), per the v3 figure's labelled_budget_check.
+FULL_POOL_L = {"evil": 6468, "sycophancy": 16000, "hallucination": 16000}
+
+
 def _slice_ok(r: dict, beh: str) -> bool:
     if r.get("regime") != "e1" or r.get("variant") != "context_end":
         return False
     if str(r.get("u_rung_label")) != "full":
         return False
     bl = r.get("budget_l")
-    return bl is None or int(bl) == BUDGET_L[beh] or int(bl) >= BUDGET_L[beh]
+    return bl is None or int(bl) >= FULL_POOL_L[beh]
 
 
 def committed_arm4() -> dict[tuple[str, str], dict]:
@@ -208,7 +214,7 @@ def committed_v3() -> dict[tuple[str, str, str], dict]:
 def ceilings() -> dict[tuple[str, str], float]:
     doc = json.loads(SPREAD_STATS.read_text())
     return {
-        (c["behavior"], c["rung"]): float(c["ceiling_sqrt_r_yy"])
+        (c["behavior"], c["setting"]): float(c["ceiling_sqrt_r_yy"])
         for c in doc["cells"]
         if c.get("ceiling_sqrt_r_yy") is not None
     }
