@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2080,
+  "highest_id": 2081,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8364,6 +8364,13 @@
       "path": "tasks/proposed/2080",
       "status": "proposed",
       "title": "workflow-fix: worktrees are a required location class in absence sweeps"
+    },
+    "2081": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2081",
+      "status": "proposed",
+      "title": "workflow-fix: lint launcher GPU-width derivation without a SLURM branch (#1902 class)"
     },
     "209": {
       "has_clean_result": false,
