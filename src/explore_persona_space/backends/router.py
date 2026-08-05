@@ -3338,6 +3338,43 @@ def _refuse_infeasible_cpu_footprint(
         )
 
 
+def _log_runpod_rung_reason(*, reason: str, spec: RunSpec, residual_gap: str) -> None:
+    """One log line naming WHY the RunPod rung is firing (reason-keyed)."""
+    if reason in (
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+    ):
+        logger.warning(
+            "route: GCP WORKLOAD failure for issue %d; failing over to RunPod "
+            "(persistent SSH-able pod for diagnosis; residual gap: %s).",
+            spec.issue,
+            residual_gap,
+        )
+    elif reason == ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD:
+        logger.warning(
+            "route: GCP FLEX_START queue timeout for issue %d (instance stayed "
+            "PENDING past EPS_GCP_QUEUE_WAIT_SECONDS); failing over to RunPod "
+            "(residual gap: %s).",
+            spec.issue,
+            residual_gap,
+        )
+    elif reason == ROUTE_REASON_RUNPOD_FIRST:
+        logger.info(
+            "route: RunPod is the FIRST auto lane for issue %d (#2054 — the "
+            "Anthropic-org sponsored pool); launching there before any other "
+            "lane (%s).",
+            spec.issue,
+            residual_gap,
+        )
+    else:
+        logger.warning(
+            "route: every cheaper auto lane exhausted for issue %d; falling "
+            "back to RunPod (residual gap: %s).",
+            spec.issue,
+            residual_gap,
+        )
+
+
 def _runpod_terminal_rung(
     *,
     spec: RunSpec,
@@ -3478,31 +3515,7 @@ def _runpod_terminal_rung(
             runpod_intent,
             spec.issue,
         )
-    if reason in (
-        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
-        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
-    ):
-        logger.warning(
-            "route: GCP WORKLOAD failure for issue %d; failing over to RunPod "
-            "(persistent SSH-able pod for diagnosis; residual gap: %s).",
-            spec.issue,
-            residual_gap,
-        )
-    elif reason == ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD:
-        logger.warning(
-            "route: GCP FLEX_START queue timeout for issue %d (instance stayed "
-            "PENDING past EPS_GCP_QUEUE_WAIT_SECONDS); failing over to RunPod "
-            "(residual gap: %s).",
-            spec.issue,
-            residual_gap,
-        )
-    else:
-        logger.warning(
-            "route: GCP ladder (and free lanes, if any) exhausted for issue %d; "
-            "falling back to RunPod (residual gap: %s).",
-            spec.issue,
-            residual_gap,
-        )
+    _log_runpod_rung_reason(reason=reason, spec=spec, residual_gap=residual_gap)
     runpod_spec = replace(
         spec,
         backend="runpod",
@@ -4651,6 +4664,50 @@ def _override_gcp_with_ladder(
 # ---------------------------------------------------------------------------
 
 
+def _auto_candidates(
+    *,
+    lane_order: tuple[BackendKind, ...],
+    free_backends: dict[BackendKind, ComputeBackend],
+    gcp_backend: ComputeBackend | None,
+    runpod_backend: ComputeBackend,
+    cpu_only: bool,
+    mila_socket_alive: Callable[[], bool] | None,
+) -> list[tuple[ComputeBackend, BackendKind]]:
+    """Build the auto chain's candidate list in lane order.
+
+    Skips unwired lanes, Mila-when-down, and (for CPU-only intents) the
+    free SLURM lanes. ``runpod`` (#2054) is a first-class auto lane and is
+    always wired — the ``route()`` signature requires ``runpod_backend`` —
+    and CPU-only intents keep it: RunPod CPU (deployCpuPod) IS the
+    documented CPU chain (#747/#2028). The stage-1 reconnect scan is a
+    no-op for runpod (the production ``reconnect_fn`` returns ``None`` for
+    it — pod_lifecycle's own flow is idempotent).
+    """
+    candidates: list[tuple[ComputeBackend, BackendKind]] = []
+    for kind in lane_order:
+        if kind == "runpod":
+            candidates.append((runpod_backend, "runpod"))
+            continue
+        if kind == "gcp":
+            if gcp_backend is not None:
+                candidates.append((gcp_backend, "gcp"))
+            continue
+        if cpu_only:
+            # Excluding the free lanes from ``candidates`` also removes them
+            # from the stage-1 reconnect scan — deliberately: a CPU-only
+            # intent can never have a live SLURM job to reconnect to (the lane
+            # has no 0-GPU sbatch render, so no prior route() could have
+            # submitted one there). Nothing is lost by not scanning (#1464).
+            continue
+        backend = free_backends.get(kind)
+        if backend is None:
+            continue
+        if kind == "mila" and (mila_socket_alive is None or not mila_socket_alive()):
+            continue
+        candidates.append((backend, kind))
+    return candidates
+
+
 def _attempt_runpod_lane(
     *,
     spec: RunSpec,
@@ -4813,34 +4870,14 @@ def _auto_route(
             spec.intent,
             ", ".join(sorted(free_backends)),
         )
-    candidates: list[tuple[ComputeBackend, BackendKind]] = []
-    for kind in lane_order:
-        if kind == "runpod":
-            # #2054: runpod is a first-class auto lane (always wired — the
-            # route() signature requires runpod_backend). CPU-only intents
-            # keep it too: RunPod CPU (deployCpuPod) IS the documented CPU
-            # chain (#747/#2028). The stage-1 reconnect scan is a no-op for
-            # runpod (the production reconnect_fn returns None for it —
-            # pod_lifecycle's own flow is idempotent).
-            candidates.append((runpod_backend, "runpod"))
-            continue
-        if kind == "gcp":
-            if gcp_backend is not None:
-                candidates.append((gcp_backend, "gcp"))
-            continue
-        if cpu_only:
-            # Excluding the free lanes from ``candidates`` also removes them
-            # from the stage-1 reconnect scan below — deliberately: a CPU-only
-            # intent can never have a live SLURM job to reconnect to (the lane
-            # has no 0-GPU sbatch render, so no prior route() could have
-            # submitted one there). Nothing is lost by not scanning (#1464).
-            continue
-        backend = free_backends.get(kind)
-        if backend is None:
-            continue
-        if kind == "mila" and (mila_socket_alive is None or not mila_socket_alive()):
-            continue
-        candidates.append((backend, kind))
+    candidates = _auto_candidates(
+        lane_order=lane_order,
+        free_backends=free_backends,
+        gcp_backend=gcp_backend,
+        runpod_backend=runpod_backend,
+        cpu_only=cpu_only,
+        mila_socket_alive=mila_socket_alive,
+    )
 
     # Stage 1: reconnect scan over every wired lane, in lane order.
     reconnect_result = _try_auto_reconnect(
