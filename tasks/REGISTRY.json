@@ -8375,8 +8375,8 @@
     "2082": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2082",
-      "status": "planning",
+      "path": "tasks/approved/2082",
+      "status": "approved",
       "title": "daily-fix: fix red main: test_issue1689_os_exit_shutdown_bypass.py::test_entrypoint_calls_os_exit[issue1689_real_u2_from_1738.py] \u2014 conform the script's `__main__` guard to"
     },
     "2083": {
