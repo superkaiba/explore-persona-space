@@ -93,13 +93,26 @@ ensure_sparsify() {
   # the gate before doing any encode work (fail-fast as designed, but it
   # costs a provision + bootstrap cycle).
   #
-  # PINNED on purpose: sparsify is the parity REFERENCE implementation, so
-  # an unpinned install could drift and either spuriously fail the gate or
-  # spuriously pass it. 1.3.3 is the version the reference read was
-  # verified against. Idempotent (a satisfied requirement is a no-op) and
-  # fail-loud (no `|| true`) -- if the reference cannot be installed, the
-  # parity gate cannot be honestly run.
-  run uv pip install "sparsify==${ISSUE2061_SPARSIFY_VERSION:-1.3.3}"
+  # DIST NAME != IMPORT NAME. The distribution is `eai-sparsify`
+  # (EleutherAI, "Sparsify transformers with SAEs and transcoders"); the
+  # module it installs is `sparsify`. Installing the bare PyPI name
+  # `sparsify` gets Neural Magic's DEPRECATED sparsification UI -- an
+  # unrelated project that does not provide `SparseCoder` -- and the pin
+  # `sparsify==1.3.3` does not resolve at all (that project ships
+  # 1.3.0 then 1.4.0). Verified: `uv pip install --dry-run
+  # 'eai-sparsify==1.3.3'` resolves; `from sparsify import SparseCoder`
+  # -> sparsify.sparse_coder.
+  #
+  # PINNED on purpose: this is the parity REFERENCE implementation, so an
+  # unpinned install could drift and either spuriously fail the gate or
+  # spuriously pass it. Idempotent (a satisfied requirement is a no-op)
+  # and fail-loud (no `|| true`) -- if the reference cannot be installed,
+  # the parity gate cannot be honestly run.
+  run uv pip install "eai-sparsify==${ISSUE2061_SPARSIFY_VERSION:-1.3.3}"
+  # Self-check the dist-name -> import-name mapping. A wrong distribution
+  # can install cleanly and still not provide the gate's symbol, so fail
+  # HERE with a legible message rather than inside the parity gate.
+  run uv run python -c "from sparsify import SparseCoder"
 }
 
 p3_device() {

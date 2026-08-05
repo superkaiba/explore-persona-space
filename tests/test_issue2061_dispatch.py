@@ -472,8 +472,28 @@ def test_parity_gate_call_sites_install_sparsify_pinned_and_fail_loud():
     assert m, "ensure_sparsify() helper missing"
     body = m.group(1)
     assert "uv pip install" in body, "helper does not install sparsify"
-    assert "sparsify==" in body, "sparsify install is NOT version-pinned"
     assert "ISSUE2061_SPARSIFY_VERSION" in body, "pin is not env-overridable"
+
+    # DIST NAME, checked exactly. The import name is `sparsify` but the
+    # distribution is `eai-sparsify` (EleutherAI). The bare PyPI name
+    # `sparsify` is Neural Magic's DEPRECATED sparsification UI: it does not
+    # provide `SparseCoder`, and `sparsify==1.3.3` does not even resolve
+    # (that project ships 1.3.0 then 1.4.0). A substring check for
+    # "sparsify==" cannot tell the two apart -- `eai-sparsify==` contains it
+    # -- which is exactly how the wrong dist name shipped once.
+    dist = re.search(r'uv pip install "([A-Za-z0-9._-]+)==', body)
+    assert dist, "could not parse the pinned distribution name"
+    assert dist.group(1) == "eai-sparsify", (
+        f"parity reference must install the EleutherAI distribution "
+        f"'eai-sparsify', got {dist.group(1)!r}"
+    )
+
+    # The dist-name -> import-name mapping is self-checked in the helper, so
+    # a wrong distribution fails at install time with a legible message
+    # instead of inside the parity gate.
+    assert "from sparsify import SparseCoder" in body, (
+        "helper does not verify the installed distribution provides SparseCoder"
+    )
     # Fail-loud: never swallow an install failure. A missing reference
     # implementation means the parity gate cannot be honestly run.
     # Check EXECUTABLE lines only -- the helper's own comment names the
