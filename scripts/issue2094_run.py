@@ -524,7 +524,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--planned-wall-h", type=float, default=PLANNED_GRID_WALL_H)
     ap.add_argument("--gpu-hours-budgeted", type=float, default=33.0)
-    ap.add_argument("--additivity", action="store_true", help=argparse.SUPPRESS)
+    # NOTE: the plan §4.4 additivity spot-check ("optional", ~12 extra rollouts at
+    # ce/L14/alpha=1) is NOT wired here — it is a separate small block family, left
+    # to the analysis unit rather than shipped as an unwired flag.
     return ap.parse_args(argv)
 
 
