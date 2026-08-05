@@ -12290,7 +12290,7 @@ def test_check26_repo_unresolved_is_noop_pass(monkeypatch):
 
 _CHECK28_NAME = (
     "figure text opaque config codes "
-    "(slug / @L-pin / H-code / slot-family / P-M candidate / letter-arrow tokens)"
+    "(slug / @L-pin / H-code / slot-family / P-M candidate / letter-arrow / arm-slug tokens)"
 )
 
 
@@ -12796,6 +12796,132 @@ def test_check28_percentile_title_passes_clean(tmp_path, monkeypatch):
     body = _CHECK24_BODY.replace("0123456789abcdef", sha)
     res = verify_task_body.check_figure_label_codes(body)
     assert res.passed and not res.is_warn, res.render()
+
+
+def test_check28_arm_slug_classifier():
+    """Pure-function inventories for the hyphen-separated arm-slug class (g)
+    (#1988): AC-1 recall (the #1768 `behavior-context-regime-lr-seed` slug
+    grammar + the no-`s`-seed-prefix #1586 variant), AC-2 corpus-derived
+    FP drops (digit-in-FINAL-segment + <=6-char-tail filter), AC-3
+    2-segment non-flag (regex requires >=3 segments), AC-4 path exemption
+    with its regex-matches non-vacuity proof."""
+    fn = verify_task_body._opaque_code_tokens
+    # AC-1 recall: fleet slug grammar, with and without the `s` seed prefix.
+    assert fn("cas-pers-con-lr1e5-s137") == ["cas-pers-con-lr1e5-s137"]
+    assert fn("ft-con-137") == ["ft-con-137"]
+    assert fn("ft-con-42") == ["ft-con-42"]
+    assert fn("delta vs base for cas-icl-po-lr1e5-s42 cells") == ["cas-icl-po-lr1e5-s42"]
+    # AC-2 corpus-derived FP drops: hyphenated rendered English / compounds
+    # (no digit in the final segment) and long dated ids (final segment over
+    # 6 chars) stay clean — the exact plan-review probe set.
+    for good in (
+        "under-4-token",  # figures/issue_1335 rendered text
+        "first-16-token",  # figures/issue_952
+        "best-of-28-layers",  # figures/issue_664
+        "claude-sonnet-4-5-20250929",  # judge model id (issue_1092/issue_1739)
+        "eps-persona-gpu-jun2026",  # GCP project id (issue_588)
+        "end-to-end",
+        "state-of-the-art",
+        "us-central1-a",  # GCP zone — final segment `a` has no digit
+    ):
+        assert fn(good) == [], f"false positive on {good!r}: {fn(good)}"
+    # AC-3: 2-segment hyphen tokens never match (>=3 segments required).
+    assert fn("log-prob") == []
+    assert fn("log-prob margin by arm") == []
+    # AC-4 path exemption: the raw regex genuinely matches inside the path
+    # word (non-vacuity assert below), so the `[]` results are produced by
+    # the per-word path exemption, not the regex boundary.
+    assert fn("figures/issue_1768/ft-con-137.png") == []  # whole-string path skip
+    assert fn("source: figures/issue_1768/ft-con-137.png") == []  # path word in prose
+    assert verify_task_body._ARM_SLUG_RE.search("figures/issue_1768/ft-con-137.png")
+    # `_is_arm_slug_token` membership predicate (shared with check 28's
+    # caption suppression): fullmatch + digit-bearing <=6-char final segment.
+    assert verify_task_body._is_arm_slug_token("cas-pers-con-lr1e5-s137")
+    assert verify_task_body._is_arm_slug_token("ft-con-137")
+    assert not verify_task_body._is_arm_slug_token("claude-sonnet-4-5-20250929")
+    assert not verify_task_body._is_arm_slug_token("under-4-token")
+    assert not verify_task_body._is_arm_slug_token("log-prob")
+    assert not verify_task_body._is_arm_slug_token("H3")  # non-slug class token
+
+
+def test_check28_arm_slug_in_yticklabels_warns(tmp_path, monkeypatch):
+    """The #1988 live shape (#1768's figures): arm slugs rendered as tick
+    labels reach check 28 through `meta["text"].axes[].yticklabels` VALUES
+    and WARN when the body caption does not name them."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-05T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [
+                    {
+                        "title": "install delta by cell",
+                        "yticklabels": ["cas-pers-con-lr1e5-s137", "ft-con-137"],
+                    }
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "cas-pers-con-lr1e5-s137" in res.detail
+
+
+def test_check28_arm_slug_caption_decode_suppressed(tmp_path, monkeypatch):
+    """Slug-class caption-decode suppression (#1988): when THIS figure's
+    blockquote caption names the slug verbatim (case-insensitively — the
+    caption here renders it uppercase), the slug token is suppressed and
+    the check PASSes clean."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-05T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"yticklabels": ["cas-pers-con-lr1e5-s137"]}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha).replace(
+        "Baseline gray, tulu-25 blue; error bars 95% Wald CIs.",
+        "Row CAS-PERS-CON-LR1E5-S137 is the persona-context contrastive cell at lr 1e-5, seed 137.",
+    )
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "free of opaque config codes" in res.detail
+
+
+def test_check28_caption_suppression_is_slug_class_only(tmp_path, monkeypatch):
+    """Caption naming decodes ONLY the arm-slug class: a caption naming both
+    the slug AND a hypothesis code verbatim suppresses the slug token while
+    the H-code (class (c)) still WARNs — classes (a)-(f) stay byte-stable
+    (no caption suppression)."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-05T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"title": "ft-con-137 (H3)"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha).replace(
+        "Baseline gray, tulu-25 blue; error bars 95% Wald CIs.",
+        "Cell ft-con-137 is the full-finetune contrastive cell at seed 137 (H3).",
+    )
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "H3" in res.detail
+    assert "ft-con-137" not in res.detail
 
 
 # ─── Check 41: sidecar-less embedded figures (coverage WARN, #1478) ────────
