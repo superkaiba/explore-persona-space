@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2081,
+  "highest_id": 2082,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7645,8 +7645,8 @@
     "1988": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1988",
-      "status": "running",
+      "path": "tasks/reviewing/1988",
+      "status": "reviewing",
       "title": "workflow-fix: widen check-28 figure token pattern to arm slugs"
     },
     "1989": {
@@ -8347,8 +8347,8 @@
     "2079": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2079",
-      "status": "running",
+      "path": "tasks/reviewing/2079",
+      "status": "reviewing",
       "title": "workflow-fix: lint cross-module sha-pin domain agreement (#1776/#1491 class)"
     },
     "208": {
@@ -8371,6 +8371,13 @@
       "path": "tasks/proposed/2081",
       "status": "proposed",
       "title": "workflow-fix: lint launcher GPU-width derivation without a SLURM branch (#1902 class)"
+    },
+    "2082": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2082",
+      "status": "proposed",
+      "title": "daily-fix: fix red main: test_issue1689_os_exit_shutdown_bypass.py::test_entrypoint_calls_os_exit[issue1689_real_u2_from_1738.py] \u2014 conform the script's `__main__` guard to"
     },
     "209": {
       "has_clean_result": false,

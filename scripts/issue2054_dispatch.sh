@@ -97,9 +97,29 @@ build_cmd() {
       # Default `--stage all` = both in-process (smoke / single box); pass
       # the stage per lane via the router's verbatim pass-through. CPU smoke:
       # `phase_a --gen-mock --questions-jsonl <tiny pool>`.
+      #
+      # SHARED DRAW SIZING (crash-fix r5, 2026-08-05). The default
+      # `target_conv_ids - shared_recovered` arithmetic sizes the CROSS-variant
+      # intersection, but gate 4 intersects WITHIN one (character, model) group,
+      # so it under-draws whenever per-variant recovery exceeds the shared
+      # intersection (measured: ~2,155/variant recovered vs 1,055 shared).
+      # --gen-draw-n sizes the shared draw directly:
+      #   min recovered / variant (post casing fix) = 2,152
+      #   min verbatim-keep, single-line + <400ch   =  36.0%
+      #   pre-judge pool @ D=14,000  = 2,152 + 0.360*14,000 = 7,192 = 1.61x
+      #   the 4,480 gate-4 floor — headroom for the judge admission leg (not
+      #   yet measured on this instrument) + phase b/c/d attrition; the gate is
+      #   missed only if combined downstream retention drops below ~62%.
+      #   Eligible pool after the new filters ~57.8k (79,606 * 72.6%), so a
+      #   14,000 draw is ~24% of it.
+      # Wall: 5 variants * 14,000 = 70,000 scaffolds @ ~0.068 s each (measured
+      # 39,965 in ~45 min on 1xH100, 2026-08-05) = ~80 min, sequential
+      # per-variant subprocesses on ONE GPU — under the ~2 h shardable-width
+      # threshold, so 1xH100 is right-sized.
       CMD=(
         uv run python scripts/issue2054_phase_a.py
         --target-conv-ids 8000
+        --gen-draw-n 14000
         --output-dir data/issue_2054/scaffolds/
         --seed 137
       )

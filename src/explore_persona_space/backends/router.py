@@ -25,25 +25,29 @@ the single-constant rollback (flip the constant to ``False``); it is not
 reachable for fresh dispatches while the flag is on.
 
 1. **Explicit override** — ``spec.backend == "runpod" | "gcp" | "nibi" |
-   "fir" | "mila" | "fellows"`` runs that lane directly. RunPod is ALSO reachable on
-   the auto chain — as the COST-ORDERED TERMINAL FALLBACK, never first:
-   when every cheaper GCP rung + free SLURM lane is exhausted on the
-   CAPACITY path (item 8, ``reason: auto_fallback_runpod``, #656), when a
-   GCP rung CRASHES THE WORKLOAD (item 5, ``reason:
-   gcp_workload_failover_runpod``, #658), and for the mapped cheap CPU
-   intents (item 8a, ``cpu-small`` / ``cpu-mid``, #747). Full failover
-   policy: ``.claude/rules/compute-backend-failover.md`` (canonical).
+   "fir" | "mila" | "fellows"`` runs that lane directly. RunPod is ALSO
+   reachable on the auto chain — as the FIRST auto lane (user directive
+   2026-08-05, #2054: the RunPod team account is the shared
+   Anthropic-fellows/safety org pool, so provisioning there is ordinary
+   use of a sponsored pool, not discretionary spend; ``reason:
+   auto_runpod_first``) AND as the retained terminal rung: when every
+   remaining free SLURM lane is exhausted on the CAPACITY path (item 8,
+   ``reason: auto_fallback_runpod``, #656), when a GCP rung CRASHES THE
+   WORKLOAD (item 5, ``reason: gcp_workload_failover_runpod``, #658), and
+   for the mapped cheap CPU intents (item 8a, ``cpu-small`` / ``cpu-mid``,
+   #747). Full failover policy:
+   ``.claude/rules/compute-backend-failover.md`` (canonical).
 2. **Auto** — walk the resolved auto lane order. The STANDING DEFAULT is
-   **fellows first, then the free DRAC/Mila SLURM lanes**
-   (:data:`DEFAULT_AUTO_LANE_ORDER` = ``("fellows", "nibi", "fir",
-   "mila")`` while GCP provisioning is disabled by policy — the #2028
-   banner above; the flag-off rollback build re-inserts ``gcp`` after
-   ``fellows``, restoring the #1609 fellows-then-GCP order in which
-   credits-backed GCP capacity was consumed BEFORE the free DRAC/Mila
-   lanes). The order is overridable via the
-   ``EPM_AUTO_LANE_ORDER`` env var (comma-separated lanes, validated —
-   ``runpod``, ``gcp``-while-disabled, and unknown names raise loudly)
-   or per-call via
+   **RunPod first (the Anthropic-org pool), then fellows, then the free
+   DRAC/Mila SLURM lanes** (:data:`DEFAULT_AUTO_LANE_ORDER` =
+   ``("runpod", "fellows", "nibi", "fir", "mila")`` while GCP provisioning
+   is disabled by policy — the #2028 banner above; the flag-off rollback
+   build re-inserts ``gcp`` after ``fellows``). A RunPod-lane capacity
+   miss (nothing provisioned) falls through to the free lanes; a partial
+   launch that left a pod billing propagates. The order is overridable via
+   the ``EPM_AUTO_LANE_ORDER`` env var (comma-separated lanes, validated —
+   ``gcp``-while-disabled and unknown names raise loudly; ``runpod`` is a
+   legal lane as of #2054) or per-call via
    :attr:`RouterConfig.lane_order`; there is deliberately NO date logic —
    flipping the order back is a human action (env override or a default
    edit), never a clock. Contiguous SLURM lanes in the order are ranked
@@ -79,19 +83,20 @@ reachable for fresh dispatches while the flag is on.
    started; tearing it down would burn the wait we already paid for). A
    timeout produces a ``manual-attention`` outcome rather than a silent
    leak.
-4. **Fallback chain — within the resolved order, RunPod is the TERMINAL
-   rung (never first, never skipping a cheaper rung).** A provision-class
-   failure on any lane (free-lane PENDING-at-cap / provisioning failure;
-   GCP provisioning / capacity / prepare / state-probe failure when lanes
-   remain after it) continues DOWN the resolved order. Under the GCP-first
-   default that means GCP capacity failures fall through to the SLURM
-   lanes; under a free-first override the SLURM park-failures escalate to
-   GCP exactly as before. Once the GCP ladder AND the free SLURM lanes are
-   ALL exhausted on the capacity path, the auto chain falls through to the
-   RunPod terminal rung (item 8, ``reason: auto_fallback_runpod``, #656);
-   a GCP WORKLOAD crash short-circuits straight there (item 5, #658). The
-   reversal of the historical "NEVER RunPod on auto" invariant — RunPod is
-   the LAST capacity rung, not override-only.
+4. **Fallback chain — within the resolved order, a lane failure continues
+   DOWN the order; RunPod is BOTH the first lane and the retained terminal
+   rung (#2054).** A provision-class failure on any lane (a RunPod-lane
+   capacity miss with nothing provisioned; free-lane PENDING-at-cap /
+   provisioning failure; GCP provisioning / capacity / prepare /
+   state-probe failure when lanes remain after it) continues DOWN the
+   resolved order. Under the runpod-first default a RunPod capacity miss
+   falls through to fellows + the free SLURM lanes; once EVERY lane is
+   exhausted on the capacity path, the auto chain falls through to the
+   RunPod terminal rung — one final retry (item 8,
+   ``reason: auto_fallback_runpod``, #656); a GCP WORKLOAD crash
+   short-circuits straight there (item 5, #658). Historical note: #656
+   reversed "NEVER RunPod on auto" (terminal rung); #2054 promoted RunPod
+   to the FIRST lane (the Anthropic-org sponsored pool).
 5. **Failure classification** — :class:`gcp.GcpProvisioningError` (and
    any backend-marked ``provisioning_failure: True`` raise) routes to the
    next tier; a :class:`gcp.GcpWorkloadError` on a GCP rung FAILS OVER TO
@@ -356,11 +361,22 @@ ROUTE_REASON_PREPARE_FAILED: str = "backend_prepare_failed"
 #: were exhausted (#656). DISTINCT from :data:`ROUTE_REASON_OVERRIDE` so the
 #: marker trail tells "user pinned RunPod" apart from "router fell back to
 #: RunPod after exhausting cheaper compute". The ``extra`` carries
-#: ``runpod_fallback_residual_gap`` naming which rungs ran dry. This is the
-#: deliberate reversal of the historical no-auto-RunPod invariant
-#: (user-directed 2026-06-17): RunPod is reached ONLY here, never first,
-#: never skipping a cheaper rung.
+#: ``runpod_fallback_residual_gap`` naming which rungs ran dry. Historical
+#: note: #656 reversed the no-auto-RunPod invariant (user-directed
+#: 2026-06-17) with RunPod as the LAST capacity rung; #2054 then promoted
+#: RunPod to the FIRST auto lane (:data:`ROUTE_REASON_RUNPOD_FIRST`) — this
+#: reason survives as the end-of-chain terminal RETRY after every other
+#: lane is exhausted.
 ROUTE_REASON_RUNPOD_FALLBACK: str = "auto_fallback_runpod"
+#: RunPod launched as the FIRST auto lane (user directive 2026-08-05,
+#: #2054): the RunPod team account is the shared Anthropic-fellows/safety
+#: org pool, so provisioning there is ordinary use of a sponsored pool —
+#: not discretionary spend — and it LEADS the default auto order. DISTINCT
+#: from :data:`ROUTE_REASON_RUNPOD_FALLBACK` (the post-exhaustion terminal
+#: retry, retained) and :data:`ROUTE_REASON_OVERRIDE` (a user pin): a
+#: runpod-first capacity miss (nothing provisioned) falls through to the
+#: free SLURM lanes instead of raising.
+ROUTE_REASON_RUNPOD_FIRST: str = "auto_runpod_first"
 #: A CPU-only intent WITHOUT a RunPod-CPU lane (gpu_count==0 AND not in
 #: :data:`RUNPOD_CPU_INSTANCE_FOR_INTENT`, #677) reached the RunPod terminal
 #: rung — either the earlier lanes were capacity-exhausted OR a GCP CPU
@@ -782,8 +798,9 @@ ROUTE_REASON_GCP_DISABLED: str = "gcp_backend_disabled"
 #: SLURM free-lane subset (DRAC + Mila), in legacy precedence order.
 #: Kept as a public constant for callers that need "the free lanes";
 #: the AUTO chain's order is :data:`DEFAULT_AUTO_LANE_ORDER` /
-#: :func:`auto_lane_order`. RunPod is NEVER in either list — it's
-#: override-only by deliberate design. The ``fellows`` lane (#1609) is a
+#: :func:`auto_lane_order`. RunPod is NOT in this tuple (it is not a free
+#: SLURM lane) but IS a first-class auto lane as of #2054 — it LEADS
+#: :data:`DEFAULT_AUTO_LANE_ORDER`. The ``fellows`` lane (#1609) is a
 #: free SLURM lane too but is deliberately NOT in this legacy tuple —
 #: it sits AHEAD of the (rollback-only) gcp rung in the auto order (see
 #: :data:`DEFAULT_AUTO_LANE_ORDER`), not in the post-GCP tail.
@@ -793,33 +810,37 @@ DEFAULT_FREE_LANE_ORDER: tuple[BackendKind, ...] = ("nibi", "fir", "mila")
 def _default_auto_lane_order() -> tuple[BackendKind, ...]:
     """Build the standing default auto lane order from the #2028 policy flag.
 
-    Flag ON (the standing state): ``("fellows", "nibi", "fir", "mila")`` —
-    no gcp rung anywhere on the auto chain. Flag OFF (rollback): the #1609
-    fellows-then-GCP order ``("fellows", "gcp", "nibi", "fir", "mila")``.
+    RunPod LEADS both builds (user directive 2026-08-05, #2054 — the
+    Anthropic-org sponsored pool is the first resort). Flag ON (the
+    standing state): ``("runpod", "fellows", "nibi", "fir", "mila")`` —
+    no gcp rung anywhere on the auto chain. Flag OFF (rollback): the gcp
+    rung re-inserts after fellows —
+    ``("runpod", "fellows", "gcp", "nibi", "fir", "mila")``.
     Reads the module-level constant at CALL time so a test/rollback flip is
     honored; the module-level :data:`DEFAULT_AUTO_LANE_ORDER` snapshot is
     built once at import.
     """
     if GCP_PROVISIONING_DISABLED:
-        return ("fellows", *DEFAULT_FREE_LANE_ORDER)
-    return ("fellows", "gcp", *DEFAULT_FREE_LANE_ORDER)
+        return ("runpod", "fellows", *DEFAULT_FREE_LANE_ORDER)
+    return ("runpod", "fellows", "gcp", *DEFAULT_FREE_LANE_ORDER)
 
 
-#: Standing default auto lane order: **fellows first** (the free
+#: Standing default auto lane order: **RunPod first** (the shared
+#: Anthropic-fellows/safety org pool — a sponsored pool, not discretionary
+#: spend; user directive 2026-08-05, #2054), then fellows (the free
 #: Anthropic-fellows charmander H200 SLURM lane, #1609), then the legacy
 #: free DRAC/Mila SLURM lanes in precedence order. Built conditionally from
 #: :data:`GCP_PROVISIONING_DISABLED` (#2028): while the flag is on there is
 #: NO gcp rung; the flag-off rollback build re-inserts ``gcp`` after
-#: ``fellows`` (credits-backed GCP capacity consumed BEFORE the free
-#: DRAC/Mila lanes — the #1609 order). This is an unconditional default —
+#: ``fellows``. This is an unconditional default —
 #: NO date logic; flipping the order back is a deliberate human action (set
 #: :data:`ENV_AUTO_LANE_ORDER` or flip the policy constant), never a clock.
 DEFAULT_AUTO_LANE_ORDER: tuple[BackendKind, ...] = _default_auto_lane_order()
 
 #: Env override for the auto lane order — comma-separated lane names,
-#: e.g. ``EPM_AUTO_LANE_ORDER=nibi,fir,mila`` to bypass fellows.
-#: Validated by :func:`auto_lane_order`: ``runpod`` raises loudly
-#: (real-money safety — never silently dropped), ``gcp`` raises while
+#: e.g. ``EPM_AUTO_LANE_ORDER=nibi,fir,mila`` to bypass runpod + fellows.
+#: Validated by :func:`auto_lane_order`: ``runpod`` is a LEGAL lane as of
+#: #2054 (it leads the default), ``gcp`` raises while
 #: :data:`GCP_PROVISIONING_DISABLED` is on (#2028 — the rollback lever is
 #: the constant flip, never a lane-order override), as do unknown names,
 #: ``auto``/``cluster`` literals, and duplicates.
@@ -864,9 +885,10 @@ _VALID_BACKEND_VALUES: frozenset[str] = frozenset(
 )
 
 #: Lanes the AUTO chain may contain — :data:`_VALID_BACKEND_VALUES`
-#: minus ``runpod`` (override-only; real money) and ``auto`` (the
-#: sentinel itself, not a lane).
-_AUTO_LANE_VALUES: frozenset[str] = frozenset({"gcp", "nibi", "fir", "mila", "fellows"})
+#: minus ``auto`` (the sentinel itself, not a lane). ``runpod`` joined at
+#: #2054 (it leads the default order; the Anthropic-org pool is the first
+#: resort, not a real-money last resort).
+_AUTO_LANE_VALUES: frozenset[str] = frozenset({"runpod", "gcp", "nibi", "fir", "mila", "fellows"})
 
 #: Lanes whose kind IS a SLURM cluster name. The shared ``SlurmBackend``
 #: resolves its target cluster from ``spec.cluster`` per call, so every
@@ -1614,12 +1636,11 @@ def _validate_auto_lane_order(
     Hard rules (all raise — a misconfigured order must NEVER be silently
     repaired by dropping entries):
 
-    * ``runpod`` is FORBIDDEN — RunPod spends real money and stays
-      override-only; an order that smuggles it in is a real-money safety
-      violation, not a preference.
     * ``gcp`` is FORBIDDEN while :data:`GCP_PROVISIONING_DISABLED` is on
-      (#2028; the ``runpod`` refusal precedent) — a lane order that smuggles
-      it in would silently re-enable a policy-removed provisioning surface.
+      (#2028) — a lane order that smuggles it in would silently re-enable a
+      policy-removed provisioning surface. (``runpod`` is LEGAL as of #2054
+      — it leads the default order; the historical runpod refusal was the
+      real-money-last-resort model this directive removed.)
     * Unknown lane names (typos, the ``auto`` sentinel, the legacy
       ``cluster`` literal) raise.
     * Duplicates raise (a duplicated lane would be attempted twice).
@@ -1628,12 +1649,6 @@ def _validate_auto_lane_order(
     if not lanes:
         raise RouteError(f"auto lane order from {source} is empty — refusing to route blind")
     for lane in lanes:
-        if lane == "runpod":
-            raise RouteError(
-                f"auto lane order from {source} contains 'runpod' — RunPod spends "
-                "real money and is reachable ONLY via an explicit backend override, "
-                "never on the auto chain. Remove it from the order."
-            )
         if lane == "gcp" and gcp_provisioning_disabled():
             raise RouteError(
                 f"auto lane order from {source} contains 'gcp' — GCP provisioning "
@@ -1655,12 +1670,13 @@ def auto_lane_order() -> tuple[BackendKind, ...]:
     """Resolve the auto-chain lane order: env override, else the standing default.
 
     * :data:`ENV_AUTO_LANE_ORDER` set (non-empty) → parse the
-      comma-separated lane list and validate it (``runpod`` /
-      ``gcp``-while-disabled (#2028) / unknown names / duplicates raise
-      loudly — never silently dropped).
-    * Otherwise → :data:`DEFAULT_AUTO_LANE_ORDER` (fellows first, then the
-      free SLURM lanes; the gcp rung exists only in the flag-off rollback
-      build — no date gate of any kind; #1609/#2028).
+      comma-separated lane list and validate it
+      (``gcp``-while-disabled (#2028) / unknown names / duplicates raise
+      loudly — never silently dropped; ``runpod`` is legal as of #2054).
+    * Otherwise → :data:`DEFAULT_AUTO_LANE_ORDER` (runpod first — the
+      Anthropic-org pool, #2054 — then fellows, then the free SLURM lanes;
+      the gcp rung exists only in the flag-off rollback build — no date
+      gate of any kind; #1609/#2028/#2054).
     """
     raw = os.environ.get(ENV_AUTO_LANE_ORDER, "").strip()
     if not raw:
@@ -1672,20 +1688,21 @@ def auto_lane_order() -> tuple[BackendKind, ...]:
 def _split_lane_groups(kinds: list[BackendKind]) -> list[tuple[BackendKind, ...]]:
     """Split availability-filtered lane kinds into contiguous attempt groups.
 
-    Each group is either ``("gcp",)`` or a maximal run of consecutive
-    SLURM lanes. The auto chain walks groups in order; WITHIN a SLURM
-    group the lanes keep the existing est-start ranking + park + cancel
-    chain (ties preserve the configured order — ``rank_lanes`` is
-    stable), while a GCP group is a single provision attempt.
+    Each group is ``("gcp",)``, ``("runpod",)`` (#2054), or a maximal run
+    of consecutive SLURM lanes. The auto chain walks groups in order;
+    WITHIN a SLURM group the lanes keep the existing est-start ranking +
+    park + cancel chain (ties preserve the configured order —
+    ``rank_lanes`` is stable), while a GCP or RunPod group is a single
+    provision attempt.
     """
     groups: list[tuple[BackendKind, ...]] = []
     current: list[BackendKind] = []
     for kind in kinds:
-        if kind == "gcp":
+        if kind in ("gcp", "runpod"):
             if current:
                 groups.append(tuple(current))
                 current = []
-            groups.append(("gcp",))
+            groups.append((kind,))
         else:
             current.append(kind)
     if current:
@@ -2236,12 +2253,13 @@ def route(
     Required injections:
 
     * ``runpod_backend`` — the explicit ``backend: runpod`` override
-      target AND (since #656) the auto chain's TERMINAL fallback rung,
-      reached ONLY after the cost-ordered GCP ladder + the free SLURM
-      lanes are all exhausted (``reason: auto_fallback_runpod``). The
-      ordering invariant — RunPod never first, never skipping a cheaper
-      rung — is pinned by
-      ``test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted``.
+      target, the auto chain's FIRST lane (#2054, ``reason:
+      auto_runpod_first`` — the Anthropic-org sponsored pool is the first
+      resort), AND (since #656, retained) the auto chain's TERMINAL retry
+      rung after every other lane is exhausted (``reason:
+      auto_fallback_runpod``). The ordering contract — RunPod first, free
+      lanes behind it, one terminal retry — is pinned by
+      ``test_runpod_first_capacity_miss_falls_through_then_terminal_retry``.
 
     Optional injections:
 
@@ -2417,9 +2435,9 @@ def route(
             f"{ENV_AUTO_LANE_ORDER} env override"
             if os.environ.get(ENV_AUTO_LANE_ORDER, "").strip()
             else (
-                "default (fellows-first standing order; gcp disabled #2028)"
+                "default (runpod-first standing order #2054; gcp disabled #2028)"
                 if gcp_provisioning_disabled()
-                else "default (fellows-then-GCP standing order)"
+                else "default (runpod-first standing order #2054; gcp rollback build)"
             )
         )
     logger.info(
@@ -3366,6 +3384,43 @@ def _refuse_infeasible_cpu_footprint(
         )
 
 
+def _log_runpod_rung_reason(*, reason: str, spec: RunSpec, residual_gap: str) -> None:
+    """One log line naming WHY the RunPod rung is firing (reason-keyed)."""
+    if reason in (
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+    ):
+        logger.warning(
+            "route: GCP WORKLOAD failure for issue %d; failing over to RunPod "
+            "(persistent SSH-able pod for diagnosis; residual gap: %s).",
+            spec.issue,
+            residual_gap,
+        )
+    elif reason == ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD:
+        logger.warning(
+            "route: GCP FLEX_START queue timeout for issue %d (instance stayed "
+            "PENDING past EPS_GCP_QUEUE_WAIT_SECONDS); failing over to RunPod "
+            "(residual gap: %s).",
+            spec.issue,
+            residual_gap,
+        )
+    elif reason == ROUTE_REASON_RUNPOD_FIRST:
+        logger.info(
+            "route: RunPod is the FIRST auto lane for issue %d (#2054 — the "
+            "Anthropic-org sponsored pool); launching there before any other "
+            "lane (%s).",
+            spec.issue,
+            residual_gap,
+        )
+    else:
+        logger.warning(
+            "route: every cheaper auto lane exhausted for issue %d; falling "
+            "back to RunPod (residual gap: %s).",
+            spec.issue,
+            residual_gap,
+        )
+
+
 def _runpod_terminal_rung(
     *,
     spec: RunSpec,
@@ -3380,6 +3435,7 @@ def _runpod_terminal_rung(
     reason: str = ROUTE_REASON_RUNPOD_FALLBACK,
     failover_evidence: dict[str, Any] | None = None,
     gcp_failover_of_identity: dict[str, Any] | None = None,
+    post_failure_marker: bool = True,
 ) -> RouteResult:
     """Final fallback rung: launch on RunPod after every cheaper rung failed.
 
@@ -3412,6 +3468,13 @@ def _runpod_terminal_rung(
     #940: a GCP-only GPU intent is translated to its RunPod-provisionable
     equivalent (:func:`_translated_runpod_intent`) before the launch, so the
     rung actually fires instead of dying in ``gpu_heuristics.resolve_intent``.
+
+    ``post_failure_marker`` (#2054): the NON-terminal runpod-first lane
+    (:func:`_attempt_runpod_lane`) passes ``False`` so a capacity-class
+    failure it will CATCH-and-continue does not post a misleading
+    ``no_compute_available`` breadcrumb while cheaper-to-wait lanes remain;
+    the pod-billing (workload-start) and CPU-guard breadcrumbs — whose
+    exceptions always propagate out of the lane — stay unconditional.
     """
     # Per-dispatch fallback opt-out (#1997): a launch composed with
     # --no-runpod-fallback (spec.extra["no_runpod_fallback"], threaded by
@@ -3520,13 +3583,14 @@ def _runpod_terminal_rung(
                 elapsed_seconds=now_fn() - started_at,
             )
         )
-        _post_terminal_failure_marker(
-            spec=spec,
-            marker_poster=marker_poster,
-            reason=ROUTE_REASON_NO_COMPUTE,
-            chosen_kind="runpod",
-            attempts=attempts,
-        )
+        if post_failure_marker:
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_NO_COMPUTE,
+                chosen_kind="runpod",
+                attempts=attempts,
+            )
         raise NoComputeAvailableError(
             "every GCP rung + free lane failed AND the RunPod terminal "
             f"fallback cannot serve this intent ({exc})",
@@ -3540,31 +3604,7 @@ def _runpod_terminal_rung(
             runpod_intent,
             spec.issue,
         )
-    if reason in (
-        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
-        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
-    ):
-        logger.warning(
-            "route: GCP WORKLOAD failure for issue %d; failing over to RunPod "
-            "(persistent SSH-able pod for diagnosis; residual gap: %s).",
-            spec.issue,
-            residual_gap,
-        )
-    elif reason == ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD:
-        logger.warning(
-            "route: GCP FLEX_START queue timeout for issue %d (instance stayed "
-            "PENDING past EPS_GCP_QUEUE_WAIT_SECONDS); failing over to RunPod "
-            "(residual gap: %s).",
-            spec.issue,
-            residual_gap,
-        )
-    else:
-        logger.warning(
-            "route: GCP ladder (and free lanes, if any) exhausted for issue %d; "
-            "falling back to RunPod (residual gap: %s).",
-            spec.issue,
-            residual_gap,
-        )
+    _log_runpod_rung_reason(reason=reason, spec=spec, residual_gap=residual_gap)
     runpod_spec = replace(
         spec,
         backend="runpod",
@@ -3799,13 +3839,14 @@ def _runpod_terminal_rung(
                     elapsed_seconds=now_fn() - started_at,
                 )
             )
-            _post_terminal_failure_marker(
-                spec=spec,
-                marker_poster=marker_poster,
-                reason=ROUTE_REASON_NO_COMPUTE,
-                chosen_kind="runpod",
-                attempts=attempts,
-            )
+            if post_failure_marker:
+                _post_terminal_failure_marker(
+                    spec=spec,
+                    marker_poster=marker_poster,
+                    reason=ROUTE_REASON_NO_COMPUTE,
+                    chosen_kind="runpod",
+                    attempts=attempts,
+                )
             raise NoComputeAvailableError(
                 "every GCP rung + free lane failed AND the RunPod terminal "
                 f"fallback also failed ({type(exc).__name__}: {exc})",
@@ -4765,6 +4806,156 @@ def _override_gcp_with_ladder(
 # ---------------------------------------------------------------------------
 
 
+def _auto_candidates(
+    *,
+    lane_order: tuple[BackendKind, ...],
+    free_backends: dict[BackendKind, ComputeBackend],
+    gcp_backend: ComputeBackend | None,
+    runpod_backend: ComputeBackend,
+    cpu_only: bool,
+    mila_socket_alive: Callable[[], bool] | None,
+) -> list[tuple[ComputeBackend, BackendKind]]:
+    """Build the auto chain's candidate list in lane order.
+
+    Skips unwired lanes, Mila-when-down, and (for CPU-only intents) the
+    free SLURM lanes. ``runpod`` (#2054) is a first-class auto lane and is
+    always wired — the ``route()`` signature requires ``runpod_backend`` —
+    and CPU-only intents keep it: RunPod CPU (deployCpuPod) IS the
+    documented CPU chain (#747/#2028). The stage-1 reconnect scan is a
+    no-op for runpod (the production ``reconnect_fn`` returns ``None`` for
+    it — pod_lifecycle's own flow is idempotent).
+    """
+    candidates: list[tuple[ComputeBackend, BackendKind]] = []
+    for kind in lane_order:
+        if kind == "runpod":
+            candidates.append((runpod_backend, "runpod"))
+            continue
+        if kind == "gcp":
+            if gcp_backend is not None:
+                candidates.append((gcp_backend, "gcp"))
+            continue
+        if cpu_only:
+            # Excluding the free lanes from ``candidates`` also removes them
+            # from the stage-1 reconnect scan — deliberately: a CPU-only
+            # intent can never have a live SLURM job to reconnect to (the lane
+            # has no 0-GPU sbatch render, so no prior route() could have
+            # submitted one there). Nothing is lost by not scanning (#1464).
+            continue
+        backend = free_backends.get(kind)
+        if backend is None:
+            continue
+        if kind == "mila" and (mila_socket_alive is None or not mila_socket_alive()):
+            continue
+        candidates.append((backend, kind))
+    return candidates
+
+
+def _attempt_runpod_lane(
+    *,
+    spec: RunSpec,
+    runpod_backend: ComputeBackend,
+    store: LeaseStore,
+    attempts: list[RouteAttempt],
+    started_at: float,
+    now_fn: Callable[[], float],
+    marker_poster: Callable[..., None] | None,
+    on_launched: Callable[[RunHandle], None] | None,
+    terminal: bool,
+    lane_order: tuple[BackendKind, ...],
+) -> RouteResult | None:
+    """RunPod as a first-class auto lane (user directive 2026-08-05, #2054).
+
+    The RunPod team account is the shared Anthropic-fellows/safety org pool
+    — provisioning there is ordinary use of a sponsored pool, not
+    discretionary spend — so the lane LEADS the default auto order instead
+    of being reachable only as the last-resort rung. This is a change of
+    PRECEDENCE, not capability: the launch itself is
+    :func:`_runpod_terminal_rung` (per-issue flock, lease write, intent
+    translation, CPU guards, marker), verbatim.
+
+    ``terminal`` (the lane is the LAST attempt group — e.g. a CPU-only
+    intent where the free SLURM lanes are excluded and no gcp rung is
+    wired) keeps the terminal-rung semantics byte-for-byte: typed terminals
+    raise (:class:`NoComputeAvailableError`, the #677 CPU terminals, the
+    exit-75 still-waiting contract). NON-terminal, a failure that
+    provisioned NOTHING is a lane miss: return ``None`` so the chain
+    advances to the remaining lanes (the end-of-chain terminal rung retries
+    RunPod once more after full exhaustion). Exceptions that must NEVER be
+    swallowed into a lane miss still propagate:
+
+    * :class:`~explore_persona_space.backends.runpod.RunPodWorkloadStartError`
+      (a ``RuntimeError``, not caught here) — a pod PROVISIONED and is
+      billing; launching a sibling lane beside it would double-provision.
+    * :class:`CpuExhaustedNoRunpodLaneError` (re-raised explicitly — it
+      subclasses :class:`NoComputeAvailableError`) — a structurally
+      RunPod-unservable CPU intent keeps its #677 fail-loud typed terminal.
+    """
+    if terminal:
+        return _runpod_terminal_rung(
+            spec=spec,
+            runpod_backend=runpod_backend,
+            store=store,
+            attempts=attempts,
+            started_at=started_at,
+            now_fn=now_fn,
+            marker_poster=marker_poster,
+            on_launched=on_launched,
+            residual_gap=(
+                "runpod-first auto lane (Anthropic-org pool, #2054) — sole/last "
+                "attempt group in the resolved order"
+            ),
+            reason=ROUTE_REASON_RUNPOD_FIRST,
+        )
+    from explore_persona_space.backends.runpod import EXIT_STILL_WAITING
+
+    try:
+        return _runpod_terminal_rung(
+            spec=spec,
+            runpod_backend=runpod_backend,
+            store=store,
+            attempts=attempts,
+            started_at=started_at,
+            now_fn=now_fn,
+            marker_poster=marker_poster,
+            on_launched=on_launched,
+            residual_gap=(
+                "runpod-first auto lane (Anthropic-org pool, #2054) — no cheaper "
+                "rung attempted before RunPod"
+            ),
+            reason=ROUTE_REASON_RUNPOD_FIRST,
+            post_failure_marker=False,
+        )
+    except subprocess.CalledProcessError as exc:
+        if exc.returncode != EXIT_STILL_WAITING:
+            raise
+        # Exit-75 still-waiting (#1603): the wait-for-capacity budget ran out
+        # with NOTHING provisioned and NOTHING billing — on the FIRST lane
+        # that is a plain capacity miss; continue down the free lanes (the
+        # end-of-chain terminal retry re-raises the exit-75 contract if the
+        # whole order exhausts).
+        logger.warning(
+            "route: runpod-first lane still WAITING for capacity on issue %d "
+            "(exit-%d); continuing down the auto chain (%s).",
+            spec.issue,
+            EXIT_STILL_WAITING,
+            " -> ".join(lane_order),
+        )
+        return None
+    except CpuExhaustedNoRunpodLaneError:
+        # Structurally unservable CPU intent (#677 fail-loud floor) — a lane
+        # further down can never fix it either; keep the typed terminal.
+        raise
+    except NoComputeAvailableError as exc:
+        logger.warning(
+            "route: runpod-first lane failed for issue %d (%s); continuing "
+            "down the auto chain (%s).",
+            spec.issue,
+            exc,
+            " -> ".join(lane_order),
+        )
+        return None
+
+
 def _auto_route(
     *,
     spec: RunSpec,
@@ -4789,18 +4980,22 @@ def _auto_route(
     on_launched: Callable[[RunHandle], None] | None,
     clock_fn: Callable[[], datetime] | None,
 ) -> RouteResult:
-    """No-``backend:`` auto route: walk ``lane_order`` (GCP-first default).
+    """No-``backend:`` auto route: walk ``lane_order`` (runpod-first default).
 
-    GCP is a first-class auto lane, not only an escalation target: at
-    its position in the order it walks the cost-ordered fallback ladder
+    RunPod is a first-class auto lane as of #2054 (user directive
+    2026-08-05: the RunPod team account is the shared Anthropic-org
+    sponsored pool — first resort, not last): at its position in the order
+    :func:`_attempt_runpod_lane` launches there, and a capacity miss with
+    nothing provisioned falls through to the remaining lanes. GCP is a
+    first-class auto lane too (rollback-only while #2028 holds): at its
+    position it walks the cost-ordered fallback ladder
     (:func:`_attempt_gcp_lane` → on-demand A100-80 → A100-40 → SPOT).
     Contiguous SLURM lanes keep the existing est-start ranking + park +
     cancel chain among themselves. When EVERY lane is exhausted, the chain
-    falls to the RunPod terminal rung (:func:`_runpod_terminal_rung`) — the
-    deliberate reversal of the no-auto-RunPod invariant (#656): RunPod is
-    reached ONLY here, after every cheaper GCP rung + free SLURM lane has
-    failed. Only if the RunPod launch ITSELF fails does the chain raise
-    :class:`NoComputeAvailableError` ("truly no compute anywhere").
+    falls to the RunPod terminal rung (:func:`_runpod_terminal_rung`) —
+    one final RunPod retry (#656 machinery, retained). Only if THAT launch
+    fails does the chain raise :class:`NoComputeAvailableError` ("truly no
+    compute anywhere").
     """
     del clock_fn  # reserved for a future "day boundary at posted-time" override
     # Build the candidate list in lane order (skipping unwired lanes +
@@ -4817,25 +5012,14 @@ def _auto_route(
             spec.intent,
             ", ".join(sorted(free_backends)),
         )
-    candidates: list[tuple[ComputeBackend, BackendKind]] = []
-    for kind in lane_order:
-        if kind == "gcp":
-            if gcp_backend is not None:
-                candidates.append((gcp_backend, "gcp"))
-            continue
-        if cpu_only:
-            # Excluding the free lanes from ``candidates`` also removes them
-            # from the stage-1 reconnect scan below — deliberately: a CPU-only
-            # intent can never have a live SLURM job to reconnect to (the lane
-            # has no 0-GPU sbatch render, so no prior route() could have
-            # submitted one there). Nothing is lost by not scanning (#1464).
-            continue
-        backend = free_backends.get(kind)
-        if backend is None:
-            continue
-        if kind == "mila" and (mila_socket_alive is None or not mila_socket_alive()):
-            continue
-        candidates.append((backend, kind))
+    candidates = _auto_candidates(
+        lane_order=lane_order,
+        free_backends=free_backends,
+        gcp_backend=gcp_backend,
+        runpod_backend=runpod_backend,
+        cpu_only=cpu_only,
+        mila_socket_alive=mila_socket_alive,
+    )
 
     # Stage 1: reconnect scan over every wired lane, in lane order.
     reconnect_result = _try_auto_reconnect(
@@ -4860,6 +5044,22 @@ def _auto_route(
     groups = _split_lane_groups([kind for _backend, kind in candidates])
     for group_idx, group in enumerate(groups):
         terminal = group_idx == len(groups) - 1
+        if group == ("runpod",):
+            runpod_result = _attempt_runpod_lane(
+                spec=spec,
+                runpod_backend=runpod_backend,
+                store=store,
+                attempts=attempts,
+                started_at=started_at,
+                now_fn=now_fn,
+                marker_poster=marker_poster,
+                on_launched=on_launched,
+                terminal=terminal,
+                lane_order=lane_order,
+            )
+            if runpod_result is not None:
+                return runpod_result
+            continue
         if group == ("gcp",):
             try:
                 gcp_result = _attempt_gcp_lane(
@@ -4919,17 +5119,18 @@ def _auto_route(
         if free_result is not None:
             return free_result
 
-    # Terminal: every cheaper auto lane (GCP ladder + free SLURM lanes)
-    # failed or was unwired / unavailable. Fall to the RunPod terminal rung
-    # (#656, the reversed no-auto-RunPod invariant): RunPod is reached ONLY
-    # here, after the cost-ordered GCP ladder AND the free lanes are all
-    # exhausted. The residual gap names the exhausted lanes loudly in the
-    # marker. Only if the RunPod launch ITSELF fails does this raise the
-    # typed NoComputeAvailableError ("truly no compute anywhere").
+    # Terminal: every auto lane in the order (the runpod-first lane when
+    # present, the rollback-only GCP ladder, the free SLURM lanes) failed or
+    # was unwired / unavailable. Fall to the RunPod terminal rung (#656
+    # machinery, retained under #2054 as the end-of-chain RETRY — a lane
+    # miss at position 1 may have freed up during the SLURM parks). The
+    # residual gap names the exhausted lanes loudly in the marker. Only if
+    # THIS RunPod launch fails does the chain raise the typed
+    # NoComputeAvailableError ("truly no compute anywhere").
     wired = [kind for _b, kind in candidates]
     residual_gap = (
         f"auto chain exhausted (order: {' -> '.join(lane_order)}; wired: "
-        f"{wired or 'none'}) — GCP ladder + free SLURM lanes all failed"
+        f"{wired or 'none'}) — every auto lane failed; terminal RunPod retry"
     )
     return _runpod_terminal_rung(
         spec=spec,
@@ -6710,6 +6911,7 @@ __all__ = [
     "ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY",
     "ROUTE_REASON_RECONNECT",
     "ROUTE_REASON_RUNPOD_FALLBACK",
+    "ROUTE_REASON_RUNPOD_FIRST",
     "ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION",
     "ROUTE_REASON_WORKLOAD_FAILURE",
     "RUNPOD_CPU_INSTANCE_CAPS",

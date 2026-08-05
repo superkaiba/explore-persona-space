@@ -1088,19 +1088,15 @@ def create_pod_with_wait_for_capacity(
     transport-budget-exhausted, empty gpu list) fail fast per CLAUDE.md.
 
     ``preflight_check`` runs at the TOP of each loop attempt (before
-    ``create_pod``) when supplied. It is the local-side analog of the
-    live API guard: typically a bound call to
-    :func:`_assert_under_account_hourly_cap` with
-    ``transient_on_exceed=True``, which raises
-    :class:`RunPodInsufficientBalanceError` if the projected account $/hr
-    would exceed the cap. Catching it inside the loop means freed $/hr
-    headroom from a sibling pod is detected at the next tick and the
-    provision proceeds without operator intervention — closing the gap
-    where the pre-call SystemExit guard would hard-exit a wait-mode run
-    to ``blocked`` BEFORE the wait loop ever started (the #506
-    first-block at 03:43Z 2026-06-08). When the parameter is ``None``
-    (default) no preflight runs, preserving the legacy behavior for any
-    caller that doesn't pass it.
+    ``create_pod``) when supplied. Since #2054 the standard preflight —
+    :func:`_assert_under_account_hourly_cap` — is ADVISORY-ONLY and never
+    raises (the local $/hr mirror can no longer refuse or stall a
+    provision); the local-cap retry branch below is RETAINED for any
+    future preflight that raises
+    :class:`RunPodInsufficientBalanceError` (the #506 wait-not-block
+    contract). When the parameter is ``None`` (default) no preflight
+    runs, preserving the legacy behavior for any caller that doesn't
+    pass it.
 
     Loops with exponential-jittered backoff (base 30s, cap 10 min) until
     capacity / $/hr headroom is available or the per-process wall-clock
@@ -1244,18 +1240,14 @@ def _resume_with_balance_wait_if_autonomous(
     explicitly (stop a sibling pod, raise the console cap, etc.).
 
     ``preflight_check`` runs at the TOP of each loop attempt (before
-    ``resume_pod``) when supplied. It is the local analog of the
-    INSUFFICIENT_BALANCE handler below: typically a bound call to
-    :func:`_assert_under_account_hourly_cap` with
-    ``transient_on_exceed=True``, which raises
-    :class:`RunPodInsufficientBalanceError` when the projected account
-    $/hr would exceed the cap. The handler then either fails loud
-    (interactive mode — the local-pre-flight failed BEFORE the resume
-    call would have, so we still want a clear actionable message) or
-    waits + retries (autonomous mode, closing the resume-path analog of
-    the #506 first-block gap). When the parameter is ``None`` (default)
-    no preflight runs, preserving the legacy behavior for any caller
-    that doesn't pass it.
+    ``resume_pod``) when supplied. Since #2054 the standard preflight —
+    :func:`_assert_under_account_hourly_cap` — is ADVISORY-ONLY and never
+    raises (the local $/hr mirror can no longer refuse or stall a
+    resume); the local-cap handler below is RETAINED for any future
+    preflight that raises :class:`RunPodInsufficientBalanceError`, and
+    the LIVE API-side INSUFFICIENT_BALANCE handling is unchanged. When
+    the parameter is ``None`` (default) no preflight runs, preserving
+    the legacy behavior for any caller that doesn't pass it.
 
     ``force_wait=True`` enables the same retry-wait OUTSIDE autonomous
     mode. It backs the interactive ``pod.py resume --wait-for-capacity``
@@ -1621,19 +1613,21 @@ def _live_ssh_endpoint(issue: int) -> tuple[str | None, int | None]:
 # RunPod enforces a per-account hourly spending limit set in the console (the
 # "$80/hr cap"). When the projected sum-of-running-pod hourly rates exceeds
 # that cap, RunPod refuses the next ``podFindAndDeployOnDemand`` /
-# ``podResume`` with ``INSUFFICIENT_BALANCE: Renting this pod would put you
-# over your current spending limit ($X/hr)`` — AFTER the user has already
-# initiated the run. We mirror the cap locally so the guard fails LOUD
-# pre-flight with the projected total instead of mid-run (incidents #503,
-# #505 on 2026-06-05). Default 80.0 USD/hr; override via env to match
-# whatever the console cap is set to.
+# ``podResume`` with ``INSUFFICIENT_BALANCE``. We keep a local mirror of that
+# cap ONLY as the reference point for the ADVISORY burn report below.
 #
-# The original single-tenant premise drifted (#1600): the team account is now
-# shared with the Anthropic-fellows cluster fleet, whose unmanaged pods alone
-# exceed any sane local cap, so the guard's burn sum is scoped to MANAGED
-# pods by default (see ``_burn_scope`` below). The guard's purpose is bounding
-# OUR spend (#503/#505/#506), not gating on pods we neither created nor can
-# stop.
+# History: the mirror was originally a hard pre-flight guard (#503/#505 on
+# 2026-06-05), then scoped to MANAGED pods after the team account became the
+# shared Anthropic-fellows fleet account (#1600 — unmanaged pods alone exceed
+# any sane local cap; 13/13 wait refusals on #779). #2054 (user directive
+# 2026-08-05) removed the guard's blocking behavior entirely: the account is
+# a sponsored Anthropic-org pool whose console-side cap is the enforcement
+# point, RunPod is now the FIRST-resort router lane, and a local dollar cap
+# that can refuse or stall a provision sat in tension with the standing
+# no-dollar-budget-caps invariant (tests/test_no_dollar_budget_caps.py: log
+# cost telemetry; enforce spend at the account level, never abort work on
+# projected dollars). Default 80.0 USD/hr; override via env to match
+# whatever the console cap is set to.
 _DEFAULT_ACCOUNT_HOURLY_CAP_USD = 80.0
 
 
@@ -1700,135 +1694,108 @@ def _assert_under_account_hourly_cap(
     skip_for_same_pod: str | None = None,
     transient_on_exceed: bool = False,
 ) -> None:
-    """Refuse to provision/resume when the projected account $/hr would exceed
-    the RunPod console cap. Fails LOUD pre-flight with the current burn, the
-    new pod's estimated rate, the projected total, and the cap.
+    """ADVISORY-ONLY $/hr burn report — NEVER refuses or stalls (#2054).
 
-    Parameters
-    ----------
-    verb : ``"provision"`` or ``"resume"`` — only used in the error message.
-    pod_label : human-friendly id for the pod we're about to start (e.g.
-        ``"pod-137"``); only used in the error message.
-    intended_gpu_type : short GPU name (``"H100"``) or full GraphQL id; passed
-        to :func:`runpod_api.estimate_pod_hourly_rate`.
-    intended_gpu_count : how many GPUs the new pod will use.
-    skip_for_same_pod : when ``resume`` re-queries the API the stopped pod
-        already shows ``RUNNING=False``, but if there's a sibling RUNNING pod
-        with the SAME name from a duplicate-provision race, we'd double-count.
-        Pass the pod name to exclude from the current-burn sum (defensive —
-        the resume path is the one that triggered #503).
-    transient_on_exceed : when False (default) an over-cap projection raises
-        :class:`SystemExit` with the actionable human-readable message — the
-        original interactive / one-shot contract from #503/#505. When True
-        an over-cap projection instead raises
-        :class:`RunPodInsufficientBalanceError`, so a calling retry loop
-        (``create_pod_with_wait_for_capacity`` /
-        ``_resume_with_balance_wait_if_autonomous``) can treat the local
-        guard the same way it treats the live RunPod-side INSUFFICIENT_BALANCE
-        refusal: transient + no-cost-while-idle, retry-with-backoff until a
-        sibling pod frees $/hr headroom. The local guard runs an estimate
-        against the same cap RunPod itself enforces, so the right behavior in
-        an autonomous wait loop is identical (incident #506 first block at
-        03:43Z 2026-06-08: the local guard hard-exited to ``blocked`` before
-        the API-side fix from #506 could even fire). Default OFF preserves
-        the byte-identical SystemExit behavior for every pre-existing caller.
+    Historically a hard pre-flight guard mirroring the RunPod console
+    spending cap (SystemExit interactive; transient
+    ``RunPodInsufficientBalanceError`` in the wait loops — #503/#505/#506,
+    managed-scope filter #1600). User directive 2026-08-05 (#2054) removed
+    the blocking behavior: the RunPod team account is the shared
+    Anthropic-fellows/safety org pool — a sponsored pool whose console-side
+    cap is the enforcement point — and RunPod is now the FIRST-resort lane
+    on the auto router, so a local dollar-cap mirror must never refuse or
+    stall a provision/resume. The blocking form also sat in tension with
+    the standing no-dollar-budget-caps invariant
+    (``tests/test_no_dollar_budget_caps.py``: log cost telemetry; enforce
+    spend at the account level, never abort work on projected dollars).
 
-    Scope (#1600): the burn sum this guard gates on is controlled by
-    ``EPM_RUNPOD_BURN_SCOPE`` (default ``managed`` — only the ``pod-*`` /
-    ``epm-issue-*`` pods our project manages; ``all`` restores the
-    account-wide sum). The team account is shared with the fellows cluster
-    fleet, whose burn must not gate our provisions. Under managed scope a
-    once-per-process stderr WARN fires when the excluded unmanaged burn
-    alone exceeds the cap, and every over-cap SystemExit message carries an
-    excluded-unmanaged summary line (count, $/hr, account-wide total) so
-    the full account picture stays visible.
+    What remains is telemetry: the projected burn (managed scope by
+    default, ``EPM_RUNPOD_BURN_SCOPE=all`` for account-wide), the
+    once-per-process WARN when unmanaged burn alone exceeds the local
+    mirror, and a clearly-labelled ADVISORY stderr note when the projection
+    exceeds the mirror (``RUNPOD_ACCOUNT_HOURLY_CAP``, default 80.0). The
+    function ALWAYS returns ``None``. A burn-read failure (API unreachable)
+    is logged as an advisory skip and never propagates — the actual
+    provision/resume call moments later fails loud on a genuinely dead API,
+    so nothing is silently swallowed.
 
-    Per the "Fail fast — never hide failures" rule: if
-    :func:`current_account_hourly_burn` raises (API unreachable), the
-    exception propagates. We CANNOT make the decision without the live state,
-    so we refuse the operation rather than silently letting RunPod surface it
-    mid-run.
+    The keyword surface is retained so call sites stay byte-compatible:
+    ``skip_for_same_pod`` still shapes the reported sum (duplicate-provision
+    race defense, #503); ``transient_on_exceed`` is accepted and IGNORED
+    (nothing raises anymore). A LIVE RunPod-side ``INSUFFICIENT_BALANCE``
+    refusal (the console cap) is UNCHANGED —
+    ``create_pod_with_wait_for_capacity`` /
+    ``_resume_with_balance_wait_if_autonomous`` still catch and retry it.
     """
     global _unmanaged_burn_warned
-    cap = _account_hourly_cap_usd()
-    intended_rate = estimate_pod_hourly_rate(intended_gpu_type, intended_gpu_count)
-    account_total, account_breakdown = current_account_hourly_burn()
-    # Read the scope AFTER the API call: list_team_pods() lazily loads .env
-    # (runpod_api._load_dotenv, non-overriding), so an .env-only
-    # EPM_RUNPOD_BURN_SCOPE is visible here even in a fresh process.
-    scope = _burn_scope()
-    if scope == "managed":
-        breakdown = [(n, r) for n, r in account_breakdown if _is_managed_pod_name(n)]
-        unmanaged = [(n, r) for n, r in account_breakdown if not _is_managed_pod_name(n)]
-        unmanaged_total = sum(r for _, r in unmanaged)
-        current_total = sum(r for _, r in breakdown)
-        if unmanaged_total > cap and not _unmanaged_burn_warned:
-            _unmanaged_burn_warned = True
-            print(
-                f"[pod_lifecycle] WARN: ${unmanaged_total:.2f}/hr of RUNNING burn on the "
-                f"shared team account is {len(unmanaged)} UNMANAGED pod(s) (not ours; "
-                f"excluded from the $/hr-cap guard — EPM_RUNPOD_BURN_SCOPE=all to "
-                f"include). Managed burn: ${current_total:.2f}/hr.",
-                file=sys.stderr,
-            )
-    else:
-        breakdown = account_breakdown
-        unmanaged = []
-        unmanaged_total = 0.0
-        current_total = account_total
-    if skip_for_same_pod:
-        # Subtract any RUNNING pod sharing the resumed pod's name (defensive
-        # vs duplicate-provision races; in the normal resume path the stopped
-        # pod isn't in `breakdown` at all because it's EXITED). Resumed pods
-        # are managed-named by construction, so they survive the managed-
-        # scope filter above and the subtraction works under both scopes.
-        for name, rate in breakdown:
-            if name == skip_for_same_pod:
-                current_total -= rate
-    projected = current_total + intended_rate
-    if projected <= cap:
-        return
-    if transient_on_exceed:
-        # Wait-mode caller (autonomous /issue / explicit --wait-for-capacity):
-        # raise the same exception class the wait loop already catches from
-        # the live API, so the loop re-checks at each backoff tick and proceeds
-        # the moment a sibling pod frees $/hr headroom. The message is short
-        # — the verbose actionable form is only useful at an interactive
-        # terminal, and the loop heartbeat already prints attempt/elapsed.
-        raise RunPodInsufficientBalanceError(
-            f"local pre-flight: projected ${projected:.2f}/hr (current "
-            f"${current_total:.2f} [{scope} scope] + this pod "
-            f"${intended_rate:.2f}) exceeds cap ${cap:.2f}/hr"
+    del transient_on_exceed  # retained for call-site compatibility; nothing raises (#2054)
+    try:
+        cap = _account_hourly_cap_usd()
+        intended_rate = estimate_pod_hourly_rate(intended_gpu_type, intended_gpu_count)
+        account_total, account_breakdown = current_account_hourly_burn()
+        # Read the scope AFTER the API call: list_team_pods() lazily loads
+        # .env (runpod_api._load_dotenv, non-overriding), so an .env-only
+        # EPM_RUNPOD_BURN_SCOPE is visible here even in a fresh process.
+        scope = _burn_scope()
+        if scope == "managed":
+            breakdown = [(n, r) for n, r in account_breakdown if _is_managed_pod_name(n)]
+            unmanaged = [(n, r) for n, r in account_breakdown if not _is_managed_pod_name(n)]
+            unmanaged_total = sum(r for _, r in unmanaged)
+            current_total = sum(r for _, r in breakdown)
+            if unmanaged_total > cap and not _unmanaged_burn_warned:
+                _unmanaged_burn_warned = True
+                print(
+                    f"[pod_lifecycle] WARN: ${unmanaged_total:.2f}/hr of RUNNING burn on the "
+                    f"shared team account is {len(unmanaged)} UNMANAGED pod(s) (not ours; "
+                    f"excluded from the $/hr burn report — EPM_RUNPOD_BURN_SCOPE=all to "
+                    f"include). Managed burn: ${current_total:.2f}/hr.",
+                    file=sys.stderr,
+                )
+        else:
+            breakdown = account_breakdown
+            unmanaged = []
+            unmanaged_total = 0.0
+            current_total = account_total
+        if skip_for_same_pod:
+            # Subtract any RUNNING pod sharing the resumed pod's name
+            # (defensive vs duplicate-provision races; in the normal resume
+            # path the stopped pod isn't in `breakdown` at all because it's
+            # EXITED). Resumed pods are managed-named by construction, so
+            # they survive the managed-scope filter above and the
+            # subtraction works under both scopes.
+            for name, rate in breakdown:
+                if name == skip_for_same_pod:
+                    current_total -= rate
+        projected = current_total + intended_rate
+        if projected <= cap:
+            return None
+        unmanaged_note = (
+            f" (excluded: {len(unmanaged)} unmanaged team pod(s), "
+            f"${unmanaged_total:.2f}/hr — account-wide total ${account_total:.2f}/hr)"
+            if unmanaged
+            else ""
         )
-    breakdown_lines = (
-        "\n".join(f"    {name:<30} ${rate:6.2f}/hr" for name, rate in breakdown[:10])
-        or "    (no other RUNNING pods in scope)"
-    )
-    omitted = max(0, len(breakdown) - 10)
-    if omitted:
-        breakdown_lines += f"\n    ... and {omitted} more"
-    if unmanaged:
-        breakdown_lines += (
-            f"\n    (excluded: {len(unmanaged)} unmanaged team pod(s), "
-            f"${unmanaged_total:.2f}/hr — account-wide total ${account_total:.2f}/hr; "
-            f"EPM_RUNPOD_BURN_SCOPE=all to include)"
+        print(
+            f"[pod_lifecycle] ADVISORY (informational only — never blocks, #2054): "
+            f"{verb} {pod_label} projects ${projected:.2f}/hr — current "
+            f"${current_total:.2f}/hr [{scope} scope] + this pod ${intended_rate:.2f}/hr "
+            f"({intended_gpu_count}x {_short_gpu_label(intended_gpu_type)}) — over the "
+            f"local mirror ${cap:.2f}/hr (RUNPOD_ACCOUNT_HOURLY_CAP){unmanaged_note}. "
+            f"Proceeding: the RunPod console cap is the enforcement point; a live "
+            f"INSUFFICIENT_BALANCE refusal is retried by the wait loops.",
+            file=sys.stderr,
         )
-    raise SystemExit(
-        f"\nRefusing to {verb} {pod_label}: would exceed the RunPod account "
-        f"hourly spending cap.\n"
-        f"  Current burn   : ${current_total:6.2f}/hr (RUNNING pods, {scope} scope)\n"
-        f"  This pod adds  : ${intended_rate:6.2f}/hr "
-        f"({intended_gpu_count}x {_short_gpu_label(intended_gpu_type)})\n"
-        f"  Projected total: ${projected:6.2f}/hr\n"
-        f"  Account cap    : ${cap:6.2f}/hr "
-        f"(local mirror; override with RUNPOD_ACCOUNT_HOURLY_CAP)\n"
-        f"  Current RUNNING pods:\n{breakdown_lines}\n"
-        f"\nOptions: stop or terminate other pods to free capacity, raise the "
-        f"console cap (and `export RUNPOD_ACCOUNT_HOURLY_CAP=<new>`), "
-        f"tune per-GPU rate estimates via RUNPOD_RATE_<GPU>_USD if they "
-        f"over-estimate your actual pricing, or re-run the {verb} with "
-        f"`--wait-for-capacity` to retry with backoff until headroom frees.\n"
-    )
+    except Exception as exc:
+        # Advisory-only telemetry must never block the operation (#2054); the
+        # skip is logged loudly, and the provision/resume call immediately
+        # after this report hits the same API and fails loud if it is
+        # genuinely down — nothing is silently swallowed.
+        print(
+            f"[pod_lifecycle] ADVISORY: $/hr burn report unavailable "
+            f"({type(exc).__name__}: {exc}); proceeding with {verb} {pod_label}.",
+            file=sys.stderr,
+        )
+    return None
 
 
 def _short_gpu_label(gpu_type_id: str | None) -> str:
@@ -2323,14 +2290,9 @@ def cmd_provision(args: argparse.Namespace) -> None:
                 "(unbounded retry on SUPPLY_CONSTRAINT)."
             )
 
-        # Local account-hourly-spend guard is routed THROUGH the wait loop in
-        # wait mode (transient_on_exceed=True → RunPodInsufficientBalanceError).
-        # The wait loop re-checks it at each backoff tick, so freed $/hr
-        # headroom from a sibling pod is detected without operator
-        # intervention. The unconditional SystemExit pre-call from the
-        # interactive path is deliberately ABSENT here: incident #506 first
-        # block at 03:43Z 2026-06-08 was that pre-call hard-exiting the
-        # autonomous run to ``blocked`` BEFORE the wait loop ever started.
+        # Advisory-only burn report routed through the wait loop (since #2054
+        # it never raises — the console cap is the enforcement point; the
+        # loop still catches a LIVE API-side INSUFFICIENT_BALANCE refusal).
         def _wait_mode_preflight() -> None:
             _assert_under_account_hourly_cap(
                 verb="provision",
@@ -2352,9 +2314,8 @@ def cmd_provision(args: argparse.Namespace) -> None:
         except WaitForCapacityStillWaiting as exc:
             _emit_still_waiting_and_exit(exc)
     else:
-        # Interactive / one-shot: keep the unconditional pre-flight SystemExit
-        # contract from #503/#505 — humans expect an immediate, actionable
-        # refusal at the terminal rather than a silent wait loop.
+        # Interactive / one-shot: advisory burn report only (since #2054 the
+        # local mirror never refuses — the RunPod console cap enforces).
         _assert_under_account_hourly_cap(
             verb="provision",
             pod_label=name,
