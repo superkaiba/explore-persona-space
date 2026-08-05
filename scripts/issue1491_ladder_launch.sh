@@ -60,6 +60,10 @@
 #            ci join asserts the gen wave's shard arithmetic verbatim.
 #
 # Pod-side: NO VM thread-cap prefix (dedicated GPUs keep full width).
+#
+# GPU width + the per-shard CUDA_VISIBLE_DEVICES values come from the SLURM
+# allocation env on the fellows lane (SLURM_JOB_ID set) and from nvidia-smi
+# enumeration elsewhere — see "GPU discovery" below (#1902 shared-node gotcha).
 
 set -euo pipefail
 
@@ -165,14 +169,70 @@ else
 fi
 
 # ---- GPU discovery + shard arithmetic --------------------------------------
+#
+# Width + PHYSICAL device ids. On a SLURM job (SLURM_JOB_ID set — the fellows
+# H200 lane) the node is GPU-SHARED with other tenants and `nvidia-smi -L`
+# ALWAYS enumerates all 8 physical devices (it ignores CUDA_VISIBLE_DEVICES),
+# so a detected-count fan-out over-shards onto other tenants' GPUs (#1902
+# crash 1; gotchas.md "Fellows SLURM nodes are GPU-SHARED"). On SLURM, width +
+# ids therefore come from the allocation env via the landed #1902 reference
+# implementation scripts/issue1902_common.py::realized_gpu_ids (REUSED, not
+# reimplemented — same shell-out shape as scripts/issue1902_dispatch.sh):
+# CUDA_VISIBLE_DEVICES (slurm-set) > SLURM_JOB_GPUS / SLURM_STEP_GPUS >
+# SLURM_GPUS_ON_NODE (count only; ids assumed 0..N-1), clamped to
+# SLURM_GPUS_ON_NODE (`-clamped` source suffix), FAIL LOUD when a SLURM job
+# exposes none of the three — never the physical nvidia-smi count. Non-SLURM
+# lanes (RunPod / GCE exclusive hosts) keep the nvidia-smi enumeration +
+# fallback-8 unchanged (ids 0..N-1, exactly the prior behavior). An explicit
+# --gpus-per-pod always wins on WIDTH; on SLURM its ids are still drawn from
+# the allocation (first K, `-override` source suffix) and it FAILS LOUD when
+# it exceeds the allocation — never 0..K-1 blindly.
 
-if [ -z "$GPUS_PER_POD" ]; then
-  if command -v nvidia-smi >/dev/null 2>&1; then
-    GPUS_PER_POD="$(nvidia-smi -L 2>/dev/null | wc -l | tr -d ' ')"
+GPU_SOURCE=""
+GPU_IDS=()
+if [ -n "${SLURM_JOB_ID:-}" ]; then
+  GPU_LINE="$(uv run python -c '
+import os, sys
+sys.path.insert(0, "scripts")
+import issue1902_common as C
+src, ids = C.realized_gpu_ids(os.environ, 0)
+assert src != "detected", "launcher bug: SLURM branch entered without SLURM_JOB_ID"
+print(src + "|" + ",".join(ids))
+')" || {
+    echo "FATAL: SLURM GPU derivation failed (SLURM_JOB_ID=${SLURM_JOB_ID} set but realized_gpu_ids refused — traceback above); refusing the nvidia-smi physical count on a shared node (#1902)" >&2
+    exit 2
+  }
+  GPU_SOURCE="${GPU_LINE%%|*}"
+  IFS=',' read -r -a GPU_IDS <<< "${GPU_LINE##*|}"
+  if [ "${#GPU_IDS[@]}" -lt 1 ]; then
+    echo "FATAL: empty GPU id list from the SLURM allocation derivation (line: '$GPU_LINE')" >&2
+    exit 2
   fi
-  # if [ empty or 0 ] fall back to 8 (the default 8-GPU pod shape)
-  if ! [ "${GPUS_PER_POD:-0}" -ge 1 ] 2>/dev/null; then GPUS_PER_POD=8; fi
+  if [ -n "$GPUS_PER_POD" ]; then
+    if ! [ "$GPUS_PER_POD" -ge 1 ] 2>/dev/null || [ "$GPUS_PER_POD" -gt "${#GPU_IDS[@]}" ]; then
+      echo "FATAL: --gpus-per-pod $GPUS_PER_POD invalid or exceeds the SLURM allocation (${#GPU_IDS[@]} GPUs: ${GPU_IDS[*]}) — refusing to fan out onto other tenants' devices" >&2
+      exit 2
+    fi
+    GPU_IDS=("${GPU_IDS[@]:0:GPUS_PER_POD}")
+    GPU_SOURCE="${GPU_SOURCE}-override"
+  fi
+  GPUS_PER_POD="${#GPU_IDS[@]}"
+else
+  if [ -z "$GPUS_PER_POD" ]; then
+    if command -v nvidia-smi >/dev/null 2>&1; then
+      GPUS_PER_POD="$(nvidia-smi -L 2>/dev/null | wc -l | tr -d ' ')"
+    fi
+    # if [ empty or 0 ] fall back to 8 (the default 8-GPU pod shape)
+    if ! [ "${GPUS_PER_POD:-0}" -ge 1 ] 2>/dev/null; then GPUS_PER_POD=8; fi
+    GPU_SOURCE="detected"
+  else
+    GPU_SOURCE="override"
+  fi
+  for i in $(seq 0 $((GPUS_PER_POD - 1))); do GPU_IDS+=("$i"); done
 fi
+# The derivation-source token below is the fix-engaged signal for the #1902
+# shared-node class: on the fellows lane it must read slurm-*, never detected.
+echo "[gpu-derivation] source=$GPU_SOURCE gpus_per_pod=$GPUS_PER_POD ids=$(IFS=','; echo "${GPU_IDS[*]}")"
 if ! [ "$NUM_SHARDS" -ge 1 ] 2>/dev/null || ! [ "$SHARD_OFFSET" -ge 0 ] 2>/dev/null; then
   echo "FATAL: bad --num-shards ($NUM_SHARDS) / --shard-offset ($SHARD_OFFSET)" >&2
   exit 2
@@ -249,6 +309,9 @@ for split_name in "${SPLITS_TO_RUN[@]}"; do
   WAVE_IDX=()
   for g in $(seq 0 $((GPUS_PER_POD - 1))); do
     gidx=$((SHARD_OFFSET + g))
+    # CVD pin = the PHYSICAL device id from the derivation above (== g on
+    # non-SLURM lanes); shard arithmetic stays on the LOCAL index g.
+    dev="${GPU_IDS[$g]}"
     log="$LOG_DIR/issue-1491-${SCALE_SLUG}-${split_name}-shard${gidx}.log"
     pidf="$LOG_DIR/issue-1491-${SCALE_SLUG}-${split_name}-shard${gidx}.pid"
     cmd=(
@@ -273,8 +336,8 @@ for split_name in "${SPLITS_TO_RUN[@]}"; do
     cmd_q=$(printf '%q ' "${cmd[@]}")
 
     if [ "$DRY_RUN" -eq 1 ]; then
-      echo "  shard $gidx -> GPU $g | log=$log pid=$pidf"
-      echo "    CUDA_VISIBLE_DEVICES=$g setsid nohup $cmd_q> $log 2>&1 < /dev/null &"
+      echo "  shard $gidx -> GPU $dev | log=$log pid=$pidf"
+      echo "    CUDA_VISIBLE_DEVICES=$dev setsid nohup $cmd_q> $log 2>&1 < /dev/null &"
       continue
     fi
 
@@ -282,9 +345,9 @@ for split_name in "${SPLITS_TO_RUN[@]}"; do
     # workload pid via bash -c so the pidfile names the child, not the
     # launcher subshell (parent parity). The log path rides as a positional
     # param (not interpolated) so a space in $LOG_DIR cannot split it.
-    PID=$(CUDA_VISIBLE_DEVICES=$g bash -c "setsid nohup $cmd_q> \"\$1\" 2>&1 < /dev/null & echo \$!" _ "$log")
+    PID=$(CUDA_VISIBLE_DEVICES=$dev bash -c "setsid nohup $cmd_q> \"\$1\" 2>&1 < /dev/null & echo \$!" _ "$log")
     echo "$PID" > "$pidf"
-    echo "[launch] scale=$SCALE_SLUG split=$split_name shard=$gidx -> GPU $g pid=$PID log=$log"
+    echo "[launch] scale=$SCALE_SLUG split=$split_name shard=$gidx -> GPU $dev pid=$PID log=$log"
     WAVE_PIDS+=("$PID")
     WAVE_LOGS+=("$log")
     WAVE_IDX+=("$gidx")
