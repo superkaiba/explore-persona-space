@@ -8340,8 +8340,8 @@
     "2078": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2078",
-      "status": "proposed",
+      "path": "tasks/archived/2078",
+      "status": "archived",
       "title": "workflow-fix: register eval_results/issue_1481 sparse cone (Step 9c collection abort)"
     },
     "208": {

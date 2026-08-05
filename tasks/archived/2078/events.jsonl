@@ -1,0 +1,2 @@
+{"ts": "2026-08-05T04:29:18Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-05T04:29:30Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "Duplicate of open #2022 (same target tests/sparse_cones.txt, same bug: eval_results/issue_1481 cone unregistered). Caught by file_infra_task's open-sibling advisory; the exact-(target_file,fingerprint) dedup missed it because the fingerprints differ in wording. No session was spawned (Happy daemon unreachable), so nothing to stop."}
