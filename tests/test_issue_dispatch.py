@@ -621,6 +621,37 @@ def test_classify_terminal_cpu_exhausted_emits_distinct_reason() -> None:
     assert "detail: CPU intent 'cpu-bigmem'" in t.note
 
 
+def test_classify_stopped_pod_collision() -> None:
+    """#1997 (b6): RunPodStoppedPodCollisionError maps to infra/blocked with
+    the DISTINCT reason runpod_stopped_pod_collision (NOT no_compute_available)
+    — the token is NOT in the watcher's TRANSIENT_CAPACITY_REASONS, so the
+    capacity-retry pass never hot-retries a structural refusal only a human
+    can clear (resume / approved terminate / --name-suffix)."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION,
+        RunPodStoppedPodCollisionError,
+    )
+    from scripts.autonomous_session_watch import TRANSIENT_CAPACITY_REASONS
+
+    exc = RunPodStoppedPodCollisionError(
+        "RunPod terminal rung refused: a STOPPED pod-137 already exists",
+        attempts=[{"kind": "runpod", "outcome": "runpod_stopped_pod_collision"}],
+    )
+    t = classify_terminal_exception(exc)
+    assert t.failure_class == "infra"
+    assert t.status == "blocked"
+    assert f"reason: {ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION}" in t.note
+    assert "reason: no_compute_available" not in t.note
+    assert "detail: RunPod terminal rung refused" in t.note
+    # The recovery paths for the human who must clear the refusal.
+    assert "pod.py resume" in t.note
+    assert "--yes --approve" in t.note
+    assert "--name-suffix" in t.note
+    # The route-attempt trail survives into the note (epm:failure evidence).
+    assert "runpod_stopped_pod_collision" in t.note
+    assert ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION not in TRANSIENT_CAPACITY_REASONS
+
+
 def test_classify_terminal_generic_no_compute_still_no_compute() -> None:
     """#677 control: the subclass branch did NOT shadow the generic branch —
     a plain NoComputeAvailableError still maps to reason: no_compute_available."""

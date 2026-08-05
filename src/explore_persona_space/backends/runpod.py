@@ -123,6 +123,21 @@ _POD_LIFECYCLE_TAIL_MAX_LINE_CHARS = 400
 #: tests/test_dispatch_issue_cli.py::test_exit_still_waiting_matches_pod_lifecycle.
 EXIT_STILL_WAITING = 75
 
+#: pod_lifecycle.py's stopped-pod same-name collision refusal (#1997): a
+#: same-named STOPPED (EXITED) pod exists and the provision REFUSED to mint a
+#: duplicate-named pod (whose name-keyed pods.conf / pods_ephemeral.json rows
+#: would hijack the stopped pod's — the #1739 4-duplicate incident). NOTHING
+#: was provisioned, NOTHING bills; recovery is a HUMAN action (resume /
+#: approved terminate / --name-suffix / --allow-stopped-duplicate), so the
+#: router terminal rung raises the typed, NON-watcher-re-drivable
+#: ``RunPodStoppedPodCollisionError`` on this code instead of the re-drivable
+#: ``no_compute_available`` terminal. Mirrored (not imported) from
+#: ``scripts/pod_lifecycle.py::EXIT_STOPPED_POD_COLLISION`` — this module's
+#: imports stay ``base``-only by documented convention (see EXIT_STILL_WAITING
+#: above). Parity pinned by
+#: tests/test_dispatch_issue_cli.py::test_exit_stopped_pod_collision_matches_pod_lifecycle.
+EXIT_STOPPED_POD_COLLISION = 76
+
 
 class PodLifecycleProcessError(subprocess.CalledProcessError):
     """``CalledProcessError`` whose ``str()`` carries the child's stderr tail.

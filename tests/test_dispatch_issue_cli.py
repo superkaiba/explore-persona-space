@@ -927,6 +927,23 @@ def test_exit_still_waiting_matches_pod_lifecycle() -> None:
     assert cli_code == pl_code == runpod_code == 75
 
 
+def test_exit_stopped_pod_collision_matches_pod_lifecycle() -> None:
+    """#1997: ``backends/runpod.py`` mirrors (never imports)
+    ``pod_lifecycle.EXIT_STOPPED_POD_COLLISION`` — pin the two equal (and
+    distinct from the exit-75 still-waiting code) so a renumbering on either
+    side fails loudly here, mirroring the exit-75 parity pin above."""
+    from explore_persona_space.backends.runpod import (
+        EXIT_STILL_WAITING,
+    )
+    from explore_persona_space.backends.runpod import (
+        EXIT_STOPPED_POD_COLLISION as runpod_code,
+    )
+    from scripts.pod_lifecycle import EXIT_STOPPED_POD_COLLISION as pl_code
+
+    assert pl_code == runpod_code == 76
+    assert runpod_code != EXIT_STILL_WAITING
+
+
 def test_provision_still_waiting_accepts_pod_lifecycle_process_error_subclass() -> None:
     """#1603 test 6: ``PodLifecycleProcessError`` (the #1465 stderr-tail relay
     subclass — returncode + cmd ride verbatim) satisfies

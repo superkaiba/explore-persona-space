@@ -401,25 +401,112 @@ def test_provision_refusal_stderr_classifies_created_nothing(
     assert backend_poll._classify_provision_failure(marker_text, 1) == "created-nothing"
 
 
-def test_cmd_provision_allows_when_only_exited_pod_exists(isolated_state, stub_list_team_pods):
-    """An EXITED pod with the target name should NOT block provision."""
+def test_provision_refuses_stopped_collision_exit_76(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """#1997 (b1): a same-named STOPPED (EXITED) pod now REFUSES the provision
+    with the typed exit 76 (pre-#1997 it silently proceeded, minting the
+    #1739 duplicate-named pod whose name-keyed state rows hijacked the
+    stopped pod's). The stderr message keeps BOTH conjunctive #1490
+    created-nothing classifier fragments AND names every recovery path."""
+    import backend_poll  # scripts/ already on sys.path (module header)
+
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
     _write_metadata_file({})
     stub_list_team_pods.return_value = [_info("pod-51", desired_status="EXITED")]
 
-    ns = argparse.Namespace(
-        issue=51,
-        list_intents=False,
-        intent="eval",
-        gpu_type=None,
-        gpu_count=None,
-        dry_run=True,  # Stops before any actual API mutation.
-        volume_gb=200,
-        container_disk_gb=50,
-        ttl_days=7,
-        no_bootstrap=True,
-    )
-    # Should NOT raise; dry-run path returns cleanly.
-    pod_lifecycle.cmd_provision(ns)
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_provision(_gpu_provision_ns(51))
+    assert exc.value.code == pod_lifecycle.EXIT_STOPPED_POD_COLLISION == 76
+
+    err = capsys.readouterr().err
+    # BOTH conjunctive fragments of backend_poll._PROVISION_REFUSAL_MARKERS
+    # survive, so the #1490 classifier reads the refusal as created-nothing
+    # (never a terminate candidate).
+    assert "already exists" in err
+    assert "Use `pod.py resume" in err
+    assert backend_poll._classify_provision_failure(err, 76) == "created-nothing"
+    # Every recovery path is named: resume / approved terminate / suffix /
+    # the deliberate override flag.
+    assert "pod.py resume --issue 51" in err
+    assert "terminate --issue 51 --yes --approve" in err
+    assert "--name-suffix" in err
+    assert "--allow-stopped-duplicate" in err
+
+
+def test_provision_stopped_mask_running_duplicate_refuses_exit_1(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """#1997 (b2, the duplicate-mask fix): RunPod permits duplicate pod names,
+    and the pre-#1997 name-keyed dict let a STOPPED entry mask a RUNNING one
+    (order-dependent on the API list). With BOTH orders, the non-EXITED
+    refusal (exit 1) must win over the stopped-collision refusal (exit 76)."""
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    _write_metadata_file({})
+    exited = _info("pod-52", pod_id="pod-52-stopped", desired_status="EXITED")
+    running = _info("pod-52", pod_id="pod-52-live", desired_status="RUNNING")
+
+    for order in ([exited, running], [running, exited]):
+        stub_list_team_pods.return_value = order
+        with pytest.raises(SystemExit) as exc:
+            pod_lifecycle.cmd_provision(_gpu_provision_ns(52))
+        assert exc.value.code == 1, f"order {order} did not take the non-EXITED refusal"
+        err = capsys.readouterr().err
+        assert "status=RUNNING" in err
+        assert "id=pod-52-live" in err
+
+
+def test_provision_allow_stopped_duplicate_proceeds(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """#1997 (b3): --allow-stopped-duplicate deliberately overrides the
+    stopped-collision refusal — the provision proceeds past the idempotency
+    check (dry-run stops before any API mutation)."""
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = [_info("pod-53", desired_status="EXITED")]
+
+    # Should NOT raise; dry-run path returns cleanly past the collision check.
+    pod_lifecycle.cmd_provision(_gpu_provision_ns(53, allow_stopped_duplicate=True))
+    out = capsys.readouterr().out
+    assert "[dry-run]" in out
+
+
+def test_suffixed_provision_unaffected_by_bare_stopped_pod(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """#1997 (b4): a --name-suffix provision collides only on ITS OWN name —
+    a bare STOPPED pod-<N> never blocks it (the existing suffix semantics,
+    pinned against the new stopped-collision check), while a STOPPED
+    pod-<N>-<slug> refuses the suffixed provision with exit 76."""
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = [_info("pod-54", desired_status="EXITED")]
+
+    pod_lifecycle.cmd_provision(_gpu_provision_ns(54, name_suffix="b"))
+    out = capsys.readouterr().out
+    assert "[dry-run]" in out
+    assert "pod-54-b" in out
+
+    # A STOPPED pod-54-b DOES refuse the suffixed provision (its own name).
+    stub_list_team_pods.return_value = [_info("pod-54-b", desired_status="EXITED")]
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_provision(_gpu_provision_ns(54, name_suffix="b"))
+    assert exc.value.code == pod_lifecycle.EXIT_STOPPED_POD_COLLISION
+    assert "pod-54-b already exists STOPPED" in capsys.readouterr().err
+
+
+def test_provision_parser_exposes_allow_stopped_duplicate():
+    """#1997: the provision subparser wires --allow-stopped-duplicate
+    (store_true, default False — the refusal is the default posture)."""
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="cmd")
+    pod_lifecycle._parser_provision(sub)
+
+    ns = parser.parse_args(["provision", "--issue", "51", "--allow-stopped-duplicate"])
+    assert ns.allow_stopped_duplicate is True
+    ns0 = parser.parse_args(["provision", "--issue", "51"])
+    assert ns0.allow_stopped_duplicate is False
 
 
 # ---------------------------------------------------------------------------
@@ -1582,7 +1669,10 @@ def test_bootstrap_failure_hint_carries_name_suffix(isolated_state, monkeypatch,
     monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", lambda pod_id, timeout=600: info)
     monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
     monkeypatch.setattr(pod_lifecycle, "_upsert_pods_conf", lambda pod: None)
-    monkeypatch.setattr(pod_lifecycle, "_bootstrap", lambda name, intent_label: 1)
+    # Signature-conformant stub: _bootstrap(pod_name, intent_label, issue) —
+    # the pre-#1997 bare two-arg lambda went stale when the production call
+    # site gained issue=args.issue (red on pristine main, fixed here).
+    monkeypatch.setattr(pod_lifecycle, "_bootstrap", lambda name, intent_label, issue=None: 1)
     ns = argparse.Namespace(issue=779, name_suffix="b", ttl_days=7, no_bootstrap=False)
 
     with pytest.raises(SystemExit) as exc:
@@ -1604,7 +1694,10 @@ def _stub_provision_tail(monkeypatch, info, rcs: list[int]) -> list[str]:
     """
     calls: list[str] = []
 
-    def fake_bootstrap(name, intent_label):
+    def fake_bootstrap(name, intent_label, issue=None):
+        # Signature-conformant with _bootstrap(pod_name, intent_label, issue)
+        # — the pre-#1997 two-arg stub went stale when the production call
+        # site gained issue=args.issue (red on pristine main, fixed here).
         calls.append(name)
         return rcs[len(calls) - 1]
 

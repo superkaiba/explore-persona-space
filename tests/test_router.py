@@ -9433,6 +9433,95 @@ def test_runpod_terminal_rung_non75_process_error_keeps_no_compute(
     assert attempts[-1].outcome == "runpod_fallback_failed"
 
 
+class _StoppedCollisionRunpod(_BaseBackend):
+    """RunPod double whose ``launch`` raises pod_lifecycle's exit-76
+    stopped-pod same-name collision refusal (#1997) through the #1465
+    stderr-tail relay subclass."""
+
+    def __init__(self) -> None:
+        self.launches: list[RunSpec] = []
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        from explore_persona_space.backends.runpod import PodLifecycleProcessError
+
+        self.launches.append(spec)
+        raise PodLifecycleProcessError(
+            76,
+            ["pod_lifecycle", "provision"],
+            output=None,
+            stderr=(
+                "Pod pod-137 already exists STOPPED (status=EXITED, id=pod-x).\n"
+                "Use `pod.py resume --issue 137` to bring the stopped pod back"
+            ),
+        )
+
+
+def test_runpod_terminal_rung_stopped_collision_exit76_raises_typed(
+    lease_store, marker_poster, captured_markers
+):
+    """#1997 (b5): an exit-76 stopped-pod collision at the terminal rung raises
+    the TYPED RunPodStoppedPodCollisionError — NOT NoComputeAvailableError
+    (whose re-drivable no_compute_available terminal would let the watcher's
+    capacity-retry pass hot-retry the same structural refusal) — posts the
+    terminal marker with the DISTINCT reason, records the DISTINCT
+    RouteAttempt outcome, and writes no lease (nothing provisioned)."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION,
+        RunPodStoppedPodCollisionError,
+        _runpod_terminal_rung,
+    )
+
+    rp = _StoppedCollisionRunpod()
+    attempts: list[RouteAttempt] = []
+    clock = _clock()
+    with pytest.raises(RunPodStoppedPodCollisionError) as ei:
+        _runpod_terminal_rung(
+            spec=_spec(backend="auto"),
+            runpod_backend=rp,
+            store=lease_store,
+            attempts=attempts,
+            started_at=clock(),
+            now_fn=clock,
+            marker_poster=marker_poster,
+            on_launched=None,
+            residual_gap="test: every cheaper rung exhausted",
+        )
+    assert not isinstance(ei.value, NoComputeAvailableError)
+    assert len(rp.launches) == 1
+    # The typed terminal marker carries the DISTINCT reason — never the
+    # re-drivable no_compute_available.
+    assert _by_reason(captured_markers, ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION)
+    assert not _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    # NO lease write — nothing provisioned, nothing billing.
+    assert lease_store.read(137) is None
+    assert attempts[-1].outcome == "runpod_stopped_pod_collision"
+    # Recovery paths ride the typed error's message, and the route-attempt
+    # trail rides the exception (epm:failure evidence).
+    assert "pod.py resume" in ei.value.reason
+    assert ei.value.attempts[-1]["outcome"] == "runpod_stopped_pod_collision"
+
+
+def test_runpod_stopped_pod_collision_reason_cross_module_parity():
+    """#1997 (SR1 pattern, mirrors #954): the router constant equals the
+    ``backend_poll.py`` async-leg literal, and the reason is NOT in the
+    watcher's TRANSIENT_CAPACITY_REASONS allowlist — the capacity-retry pass
+    never auto re-drives a structural refusal only a human can clear."""
+    import inspect
+
+    import scripts.backend_poll as bp
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION,
+    )
+    from scripts.autonomous_session_watch import TRANSIENT_CAPACITY_REASONS
+
+    assert ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION == "runpod_stopped_pod_collision"
+    # The poller's async failover legs mint terminal JSONs with the SAME
+    # literal (one reason per failure class across paths).
+    assert '"runpod_stopped_pod_collision"' in inspect.getsource(bp)
+    assert ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION not in TRANSIENT_CAPACITY_REASONS
+
+
 def test_route_auto_chain_exit75_at_terminal_rung_propagates_still_waiting(
     lease_store, marker_poster, captured_markers
 ):

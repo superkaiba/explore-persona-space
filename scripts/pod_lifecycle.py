@@ -977,6 +977,18 @@ def _wait_for_capacity_attempt_budget_secs() -> float:
 # orchestrator / watchers can route on it without parsing stderr.
 EXIT_STILL_WAITING = 75
 
+# Exit code for the stopped-pod same-name collision refusal (#1997, the #1739
+# 4-duplicate-pod incident): a same-named STOPPED (EXITED) pod exists, and a
+# fresh create would mint a duplicate-named pod whose name-keyed state rows
+# (pods.conf / pods_ephemeral.json) HIJACK the stopped pod's. EX_PROTOCOL
+# slot, sibling of EXIT_STILL_WAITING = 75: distinct from 0 (pod ready),
+# 1 (real failure / non-EXITED collision), and 75 (still-waiting) so the
+# router terminal rung can raise the typed RunPodStoppedPodCollisionError
+# (backends/router.py) instead of collapsing into the re-drivable
+# no_compute_available terminal. Mirrored (not imported) in
+# backends/runpod.py::EXIT_STOPPED_POD_COLLISION.
+EXIT_STOPPED_POD_COLLISION = 76
+
 
 class WaitForCapacityStillWaiting(RunPodError):
     """Raised when one wait-for-capacity process attempt exhausts its
@@ -2145,17 +2157,27 @@ def cmd_provision(args: argparse.Namespace) -> None:
     # stopped volume) is exactly why the suffix form exists and must not
     # block it.
     live_pods = list_team_pods()
-    live_by_name = {p.name: p for p in live_pods if _is_managed_pod(p)}
+    managed = [p for p in live_pods if _is_managed_pod(p)]
 
     # Pre-flight: surface any pods the lifecycle is blind to (non-managed
     # names) so the user notices accumulating charges before adding another
     # pod. Don't block — just warn loudly.
     _warn_on_lifecycle_escapes(live_pods)
+    # The legacy candidate (epm-issue-<N>) rides along for one-pod-per-issue
+    # posture, NOT the hijack rationale: the state rows key on NAME, and
+    # pod-<N> != epm-issue-<N>, so a legacy pod cannot be name-hijacked by a
+    # fresh canonical create — the check simply keeps one pod per issue.
     candidates = (name,) if name_suffix else (name, legacy)
     for candidate in candidates:
-        if candidate in live_by_name and live_by_name[candidate].desired_status != "EXITED":
-            existing = live_by_name[candidate]
-            suffix_hint = f" --name-suffix {name_suffix}" if name_suffix else ""
+        # Per-candidate LIST scan (#1997): RunPod permits duplicate pod names,
+        # and the pre-#1997 name-keyed `{p.name: p}` dict collapsed duplicates
+        # — a STOPPED entry could mask a RUNNING one in this check, order-
+        # dependent on the API list.
+        same_named = [p for p in managed if p.name == candidate]
+        non_exited = [p for p in same_named if p.desired_status != "EXITED"]
+        suffix_hint = f" --name-suffix {name_suffix}" if name_suffix else ""
+        if non_exited:
+            existing = non_exited[0]
             print(
                 f"Pod {candidate} already exists "
                 f"(status={existing.desired_status}, id={existing.pod_id}).\n"
@@ -2167,6 +2189,33 @@ def cmd_provision(args: argparse.Namespace) -> None:
                 file=sys.stderr,
             )
             sys.exit(1)
+        if same_named and not getattr(args, "allow_stopped_duplicate", False):
+            # Stopped-pod same-name collision (#1997, the #1739 incident): a
+            # deliberately-STOPPED pod maps to EXITED, so the pre-#1997 check
+            # let every fallback dispatch create a FRESH duplicate-named pod
+            # whose name-keyed state rows (pods.conf / pods_ephemeral.json)
+            # hijacked the stopped pod's — #1739 minted four. Default-refuse
+            # with the typed exit 76; the message keeps BOTH
+            # backend_poll._PROVISION_REFUSAL_MARKERS fragments ("already
+            # exists" + "Use `pod.py resume") so the #1490 created-nothing
+            # classifier still reads this refusal as created-nothing — never
+            # a terminate candidate.
+            existing = same_named[0]
+            print(
+                f"Pod {candidate} already exists STOPPED "
+                f"(status={existing.desired_status}, id={existing.pod_id}).\n"
+                f"Refusing to create a same-named duplicate: the name-keyed state rows "
+                f"(pods.conf / pods_ephemeral.json) would hijack the stopped pod (#1997, "
+                f"the #1739 4-duplicate-pod incident).\n"
+                f"Use `pod.py resume --issue {args.issue}{suffix_hint}` to bring the "
+                f"stopped pod back, `pod.py terminate --issue {args.issue}{suffix_hint} "
+                f"--yes --approve` to destroy it first, provision with "
+                f"`--name-suffix <slug>`, or pass --allow-stopped-duplicate to create "
+                f"the duplicate deliberately.",
+                # stderr for the same #1465/#1518 relay reason as the branch above.
+                file=sys.stderr,
+            )
+            sys.exit(EXIT_STOPPED_POD_COLLISION)
 
     # Account-key preflight (#1655): read-only guardrail BEFORE any create —
     # covers the CPU branch, the GPU branch (wait + one-shot), and --dry-run
@@ -3196,6 +3245,19 @@ def _parser_provision(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("provision", help="Create a fresh pod for an issue and bootstrap it")
     p.add_argument("--issue", type=int, help="GitHub issue number (used as pod name)")
     p.add_argument("--name-suffix", default=None, help=_NAME_SUFFIX_HELP)
+    p.add_argument(
+        "--allow-stopped-duplicate",
+        action="store_true",
+        help=(
+            "Deliberately create a same-named duplicate pod even though a "
+            "STOPPED (EXITED) pod with the target name exists. DEFAULT: the "
+            f"provision refuses with exit {EXIT_STOPPED_POD_COLLISION} (#1997 "
+            "— a duplicate-named create hijacks the stopped pod's name-keyed "
+            "pods.conf / pods_ephemeral.json rows; the #1739 incident minted "
+            "four). Prefer `pod.py resume`, an approved terminate, or "
+            "--name-suffix instead."
+        ),
+    )
     p.add_argument(
         "--intent",
         help="Workload intent (lora-7b, ft-7b, eval, inf-70b, ft-70b, debug). "

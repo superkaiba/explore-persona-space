@@ -90,6 +90,7 @@ from explore_persona_space.backends.router import (
     ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
     ROUTE_REASON_GCP_DISABLED,
     ROUTE_REASON_RECONNECT,
+    ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION,
     BackendPrepareError,
     CpuExhaustedNoRunpodLaneError,
     CpuFallbackInfeasibleError,
@@ -100,6 +101,7 @@ from explore_persona_space.backends.router import (
     NoComputeAvailableError,
     RouterConfig,
     RouteResult,
+    RunPodStoppedPodCollisionError,
     WorkloadSurfacedError,
     route,
 )
@@ -966,6 +968,31 @@ def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
                 "SLURM lanes), or flip router.GCP_PROVISIONING_DISABLED = False for "
                 "a deliberate rollback (#2028)\n"
                 f"detail: {exc}"
+            ),
+        )
+    if isinstance(exc, RunPodStoppedPodCollisionError):
+        # #1997: the RunPod terminal rung was refused by pod_lifecycle's
+        # stopped-pod same-name collision guard (exit 76) — a STOPPED pod-<N>
+        # exists and a duplicate-named create would hijack its name-keyed
+        # state rows (the #1739 incident). A STRUCTURAL refusal, not a
+        # capacity outcome: the reason token is NOT in the watcher's
+        # TRANSIENT_CAPACITY_REASONS (nothing will "free up"; auto-retry
+        # would hot-loop the same refusal or race a human's recovery). The
+        # fix is a human action — resume the stopped pod, terminate it with
+        # approval, or provision under a distinct name.
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: {ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION}\n"
+                "recovery: `uv run python scripts/pod.py resume --issue <N>` to reuse "
+                "the stopped pod, or `uv run python scripts/pod.py terminate "
+                "--issue <N> --yes --approve` then re-dispatch, or provision with "
+                "--name-suffix <slug>, or pass --allow-stopped-duplicate to "
+                "deliberately create the duplicate (#1997)\n"
+                f"detail: {exc.reason}\n"
+                f"attempts: {json.dumps(exc.attempts, sort_keys=True)}"
             ),
         )
     if isinstance(exc, CpuFallbackInfeasibleError):
