@@ -685,12 +685,53 @@ def _batched_capture_parity_gate(
 # First-chunk self-gate (plan §7 Decision Gate 1)
 # ---------------------------------------------------------------------------
 
+# Sanity floor for the shuffled-pairing null's R² (see _self_gate_predicate).
+# The gate's null is a shuffle-FIT null — beta is REFIT on permuted (X, Y)
+# pairings, then scored on val — whose expected R² is ~ -1, NOT ~ 0: with the
+# pairings destroyed, the refit beta captures spurious structure rather than
+# collapsing to zero, so val predictions scatter around y_mu and
+# SSE_null > SST. (An R² ~ 0 null is the MEAN-PREDICTOR null, yhat == y_mu
+# exactly => SSE == SST — a DIFFERENT construction. A two-sided
+# |r2_null| < 0.05 bound therefore encodes the wrong null's expectation and
+# is unsatisfiable against this gate's own null on ANY input — the 2026-08-05
+# incident that aborted all 8 train_25k shards, epm:failure v3.) Measured at
+# the mid-shard trigger regime (n_train=1600, h=896, lam=1.0, scale05
+# production shards): r2_null in [-0.990, -0.833]. The floor sits ~3x below
+# the most negative observed value — wide enough to pass the legitimate
+# shuffle-fit regime, tight enough that a numerically pathological null
+# (broken centering/scaling, NaN-adjacent inputs; reads like -50) still
+# fails loud.
+SELF_GATE_NULL_FLOOR = -3.0
+
+
+def _self_gate_predicate(r2_fit: float, r2_null: float) -> bool:
+    """Plan §7 Gate 1 PASS predicate (see SELF_GATE_NULL_FLOOR rationale).
+
+    PASS iff BOTH:
+    - (fit - null) > 0.05 — the fitted map beats the shuffled-pairing null
+      by a margin (unchanged from the original gate); AND
+    - SELF_GATE_NULL_FLOOR < r2_null < 0.05 — the null itself is not
+      predictive. ONE-SIDED cap by design: a shuffle-FIT null sits near -1
+      by construction (comment above), so only an UPPER bound on r2_null
+      tests "the null carries no signal"; the floor catches pathology.
+
+    Deliberately NO absolute floor on r2_fit: the ladder's smallest rungs
+    are EXPECTED to show low R² — that is the finding. A fit-floor would
+    bias the ladder by construction, admitting only scales that already
+    show high predictability.
+    """
+    gap_ok = (r2_fit - r2_null) > 0.05
+    null_ok = SELF_GATE_NULL_FLOOR < r2_null < 0.05
+    return gap_ok and null_ok
+
 
 def _first_chunk_self_gate(rows: list[dict], layer_index_primary: int) -> tuple[bool, dict]:
     """Quick numpy ridge fit + shuffled-pairing null on the first ~2,000
     captured rows at the primary layer.
 
-    PASS iff: (fit - null) > 0.05 AND |null R²| < 0.05.
+    PASS iff ``_self_gate_predicate(r2_fit, r2_null)``: (fit - null) > 0.05
+    AND SELF_GATE_NULL_FLOOR < null R² < 0.05 (one-sided — the shuffle-fit
+    null's expectation is ~ -1, see the rationale above the predicate).
     Returns (passed, diagnostics-dict).
     """
     if len(rows) < 500:
@@ -737,8 +778,9 @@ def _first_chunk_self_gate(rows: list[dict], layer_index_primary: int) -> tuple[
         "r2_fit": r2_fit,
         "r2_null": r2_null,
         "gap": r2_fit - r2_null,
+        "null_floor": SELF_GATE_NULL_FLOOR,
     }
-    passed = (r2_fit - r2_null) > 0.05 and abs(r2_null) < 0.05
+    passed = _self_gate_predicate(r2_fit, r2_null)
     diag["passed"] = passed
     return passed, diag
 
