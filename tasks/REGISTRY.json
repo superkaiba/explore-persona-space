@@ -8453,8 +8453,8 @@
     "2092": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2092",
-      "status": "proposed",
+      "path": "tasks/planning/2092",
+      "status": "planning",
       "title": "batch drain loses bare-numeric judge verdicts (#1434 parity not ported): 64% vs 2.8% drops"
     },
     "2093": {
