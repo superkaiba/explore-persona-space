@@ -38,10 +38,14 @@ import sys
 import time
 from pathlib import Path
 
-import torch
-from huggingface_hub import HfApi, hf_hub_download
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.sparsify_topk_sae import (
+load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch/numpy import
+
+import torch  # noqa: E402
+from huggingface_hub import HfApi, hf_hub_download  # noqa: E402
+
+from explore_persona_space.analysis.sparsify_topk_sae import (  # noqa: E402
     load_sae_weights,
     topk_encode,
     topk_reconstruct,

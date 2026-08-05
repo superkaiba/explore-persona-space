@@ -34,7 +34,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch/numpy import
+
+import numpy as np  # noqa: E402
 
 # matplotlib is a per-project dep already; only import when actually plotting
 # to keep --help fast + argparse smoke check cheap.

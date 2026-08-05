@@ -10,27 +10,32 @@ Reads:
   pooling convention: `scripts/issue2061_turnstore.py`.
 
 Fits, per (stage, render, corpus, arm) cell:
-- K=5 group folds, fold seed 0 (inherited from #1336, plan §10).
+- K=5 GROUP-level folds (conversation-id groups), fold seed 0 — #1336's exact
+  fold convention via `issue2061_turnstore.group_fold_ids` (mirrors
+  `issue825_fit_cells._cv_folds`, the constructor #1336's fits drive; plan
+  §10, review M5, `.claude/rules/ood-generalization-folds.md`).
 - Shared-factorization ridge via `ridge_fit_predict_fast_layer_batched`
   (`src/explore_persona_space/experiments/issue_779/fit_h.py:180`); GCV over
-  the #823/#779 grid `np.logspace(-2, 4, 13)`.
+  the #823/#779 grid `np.logspace(-2, 4, 13)` WITH the #1887 dof cap
+  (`gcv_dof_cap=0.9`, plan §11 "Under-determined-cell mitigation" — engaged
+  via the helper's opt-in kwarg; inert whenever `0.9 * n_train >= d_in`, i.e.
+  everywhere except `gsm8k_test1319`-class under-determined cells). Per-fit
+  selected-lambda diagnostics (selector, lambda, effective dof) are recorded
+  per #1887.
+- Slow-vs-fast numeric-parity gate (the helper's docstring mandate + plan
+  §Design): once per process, >=3 fold slices of the first fitted cell at
+  production (n_train, d_in) shape vs the canonical `ridge_fit_predict` SVD
+  reference on a seeded column subsample; max rel diff <= 1e-4 (#1332 bar).
 - Per-feature R²_j = 1 − ||f_j − ĝ_j||² / ||f_j − mean(f_j)||² on held-out
   folds, pooled with fold-local test means.
-- kNN retrieval (euclidean + cosine) via `analysis/mapping_baselines.knn_retrieval`.
+- kNN retrieval (euclidean + cosine) via `analysis/mapping_baselines.knn_retrieval`
+  with `k = ceil(n_pool / 20)` (plan §13; chance = k / n_pool).
 
-**GCV under-determined regime diagnostics (plan §7 mitigation).** On cells
-with per-fold `n_train < d_in=4096` (only `gsm8k_test1319` per the
-reconciliation table), we report per-fit `best_lambda` + `effective_dof`
-via `return_info=True`. A WARN fires when `effective_dof > 0.9 * n_train`
-(the #1887 dof-cap 0.9 target); production dof-capping is deferred to the
-upstream fit function once it lands on `main` (see plan §11 "Under-
-determined-cell mitigation" row).
-
-Emits `eval_results/issue_2061/per_feature_r2/<stage>_<corpus>_<arm>_L29.jsonl`
+Emits `eval_results/issue_2061/per_feature_r2/<stage>_<render>_<corpus>_<arm>_L29.jsonl`
 — one JSON object per feature with keys:
-  {feature_id, R2, n_train, n_test, best_lambda, effective_dof,
-   knn_acc_1_euclid, knn_acc_10_euclid, knn_acc_1_cosine, knn_acc_10_cosine,
-   chance_1, chance_10}
+  {feature_id, R2, n_train_folds, n_test_total, best_lambda_folds,
+   effective_dof_folds, lambda_selector, knn_acc_1_euclid, knn_acc_k_euclid,
+   knn_k_ret, knn_acc_1_cosine, knn_acc_k_cosine, chance_1, chance_k}
 
 Usage:
   uv run python scripts/issue2061_fit_per_feature.py \\
@@ -42,16 +47,22 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 import time
 from pathlib import Path
 
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.mapping_baselines import knn_retrieval
-from explore_persona_space.experiments.issue_779.fit_h import (
+load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch/numpy import
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
+from explore_persona_space.analysis.mapping_baselines import knn_retrieval  # noqa: E402
+from explore_persona_space.experiments.issue_779.fit_h import (  # noqa: E402
+    ridge_fit_predict,
     ridge_fit_predict_fast_layer_batched,
 )
 
@@ -72,27 +83,93 @@ LAMBDA_GRID = np.logspace(-2, 4, 13)
 DOF_CAP_FRACTION = 0.9  # plan §7 under-determined-cell mitigation
 
 
-def _load_arm_inputs(turnstore_dir: Path, arm: str, layer: int = LAYER) -> np.ndarray:
-    """(n, d_in) float32 arm inputs from ALL shards of one LOCAL turnstore dir.
+def _load_arm_inputs(
+    turnstore_dir: Path, arm: str, layer: int = LAYER
+) -> tuple[np.ndarray, list[str]]:
+    """((n, d_in) float32 arm inputs, conv_ids) from ALL shards of one turnstore dir.
 
     `arm` selects the banked #1336 slot state — "prefix" -> the prefix-header
     slot, "context" -> the a1-assistant-header slot (end of the context).
     Realized convention + fail-loud schema assert live in
     `issue2061_turnstore` (see its docstring; plan §12(4)). Shards are
     enumerated in shard-index order, matching the encode script's row order,
-    so X rows align with the encoded Y rows by construction.
+    so X rows align with the encoded Y rows by construction. The conv_ids
+    feed the #1336 GROUP-level fold construction (plan §10, review M5).
     """
     shard_paths = ts.enumerate_shards(turnstore_dir)
-    x, _conv_ids = ts.load_state_from_shards(shard_paths, state=arm, layer=layer)
-    return x.numpy()
+    x, conv_ids = ts.load_state_from_shards(shard_paths, state=arm, layer=layer)
+    return x.numpy(), conv_ids
 
 
-def _make_folds(n: int, k: int = K_FOLDS, seed: int = FOLD_SEED) -> list[np.ndarray]:
-    """K-fold indices with fixed seed (matches #1336's fold convention)."""
-    rng = np.random.default_rng(seed)
-    perm = rng.permutation(n)
-    folds = np.array_split(perm, k)
-    return [np.array(f, dtype=np.int64) for f in folds]
+def _make_folds(conv_ids: list[str], k: int = K_FOLDS, seed: int = FOLD_SEED) -> list[np.ndarray]:
+    """Per-fold TEST index arrays from #1336's GROUP-level fold convention.
+
+    Delegates to `issue2061_turnstore.group_fold_ids` (mirrors
+    `issue825_fit_cells._cv_folds`: seeded permutation of UNIQUE conversation
+    ids, `perm % k` per id — all rows of a conversation share a fold). Fold
+    sizes vary with group membership; every fold is non-empty (fail-loud in
+    the helper).
+    """
+    fold_of_row = ts.group_fold_ids(conv_ids, n_folds=k, seed=seed)
+    return [np.where(fold_of_row == f)[0].astype(np.int64) for f in range(k)]
+
+
+_PARITY_GATE_STATE = {"done": False}
+
+
+def run_parity_gate(
+    X: np.ndarray,
+    Y: np.ndarray,
+    folds: list[np.ndarray],
+    *,
+    n_slices: int = 3,
+    n_cols: int = 512,
+    col_seed: int = 0,
+    tol: float = 1e-4,
+    device: str = "cpu",
+) -> float:
+    """Slow-vs-fast numeric-parity gate (the batched helper's docstring mandate).
+
+    Compares `ridge_fit_predict_fast_layer_batched` against the canonical SVD
+    reference `ridge_fit_predict` on `n_slices` fold slices at the CELL's
+    production (n_train, d_in) shape, over a seeded column subsample of the
+    target (per-column regressions are independent, so column subsetting does
+    not change the per-slice fit machinery under test — the (n_train, d_in)
+    shape is what drives the size-dependent parity caveat). Runs with
+    `gcv_dof_cap=None` on BOTH sides (the slow reference has no cap; the cap
+    is a lambda-grid mask pinned separately by tests/test_issue2061_stats.py).
+    Raises RuntimeError above `tol` (#1332 bar: max rel diff <= 1e-4).
+    Returns the realized max rel diff.
+    """
+    n_slices = min(n_slices, len(folds))
+    rng = np.random.default_rng(col_seed)
+    cols = np.sort(rng.choice(Y.shape[1], size=min(n_cols, Y.shape[1]), replace=False))
+    worst = 0.0
+    for fi in range(n_slices):
+        test_idx = folds[fi]
+        train_idx = np.concatenate([f for j, f in enumerate(folds) if j != fi])
+        Xtr = X[train_idx].astype(np.float64)
+        Ytr = Y[train_idx][:, cols].astype(np.float64)
+        Xev = X[test_idx].astype(np.float64)
+        fast = ridge_fit_predict_fast_layer_batched(
+            Xtr[None], Ytr[None], Xev[None], lambdas=LAMBDA_GRID, device=device
+        )[0]
+        slow = ridge_fit_predict(Xtr, Ytr, Xev, lambdas=LAMBDA_GRID)
+        rel = float(np.max(np.abs(fast - slow)) / (np.max(np.abs(slow)) + 1e-12))
+        worst = max(worst, rel)
+        print(
+            f"  [parity-gate] slice {fi}: n_train={Xtr.shape[0]} d_in={Xtr.shape[1]} "
+            f"n_cols={len(cols)} max_rel_diff={rel:.3g}",
+            flush=True,
+        )
+    if worst > tol:
+        raise RuntimeError(
+            f"slow-vs-fast ridge parity gate FAILED: max rel diff {worst:.3g} > tol {tol:.1g} "
+            f"over {n_slices} slices (fit_h.ridge_fit_predict_fast_layer_batched docstring "
+            "mandate) — fall back to the canonical solver."
+        )
+    print(f"  [parity-gate] PASS: worst max_rel_diff={worst:.3g} <= tol={tol:.1g}", flush=True)
+    return worst
 
 
 def fit_cell(
@@ -102,10 +179,11 @@ def fit_cell(
     output_path: Path,
     layer: int = LAYER,
     device: str = "cpu",
+    skip_parity_gate: bool = False,
 ) -> None:
     """Fit ridge for one (stage, render, corpus, arm) cell + write JSONL."""
     print(f"[fit] turnstore={turnstore_dir.name} arm={arm} encoded={encoded_shard.name}")
-    X = _load_arm_inputs(turnstore_dir, arm, layer=layer)  # (n, d_in)
+    X, conv_ids = _load_arm_inputs(turnstore_dir, arm, layer=layer)  # (n, d_in)
     Y = (
         torch.load(encoded_shard, map_location="cpu", weights_only=True).float().numpy()
     )  # (n, d_sae)
@@ -114,7 +192,13 @@ def fit_cell(
     d_sae = Y.shape[1]
     print(f"  n={n} d_in={d_in} d_sae={d_sae}")
 
-    folds = _make_folds(n, k=K_FOLDS, seed=FOLD_SEED)
+    folds = _make_folds(conv_ids, k=K_FOLDS, seed=FOLD_SEED)
+
+    # Once-per-process slow-vs-fast parity gate on the FIRST fitted cell
+    # (>=3 slices at this cell's production shape; helper docstring mandate).
+    if not skip_parity_gate and not _PARITY_GATE_STATE["done"]:
+        run_parity_gate(X, Y, folds, device=device)
+        _PARITY_GATE_STATE["done"] = True
     # Pooled per-feature R² with fold-local test means: track SS_res + SS_tot
     # per feature across folds. Also track per-fit best_lambda / dof for the
     # dof-cap diagnostic.
@@ -144,6 +228,7 @@ def fit_cell(
             lambdas=LAMBDA_GRID,
             device=device,
             return_info=True,
+            gcv_dof_cap=DOF_CAP_FRACTION,  # #1887 mitigation, plan §11 (review M4)
         )
         elapsed = time.time() - t0
         best_lam = float(info["best_lambda"][0])
@@ -151,12 +236,18 @@ def fit_cell(
         per_fold_lambda.append(best_lam)
         per_fold_dof.append(dof)
 
-        # Under-determined-regime WARN (plan §7 mitigation).
-        if n_train < D_IN and dof > DOF_CAP_FRACTION * n_train:
+        # The helper masks lambdas whose dof exceeds the cap (and fail-louds
+        # when ALL are masked), so the selected dof satisfies the cap by
+        # construction — assert it stays that way (guard against upstream drift).
+        assert dof <= DOF_CAP_FRACTION * n_train * (1.0 + 1e-9), (
+            f"fold {fi}: selected dof={dof:.1f} violates gcv_dof_cap="
+            f"{DOF_CAP_FRACTION} * n_train={n_train} — fit_h dof-cap drift?"
+        )
+        if n_train < D_IN:
             print(
-                f"  [WARN] fold {fi}: n_train={n_train} < d_in={D_IN} AND "
-                f"effective_dof={dof:.1f} > {DOF_CAP_FRACTION}*n_train="
-                f"{DOF_CAP_FRACTION * n_train:.1f} — GCV dof-cap should engage"
+                f"  [dof-cap] fold {fi}: n_train={n_train} < d_in={D_IN} — "
+                f"cap {DOF_CAP_FRACTION} active (lambda={best_lam:.3g}, dof={dof:.1f})",
+                flush=True,
             )
 
         # Per-feature R² accumulation, pooled with fold-local test means.
@@ -175,9 +266,13 @@ def fit_cell(
         r2 = 1.0 - np.where(ss_tot > 0, ss_res / ss_tot, np.nan)
 
     # kNN retrieval on the pooled OOF predictions vs the fixed target pool.
-    k_ret = max(1, min(10, n // 20))  # k = ceil(n/20) capped at 10
+    # k = ceil(n_pool / 20), chance = k / n_pool (plan §13). `knn_retrieval`
+    # returns `acc_at_k` / `chance_at_k` as dicts KEYED BY K (review C2 —
+    # positional indexing crashed KeyError: 0 after the fold fits).
+    k_ret = max(1, math.ceil(n / 20))
     knn_e = knn_retrieval(Y_pred_pool, Y.astype(np.float64), ks=(1, k_ret), metric="euclidean")
     knn_c = knn_retrieval(Y_pred_pool, Y.astype(np.float64), ks=(1, k_ret), metric="cosine")
+    lambda_selector = f"gcv-dof-cap-{DOF_CAP_FRACTION}"  # #1887 diagnostics (M4)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w") as f:
@@ -191,13 +286,14 @@ def fit_cell(
                         "n_test_total": int(n),
                         "best_lambda_folds": per_fold_lambda,
                         "effective_dof_folds": per_fold_dof,
-                        "knn_acc_1_euclid": float(knn_e["acc_at_k"][0]),
-                        "knn_acc_k_euclid": float(knn_e["acc_at_k"][1]),
+                        "lambda_selector": lambda_selector,
+                        "knn_acc_1_euclid": float(knn_e["acc_at_k"][1]),
+                        "knn_acc_k_euclid": float(knn_e["acc_at_k"][k_ret]),
                         "knn_k_ret": int(k_ret),
-                        "knn_acc_1_cosine": float(knn_c["acc_at_k"][0]),
-                        "knn_acc_k_cosine": float(knn_c["acc_at_k"][1]),
-                        "chance_1": float(knn_e["chance_at_k"][0]),
-                        "chance_k": float(knn_e["chance_at_k"][1]),
+                        "knn_acc_1_cosine": float(knn_c["acc_at_k"][1]),
+                        "knn_acc_k_cosine": float(knn_c["acc_at_k"][k_ret]),
+                        "chance_1": float(knn_e["chance_at_k"][1]),
+                        "chance_k": float(knn_e["chance_at_k"][k_ret]),
                     }
                 )
                 + "\n"
@@ -227,6 +323,11 @@ def main() -> int:
         type=str,
         default="cpu",
         help="'cpu' or 'cuda' (cpu is fine for this regime: n_train < d_in^2)",
+    )
+    parser.add_argument(
+        "--skip-parity-gate",
+        action="store_true",
+        help="skip the once-per-process slow-vs-fast parity gate (debug only)",
     )
     args = parser.parse_args()
 
@@ -287,6 +388,7 @@ def main() -> int:
             arm=arm,
             output_path=output_path,
             device=args.device,
+            skip_parity_gate=args.skip_parity_gate,
         )
     return 0
 

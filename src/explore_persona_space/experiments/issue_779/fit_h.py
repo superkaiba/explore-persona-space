@@ -186,6 +186,7 @@ def ridge_fit_predict_fast_layer_batched(
     device: str = "cpu",
     return_weights: bool = False,
     return_info: bool = False,
+    gcv_dof_cap: float | None = None,
 ) -> np.ndarray | tuple:
     """LAYER-BATCHED Gram-eigh ridge — one batched eigh over a leading axis.
 
@@ -219,6 +220,17 @@ def ridge_fit_predict_fast_layer_batched(
             lambda-discipline; #1902 plan §10 option (a): best_lam/dof are
             already computed in-body). Additive + backward-compatible: with
             both flags the return is ``(preds, W, info)``.
+        gcv_dof_cap: OPT-IN #1887 GCV degrees-of-freedom cap (task #2061 M4).
+            When set (e.g. ``0.9``), any lambda whose effective dof
+            ``sum_k w_k/(w_k+lam)`` exceeds ``gcv_dof_cap * n_tr`` on a slice
+            is EXCLUDED from that slice's GCV argmin — the #1887 mitigation
+            for pure-GCV selection degenerating to a (near-)interpolating
+            grid-edge lambda at ``n_tr < d`` (same semantics as
+            ``scripts/issue825_fit_cells.py``'s ``GCV_DOF_CAP`` masking).
+            A slice where EVERY lambda is excluded raises ``RuntimeError``
+            (fail loud — widen the grid or use another selector). Default
+            ``None`` preserves the pre-#2061 pure-GCV behavior byte-for-byte
+            (existing #779/#1768/#1332/#1902 callers are unaffected).
 
     Returns:
         preds (L, n_ev, d_out) as CPU numpy; optionally (preds, W) /
@@ -255,7 +267,23 @@ def ridge_fit_predict_fast_layer_batched(
         rss = tot - ((2 * filt - filt**2) * sqVtY).sum(dim=1)  # (L,)
         dof = filt.sum(dim=1)  # (L,)
         denom = (ntr - dof) ** 2
-        gcv_all[:, li] = torch.where(denom > 1e-12, rss / denom, torch.full_like(rss, float("inf")))
+        vals = torch.where(denom > 1e-12, rss / denom, torch.full_like(rss, float("inf")))
+        if gcv_dof_cap is not None:
+            # #1887 dof-cap mask: exclude lambdas whose effective dof exceeds
+            # cap * n_tr from the per-slice argmin (see the Args docstring).
+            vals = torch.where(dof <= gcv_dof_cap * ntr, vals, torch.full_like(vals, float("inf")))
+        gcv_all[:, li] = vals
+    if gcv_dof_cap is not None:
+        all_capped = torch.isinf(gcv_all).all(dim=1)
+        if bool(all_capped.any()):
+            bad = torch.nonzero(all_capped).flatten().tolist()
+            raise RuntimeError(
+                f"gcv_dof_cap={gcv_dof_cap}: every lambda in the grid "
+                f"(n={len(lambdas)}, [{float(lambdas[0]):.3g}, {float(lambdas[-1]):.3g}]) "
+                f"exceeds dof cap {gcv_dof_cap} * n_tr={ntr} on slice(s) {bad} (#1887). "
+                "Widen the lambda grid toward larger lambdas, lower the cap deliberately, "
+                "or use an inner-CV selector (scripts/issue825_fit_cells.py)."
+            )
     best_idx = gcv_all.argmin(dim=1)  # (L,)
     best_lam = torch.as_tensor(np.asarray(lambdas), dtype=torch.float64, device=dev)[best_idx]
 

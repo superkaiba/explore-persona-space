@@ -168,9 +168,10 @@ def test_fit_per_feature_loader_both_arms_all_shards(tmp_path):
     _write_shard(d, 0, [0, 1])
     _write_shard(d, 1, [2, 3, 4])
     for arm in ("prefix", "context"):
-        x = fpf._load_arm_inputs(d, arm, layer=LAYER)
+        x, conv_ids = fpf._load_arm_inputs(d, arm, layer=LAYER)
         assert x.shape == (5, HIDDEN), (arm, x.shape)  # 2 + 3 rows: BOTH shards
         assert torch.equal(torch.from_numpy(x), _expected([0, 1, 2, 3, 4], arm)), arm
+        assert conv_ids == [f"conv-{g:03d}" for g in range(5)], arm
 
 
 # ---------------------------------------------------------------------------

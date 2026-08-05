@@ -38,10 +38,15 @@ recorded in the Unit A implementation report.
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch/numpy import
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 EXPECTED_SHARD_KEYS = frozenset({"conv_ids", "slots", "profiles", "nll", "spans_meta"})
 
@@ -184,3 +189,32 @@ def load_state_from_shards(
         x = x[:max_rows]
         ids = ids[:max_rows]
     return x.contiguous(), ids
+
+
+def group_fold_ids(conv_ids: Sequence[str], n_folds: int, seed: int) -> np.ndarray:
+    """GROUP-level fold ids per row — #1336's exact fold convention (plan §10, M5).
+
+    Mirrors `scripts/issue825_fit_cells.py::_cv_folds` (the fold constructor
+    #1336's `issue1336_fit_cells.py` drives via the #825 cores with
+    `cm.N_FOLDS=5` / `cm.FIT_SEED=0`): a seeded permutation of the UNIQUE
+    conversation ids, `perm[i] % n_folds` per unique id, so every row sharing
+    a conversation id lands in the same fold (`.claude/rules/
+    ood-generalization-folds.md`). Equality with `_cv_folds` is pinned by
+    `tests/test_issue2061_stats.py`. Fail-loud when any fold is empty.
+    """
+    conv_arr = np.asarray(list(conv_ids))
+    uniq = np.unique(conv_arr)
+    rng = np.random.default_rng(seed)
+    perm = rng.permutation(len(uniq))
+    conv_fold = {cid: int(perm[i] % n_folds) for i, cid in enumerate(uniq)}
+    folds = np.array([conv_fold[c] for c in conv_arr], dtype=np.int64)
+    for cid in uniq:
+        f = folds[conv_arr == cid]
+        assert (f == f[0]).all(), f"fold id varies within conversation {cid!r}"
+    counts = np.bincount(folds, minlength=n_folds)
+    if (counts == 0).any():
+        raise ValueError(
+            f"group_fold_ids: empty fold(s) {np.where(counts == 0)[0].tolist()} — "
+            f"only {len(uniq)} unique conversation ids for n_folds={n_folds}."
+        )
+    return folds
