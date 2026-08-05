@@ -31,6 +31,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [full reference](https://github.com/superkaiba/explore-persona-space/blob/fdb2ddda815fa264a0f976c837fafb346fa5ce03/docs/methodology/issue_1491.md) · [gist mirror](https://gist.github.com/superkaiba/0d1f1db67f5daaabc8dd99a9c79334e9)
+
 ## Takeaways
 
 - Raw context→answer R² rises 0.564→0.725 from 0.5B to 7B (each step p < 0.002, n=1,000), plateaus at 14B, and falls to 0.645 at 32B — below 3B.
