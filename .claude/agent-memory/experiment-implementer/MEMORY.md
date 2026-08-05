@@ -1,151 +1,150 @@
-- [Resume-aware phase-entry headroom gates](feedback_resume_aware_phase_headroom_gates.md) — a blanket fresh-run floor at phase entry deadlocks a resume whose own done artifacts occupy the disk; skip/scale need by PENDING cells, wave-gate template (#1586 fu crash 5)
-- [Mid-run Hub-verified ckpt reap + restage-on-missing](feedback_midrun_verified_upload_ckpt_reap.md) — keep-for-later checkpoints are re-stageable duplicates once upload-verified; fleet of completed cells starves the next phase's headroom floor; reap on verified upload, restage via the single resolver (#1586 fu r5)
-- [Chained smoke-then-full out-root residue](feedback_chained_smoke_leg_out_root_residue.md) — smoke && full per-leg out-roots leave the smoke leg's keep-cell rungs unowned (~44 GB) and starve the full leg's headroom assert; full leg reaps the DERIVED sibling smoke root at first phase entry (#1586 fu r3)
-- [Capture convention: read the PRODUCER's code](feedback_capture_convention_read_producer_code.md) — stored-array reconciliation: pin tokenize/span convention from the parent's chunk writer; stream the parent draw, never recapture (#1482 r3)
-- [TRL mixed prompt/completion schema UB](feedback_trl_mixed_prompt_completion_schema.md) — is_conversational() pops ONE arbitrary key: list-prompt + str-completion routes nondeterministically to the str-only tokenize_fn; both keys message lists (#1489 r4)
-- [SAE published FVE/L0 need the reference token pool](feedback_sae_reference_eval_token_pool.md) — dictionary_learning remove_bos: BOS-8 strip + 10x-median outlier drop + var-FVE; norm factor weight-folded, raw acts correct (#1482 r3)
-- [Batch-API judge item ids — 53-char budget](feedback_batch_custom_id_53_char_budget.md) — Batch custom_id caps at 64, encoder appends 11 → item ids ≤53; hash-compact h<sha1-12>/d<draw> + persisted id_map + quarantine a partially-judged cache before relaunch (draw-dedup trap) (#1415)
-- [CPU randn serial floor in Haar nulls](feedback_cpu_randn_serial_floor_haar_nulls.md) — torch CPU randn is thread-invariant (~50 ns/val); GPU-routing QR leaves ~0.5 s/matrix stream-pinned floor — measure both legs before projecting (#1417 r2)
-- [Batched solve dies on ONE singular slice](feedback_batched_solve_singular_slice_pinv_fallback.md) — np.linalg.solve raises ONCE for a whole (B,k,k) stack; jitter scale-absorbed in fl64; batched-first + per-slice pinv + degenerate_ols flag (#1739 r10)
-- [cuSOLVER eigh non-convergence CPU fallback](feedback_cusolver_eigh_nonconvergence_cpu_fallback.md) — cuda eigh raises LinAlgError on near-singular Grams CPU LAPACK handles; wrap Gram eigh sites in _eigh_robust-style CPU fallback (#1335 r10)
-- [Verbatim-embed answer-anchored span gate](feedback_verbatim_embed_answer_anchored_span_gate.md) — never quote-pair a KNOWN embedded answer's span; 29% of real LMSYS answers carry quotes (pool 2293→4089); anchor on the unique occurrence (#1345 cps)
-- [Verbatim-embed reject taxonomy before budget fix](feedback_verbatim_embed_reject_taxonomy_before_budget_fix.md) — finish_reason + answer-length quantiles on persisted raw rows FIRST: #1345 only 13/1778 rejects were cap-truncated; dominant = model abandons LONG answers at temp 1.0
-- [Pilot timing gates measure at the SWEEP's execution shape](feedback_pilot_timing_gate_sweep_shape.md) — batch-1 pilot vs batched sweep false-fires a correct s/sample threshold (bandwidth-bound decode ≈ batch-independent per-step); replicate to B=gen_batch + normalize; gate refusal = report + distinct rc, never bare rc=1 (#1415)
-- [EXDEV tempdir Hub staging](feedback_exdev_tempdir_hub_staging.md) — bare TemporaryDirectory() (/tmp) + os.replace onto /workspace crashes EXDEV on pods; stage inside the dest dir (dir=dest, prefix=".hfstage_") (#1335 r9)
-- [GCV lambda interpolation degeneracy](feedback_gcv_lambda_interpolation_degeneracy.md) — grouped cells with n_tr ≲ D: GCV picks grid-min λ, R² −2..−46 on healthy data; fix inner-group-CV selection (#1335)
-- [rule-24 surgical re-judge recipe](feedback_rule24_surgical_rejudge_recipe.md) — recover 529 draws from judge_raw via judge_graded per-k groups + fresh cache; deterministic parse_error items = content-class (#1315)
-- [Hub queue-full 429 + LocalEntryNotFoundError mask](feedback_hub_queue_full_429_and_localentrynotfound_mask.md) — wrap every Hub call in hub.retry_transient; a 429 on hf_hub_download's HEAD surfaces as a 404-shaped LocalEntryNotFoundError (#1345 r5)
-- [free-helper caller-binding leak vs drain-waits](feedback_free_helper_caller_binding_drain_wait.md) — `del` in a callee frees nothing; rebind `x = _free_hf(x)` + post-rebind empty_cache; PEFT wrappers pin base (#1333 r9)
-- [Smoke keeps ZeRO-3 production width](feedback_smoke_ft_zero3_width_parity.md) — narrowing a ZeRO-3 full-FT smoke to 1 process OOMs at the first optimizer step (~86 GB unsharded on 80 GB); audit every `if cfg.smoke:` width branch when cloning a dispatcher (#1315)
-- [Per-arm-class smoke + source-filtered panel](feedback_per_arm_class_smoke_and_panel_disjointness.md) — a new source-context class crashes the #527/#538 panel-disjointness assert at ModelOrganism sites the smoke never reached; thread fu3w.panel_name_for everywhere + smoke one run per ARM CLASS (#1090 fu5)
-- [--smoke ternary skips the production branch](feedback_smoke_ternary_skips_production_branch.md) — `A if args.smoke else MODULE.CONST` leaves the production branch unexecuted by the smoke; resolve production-only constants at import time (#825 contrast crash)
-- [hf local_dir staging for delete-to-free + content-mtime fingerprints](feedback_hf_local_dir_staging_for_delete_to_free.md) — symlink-to-cache staging frees NOTHING on unlink (use hf_hub_download local_dir + os.replace); stat-keyed resume fingerprints need sha-derived os.utime or every re-staging invalidates all checkpoints (#1092 P6)
-- [Fan-out reap = process GROUP + per-cell file contract](feedback_fanout_reap_process_group_and_per_cell_file_contract.md) — killpg a start_new_session group, never terminate() the uv child (orphan EngineCores fake a wedge); per-cell resolver files need a writer per cell CLASS + resume backfill (#1112 r7)
-- [Fanout shared-staging race: pre-stage in parent](feedback_fanout_shared_staging_prestage_parent.md) — shared _hfstage scratch lets a sibling os.replace steal your download; single-file guards pass partial dests; parent pre-stage + per-invocation mkdtemp + full-required-set guard (#1315 r5); cache evicts once per parent batch (#1586 fu r6)
-- [Partial-artifact resume + tokenizer-less Trainer ckpts](feedback_partial_artifact_resume_and_trainer_ckpt_tokenizer.md) — resume-skip keyed on the FIRST written file resumes partial merges; Trainer checkpoint-<step>/ has NO tokenizer without processing_class → slow-Qwen2 vocab_file=None TypeError; repair-at-the-dir with base tokenizer (#1112 r6)
-- [Rank-deficient PCA target = algorithm-coupled estimator](feedback_rank_deficient_pca_target_algorithm_coupled.md) — probe the centered spectrum at the k boundary BEFORE vectorizing a per-resample top-k SVD pipeline; rank<k means the SVD null-basis IS part of the statistic (serial-only) + raise as science concern; batched small-matrix CPU torch ≈1 core vs threaded serial gesdd (#833 r5)
-- [group_stratified_subsample seed-degenerate on singleton stores + chat-store load peaks](feedback_group_stratified_subsample_singleton_degeneracy.md) — all-singleton groups: tie-break picks first n rows for EVERY seed (SD=0 multi-draw collapse); _load_bundle_pt full Track-S store peaks ~31 GiB (earlyoom) — stream per-shard slices; fp64 eigh thrash at 8 threads on loaded VM → cap 2 (#931 pcms).
-- [Hub-prefix-mirror staging ≠ consumer layout](feedback_hub_prefix_mirror_vs_consumer_layout.md) — producer uploaded manifest INSIDE the blob folder; pure hub-rel→local-rel mapping + fail-loud entry-file check + smoke against the REAL Hub path shapes (#928).
-- [Tiny-cell serial-parity gates thrash wide torch pools + issue658 device fallback](feedback_mlp_serial_parity_gate_thread_thrash.md) — pin 2 threads INSIDE the gate (265s vs >480s timeout at 8); calibrate atol at production epochs (9.5e-7 vs 5e-5); guard cpu-fallback at production size (#928 r6).
-- [cuDNN-TF32 parity gates diverge on H100](feedback_cudnn_tf32_fp32_parity_gate.md) — cudnn.allow_tf32 defaults True (matmul TF32 off): fp32 parity asserts of nn.GRU-vs-GRUCell fail at ~2e-4 with correct math; run the gate on a float64 clone at ~1e-8 tol + loose fp32 cross-check. #841 r21.
-- [Parity gates on determinate data are blind](feedback_parity_gate_determinate_data_blind.md) — end-to-end R2 parity tests pass even under the WRONG recipe on strong-signal data (#931: pre-fix 0.0006 vs post-fix 0.0008); the fails-pre-fix pin is a bit-level same-init serial-replica test with the early-stop branch asserted to fire; tiny no-signal smoke deltas are init noise.
-- [Artifact-pair provenance coherence](feedback_artifact_pair_provenance_coherence.md) — sha pins ≠ capture-time identity: a question bank REGENERATED after its dependent activation capture (reconstruction.regenerated field; HF last-commit dates) breaks parity + q↔response pairing; assert only on provably-reconstructable inputs. #922 r4.
-- [BPE zero-width spans under plain-text delimiters](feedback_bpe_zero_width_span_plain_text_delimiters.md) — offset-containment span alignment yields (s,s) spans when a generated segment fully BPE-merges into "User: ...
-
-"-style delimiters (bare '.'; even 'Thanks.'); span-validate at GEN time with the consumer's exact asserts + multi-token placeholder. #825 crash-fix 4.
-- [Post-PCA whitening kills OOF ridge generalization](feedback_post_pca_whitening_kills_oof_generalization.md) — standardize AMBIENT then PCA-project, never per-PCA-dim; rotation-invariance oracle; #923 (+0.13 → −6.4).
-- [mpl tight_layout after colorbar crashes under paper style](feedback_mpl_tight_layout_colorbar_paper_style.md) — matplotlib refuses the layout-engine switch once a colorbar exists; use plt.subplots(layout="constrained") for heatmaps, no tight_layout. #920.
-- [batch_judge aggregator crashes on bare-int parse from a scalar-shaped judge rubric](feedback_batch_judge_aggregator_bare_int_parse.md) — `eval.utils.parse_judge_json` returns `json.loads(text)` verbatim; a persona-vectors rubric answered as `"85"` yields a bare `int`, and the Betley legacy aggregator in `_aggregate_persona_scores` crashes on `s.get("aligned")` — BEFORE `save_raw` is written, so a scalar-rubric caller that reduces `all_scores` itself never even gets its data back. Any NON-Betley `judge_completions_batch` caller must reduce from `save_raw`'s `all_scores` itself AND the aggregator needs an `isinstance(s, dict)` guard (fix landed at fb3da7045e). #778 r2.
-- [Vectorized LOCO MLP: multihead ≠ scalar-per-dim reproduction](feedback_vectorized_loco_mlp_multihead_vs_scalar.md) — vectorized_mlp_skill.py: only the scalar-per-dim path bit-reproduces #658's _fit_mlp_ensemble_loco (exactness-gated ≤5e-6); the multihead head is the fast/rule-prescribed prod path but a different architecture (no bit-reproduce). Keep both. Thread-oversubscription thrashes small bmm (16 threads 9s vs 1-4 threads 1.6s on (300,50,49)). Input-PCA lossless at rank≤n applies to #658 too. #722/#658.
-- [--resume must pin every output-affecting regime key](feedback_resume_metadata_pin_every_regime_key.md) — adding --resume to a script with multiple input regimes (--cc/method/hyperparameter choice) requires pinning EVERY regime key in the manifest + check; a substrate fingerprint hashing only seed/data/dims doesn't distinguish argparse --cc choices, so cross-regime resume silently reuses wrong cached rows + mislabels canonical output. Auto-derive regime keys from argparse choices to prevent drift. #722 r3.
-- [Long-running analysis needs per-unit atomic writes + --resume](feedback_long_running_analysis_needs_resume.md) — a multi-iteration CPU/GPU analysis script with wall-time ≥1h that writes only end-of-run loses ALL completed work on any mid-run crash; on a shared contended VM (load avg 60+) crashes are likely. Always per-unit atomic JSON + opt-in --resume with fail-loud substrate match. #722 r2.
-- [Seed smuggled into data-mix path AND model-init seed](feedback_seed_smuggled_into_data_and_init.md) — when a per-cell `seed` field feeds BOTH a reused-artifact data-mix path AND the model-init seed, the wrapper crashes on never-built per-seed mixes AND smuggles a second deliberate variable; pin mix-data seed to the parent's materialized baseline (e.g. seed-42), vary model-init seed only, add a fail-loud assert at the call site. #734 r2→r3.
-- [Reused script may carry uncommitted sibling edits](feedback_reused_script_may_have_uncommitted_sibling_edits.md) — a reused helper's WORKING-TREE copy can have a parallel session's UNCOMMITTED signature change (new `--layer` arg) NOT on main; calling it "works" in smoke but breaks against committed main. Diff against HEAD before depending on a signature; inline a self-contained equivalent using only committed helpers; never commit the sibling's dirty change. #667 alllayer.
-- [Dispatcher wave size must equal visible GPU count](feedback_dispatcher_wave_size_must_match_visible_gpus.md) — a per-cell subprocess dispatcher fanning out `--gpu-id 0..N-1` must derive N from `torch.cuda.device_count()`, NEVER a hardcoded/`--n-gpus`-default constant; surplus `--gpu-id` lanes on a smaller lane get `CVD=1..3`, see no device, SILENTLY run on CPU for hours (no traceback). Clamp wave to detected count; raise loud on 0 GPU. #667 a36 r2.
-- [numpy SVD non-convergence on bootstrap resamples](feedback_numpy_svd_nonconvergence_bootstrap.md) — np.linalg.svd (gesdd) raises LinAlgError on rank-deficient bootstrap resamples in small clusters; fall back to scipy gesvd AND per-pair skip-guard the bootstrap loop (count skips, >5% = CONCERN). Deterministic on same data → code fix, NOT RunPod failover. #722 r3.
-- [vLLM large-batch deadlock — chunk `llm.generate` calls](feedback_vllm_large_batch_deadlock_chunk_it.md) — a single `llm.generate(N_large_prompts, ...)` can hang the vLLM v1 EngineCore CUDA worker on some pod driver/GPU combos (0% GPU util, zombie PID, no traceback); the same prompts split into sequential 500-prompt chunks (env-overridable via `EPM_VLLM_GREEDY_CHUNK_SIZE`) generate fine. Always chunk + emit per-chunk INFO logs so the poller sees liveness. #664 r9.
-- [HF↔vLLM coexistence — clear hook-captured dict + ipc_collect](feedback_hf_vllm_coexistence_captured_dict.md) — a helper that sequences vLLM-gen→HF teacher-force is NOT coexistence-safe in a per-cell/per-behavior dispatcher loop unless the HF teardown clears the hook `captured` dict (bare `del model; empty_cache` leaves detached GPU tensors pinned); +keep vLLM gpu_memory_utilization≤0.5; +vLLM-path smoke must run ≥2 iterations. #685 r3.
-- [Wrap-script: route on artifact, not exit code](feedback_wrap_script_route_on_artifact_not_rc.md) — when wrapping a script that exits non-zero on a domain HALT AFTER writing its artifact (K2 HALT, etc.), check the artifact first; rc is a fall-through crash signal only. #657 r3.
-- [onpolicy_negatives row-unfilled = deterministic outlier, not yield bug](feedback_onpolicy_neg_pool_deterministic_outliers.md) — (claim, persona) pairs with semantic degeneracy (absorbed myth, knowledgeable-persona × factually-correct claim) fail ALL candidates ALL rounds; fix via per-(j, persona) NEG_CLAIM_OVERRIDES, NOT a yield retry. #653.
-- [cd-to-repo-root commits land on main](feedback_cd_repo_root_commits_land_on_main.md) — `cd <repo-root> && git commit` commits to main, NOT the issue-N worktree; verify `git rev-parse --abbrev-ref HEAD`==issue-N before committing. #642.
-- [Write tool lands new files in session cwd](feedback_write_tool_lands_in_session_cwd.md) — a Write to a worktree abs-path can materialize at the repo-root mirror; ls-verify on disk + mv into worktree before git add. #653.
-- [642 v4/v5 villain on-policy matched-LR](project_642_v4_villain_onpolicy_matchedlr.md) — 4 NEW arms, #612 30-panel, splice #411 villain positives onto #612 negs (NOT #411 negs — byte differ); pinned shas + paths.
-- [Eval-rig per-phase checkpoint](feedback_eval_rig_per_phase_checkpoint.md) — persist each sub-phase (gen/logprob/judge) to disk the moment it completes; never write at end-of-seed. #399.
-- [vLLM use_tqdm=False on every generate](feedback_vllm_use_tqdm_zerodivision.md) — vLLM 0.11.0 LLM.generate() crashes ZeroDivisionError in tqdm when a batch finishes faster than elapsed-time tick; pass use_tqdm=False everywhere. #613.
-- [expandable_segments raises peak resident](feedback_expandable_segments_raises_peak_resident.md) — PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True trades fragmentation for higher peak (HF resident 22→30 GiB); re-measure + re-budget the memory dial after enabling, or the next co-residency OOM bites. #545.
-- [vLLM orphan worker after destroy](feedback_vllm_orphan_worker_after_destroy.md) — destroy_* doesn't reap workers; psutil child-kill + nvidia-smi check, or subprocess-isolate phases. #399.
-- [Orphan-PID check must be CVD-aware](feedback_orphan_pid_check_must_be_cvd_aware.md) — on multi-GPU pods filter compute-app PIDs by gpu_uuid vs the CVD-visible set. #396.
-- [Dispatcher silent-death hardening](feedback_dispatcher_silent_death_hardening.md) — hf_hub_download retry-with-backoff + per-file log lines + logger.exception-and-reraise loop guard. #396.
-- [Ruff strips unused imports](feedback_ruff_strips_unused_imports.md) — post-Edit hook removes reference-less imports; land import + usage together; ruff check after. 7 orderings catalogued.
-- [Clone-modify cross-file drift](feedback_clone_modify_cross_file_drift.md) — new kwarg threads leave library helpers stale; AST kwarg-vs-signature sweep (<1s) before any pod launch. #399.
-- [SUPERSEDED by hf-snapshot-download-full-tree-enumeration — see #833] [snapshot_download siblings truncation](feedback_snapshot_download_siblings_truncation.md) — allow_patterns silently fetches 0 files past ~8k siblings; use list_repo_files + per-file hf_hub_download. #375/#399.
-- [snapshot_download full-tree enumeration](feedback_hf_snapshot_download_full_tree_enumeration.md) — snapshot_download walks the WHOLE ~1M-file data repo before allow_patterns (40+ min, 0 files, #833 r7a); list_repo_files also times out now — use SCOPED list_repo_tree(path_in_repo=...) + ≤6-thread hf_hub_download.
-- [Eval-script silent 'not present' misdiagnosis](feedback_eval_script_silent_not_present_misdiagnosis.md) — split helper None into genuine-missing vs pattern-mismatch/invariant RuntimeErrors; never imply "re-train" on a downloader bug. #399.
-- [Add dimension via alias + new key, never rename](feedback_add_dimension_alias_legacy.md) — legacy filenames/keys alias the default value; new values get parallel keys; resume + consumers keep working. #399.
-- [Extract sibling metadata from HF, not generator code](feedback_extract_sibling_metadata_from_hf.md) — bit-identical metadata comes from the sibling's published HF artifacts + SHA-256 fingerprint. #480.
-- [HF mirror divergence — pin content hashes at prefetch](feedback_hf_mirror_divergence_pin_hashes.md) — issue-owned input snapshots + sha256 pins; local-verified ≠ HF mirror. #600.
-- [Pinned artifact pairs can disagree](feedback_pinned_artifact_pair_mutual_inconsistency.md) — assert per-(persona,q) coverage against the READ-side artifact; descope with a coverage field, never regenerate frozen R. #601.
-- [Deviation path → sweep all pin verifiers](feedback_deviation_path_sweeps_all_pin_verifiers.md) — an authorized artifact deviation flips sibling pin checks; re-point stale parent-pin verifiers to the run's own attestation.
-- [Resume branches synthesize success-equivalent results](feedback_resume_branch_synthesize_result.md) — bare-continue skip branches read as crashes downstream; rehearse resume offline. #600.
-- [CPU build-time guard for max_length truncation](feedback_cpu_build_time_guard_for_truncation.md) — re-tokenize every row at pool-build and fail loud over budget; smoke needs a long NEG row. #480.
-- [TRL assistant_only_loss + Qwen template](feedback_trl_assistant_only_loss_qwen_template.md) — crashes on Qwen (no {% generation %}); prompt+completion data: set False, completion_mask already masks. #519.
-- [Left-pad → explicit position_ids required](feedback_left_pad_position_ids_required.md) — batched generate/forward under left-pad needs cumsum position_ids; smoke cosine(batched, serial) ≥ 0.999. #502.
-- [Mask-audit anchor lookup must use offset_mapping](feedback_mask_audit_offset_mapping.md) — re-tokenize subsequence search breaks on BPE merges; decoded.rfind + offsets + drift guard.
-- [bf16 merge truncates small LoRA deltas](feedback_bf16_merge_truncates_small_lora_delta.md) — merge_and_unload attenuates early/low-lr adapters; parity-faithful read = unmerged PeftModel. #480.
-- [LoRA application-scaling contract](feedback_lora_application_scaling_contract.md) — rsLoRA α/√r vs classic α/r flips repeater behavior; probe both scalings + pin the read gauge. #601.
-- [hidden_states[-1] is POST-final-norm](feedback_hidden_states_tail_post_norm.md) — hs tail = lm_head input; hook for last-layer residuals; perturb non-uniformly in tiny-model tests. #597.
-- [Gate reads need matched batch geometry](feedback_gate_reads_batch_geometry.md) — left-pad companions shift bf16 logp ~0.16 nat; re-read rows in their ORIGINAL sub-batches. #597.
-- [Threshold-gated telemetry never fires on short runs](feedback_threshold_gated_telemetry_short_runs.md) — min_steps≥T cells ship NO trajectory file; gate the stop, not the probe. #601.
-- [Gate the stop predicate, never the telemetry](feedback_gate_stop_predicate_not_telemetry.md) — check every gate against the SHORTEST cell + smoke its telemetry output. #601.
-- [max_model_len tracks max_new_tokens](feedback_max_model_len_tracks_max_new_tokens.md) — raising max_new_tokens on an inherited vLLM rig requires raising max_model_len at the call site. #601.
-- [4-D per-q caches blow up disk](feedback_per_q_4d_disk_blowup.md) — (n_q, n_layers, n_pos, D) is N_pos× the 3-D estimate; default per-q writes to the analyzer-needed subset. #263.
-- [Upload loops need 5xx retry + skip-set pairing](feedback_upload_loop_retry_plus_skip_set.md) — bounded 5xx retry (4xx loud) + pre-fetched skip set; verify on a FRESH listing. #542.
-- [Smoke-root rebinding orphans parent inputs](feedback_smoke_root_rebind_orphans_parent_inputs.md) — pin parent inputs to a NON-rebinding constant and stage before the --smoke early-return. #542.
-- [Lazy imports in smoke-skipped branches](feedback_lazy_imports_skipped_by_smoke.md) — hoist to module top + AST --verify-imports gate + bind fenced calls before relaunch. #606/#1332.
-- [Subagent one turn, no watchers](feedback_subagent_one_turn_no_watchers.md) — watchers die at turn end; run minutes-scale smokes foreground with timeouts.
-- [bg heartbeat sleep child holds pipe](feedback_bg_heartbeat_sleep_child_holds_pipe.md) — killed subshell's in-flight sleep holds stdout; STOP→pkill-child→CONT→TERM in the trap. #601.
+- [Batch drain drops bare-scalar judge verdicts](feedback_batch_drain_drops_bare_scalar_verdicts.md) — high batch parse_error rate = ROUTE (#1739)
+- [Resume-aware phase-entry headroom gates](feedback_resume_aware_phase_headroom_gates.md) — a blanket fresh-run floor at phase entry (#1586)
+- [Mid-run Hub-verified ckpt reap + restage-on-missing](feedback_midrun_verified_upload_ckpt_reap.md) — keep-for-later checkpoints are (#1586)
+- [Chained smoke-then-full out-root residue](feedback_chained_smoke_leg_out_root_residue.md) — smoke && full per-leg out-roots leave the (#1586)
+- [Capture convention: read the PRODUCER's code](feedback_capture_convention_read_producer_code.md) — stored-array reconciliation: pin (#1482)
+- [TRL mixed prompt/completion schema UB](feedback_trl_mixed_prompt_completion_schema.md) — is_conversational() pops ONE arbitrary key (#1489)
+- [SAE published FVE/L0 need the reference token pool](feedback_sae_reference_eval_token_pool.md) — dictionary_learning remove_bos: BOS-8 (#1482)
+- [Batch-API judge item ids — 53-char budget](feedback_batch_custom_id_53_char_budget.md) — Batch custom_id caps at 64, encoder appends 11 → (#1415)
+- [CPU randn serial floor in Haar nulls](feedback_cpu_randn_serial_floor_haar_nulls.md) — torch CPU randn is thread-invariant (~50 ns/val) (#1417)
+- [Batched solve dies on ONE singular slice](feedback_batched_solve_singular_slice_pinv_fallback.md) — np.linalg.solve raises ONCE for a (#1739)
+- [cuSOLVER eigh non-convergence CPU fallback](feedback_cusolver_eigh_nonconvergence_cpu_fallback.md) — cuda eigh raises LinAlgError on (#1335)
+- [Verbatim-embed answer-anchored span gate](feedback_verbatim_embed_answer_anchored_span_gate.md) — never quote-pair a KNOWN embedded (#1345)
+- [Verbatim-embed reject taxonomy before budget fix](feedback_verbatim_embed_reject_taxonomy_before_budget_fix.md) — finish_reason + (#1345)
+- [Pilot timing gates measure at the SWEEP's execution shape](feedback_pilot_timing_gate_sweep_shape.md) — batch-1 pilot vs batched sweep (#1415)
+- [EXDEV tempdir Hub staging](feedback_exdev_tempdir_hub_staging.md) — bare TemporaryDirectory() (/tmp) + os.replace onto /workspace crashes (#1335)
+- [GCV lambda interpolation degeneracy](feedback_gcv_lambda_interpolation_degeneracy.md) — grouped cells with n_tr ≲ D: GCV picks grid-min λ (#1335)
+- [rule-24 surgical re-judge recipe](feedback_rule24_surgical_rejudge_recipe.md) — recover 529 draws from judge_raw via judge_graded per-k (#1315)
+- [Hub queue-full 429 + LocalEntryNotFoundError mask](feedback_hub_queue_full_429_and_localentrynotfound_mask.md) — wrap every Hub call in (#1345)
+- [free-helper caller-binding leak vs drain-waits](feedback_free_helper_caller_binding_drain_wait.md) — `del` in a callee frees nothing (#1333)
+- [Smoke keeps ZeRO-3 production width](feedback_smoke_ft_zero3_width_parity.md) — narrowing a ZeRO-3 full-FT smoke to 1 process OOMs at the (#1315)
+- [Per-arm-class smoke + source-filtered panel](feedback_per_arm_class_smoke_and_panel_disjointness.md) — a new source-context class crashes (#1090)
+- [--smoke ternary skips the production branch](feedback_smoke_ternary_skips_production_branch.md) — `A if args.smoke else MODULE.CONST` (#825)
+- [hf local_dir staging for delete-to-free + content-mtime fingerprints](feedback_hf_local_dir_staging_for_delete_to_free.md) — symlink-to-cac (#1092)
+- [Fan-out reap = process GROUP + per-cell file contract](feedback_fanout_reap_process_group_and_per_cell_file_contract.md) — killpg a (#1112)
+- [Fanout shared-staging race: pre-stage in parent](feedback_fanout_shared_staging_prestage_parent.md) — shared _hfstage scratch lets a (#1586)
+- [Partial-artifact resume + tokenizer-less Trainer ckpts](feedback_partial_artifact_resume_and_trainer_ckpt_tokenizer.md) — resume-skip (#1112)
+- [Rank-deficient PCA target = algorithm-coupled estimator](feedback_rank_deficient_pca_target_algorithm_coupled.md) — probe the centered (#833)
+- [group_stratified_subsample seed-degenerate on singleton stores + chat-store load peaks](feedback_group_stratified_subsample_singleton_degeneracy.md) (#931)
+- [Hub-prefix-mirror staging ≠ consumer layout](feedback_hub_prefix_mirror_vs_consumer_layout.md) — producer uploaded manifest INSIDE the blob (#928)
+- [Tiny-cell serial-parity gates thrash wide torch pools + issue658 device fallback](feedback_mlp_serial_parity_gate_thread_thrash.md) (#928)
+- [cuDNN-TF32 parity gates diverge on H100](feedback_cudnn_tf32_fp32_parity_gate.md) — cudnn.allow_tf32 defaults True (matmul TF32 off): fp32 (#841)
+- [Parity gates on determinate data are blind](feedback_parity_gate_determinate_data_blind.md) — end-to-end R2 parity tests pass even under (#931)
+- [Artifact-pair provenance coherence](feedback_artifact_pair_provenance_coherence.md) — sha pins ≠ capture-time identity: a question bank (#922)
+- [BPE zero-width spans under plain-text delimiters](feedback_bpe_zero_width_span_plain_text_delimiters.md) — offset-containment span (#825)
+- [Post-PCA whitening kills OOF ridge generalization](feedback_post_pca_whitening_kills_oof_generalization.md) — standardize AMBIENT then (#923)
+- [mpl tight_layout after colorbar crashes under paper style](feedback_mpl_tight_layout_colorbar_paper_style.md) — matplotlib refuses the (#920)
+- [batch_judge aggregator crashes on bare-int parse from a scalar-shaped judge rubric](feedback_batch_judge_aggregator_bare_int_parse.md) (#778)
+- [Vectorized LOCO MLP: multihead ≠ scalar-per-dim reproduction](feedback_vectorized_loco_mlp_multihead_vs_scalar.md) — vectorized_mlp_skill.py (#658)
+- [--resume must pin every output-affecting regime key](feedback_resume_metadata_pin_every_regime_key.md) — adding --resume to a script with (#722)
+- [Long-running analysis needs per-unit atomic writes + --resume](feedback_long_running_analysis_needs_resume.md) — a multi-iteration CPU/GPU (#722)
+- [Seed smuggled into data-mix path AND model-init seed](feedback_seed_smuggled_into_data_and_init.md) — when a per-cell `seed` field feeds (#734)
+- [Reused script may carry uncommitted sibling edits](feedback_reused_script_may_have_uncommitted_sibling_edits.md) — a reused helper's (#667)
+- [Dispatcher wave size must equal visible GPU count](feedback_dispatcher_wave_size_must_match_visible_gpus.md) — a per-cell subprocess (#667)
+- [numpy SVD non-convergence on bootstrap resamples](feedback_numpy_svd_nonconvergence_bootstrap.md) — np.linalg.svd (gesdd) raises (#722)
+- [vLLM large-batch deadlock — chunk `llm.generate` calls](feedback_vllm_large_batch_deadlock_chunk_it.md) — a single (#664)
+- [HF↔vLLM coexistence — clear hook-captured dict + ipc_collect](feedback_hf_vllm_coexistence_captured_dict.md) — a helper that sequences (#685)
+- [Wrap-script: route on artifact, not exit code](feedback_wrap_script_route_on_artifact_not_rc.md) — when wrapping a script that exits (#657)
+- [onpolicy_negatives row-unfilled = deterministic outlier, not yield bug](feedback_onpolicy_neg_pool_deterministic_outliers.md) — (claim (#653)
+- [cd-to-repo-root commits land on main](feedback_cd_repo_root_commits_land_on_main.md) — `cd <repo-root> && git commit` commits to main, NOT (#642)
+- [Write tool lands new files in session cwd](feedback_write_tool_lands_in_session_cwd.md) — a Write to a worktree abs-path can materialize at (#653)
+- [642 v4/v5 villain on-policy matched-LR](project_642_v4_villain_onpolicy_matchedlr.md) — 4 NEW arms, #612 30-panel, splice #411 villain (#411)
+- [Eval-rig per-phase checkpoint](feedback_eval_rig_per_phase_checkpoint.md) — persist each sub-phase (gen/logprob/judge) to disk the moment (#399)
+- [vLLM use_tqdm=False on every generate](feedback_vllm_use_tqdm_zerodivision.md) — vLLM 0.11.0 LLM.generate() crashes ZeroDivisionError in (#613)
+- [expandable_segments raises peak resident](feedback_expandable_segments_raises_peak_resident.md) — PYTORCH_CUDA_ALLOC_CONF=expandable_segment (#545)
+- [vLLM orphan worker after destroy](feedback_vllm_orphan_worker_after_destroy.md) — destroy_* doesn't reap workers; psutil child-kill + (#399)
+- [Orphan-PID check must be CVD-aware](feedback_orphan_pid_check_must_be_cvd_aware.md) — on multi-GPU pods filter compute-app PIDs by gpu_uuid (#396)
+- [Dispatcher silent-death hardening](feedback_dispatcher_silent_death_hardening.md) — hf_hub_download retry-with-backoff + per-file log lines (#396)
+- [Ruff strips unused imports](feedback_ruff_strips_unused_imports.md) — post-Edit hook removes reference-less imports; land import + usage together
+- [Clone-modify cross-file drift](feedback_clone_modify_cross_file_drift.md) — new kwarg threads leave library helpers stale; AST (#399)
+- [snapshot_download siblings truncation](feedback_snapshot_download_siblings_truncation.md) — SUPERSEDED by full-tree-enumeration (#833)
+- [snapshot_download full-tree enumeration](feedback_hf_snapshot_download_full_tree_enumeration.md) — snapshot_download walks the WHOLE (#833)
+- [Eval-script silent 'not present' misdiagnosis](feedback_eval_script_silent_not_present_misdiagnosis.md) — split helper None into (#399)
+- [Add dimension via alias + new key, never rename](feedback_add_dimension_alias_legacy.md) — legacy filenames/keys alias the default value (#399)
+- [Extract sibling metadata from HF, not generator code](feedback_extract_sibling_metadata_from_hf.md) — bit-identical metadata comes from the (#480)
+- [HF mirror divergence — pin content hashes at prefetch](feedback_hf_mirror_divergence_pin_hashes.md) — issue-owned input snapshots + sha256 (#600)
+- [Pinned artifact pairs can disagree](feedback_pinned_artifact_pair_mutual_inconsistency.md) — assert per-(persona,q) coverage against the (#601)
+- [Deviation path → sweep all pin verifiers](feedback_deviation_path_sweeps_all_pin_verifiers.md) — an authorized artifact deviation flips sibling
+- [Resume branches synthesize success-equivalent results](feedback_resume_branch_synthesize_result.md) — bare-continue skip branches read as (#600)
+- [CPU build-time guard for max_length truncation](feedback_cpu_build_time_guard_for_truncation.md) — re-tokenize every row at pool-build and (#480)
+- [TRL assistant_only_loss + Qwen template](feedback_trl_assistant_only_loss_qwen_template.md) — crashes on Qwen (no {% generation %}) (#519)
+- [Left-pad → explicit position_ids required](feedback_left_pad_position_ids_required.md) — batched generate/forward under left-pad needs (#502)
+- [Mask-audit anchor lookup must use offset_mapping](feedback_mask_audit_offset_mapping.md) — re-tokenize subsequence search breaks on BPE merges
+- [bf16 merge truncates small LoRA deltas](feedback_bf16_merge_truncates_small_lora_delta.md) — merge_and_unload attenuates early/low-lr (#480)
+- [LoRA application-scaling contract](feedback_lora_application_scaling_contract.md) — rsLoRA α/√r vs classic α/r flips repeater behavior (#601)
+- [hidden_states[-1] is POST-final-norm](feedback_hidden_states_tail_post_norm.md) — hs tail = lm_head input; hook for last-layer residuals; perturb n
+- [Gate reads need matched batch geometry](feedback_gate_reads_batch_geometry.md) — left-pad companions shift bf16 logp ~0.16 nat; re-read (#597)
+- [Threshold-gated telemetry never fires on short runs](feedback_threshold_gated_telemetry_short_runs.md) — min_steps≥T cells ship NO (#601)
+- [Gate the stop predicate, never the telemetry](feedback_gate_stop_predicate_not_telemetry.md) — check every gate against the SHORTEST cell + (#601)
+- [max_model_len tracks max_new_tokens](feedback_max_model_len_tracks_max_new_tokens.md) — raising max_new_tokens on an inherited vLLM rig (#601)
+- [4-D per-q caches blow up disk](feedback_per_q_4d_disk_blowup.md) — (n_q, n_layers, n_pos, D) is N_pos× the 3-D estimate; default per-q (#263)
+- [Upload loops need 5xx retry + skip-set pairing](feedback_upload_loop_retry_plus_skip_set.md) — bounded 5xx retry (4xx loud) + pre-fetched (#542)
+- [Smoke-root rebinding orphans parent inputs](feedback_smoke_root_rebind_orphans_parent_inputs.md) — pin parent inputs to a NON-rebinding (#542)
+- [Lazy imports in smoke-skipped branches](feedback_lazy_imports_skipped_by_smoke.md) — hoist to module top + AST --verify-imports gate + (#1332)
+- [Subagent one turn, no watchers](feedback_subagent_one_turn_no_watchers.md) — watchers die at turn end; run minutes-scale smokes foreground with
+- [bg heartbeat sleep child holds pipe](feedback_bg_heartbeat_sleep_child_holds_pipe.md) — killed subshell's in-flight sleep holds stdout (#601)
 - [PYTHONHASHSEED re-exec dance](feedback_pythonhashseed_reexec.md) — pin via os.execvpe re-exec at entry; setting from Python is too late.
-- [Sonnet refusal in seed prompts](feedback_sonnet_refusal_in_seed_prompts.md) — "generate jailbreak attempts" wording silently refuses; reframe as taxonomy labels + detect_refusal helper.
-- [Refusal regex breadth](feedback_refusal_regex_breadth.md) — HIGH-conf patterns fire alone; polite openers only with a refusal continuation within ~240 chars. #377.
-- [i472 JSON payloads wrap data](feedback_i472_json_payloads_wrap_data.md) — persona_bank/R_train/R_eval wrap data under payload keys; use the canonical load_* helpers. #505.
-- [UltraChat prompt field case-variant](feedback_ultrachat_prompt_field_case_variant.md) — use messages[0] text + casefold-strip check, never byte equality with `prompt`.
-- [Panel import forces HF_HOME=/workspace](feedback_panel_import_forces_workspace_hf_home.md) — VM-local tokenizer loads must run BEFORE the bystander-panel import.
+- [Sonnet refusal in seed prompts](feedback_sonnet_refusal_in_seed_prompts.md) — "generate jailbreak attempts" wording silently refuses; reframe as
+- [Refusal regex breadth](feedback_refusal_regex_breadth.md) — HIGH-conf patterns fire alone; polite openers only with a refusal continuation (#377)
+- [i472 JSON payloads wrap data](feedback_i472_json_payloads_wrap_data.md) — persona_bank/R_train/R_eval wrap data under payload keys; use the (#505)
+- [UltraChat prompt field case-variant](feedback_ultrachat_prompt_field_case_variant.md) — use messages[0] text + casefold-strip check, never byte
+- [Panel import forces HF_HOME=/workspace](feedback_panel_import_forces_workspace_hf_home.md) — VM-local tokenizer loads must run BEFORE the
 - [PEFT README local-path bug](feedback_peft_readme_local_path.md) — save_pretrained writes base_model=local-path; Hub 400s; rewrite before upload.
-- [Preflight --json is pretty-printed](feedback_preflight_json_parse.md) — parse whole stdout (first-{ slice), never the last line; smoke must exercise run_preflight.
-- [argparse description=__doc__ + literal % crashes](feedback_argparse_doc_percent.md) — docstring goes through % interpolation; RawDescriptionHelpFormatter + clean description.
-- [CI bounds vs mpl xerr/yerr offsets](feedback_constant_bootstrap_negative_yerr.md) — clamp max(0,v-lo)/max(0,hi-v) element-wise at EVERY errorbar site; fires on float-epsilon (#547) AND inverted quantile CIs at tiny n (#1335)
-- [paper_palette_role valid names](feedback_paper_palette_role_names.md) — only accent/baseline/control/neutral/primary; "secondary" ValueErrors at render.
-- [on_log never sees direct wandb.log](feedback_on_log_never_sees_direct_wandb_log.md) — derive cross-callback outcomes from the producer's artifact file, never on_log key-sniffing (#621 false band-miss)
-- [apply-parity probe N sizing follows Wilson-CI half-width](feedback_apply_parity_probe_n_sizing.md) — ±tolerance rate-gate must set N from Wilson-CI half-width at the expected rate (#667 pivot 1, n=10 at rate 0.7 gives half-width ~0.27 not ±0.10 — false-fails guaranteed)
-- [strict LLM-count assert on over-generation (clamp + typed shortfall)](feedback_strict_llm_count_assert_over_generation.md) — clamp to N via items[:N] on over-generation, raise typed ArtifactCountShortfall on under-generation (never == N hard-assert; #779 round-7)
-- [Parity floor: weak writer vs gauge error](feedback_parity_floor_weak_writer_vs_gauge_error.md) — per-adapter-class write-ratio floors; gauge errors are √r-multiplicative, not 10% shortfalls (#813)
-- [TrainerCallback subclass + real-path smoke](feedback_trainer_callback_must_subclass_trainercallback.md) — hand-rolled HF callbacks must subclass TrainerCallback; GPU-bound-phase smokes must traverse real SFTTrainer.__init__ (#816)
-- [script-mode sys.path scripts.* imports](feedback_script_mode_syspath_scripts_imports.md) — deferred scripts.* imports crash pod-side in script mode; _ensure_repo_root_on_syspath + script-mode import checks from non-repo cwd (#823)
-- [Memory cap: calibrate from measured real-shape peak](feedback_memory_cap_calibrate_measured_peak.md) — explicit-temporary counting under-estimates autograd+optimizer peak ~6×; measure at real shape, log resolved cap + free (#811 r8 re-OOM at c=218)
-- [HF-fetch fallback for every pod-side data/ input](feedback_hf_fallback_pod_side_data_inputs.md) — git-clone lanes stage no data/; local-first → HF-fetch → fail-loud per input + pre-model-load whole-set preflight (#779 r4-r5)
-- [Upload pipeline-INPUT artifacts before teardown](feedback_upload_pipeline_input_artifacts_before_teardown.md) — tiny pod-generated inputs upload before teardown; judge-dispatch items/results = verbatim recovery + rubric re-validation lever (#779 r5)
-- [device_map auto silent CPU offload — pin + assert; block-wise store flush](feedback_device_map_auto_silent_cpu_offload.md) — #825 rc=137: held GPU -> auto offloads 7B to 16GB host; write-at-end perpos store ~16GB
-- [logits_to_keep on capture-only forwards + persist text before capture](feedback_logits_to_keep_capture_oom.md) — transformers>=4.49 materializes full-vocab logits by default; pass logits_to_keep=1 when unread; persist rollout text before reduce (#779 OOM)
-- [exit-137 kill-source verification](feedback_exit137_kill_source_verification.md) — shared-scope cgroup counters don't attribute; check oom_kill DELTA + MemAvailable floor + oomd journals + PM stop directives before diagnosing OOM (#779 r9; supersedes_unresolved: epm:failure v5 is a marker, not a memory entry)
-- [Manifest inputs staged eagerly](feedback_manifest_inputs_staged_eagerly.md) — frozen-inputs manifests stage every pinned input BEFORE pinning; lazy staging passes local smokes, crashes fresh lanes (#763)
-- [Zero-width span from BPE-delimiter merge](feedback_zero_width_span_bpe_delimiter_merge.md) — plain-text-delimited renders: span-validate generated text at GEN time with the consumer's asserts; single-token placeholders are themselves degenerate (#825)
-- [bf16 single-position equivalence-gate calibration](feedback_bf16_single_position_equivalence_gate_calibration.md) — span-mean-calibrated cosine bars lack headroom for single-position states; layer-27 bf16 jitter breaches 0.999 while layer 0 stays 0.999999; gate early layers per-layer + flattened with measured headroom (#779 r12)
-- [numerics-probe thresholds calibrated to deployment dtype](feedback_numerics_probe_thresholds_dtype.md) — bf16 batched forwards read ~1e-3 cos deviations; never assert CPU-fp32-calibrated epsilons on GPU (#923)
-- [GCE workload scripts must source ./.env conditionally](feedback_gce_no_dotenv_conditional_sourcing.md) — GCE exports tokens with no .env; &&-chained sourcing silently kills the real command (#923)
-- [HF datasets streaming shutdown SIGABRT](feedback_hf_datasets_streaming_shutdown_sigabrt.md) — a streaming IterableDataset surviving to interpreter shutdown SIGABRTs rc=134 AFTER all work completed; del+gc.collect() at the call site (never os._exit); #952 r2.
-- [splitlines shreds JSONL with Unicode line boundaries](feedback_splitlines_jsonl_unicode_boundaries.md) — never read/count JSONL via str.splitlines(); raw U+2028/NEL in ensure_ascii=False user text shreds records (#825); use file iteration or split("\n")
-- [Anthropic system-role lift at dispatcher seams](feedback_anthropic_system_role_lift.md) — Messages API 400s on role:system in messages; lift to top-level system=; live system-bearing probe required (#906)
-- [Signature-bind faked-boundary constructors](feedback_kwargs_constructor_bind.md) — **kwargs callees hide config-dataclass kwarg drift; replicate the callee's cfg resolution in CPU tests (#906 r12)
-- [Rendered-length token budgets (train rows + capture panels)](feedback_marker_row_token_budget.md) — raw-token keep-filters under-count rendered length; budget at render time with the consumer's exact render+tokenizer; pair-drop across paired arms (#906 r13, #1092 launch 8)
-- [Tiny-real CPU e2e beats mock-seam smokes](feedback_tiny_real_cpu_e2e.md) — full-path CPU pass with from-config tiny model catches shape bugs mock smokes surface one per GPU cycle (#906 r11-r15)
-- [vLLM bank length-validate at load](feedback_vllm_bank_length_validate_at_load.md) — filter formatted-prompt overlength rows (pair-wise) in the LOADER; real corpora hide rare overlong rows smokes never sample (#952)
-- [Batched PRESS-LOCO twin exact + enumerate every loop before attesting "batched"](feedback_batched_press_loco_twin_exact.md) — nested-CV LOCO ridge batches EXACTLY (fold-chunk bmm+eigh, rtol<=1e-7); a round that batched floors left the LOCO chain serial (30-43d realized) (#811 r14)
-- [Reused artifact's realized keys vs builder code](feedback_reused_artifact_realized_keys_vs_builder_code.md) — verify a reused artifact's OWN keys, not its builder code; regenerate + alignment-gate a missing regenerable field (#1073)
-- [Real-corpus streaming filters need tiny-real probes](feedback_real_corpus_streaming_filters_tiny_real_probe.md) — WildChat/LMSYS store FULL language names + per-dataset moderation shapes; assumed field semantics rejected 100% of rows while synthetic smokes stayed green; bounded tiny-real probe + per-filter reject counters (#1092 P0)
-- [prefix-arm degenerate cloud kills spectral smoke](feedback_prefix_arm_degenerate_cloud_smoke.md) — single-context smoke slices zero prefix-arm clouds (1 unique row/context); gate on structural unique rows + ≥2-context smokes (#1112)
-- [per-cell file resolvers + group-reap fan-outs](feedback_per_cell_file_writer_reader_sweep.md) — sweep writers-vs-readers per cell class before launch; reap fan-out units by process group (#1112)
-- [Teacher-forced capture: token-id concat, never re-tokenize the joined string](feedback_teacher_forced_capture_token_id_concat.md) — BPE seam merges shift per-segment-count positions and silently misalign captures; offset-mapping boundaries + G2 identity gate (#1092 r8.4)
-- [bf16-GPU parity-gate tolerance](feedback_bf16_gpu_parity_gate_tolerance.md) — never calibrate a capture determinism cosine bar on the CPU smoke; bf16 CUDA noise is ~1e-6, use >= 0.9999 (#1005)
-- [Smoke-slice sizes must satisfy downstream min-N asserts](feedback_smoke_slice_min_n_downstream_asserts.md) — derive smoke slice floors from downstream `assert len >= k` consumers, not plan prose (#1315 r4)
-- [Out-root never /tmp (container disk)](feedback_outroot_tmp_container_disk.md) — RunPod /tmp = 50 GB overlay; anchor out-roots under /workspace + per-phase headroom probes (#1333)
-- [Fanout units must never lazily stage a shared input dest](feedback_fanout_shared_staging_race.md) — pre-stage once in the parent; per-invocation mkdtemp staging + full-set staleness guards (#1315 r5); evict shared cache once per parent batch (#1586 fu r6)
-- [Register dynamic registry entries at point of use](feedback_registry_side_effect_lost_on_resume.md) — resume fast-forward loses in-process registration side effects; register immediately before each consumer (#1315 r6)
-- [Smoke-scale gates](feedback_smoke_scale_gates.md) — production-n-calibrated verdicts (anchor tolerances, yield floors) bind spuriously at smoke n; demote to informational under --smoke, keep production pins (#1345)
-- [Hub verify-path retry + prefix batching](feedback_hub_verify_retry_transient.md) — one unretried per-file file_exists HEAD let a single 429 kill a run post-upload (#1335); retry_transient + one prefix listing
-- [Plain-text span boundaries BPE-merge](feedback_plain_text_span_boundary_bpe_merge.md) — offset-mapping spans + seam provenance; span-rig smokes include a plain-text-boundary context (#1315 r7)
-- [Bounded-retry the hub upload no-path return](feedback_hub_upload_no_path_transport_retry.md) — hub._upload swallows 429/Xet-queue and returns empty; dispatcher seams retry with backoff, fail-loud on exhaustion (#1315 r8)
-- [bf16-GPU parity-gate tolerance](feedback_bf16_gpu_parity_gate_tolerance.md) — never calibrate a capture determinism cosine bar on the CPU smoke; bf16 CUDA noise is ~1e-6, use >= 0.9999 (#1005)
-- [Resume/seed skips starve min-N gates](feedback_resume_seed_min_n_gates.md) — seed-consumed rows shrink the fresh denominator; define seeded-case semantics for every downstream min-N gate + its consumers (#1335 r6)
-- [Parent-branch stranded fixes](feedback_parent_branch_stranded_fixes.md) — reused modules may lack the parent branch's unmerged crash-fixes; reconcile realized row counts vs corpus (#1345)
-- [cross-artifact turn-key convention mismatch at joins](feedback_cross_artifact_turn_key_convention.md) — verify key-space shape + translate keys explicitly at per-turn/per-cell artifact joins; silent .get-and-skip turns a convention mismatch into a fake FAIL (#825 r11)
-- [small-cell bootstrap-CI degeneracy in mechanized gates](feedback_small_cell_bootstrap_ci_degeneracy.md) — [SUPERSEDED by rank-space tail gating] strict float coverage is itself epsilon-fragile (#825 r11)
-- [rank-space bootstrap tail-mass gating](feedback_rank_space_bootstrap_tail_gating.md) — gate CI validity on >alpha/2 draws strictly each side of a same-GEMM anchor; never float-space lo<point<hi or a cross-arithmetic point (#825 r11 rev4)
-- [Mode-branched filter key scoping + per-mode pre-GPU smoke](feedback_mode_branched_filter_key_scoping.md) — scope per-mode keys to their branch; CPU-preflight every dispatcher-composed mode (#1345 KeyError smoke crash)
-- [Subprocess phase registry + full-panel smoke](feedback_subprocess_phase_registry_and_full_panel_smoke.md) — subprocess phases inherit no module registries; register at phase entry + smoke the FULL panel in a fresh child (#1090 fu6)
-- [Smoke-gate floors from realized slice arithmetic](feedback_smoke_gate_realized_slice_arithmetic.md) — derive smoke epochs/steps from realized n_rows, never an assumed cap; pin with a fails-pre-fix test + on-disk checkpoint assert (#1489 r5)
-- [Incremental reap only after the LAST hf_dl consumer](feedback_incremental_reap_last_consumer.md) — enumerate every hf_dl reader (incl. later provisions) before any mid-run reap; direct-path readers need a re-stage-on-demand guard (#1489 r6)
-- [Skippable-phase staging side-effects](feedback_skippable_phase_staging_side_effects.md) — hoist fan-out-shared input staging to the parent, unconditional at phase entry; skippable-phase staging vanishes on seed/resume paths (#1482)
-- [stage_hub_prefix verbatim mirror needs consumer rebind](feedback_stage_hub_prefix_verbatim_mirror_consumer_rebind.md) — mirror lands dest/<repo path>; rebind consumer root to dest/<prefix>; smoke must use the production staging helper (#1481)
-- [Off-pod phase file-reads vs upload manifest](feedback_offpod_phase_upload_manifest_seam.md) — off-pod phase reads must be in the upload set; one-filesystem smokes are blind to the seam (#1482)
-- [Companion-stat drop-class semantics](feedback_companion_stat_drop_class_semantics.md) — zero split-half floors at early positions are a named non-fatal exclusion, never an integrity-guard trip (#1415)
-- [Smoke per class×regime](feedback_smoke_class_regime_coverage.md) — multi-class dispatchers smoke ≥1 cell per realized behavior-class × regime (#1586)
+- [Preflight --json is pretty-printed](feedback_preflight_json_parse.md) — parse whole stdout (first-{ slice), never the last line; smoke must
+- [argparse description=__doc__ + literal % crashes](feedback_argparse_doc_percent.md) — docstring goes through % interpolation
+- [CI bounds vs mpl xerr/yerr offsets](feedback_constant_bootstrap_negative_yerr.md) — clamp max(0,v-lo)/max(0,hi-v) element-wise at EVERY (#1335)
+- [paper_palette_role valid names](feedback_paper_palette_role_names.md) — only accent/baseline/control/neutral/primary; "secondary" ValueErrors at
+- [on_log never sees direct wandb.log](feedback_on_log_never_sees_direct_wandb_log.md) — derive cross-callback outcomes from the producer's (#621)
+- [apply-parity probe N sizing follows Wilson-CI half-width](feedback_apply_parity_probe_n_sizing.md) — ±tolerance rate-gate must set N from (#667)
+- [strict LLM-count assert on over-generation (clamp + typed shortfall)](feedback_strict_llm_count_assert_over_generation.md) — clamp to N via (#779)
+- [Parity floor: weak writer vs gauge error](feedback_parity_floor_weak_writer_vs_gauge_error.md) — per-adapter-class write-ratio floors (#813)
+- [TrainerCallback subclass + real-path smoke](feedback_trainer_callback_must_subclass_trainercallback.md) — hand-rolled HF callbacks must (#816)
+- [script-mode sys.path scripts.* imports](feedback_script_mode_syspath_scripts_imports.md) — deferred scripts.* imports crash pod-side in (#823)
+- [Memory cap: calibrate from measured real-shape peak](feedback_memory_cap_calibrate_measured_peak.md) — explicit-temporary counting (#811)
+- [HF-fetch fallback for every pod-side data/ input](feedback_hf_fallback_pod_side_data_inputs.md) — git-clone lanes stage no data/ (#779)
+- [Upload pipeline-INPUT artifacts before teardown](feedback_upload_pipeline_input_artifacts_before_teardown.md) — tiny pod-generated inputs (#779)
+- [device_map auto silent CPU offload — pin + assert; block-wise store flush](feedback_device_map_auto_silent_cpu_offload.md) — #825 rc=137 (#825)
+- [logits_to_keep on capture-only forwards + persist text before capture](feedback_logits_to_keep_capture_oom.md) — transformers>=4.49 (#779)
+- [exit-137 kill-source verification](feedback_exit137_kill_source_verification.md) — shared-scope cgroup counters don't attribute; check (#779)
+- [Manifest inputs staged eagerly](feedback_manifest_inputs_staged_eagerly.md) — frozen-inputs manifests stage every pinned input BEFORE (#763)
+- [Zero-width span from BPE-delimiter merge](feedback_zero_width_span_bpe_delimiter_merge.md) — plain-text-delimited renders: span-validate (#825)
+- [bf16 single-position equivalence-gate calibration](feedback_bf16_single_position_equivalence_gate_calibration.md) — span-mean-calibrated (#779)
+- [numerics-probe thresholds calibrated to deployment dtype](feedback_numerics_probe_thresholds_dtype.md) — bf16 batched forwards read ~1e-3 (#923)
+- [GCE workload scripts must source ./.env conditionally](feedback_gce_no_dotenv_conditional_sourcing.md) — GCE exports tokens with no .env (#923)
+- [HF datasets streaming shutdown SIGABRT](feedback_hf_datasets_streaming_shutdown_sigabrt.md) — a streaming IterableDataset surviving to (#952)
+- [splitlines shreds JSONL with Unicode line boundaries](feedback_splitlines_jsonl_unicode_boundaries.md) — never read/count JSONL via (#825)
+- [Anthropic system-role lift at dispatcher seams](feedback_anthropic_system_role_lift.md) — Messages API 400s on role:system in messages (#906)
+- [Signature-bind faked-boundary constructors](feedback_kwargs_constructor_bind.md) — **kwargs callees hide config-dataclass kwarg drift (#906)
+- [Rendered-length token budgets (train rows + capture panels)](feedback_marker_row_token_budget.md) — raw-token keep-filters under-count (#1092)
+- [Tiny-real CPU e2e beats mock-seam smokes](feedback_tiny_real_cpu_e2e.md) — full-path CPU pass with from-config tiny model catches shape (#906)
+- [vLLM bank length-validate at load](feedback_vllm_bank_length_validate_at_load.md) — filter formatted-prompt overlength rows (pair-wise) in (#952)
+- [Batched PRESS-LOCO twin exact + enumerate every loop before attesting "batched"](feedback_batched_press_loco_twin_exact.md) — nested-CV (#811)
+- [Reused artifact's realized keys vs builder code](feedback_reused_artifact_realized_keys_vs_builder_code.md) — verify a reused artifact's (#1073)
+- [Real-corpus streaming filters need tiny-real probes](feedback_real_corpus_streaming_filters_tiny_real_probe.md) — WildChat/LMSYS store (#1092)
+- [prefix-arm degenerate cloud kills spectral smoke](feedback_prefix_arm_degenerate_cloud_smoke.md) — single-context smoke slices zero (#1112)
+- [per-cell file resolvers + group-reap fan-outs](feedback_per_cell_file_writer_reader_sweep.md) — sweep writers-vs-readers per cell class (#1112)
+- [Teacher-forced capture: token-id concat, never re-tokenize the joined string](feedback_teacher_forced_capture_token_id_concat.md) (#1092)
+- [bf16-GPU parity-gate tolerance](feedback_bf16_gpu_parity_gate_tolerance.md) — never calibrate a capture determinism cosine bar on the CPU (#1005)
+- [Smoke-slice sizes must satisfy downstream min-N asserts](feedback_smoke_slice_min_n_downstream_asserts.md) — derive smoke slice floors (#1315)
+- [Out-root never /tmp (container disk)](feedback_outroot_tmp_container_disk.md) — RunPod /tmp = 50 GB overlay; anchor out-roots under (#1333)
+- [Fanout units must never lazily stage a shared input dest](feedback_fanout_shared_staging_race.md) — pre-stage once in the parent (#1586)
+- [Register dynamic registry entries at point of use](feedback_registry_side_effect_lost_on_resume.md) — resume fast-forward loses in-process (#1315)
+- [Smoke-scale gates](feedback_smoke_scale_gates.md) — production-n-calibrated verdicts (anchor tolerances, yield floors) bind spuriously at (#1345)
+- [Hub verify-path retry + prefix batching](feedback_hub_verify_retry_transient.md) — one unretried per-file file_exists HEAD let a single (#1335)
+- [Plain-text span boundaries BPE-merge](feedback_plain_text_span_boundary_bpe_merge.md) — offset-mapping spans + seam provenance; span-rig (#1315)
+- [Bounded-retry the hub upload no-path return](feedback_hub_upload_no_path_transport_retry.md) — hub._upload swallows 429/Xet-queue and (#1315)
+- [bf16-GPU parity-gate tolerance](feedback_bf16_gpu_parity_gate_tolerance.md) — never calibrate a capture determinism cosine bar on the CPU (#1005)
+- [Resume/seed skips starve min-N gates](feedback_resume_seed_min_n_gates.md) — seed-consumed rows shrink the fresh denominator; define (#1335)
+- [Parent-branch stranded fixes](feedback_parent_branch_stranded_fixes.md) — reused modules may lack the parent branch's unmerged (#1345)
+- [cross-artifact turn-key convention mismatch at joins](feedback_cross_artifact_turn_key_convention.md) — verify key-space shape + translate (#825)
+- [small-cell bootstrap-CI degeneracy in mechanized gates](feedback_small_cell_bootstrap_ci_degeneracy.md) — [SUPERSEDED by rank-space tail (#825)
+- [rank-space bootstrap tail-mass gating](feedback_rank_space_bootstrap_tail_gating.md) — gate CI validity on >alpha/2 draws strictly each (#825)
+- [Mode-branched filter key scoping + per-mode pre-GPU smoke](feedback_mode_branched_filter_key_scoping.md) — scope per-mode keys to their (#1345)
+- [Subprocess phase registry + full-panel smoke](feedback_subprocess_phase_registry_and_full_panel_smoke.md) — subprocess phases inherit no (#1090)
+- [Smoke-gate floors from realized slice arithmetic](feedback_smoke_gate_realized_slice_arithmetic.md) — derive smoke epochs/steps from (#1489)
+- [Incremental reap only after the LAST hf_dl consumer](feedback_incremental_reap_last_consumer.md) — enumerate every hf_dl reader (incl. (#1489)
+- [Skippable-phase staging side-effects](feedback_skippable_phase_staging_side_effects.md) — hoist fan-out-shared input staging to the (#1482)
+- [stage_hub_prefix verbatim mirror needs consumer rebind](feedback_stage_hub_prefix_verbatim_mirror_consumer_rebind.md) — mirror lands (#1481)
+- [Off-pod phase file-reads vs upload manifest](feedback_offpod_phase_upload_manifest_seam.md) — off-pod phase reads must be in the upload (#1482)
+- [Companion-stat drop-class semantics](feedback_companion_stat_drop_class_semantics.md) — zero split-half floors at early positions are a (#1415)
+- [Smoke per class×regime](feedback_smoke_class_regime_coverage.md) — multi-class dispatchers smoke ≥1 cell per realized behavior-class × (#1586)
