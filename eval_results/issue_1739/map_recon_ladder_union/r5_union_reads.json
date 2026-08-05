@@ -1,0 +1,461 @@
+{
+ "n_cells": 11,
+ "cells": [
+  {
+   "leg": "evil_union",
+   "variant": "context_end",
+   "map_label": "unionall27261_L250",
+   "config": "union_all",
+   "f_u": null,
+   "f_l": null,
+   "pool_size": 27261,
+   "anchor_l": 250,
+   "semantics": "add-unmatched",
+   "n_train": 21809,
+   "n_holdout": 5452,
+   "w_fit_rows": 27261,
+   "solver": "primal",
+   "map_source": "fit",
+   "eval_setting": "u_pool_holdout",
+   "n_rows": 5452,
+   "n_layers": 28,
+   "r2_best_layer": 27,
+   "r2_best": 0.7521319359739236,
+   "r2_mean": 0.6811320098384347,
+   "r2_identity_bias_present": true,
+   "r2_identity_bias_at_best_layer": -0.21636001294575524,
+   "r2_identity_bias_mean": -0.09633352684565429,
+   "knn": {
+    "euclidean": {
+     "acc_at_1_max": 0.39490095377842993,
+     "acc_at_1_mean": 0.32329551409705487,
+     "chance_at_1": 0.00018341892883345562,
+     "x_chance": 2153.0,
+     "n_layers": 28
+    },
+    "cosine": {
+     "acc_at_1_max": 0.42223037417461484,
+     "acc_at_1_mean": 0.349969866890263,
+     "chance_at_1": 0.00018341892883345562,
+     "x_chance": 2302.0,
+     "n_layers": 28
+    }
+   }
+  },
+  {
+   "leg": "evil_union",
+   "variant": "context_end",
+   "map_label": "unionall27261_L250",
+   "config": "union_all",
+   "f_u": null,
+   "f_l": null,
+   "pool_size": 27261,
+   "anchor_l": 250,
+   "semantics": "add-unmatched",
+   "n_train": 21809,
+   "n_holdout": 5452,
+   "w_fit_rows": 27261,
+   "solver": "primal",
+   "map_source": "fit",
+   "eval_setting": "eval_pooled",
+   "n_rows": 2387,
+   "n_layers": 28,
+   "r2_best_layer": 27,
+   "r2_best": 0.08496652562864315,
+   "r2_mean": -0.32491478888479824,
+   "r2_identity_bias_present": true,
+   "r2_identity_bias_at_best_layer": -1.0518182669626408,
+   "r2_identity_bias_mean": -0.6209352803037661,
+   "knn": {
+    "euclidean": {
+     "acc_at_1_max": 0.46543778801843316,
+     "acc_at_1_mean": 0.20381231671554254,
+     "chance_at_1": 0.00041893590280687055,
+     "x_chance": 1111.0,
+     "n_layers": 28
+    },
+    "cosine": {
+     "acc_at_1_max": 0.5270213657310432,
+     "acc_at_1_mean": 0.2503590879166916,
+     "chance_at_1": 0.00041893590280687055,
+     "x_chance": 1258.0,
+     "n_layers": 28
+    }
+   }
+  },
+  {
+   "leg": "evil_union",
+   "variant": "context_end",
+   "map_label": "unionall27261_L250",
+   "config": "union_all",
+   "f_u": null,
+   "f_l": null,
+   "pool_size": 27261,
+   "anchor_l": 250,
+   "semantics": "add-unmatched",
+   "n_train": 21809,
+   "n_holdout": 5452,
+   "w_fit_rows": 27261,
+   "solver": "primal",
+   "map_source": "fit",
+   "eval_setting": "hhrt",
+   "n_rows": 1868,
+   "knn_skipped_small_pool": false,
+   "n_layers": 28,
+   "r2_best_layer": 27,
+   "r2_best": -0.00010807955084501941,
+   "r2_mean": -0.4194413950488411,
+   "r2_identity_bias_present": true,
+   "r2_identity_bias_at_best_layer": -1.2228676592286671,
+   "r2_identity_bias_mean": -0.7466290875339892,
+   "knn": {
+    "euclidean": {
+     "acc_at_1_max": 0.512847965738758,
+     "acc_at_1_mean": 0.21770801468338946,
+     "chance_at_1": 0.0005353319057815846,
+     "x_chance": 957.9999999999999,
+     "n_layers": 28
+    },
+    "cosine": {
+     "acc_at_1_max": 0.5642398286937902,
+     "acc_at_1_mean": 0.2646451514224533,
+     "chance_at_1": 0.0005353319057815846,
+     "x_chance": 1054.0,
+     "n_layers": 28
+    }
+   }
+  },
+  {
+   "leg": "evil_union",
+   "variant": "context_end",
+   "map_label": "unionall27261_L250",
+   "config": "union_all",
+   "f_u": null,
+   "f_l": null,
+   "pool_size": 27261,
+   "anchor_l": 250,
+   "semantics": "add-unmatched",
+   "n_train": 21809,
+   "n_holdout": 5452,
+   "w_fit_rows": 27261,
+   "solver": "primal",
+   "map_source": "fit",
+   "eval_setting": "toxicchat",
+   "n_rows": 519,
+   "knn_skipped_small_pool": false,
+   "n_layers": 28,
+   "r2_best_layer": 27,
+   "r2_best": 0.13926710341045045,
+   "r2_mean": -0.3046597028462112,
+   "r2_identity_bias_present": true,
+   "r2_identity_bias_at_best_layer": -0.9964996819404872,
+   "r2_identity_bias_mean": -0.5563346724462219,
+   "knn": {
+    "euclidean": {
+     "acc_at_1_max": 0.3988439306358382,
+     "acc_at_1_mean": 0.2261216625378475,
+     "chance_at_1": 0.0019267822736030828,
+     "x_chance": 207.00000000000003,
+     "n_layers": 28
+    },
+    "cosine": {
+     "acc_at_1_max": 0.4701348747591522,
+     "acc_at_1_mean": 0.2663088356729975,
+     "chance_at_1": 0.0019267822736030828,
+     "x_chance": 244.0,
+     "n_layers": 28
+    }
+   }
+  },
+  {
+   "leg": "hallucination_union",
+   "variant": "context_end",
+   "map_label": "unionall36793_L250",
+   "config": "union_all",
+   "f_u": null,
+   "f_l": null,
+   "pool_size": 36793,
+   "anchor_l": 250,
+   "semantics": "add-unmatched",
+   "n_train": 29434,
+   "n_holdout": 7359,
+   "w_fit_rows": 36793,
+   "solver": "primal",
+   "map_source": "fit",
+   "eval_setting": "u_pool_holdout",
+   "n_rows": 7359,
+   "n_layers": 28,
+   "r2_best_layer": 19,
+   "r2_best": 0.7076226234353276,
+   "r2_mean": 0.6204145048239188,
+   "r2_identity_bias_present": true,
+   "r2_identity_bias_at_best_layer": -0.09759434524709931,
+   "r2_identity_bias_mean": -0.08176355263333648,
+   "knn": {
+    "euclidean": {
+     "acc_at_1_max": 0.4728903383611904,
+     "acc_at_1_mean": 0.33373129113039424,
+     "chance_at_1": 0.00013588802826470988,
+     "x_chance": 3480.0,
+     "n_layers": 28
+    },
+    "cosine": {
+     "acc_at_1_max": 0.5314580785432803,
+     "acc_at_1_mean": 0.3940946945431251,
+     "chance_at_1": 0.00013588802826470988,
+     "x_chance": 3911.0,
+     "n_layers": 28
+    }
+   }
+  },
+  {
+   "leg": "hallucination_union",
+   "variant": "context_end",
+   "map_label": "unionall36793_L250",
+   "config": "union_all",
+   "f_u": null,
+   "f_l": null,
+   "pool_size": 36793,
+   "anchor_l": 250,
+   "semantics": "add-unmatched",
+   "n_train": 29434,
+   "n_holdout": 7359,
+   "w_fit_rows": 36793,
+   "solver": "primal",
+   "map_source": "fit",
+   "eval_setting": "eval_pooled",
+   "n_rows": 7188,
+   "n_layers": 28,
+   "r2_best_layer": 19,
+   "r2_best": 0.38176356110041076,
+   "r2_mean": 0.20364998477804672,
+   "r2_identity_bias_present": true,
+   "r2_identity_bias_at_best_layer": -0.3163616419236144,
+   "r2_identity_bias_mean": -0.27571011551910785,
+   "knn": {
+    "euclidean": {
+     "acc_at_1_max": 0.5562047857540345,
+     "acc_at_1_mean": 0.31126778758247875,
+     "chance_at_1": 0.0001391207568169171,
+     "x_chance": 3998.0,
+     "n_layers": 28
+    },
+    "cosine": {
+     "acc_at_1_max": 0.6349471341124096,
+     "acc_at_1_mean": 0.3900697591223467,
+     "chance_at_1": 0.0001391207568169171,
+     "x_chance": 4564.0,
+     "n_layers": 28
+    }
+   }
+  },
+  {
+   "leg": "hallucination_union",
+   "variant": "context_end",
+   "map_label": "unionall36793_L250",
+   "config": "union_all",
+   "f_u": null,
+   "f_l": null,
+   "pool_size": 36793,
+   "anchor_l": 250,
+   "semantics": "add-unmatched",
+   "n_train": 29434,
+   "n_holdout": 7359,
+   "w_fit_rows": 36793,
+   "solver": "primal",
+   "map_source": "fit",
+   "eval_setting": "nqopen",
+   "n_rows": 3167,
+   "knn_skipped_small_pool": false,
+   "n_layers": 28,
+   "r2_best_layer": 19,
+   "r2_best": 0.3887141200207819,
+   "r2_mean": 0.15173103764666704,
+   "r2_identity_bias_present": true,
+   "r2_identity_bias_at_best_layer": -0.2777932453090308,
+   "r2_identity_bias_mean": -0.2811789615517742,
+   "knn": {
+    "euclidean": {
+     "acc_at_1_max": 0.7161351436690875,
+     "acc_at_1_mean": 0.36932202625287563,
+     "chance_at_1": 0.00031575623618566466,
+     "x_chance": 2268.0,
+     "n_layers": 28
+    },
+    "cosine": {
+     "acc_at_1_max": 0.7846542469213768,
+     "acc_at_1_mean": 0.44209256168523614,
+     "chance_at_1": 0.00031575623618566466,
+     "x_chance": 2485.0000000000005,
+     "n_layers": 28
+    }
+   }
+  },
+  {
+   "leg": "hallucination_union",
+   "variant": "context_end",
+   "map_label": "unionall36793_L250",
+   "config": "union_all",
+   "f_u": null,
+   "f_l": null,
+   "pool_size": 36793,
+   "anchor_l": 250,
+   "semantics": "add-unmatched",
+   "n_train": 29434,
+   "n_holdout": 7359,
+   "w_fit_rows": 36793,
+   "solver": "primal",
+   "map_source": "fit",
+   "eval_setting": "simpleqa",
+   "n_rows": 4021,
+   "knn_skipped_small_pool": false,
+   "n_layers": 28,
+   "r2_best_layer": 19,
+   "r2_best": 0.33764298164831574,
+   "r2_mean": 0.20582079320492208,
+   "r2_identity_bias_present": true,
+   "r2_identity_bias_at_best_layer": -0.43171173607018387,
+   "r2_identity_bias_mean": -0.3293816849241344,
+   "knn": {
+    "euclidean": {
+     "acc_at_1_max": 0.4653071375279781,
+     "acc_at_1_mean": 0.2946317547163108,
+     "chance_at_1": 0.0002486943546381497,
+     "x_chance": 1870.9999999999998,
+     "n_layers": 28
+    },
+    "cosine": {
+     "acc_at_1_max": 0.5575727430987316,
+     "acc_at_1_mean": 0.3781308842860695,
+     "chance_at_1": 0.0002486943546381497,
+     "x_chance": 2241.9999999999995,
+     "n_layers": 28
+    }
+   }
+  },
+  {
+   "leg": "sycophancy_union",
+   "variant": "context_end",
+   "map_label": "unionall36793_L250",
+   "config": "union_all",
+   "f_u": null,
+   "f_l": null,
+   "pool_size": 36793,
+   "anchor_l": 250,
+   "semantics": "add-unmatched",
+   "n_train": 29434,
+   "n_holdout": 7359,
+   "w_fit_rows": 36793,
+   "solver": "primal",
+   "map_source": "fit",
+   "eval_setting": "u_pool_holdout",
+   "n_rows": 7359,
+   "n_layers": 28,
+   "r2_best_layer": 27,
+   "r2_best": 0.8123057915515279,
+   "r2_mean": 0.7373311723290527,
+   "r2_identity_bias_present": true,
+   "r2_identity_bias_at_best_layer": -0.19356516277012914,
+   "r2_identity_bias_mean": -0.09395891849959136,
+   "knn": {
+    "euclidean": {
+     "acc_at_1_max": 0.5454545454545454,
+     "acc_at_1_mean": 0.3729107215654301,
+     "chance_at_1": 0.00013588802826470988,
+     "x_chance": 4013.9999999999995,
+     "n_layers": 28
+    },
+    "cosine": {
+     "acc_at_1_max": 0.5590433482810164,
+     "acc_at_1_mean": 0.38843107565080665,
+     "chance_at_1": 0.00013588802826470988,
+     "x_chance": 4114.0,
+     "n_layers": 28
+    }
+   }
+  },
+  {
+   "leg": "sycophancy_union",
+   "variant": "context_end",
+   "map_label": "unionall36793_L250",
+   "config": "union_all",
+   "f_u": null,
+   "f_l": null,
+   "pool_size": 36793,
+   "anchor_l": 250,
+   "semantics": "add-unmatched",
+   "n_train": 29434,
+   "n_holdout": 7359,
+   "w_fit_rows": 36793,
+   "solver": "primal",
+   "map_source": "fit",
+   "eval_setting": "eval_pooled",
+   "n_rows": 1304,
+   "n_layers": 28,
+   "r2_best_layer": 19,
+   "r2_best": 0.5112781558932519,
+   "r2_mean": 0.22535565767875473,
+   "r2_identity_bias_present": true,
+   "r2_identity_bias_at_best_layer": -0.7277895685476674,
+   "r2_identity_bias_mean": -0.7085054023499268,
+   "knn": {
+    "euclidean": {
+     "acc_at_1_max": 0.8673312883435583,
+     "acc_at_1_mean": 0.5456014460999123,
+     "chance_at_1": 0.0007668711656441718,
+     "x_chance": 1131.0,
+     "n_layers": 28
+    },
+    "cosine": {
+     "acc_at_1_max": 0.8849693251533742,
+     "acc_at_1_mean": 0.5626369412795794,
+     "chance_at_1": 0.0007668711656441718,
+     "x_chance": 1154.0,
+     "n_layers": 28
+    }
+   }
+  },
+  {
+   "leg": "sycophancy_union",
+   "variant": "context_end",
+   "map_label": "unionall36793_L250",
+   "config": "union_all",
+   "f_u": null,
+   "f_l": null,
+   "pool_size": 36793,
+   "anchor_l": 250,
+   "semantics": "add-unmatched",
+   "n_train": 29434,
+   "n_holdout": 7359,
+   "w_fit_rows": 36793,
+   "solver": "primal",
+   "map_source": "fit",
+   "eval_setting": "aita",
+   "n_rows": 1304,
+   "knn_skipped_small_pool": false,
+   "n_layers": 28,
+   "r2_best_layer": 19,
+   "r2_best": 0.5112781558932519,
+   "r2_mean": 0.22535565767875473,
+   "r2_identity_bias_present": true,
+   "r2_identity_bias_at_best_layer": -0.7277895685476674,
+   "r2_identity_bias_mean": -0.7085054023499268,
+   "knn": {
+    "euclidean": {
+     "acc_at_1_max": 0.8673312883435583,
+     "acc_at_1_mean": 0.5456014460999123,
+     "chance_at_1": 0.0007668711656441718,
+     "x_chance": 1131.0,
+     "n_layers": 28
+    },
+    "cosine": {
+     "acc_at_1_max": 0.8849693251533742,
+     "acc_at_1_mean": 0.5626369412795794,
+     "chance_at_1": 0.0007668711656441718,
+     "x_chance": 1154.0,
+     "n_layers": 28
+    }
+   }
+  }
+ ]
+}
