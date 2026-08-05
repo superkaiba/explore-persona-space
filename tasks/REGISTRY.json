@@ -8347,8 +8347,8 @@
     "2079": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2079",
-      "status": "reviewing",
+      "path": "tasks/completed/2079",
+      "status": "completed",
       "title": "workflow-fix: lint cross-module sha-pin domain agreement (#1776/#1491 class)"
     },
     "208": {
