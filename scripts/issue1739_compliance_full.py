@@ -135,21 +135,39 @@ def _git_commit() -> str:
         return "unknown"
 
 
+# CLI rung name → local rollout `rung` field. The parent's rollout schema strips
+# the behavior prefix (`evil_`) from the stored `rung` field, and calls hh-rlhf
+# "hhrt" rather than "hh_rlhf" (same mapping as issue1739_trait_rejudge.py,
+# commit 0d09a51f49's fix; verified live 2026-08-05 via `evil-{train-cross,
+# eval-hhrt,eval-toxicchat}-*_seed0.json` — `d["rung"] ∈ {"train","hhrt",
+# "toxicchat"}`).
+_LOCAL_RUNG_ALIAS: dict[str, str] = {
+    "evil_train": "train",
+    "evil_hh_rlhf": "hhrt",
+    "evil_toxicchat": "toxicchat",
+}
+
+
 def _load_rollouts_local(local_root: Path, rung: str, *, limit: int | None) -> list[dict]:
     """Read rollout JSONs for one rung from a local mirror.
 
-    Layout preference: ``<local_root>/<rung>/*.json`` (per-rung subdir); if
-    missing, fall back to a mixed dir with a ``rung`` field filter.
+    Layout A (per-rung subdir): ``<local_root>/<rung>/*.json`` — CLI rung name
+    matches the dir. Layout B (mixed dir, the parent labeling stage's actual
+    on-VM layout): all rungs' JSONs sit under one dir, distinguished by the
+    ``rung`` field; the CLI name is mapped via ``_LOCAL_RUNG_ALIAS`` before
+    comparing (identity fallback for future rungs that already match).
     """
     rung_dir = local_root / rung
     if rung_dir.exists():
         paths = sorted(p for p in rung_dir.glob("*.json") if not p.name.startswith("_"))
     else:
         paths = sorted(p for p in local_root.glob("*.json") if not p.name.startswith("_"))
+    # Normalize CLI name → on-disk rung field before comparing (identity fallback).
+    on_disk_rung = _LOCAL_RUNG_ALIAS.get(rung, rung)
     payloads: list[dict] = []
     for p in paths:
         row = json.loads(p.read_text())
-        if row.get("rung") == rung or rung_dir.exists():
+        if row.get("rung") == on_disk_rung or rung_dir.exists():
             payloads.append(row)
             if limit is not None and len(payloads) >= limit:
                 break
