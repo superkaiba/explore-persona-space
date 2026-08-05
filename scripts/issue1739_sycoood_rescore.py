@@ -61,6 +61,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import gc
 import json
 import logging
 import os
@@ -792,7 +793,12 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
         # comparison). Whitening is applied with the canonical library helper.
         mapfit = _fit_map(args, fits.apply_whitening(u_x, wh), fits.apply_whitening(u_y, wh))
         _log(f"  map fitted (kind={getattr(mapfit, 'kind', 'linear')}, n_u={u_x.shape[1]})")
-        del u_x, u_y
+        # MEMORY: the raw per-layer U-pool dict is ~17-34 GB and is dead once the
+        # stacked copies fed whitening + the map fit. Holding it through the unit
+        # loop cost exactly that much headroom in the budget_l=16000 units that
+        # OOM-killed three attempts on this 251 GB box.
+        del u_x, u_y, u_arrays, u_meta, pool_mask
+        gc.collect()
 
         # --- load rb direction for this regime ---
         rb_path = tensors_root / f"r_b_{regime}" / f"{behavior}.npz"
@@ -949,7 +955,8 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
                     preds_counts[rung] += 1
             for fh in _preds_fh.values():
                 fh.flush()
-            del preds
+            del preds, scores_ev, frozen_by_arm
+            gc.collect()
 
             elapsed = time.time() - t0
             _log(
