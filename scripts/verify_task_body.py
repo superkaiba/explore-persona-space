@@ -527,11 +527,19 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   codes (`f16`/`l16` only, #1072), bare candidate/panel codes
   (`P1`/`P7`/`M4`/`P3b` — same single-digit + optional-lowercase-letter
   shape as the H-code class, so `P100`/`M40` GPU names and lowercase
-  `p97.5`/`p50` percentiles never match, #1900), or letter-arrow
+  `p97.5`/`p50` percentiles never match, #1900), letter-arrow
   transition codes (`B->S_single`/`S→D_multi`/`D->R_multi` — single
   `[A-Z]` on each side + REQUIRED `_[a-z]+` snake suffix on the RHS;
   ASCII `->` or unicode `→` with optional whitespace; so bare-letter
-  arrows `H->O`/`A->B`/`X -> Y` legend syntax never match, #1902).
+  arrows `H->O`/`A->B`/`X -> Y` legend syntax never match, #1902), or
+  hyphen-separated arm slugs (`cas-pers-con-lr1e5-s137`/`ft-con-137` —
+  >=3 hyphen segments, first segment 2-6 lowercase alpha, plus a
+  digit-bearing <=6-char FINAL segment (the fleet grammar's lr/seed
+  tail), so hyphenated rendered English (`end-to-end`,
+  `under-4-token`, `best-of-28-layers`) and dated ids
+  (`claude-sonnet-4-5-20250929`) never flag; a slug named verbatim in
+  THAT figure's blockquote caption is suppressed — the caption decodes
+  it — with NO caption suppression for the other six classes, #1988).
   Plain-English condition names are the
   project rule end to end; config slugs belong in the Repro config row /
   provenance keys. Scans string VALUES only (provenance-keyed subtrees
@@ -8850,6 +8858,66 @@ _CANDIDATE_CODE_RE = re.compile(r"\b[PM]\d[a-z]?\b")
 #     is captured; sufficient for WARN semantics).
 _LETTER_ARROW_RE = re.compile(r"\b[A-Z]\s*(?:->|→)\s*[A-Z]_[a-z]+\b")
 
+# (g) hyphen-separated arm slugs (#1988) — condition-cell ids in the fleet's
+#     `behavior-context-regime-lr-seed` grammar rendered into figure text
+#     (`cas-pers-con-lr1e5-s137` tick labels across ~10 #1768 figures;
+#     `ft-con-137` — the no-`s`-seed-prefix #1586 variant). Shape: >=3
+#     hyphen-separated segments, first segment 2-6 lowercase alpha, later
+#     segments lowercase alnum (1-12 chars). The classifier applies the
+#     `_is_arm_slug_token` post-match filter on top: the FINAL hyphen
+#     segment must carry a digit AND be short (<= 6 chars) — the fleet
+#     grammar's lr/seed tail (`s137`, `137`, `42`) — so ordinary hyphenated
+#     English/compounds (`end-to-end`, `state-of-the-art`, `under-4-token`,
+#     `first-16-token`, `best-of-28-layers` — no digit in the final segment)
+#     and long dated ids (`claude-sonnet-4-5-20250929`,
+#     `eps-persona-gpu-jun2026` — final segment over 6 chars) stay
+#     unflagged. Digit-ANYWHERE was rejected at plan review (FPs on the
+#     compound probes above); the bare digit-in-final-segment form still
+#     kept the dated ids, so the length cap rides along
+#     (corpus-recalibrated 2026-08-05 over all 3,024 tracked
+#     `figures/**/*.meta.json`: keeps 72/72 #1768 slugs + every
+#     #1481/#1586/#1947 fleet slug; residual kept tokens — `copy-answer-1`,
+#     `att-<ts>` provenance timestamps — are in-spirit opaque and
+#     caption-suppressible, accepted).
+_ARM_SLUG_RE = re.compile(r"\b[a-z]{2,6}(?:-[a-z0-9]{1,12}){2,}\b")
+
+
+def _is_arm_slug_token(tok: str) -> bool:
+    """True iff ``tok`` is a class-(g) arm-slug hit: a FULL ``_ARM_SLUG_RE``
+    match whose FINAL hyphen segment carries a digit and is <= 6 chars (the
+    fleet grammar's lr/seed tail — ``s137``, ``137``, ``42``). Shared by the
+    ``_opaque_code_tokens`` classifier and check 28's slug-class-scoped
+    caption suppression; class membership is re-derivable from the token
+    text alone because no other class emits a hyphen-bearing all-lowercase
+    token (snake/pin/arrow tokens carry ``_``/``@``/``->``; H/P/M codes are
+    uppercase).
+    """
+    if _ARM_SLUG_RE.fullmatch(tok) is None:
+        return False
+    tail = tok.rsplit("-", 1)[1]
+    return len(tail) <= 6 and any(c.isdigit() for c in tail)
+
+
+def _arm_slug_hits(text: str) -> list[str]:
+    """Class-(g) arm-slug matches in ``text`` that survive the
+    ``_is_arm_slug_token`` final-segment filter. The caller
+    (``_opaque_code_tokens``) applies the per-word path exemption on top,
+    exactly as for the other six classes."""
+    return [m.group(0) for m in _ARM_SLUG_RE.finditer(text) if _is_arm_slug_token(m.group(0))]
+
+
+def _suppress_caption_decoded_slugs(toks: list[str], caption: str) -> list[str]:
+    """Check 28's slug-class-scoped caption-decode suppression (#1988): drop
+    class-(g) arm-slug tokens named VERBATIM (case-insensitive substring) in
+    ``caption`` — the figure's blockquote caption decodes them for the
+    reader. Non-slug classes (a)-(f) pass through untouched; an empty
+    caption suppresses nothing."""
+    caption_cf = caption.casefold()
+    if not caption_cf:
+        return toks
+    return [t for t in toks if not (_is_arm_slug_token(t) and t.casefold() in caption_cf)]
+
+
 # Path/URI-SHAPED string: no internal whitespace and at least one path
 # separator — a file path or URL, which is provenance, not rendered text.
 # Deliberately NOT a whole-string any-slash skip: a slash-separated rendered
@@ -8876,8 +8944,17 @@ def _opaque_code_tokens(text: str) -> list[str]:
     optional whitespace around the arrow). The required snake suffix
     keeps bare letter-arrows like `H->O` (chemistry), `A->B`
     (state-machine), and `X -> Y` (HMM/Markov) unflagged as legitimate
-    legend syntax. PATH-SHAPED strings (whitespace-free with a path
-    separator — file paths, URLs) are exempt from ALL SIX token scans;
+    legend syntax. The SEVENTH class (#1988) is hyphen-separated arm
+    slugs (`cas-pers-con-lr1e5-s137`, `ft-con-137` —
+    ``_ARM_SLUG_RE``: >=3 segments, first segment 2-6 lowercase alpha)
+    gated by the `_is_arm_slug_token` filter (final hyphen segment
+    carries a digit AND is <= 6 chars — the fleet grammar's lr/seed
+    tail), which keeps hyphenated rendered English (`end-to-end`,
+    `under-4-token`, `best-of-28-layers`) and long dated ids
+    (`claude-sonnet-4-5-20250929`) unflagged; 2-segment hyphen tokens
+    (`log-prob`) never match the regex at all. PATH-SHAPED strings
+    (whitespace-free with a path
+    separator — file paths, URLs) are exempt from ALL SEVEN token scans;
     strings that merely CONTAIN a slash (e.g. a slash-separated rendered
     label) are still scanned, with individual path-shaped whitespace-split
     words skipped for every token class — the exemption is load-bearing
@@ -8926,6 +9003,14 @@ def _opaque_code_tokens(text: str) -> list[str]:
                 if _only_in_path_words(tok):
                     continue
                 hits.append(tok)
+        # Arm-slug class (g) (#1988) applies the `_is_arm_slug_token`
+        # final-segment filter ON TOP of the regex (`_arm_slug_hits`), so it
+        # cannot join the shared class tuple above; the per-word path
+        # exemption is identical.
+        for tok in _arm_slug_hits(text):
+            if _only_in_path_words(tok):
+                continue
+            hits.append(tok)
     seen: set[str] = set()
     out: list[str] = []
     for t in hits:
@@ -8967,8 +9052,9 @@ def check_figure_label_codes(body: str) -> CheckResult:
     must not carry opaque config-code tokens — ``@L<digits>`` layer pins,
     regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``), bare hypothesis
     codes (``H3``/``H1c``), slot-family codes (``f16``/``l16``), bare
-    candidate/panel codes (``P1``/``P7``/``M4``), or letter-arrow
-    transition codes (``B->S_single``/``S→D_multi``/``D->R_multi``).
+    candidate/panel codes (``P1``/``P7``/``M4``), letter-arrow
+    transition codes (``B->S_single``/``S→D_multi``/``D->R_multi``), or
+    hyphen-separated arm slugs (``cas-pers-con-lr1e5-s137``/``ft-con-137``).
     Plain-English condition names are the rule end to end (memory
     feedback_no_opaque_condition_codes, SPEC statistical-framing bullet);
     config slugs belong in the Repro config row / provenance keys. Incident
@@ -8990,11 +9076,29 @@ def check_figure_label_codes(body: str) -> CheckResult:
     the letter-arrow class (f). The class REQUIRES a ``_[a-z]+`` snake
     suffix on the RHS by design, so bare letter-arrow legends
     (``H->O`` chemistry, ``A->B`` state-machine, ``X -> Y`` HMM/Markov)
-    stay unflagged. The "code-span contexts" exclusion in the
+    stay unflagged. Incident #1988 (#1768's figures): ~10 committed
+    sidecars carried the fleet's `behavior-context-regime-lr-seed`
+    hyphen slugs (``cas-pers-con-lr1e5-s137``) as tick labels at
+    ``meta["text"].axes[].yticklabels`` — inside the scanned walk — yet
+    passed all six classes clean (hyphens match no class) — mechanized
+    here as the arm-slug class (g) (``_ARM_SLUG_RE`` +
+    ``_is_arm_slug_token``). The "code-span contexts" exclusion in the
     originating diff sketch is a documented NO-OP on this channel:
     sidecar strings are matplotlib rendered text serialized to JSON
     (never markdown), so backtick code spans cannot occur and no
     backtick logic is implemented.
+
+    SLUG-CLASS caption-decode suppression (#1988): an arm-slug token
+    that appears VERBATIM (case-insensitive substring) in THIS figure's
+    CAPTION window — the contiguous ``>``-blockquote lines immediately
+    after the image line in the scanned section
+    (``_figure_caption_after``) — is suppressed for that figure: the
+    caption decodes the slug for the reader, which is the acceptable
+    remediation short of regenerating the figure. Non-slug classes
+    (a)-(f) get NO caption suppression (byte-stable grandfathered
+    behavior). URL de-duplication (``dict.fromkeys(urls)``) means a
+    figure embedded TWICE uses the FIRST occurrence's caption window —
+    conservative (an extra WARN at worst, never a lost one).
 
     Coverage = sidecar-CARRIED strings only: string values (provenance
     subtrees pruned) plus whitespace-bearing dict keys. The current
@@ -9015,7 +9119,7 @@ def check_figure_label_codes(body: str) -> CheckResult:
     key names — including a whitespace-free letter-arrow token used as a
     DataFrame column KEY, the #1902 residual gap); (iii) a token inside a
     path-shaped word (or a whole path-shaped string) is exempt — the path
-    exemption covers ALL SIX token classes. WARN, never FAIL; fail-soft on
+    exemption covers ALL SEVEN token classes. WARN, never FAIL; fail-soft on
     missing / unparsable sidecars (the check-24 convention, NOT check 26's
     loud missing-sidecar FAIL); NO-OP PASS offline / no figures / no
     scannable same-repo sidecar.
@@ -9023,19 +9127,24 @@ def check_figure_label_codes(body: str) -> CheckResult:
     label = (
         "figure text opaque config codes "
         "(slug / @L-pin / H-code / slot-family / P-M candidate / "
-        "letter-arrow tokens)"
+        "letter-arrow / arm-slug tokens)"
     )
     section = _figure_scan_section(body)
     text = section_text(body, section)
     if text is None:
         return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
     urls: list[str] = []
-    for line in text.splitlines():
+    caption_by_url: dict[str, str] = {}
+    for i, line in enumerate(rlines):
         for m in _IMAGE_RE.finditer(line):
             url = m.group(1).strip()
             url = url.split(None, 1)[0] if url else url
             if url:
                 urls.append(url)
+                # First occurrence's caption window (slug-class suppression
+                # keys on it; see docstring for the twice-embedded case).
+                caption_by_url.setdefault(url, _figure_caption_after(rlines, i))
     if not urls:
         return CheckResult(label, True, "no inline figures to scan")
     repo = _resolve_repo_root()
@@ -9058,6 +9167,11 @@ def check_figure_label_codes(body: str) -> CheckResult:
         for s in _iter_meta_label_values(meta):
             toks.extend(_opaque_code_tokens(s))
         toks = list(dict.fromkeys(toks))
+        # Slug-class-scoped caption-decode suppression (#1988): an arm slug
+        # named verbatim (case-insensitively) in THIS figure's blockquote
+        # caption is decoded for the reader — suppressed. Classes (a)-(f)
+        # are never caption-suppressed (`_suppress_caption_decoded_slugs`).
+        toks = _suppress_caption_decoded_slugs(toks, caption_by_url.get(url, ""))
         if toks:
             basename = m.group("path").rsplit("/", 1)[-1]
             preview = ", ".join(f"`{t}`" for t in toks[:4]) + (" …" if len(toks) > 4 else "")
