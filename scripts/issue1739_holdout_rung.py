@@ -271,11 +271,21 @@ def _load_rb_raw(tensors_root: Path, regime: str, behavior: str, layers: list[in
 
 
 def _whiten_acts(z: "np.ndarray", wh) -> "np.ndarray":
-    """(Ly, n, d) raw acts -> whitened fp64 (subtract mu, apply per-layer w)."""
-    import numpy as np
+    """(Ly, n, d) raw acts -> whitened fp64 via the canonical chunked helper.
 
-    z64 = np.asarray(z, dtype=np.float64) - wh.mu[None, None, :]
-    return np.einsum("lnd,lde->lne", z64, wh.w)
+    Delegates to ``fits.apply_whitening`` (bit-identity pinned by
+    ``test_apply_whitening_chunked_matches_dense``). ``wh.mu`` is (Ly, d) —
+    the former local ``z - wh.mu[None, None, :]`` broadcast (Ly, n, d)
+    against (1, 1, Ly, d) and raised ValueError at every realistic shape
+    (the exact bug class the sibling ``issue1739_rescore_ood.py`` fixed;
+    this script's synthetic ``--smoke`` bypasses whitening, so the
+    production shape first fired at the 2026-08-05 B3 pilot). The chunked
+    helper also avoids the whole-array fp64 + centered temporaries (~45 GiB
+    transient at production shape).
+    """
+    from explore_persona_space.experiments.issue_1739 import fits
+
+    return fits.apply_whitening(z, wh)
 
 
 # ---------------------------------------------------------------------------

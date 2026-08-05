@@ -327,6 +327,36 @@ def test_parse_label_line_strict_no_fuzzy_whole_text_scan() -> None:
     assert fn("") is None
 
 
+def test_holdout_whiten_acts_per_layer_mu() -> None:
+    """_whiten_acts must center per LAYER (wh.mu is (Ly, d)) — the pre-fix
+    local `z - wh.mu[None, None, :]` broadcast (Ly, n, d) against (1, 1, Ly, d)
+    and raised ValueError at every realistic shape (2026-08-05 B3 pilot crash;
+    same class the sibling rescore leg fixed by delegating to
+    fits.apply_whitening)."""
+    import numpy as np
+
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        import issue1739_holdout_rung as h
+    except ImportError as exc:  # pragma: no cover - environment guard
+        pytest.skip(f"holdout module import failed: {exc}")
+    from explore_persona_space.experiments.issue_1739 import fits
+
+    rng = np.random.default_rng(0)
+    ly, n, d = 3, 5, 4
+    z = rng.normal(size=(ly, n, d))
+    wh = fits.Whitening(
+        mu=rng.normal(size=(ly, d)),
+        w=rng.normal(size=(ly, d, d)),
+        gamma=np.ones(ly),
+    )
+    got = h._whiten_acts(z, wh)  # pre-fix: ValueError (broadcast) at n != ly
+    assert got.shape == (ly, n, d)
+    # per-layer centering semantics: layer 0 must use mu[0], not a flat mu
+    expect0 = (z[0] - wh.mu[0][None, :]) @ wh.w[0]
+    np.testing.assert_allclose(got[0], expect0, rtol=1e-12, atol=1e-12)
+
+
 def test_recover_from_raw_end_to_end(tmp_path: Path) -> None:
     """recover_from_raw: refusal rows drop as refusal (never text-scanned),
     transport rows split out, Other drops, valid Label lines recover; the

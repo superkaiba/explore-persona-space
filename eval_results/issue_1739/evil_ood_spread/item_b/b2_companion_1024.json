@@ -1,0 +1,57 @@
+{
+  "kind": "b2_companion_table_matched_instrument_1024",
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "source": "trait_dv_1024/evil_train/judge_raw_trait_1024.json all_scores",
+    "reduction": "per-rollout mean over kept draws -> per-context mean over rollouts; numeric-string scores coerced; 'REFUSAL'/parse-error/out-of-range dropped (rule 9); per_persona aggregate ignored (null-aggregated legacy Betley block)"
+  },
+  "n_train_contexts_with_dv": 6432,
+  "n_draws_total": 120000,
+  "draw_drops": {
+    "parse_error": 1836,
+    "refusal": 37795,
+    "bad_string": 1
+  },
+  "clusters": [
+    {
+      "tactic_class": "Direct Request",
+      "n": 4560,
+      "dv_sd": 27.52405877109592,
+      "dv_mean": 19.743001340155946,
+      "frac_floor_lt10": 0.5736842105263158,
+      "frac_ceiling_ge90": 0.02412280701754386,
+      "passes_n200_sd5": true
+    },
+    {
+      "tactic_class": "Hidden Intention Streamline",
+      "n": 187,
+      "dv_sd": 25.06697510415348,
+      "dv_mean": 15.096524064171124,
+      "frac_floor_lt10": 0.6524064171122995,
+      "frac_ceiling_ge90": 0.016042780748663103,
+      "passes_n200_sd5": false
+    },
+    {
+      "tactic_class": "Output Format",
+      "n": 34,
+      "dv_sd": 32.84443119788741,
+      "dv_mean": 28.520424836601308,
+      "frac_floor_lt10": 0.4411764705882353,
+      "frac_ceiling_ge90": 0.058823529411764705,
+      "passes_n200_sd5": false
+    },
+    {
+      "tactic_class": "Request Framing",
+      "n": 31,
+      "dv_sd": 24.053399267098666,
+      "dv_mean": 16.325985663082438,
+      "frac_floor_lt10": 0.6451612903225806,
+      "frac_ceiling_ge90": 0.0,
+      "passes_n200_sd5": false
+    }
+  ],
+  "selection_note": "companion read only \u2014 the fit-side authoritative table is cluster_stats.json (labeling.json 400/800 instrument); both instruments select Direct Request",
+  "git_commit": "b2d2fa008fe5954873dfe457f5576b63e925502f",
+  "ts": "2026-08-05T15:07:09Z"
+}
