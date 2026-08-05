@@ -8524,8 +8524,8 @@
     "2100": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2100",
-      "status": "proposed",
+      "path": "tasks/archived/2100",
+      "status": "archived",
       "title": "workflow-fix: verify_plan check \u2014 mount-binding + headroom for VM staging rows"
     },
     "212": {
