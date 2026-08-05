@@ -516,6 +516,7 @@ def phase_upload(args) -> dict:
     aux_dest = f"{HF_PREFIX}/regen"
     aux = [p for p in (work / "regen_scope.json", work / "regen_report.json") if p.exists()]
     for p in aux:
+        # UPLOAD_LOOP_EXEMPT: fixed <=2-file list (scope + report JSONs), bounded by construction
         hub._upload(
             p,
             repo_id=hub.DEFAULT_DATASET_REPO,
