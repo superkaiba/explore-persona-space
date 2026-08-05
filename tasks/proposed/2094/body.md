@@ -25,6 +25,9 @@ goal: 'On Qwen-2.5-7B-Instruct, test whether interventions (activation patching 
   and the #1776 Jacobian J), coherence-gated reporting (judge > 60, coherent-only,
   <50%-coherent cells marked), and a fragility map vs the norm-matched shuffled-donor
   null.'
+relates_to:
+- spec-context-as-vector
+- spec-steering
 ---
 # Single-position context/prefix interventions: fraction-of-swap at the activation and behavior levels across matched-query / matched-prefix / cross settings
 
