@@ -12,12 +12,25 @@ origin_prompt: 'start in background with happy coder and setup periodic monitori
   + K=10 anchors, coherence>60 gating, fragility map, banked-map-only transport, stage-2
   best-cell confirmation at temp 1.0 K=5)'
 workflow: v1
+goal: 'On Qwen-2.5-7B-Instruct, test whether interventions (activation patching and
+  steering) at single context positions — the context-end and prefix-end vectors,
+  with last-3-token / query-span / full-context controls — causally move BOTH the
+  answer state and behavior toward a target context, across three settings from one
+  crossed context bank (matched query; matched prefix; cross), measured by one unified
+  fraction-of-swap metric F at both levels (F_act signed projection with disjoint
+  baseline halves; F_beh dual-judge contrast normalized between unpatched floor and
+  generate-under-B ceiling), plus map-transport cosines against banked ridge maps
+  only (context-end #779 963k L14/L19; prefix-end #1738 L14/L19/L26 — no new map training),
+  an on-experiment linearity fit L (held out by pair; direction-aware vs banked M
+  and the #1776 Jacobian J), coherence-gated reporting (judge > 60, coherent-only,
+  <50%-coherent cells marked), and a fragility map vs the norm-matched shuffled-donor
+  null.'
 ---
 # Single-position context/prefix interventions: fraction-of-swap at the activation and behavior levels across matched-query / matched-prefix / cross settings
 
 ## Goal
 
-On Qwen-2.5-7B-Instruct, test whether interventions (activation patching and steering) at single context positions — the context-end and prefix-end vectors, with last-3-token / query-span / full-context controls — causally move BOTH the answer state and behavior toward a target context, across three settings from one crossed context bank (matched query = prefix differs; matched prefix = query differs; cross = both differ), measured by one unified fraction-of-swap metric F at both levels: F_act (signed projection of the realized answer-state shift onto the floor→ceiling axis, disjoint baseline halves) and F_beh (dual LLM-judge rubric contrast Δ = (judge_B − judge_A)/100 normalized between the unpatched floor and generate-under-B ceiling), plus map-transport cosines against the banked largest-n ridge maps (context-end: #779 963k at L14/L19; prefix-end: #1738 88k at L14/L19/L26), an on-experiment linearity fit L (held out by pair; compared direction-aware to the banked map M and the #1776 Jacobian J), coherence-gated reporting (judge > 60, coherent-only, cells < 50% coherent marked), and a fragility map (excess incoherence per slot × layer × dose vs the norm-matched shuffled-donor null).
+On Qwen-2.5-7B-Instruct, test whether interventions (activation patching and steering) at single context positions — the context-end and prefix-end vectors, with last-3-token / query-span / full-context controls — causally move BOTH the answer state and behavior toward a target context, across three settings from one crossed context bank (matched query; matched prefix; cross), measured by one unified fraction-of-swap metric F at both levels (F_act signed projection with disjoint baseline halves; F_beh dual-judge contrast normalized between unpatched floor and generate-under-B ceiling), plus map-transport cosines against banked ridge maps only (context-end #779 963k L14/L19; prefix-end #1738 L14/L19/L26 — no new map training), an on-experiment linearity fit L (held out by pair; direction-aware vs banked M and the #1776 Jacobian J), coherence-gated reporting (judge > 60, coherent-only, <50%-coherent cells marked), and a fragility map vs the norm-matched shuffled-donor null.
 
 ## Motivation
 
