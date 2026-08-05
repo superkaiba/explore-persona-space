@@ -1851,7 +1851,8 @@ next analyzer/critic re-run; the ~30 already-parked v2 bodies stay v2.
   produced. Log here when an iteration during `/promote-clean-result`
   uncovers a generalisable rule. New structural rules fold into THIS
   file; new mechanical checks fold into `scripts/verify_task_body.py`.
-- **`lw-post-examples/`** — 3 verbatim LessWrong research posts kept for
+- **`docs/lw-post-examples/`** (moved out of this directory 2026-08-05)
+  — 3 verbatim LessWrong research posts kept for
   register reference. The v3 register is MORE compressed than these (the
   v3 redesign deliberately moved away from the LW-narrative wall of
   prose); keep them only for the prose discipline (concrete numbers,

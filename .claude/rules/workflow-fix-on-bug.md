@@ -40,8 +40,9 @@ exception: the architectural carve-out was REMOVED 2026-08-04 (see
 
 Purpose: collapse the lag between "agent hits a workflow bug" and
 "workflow file gets fixed", while routing the fix through full review.
-Previously this lag was a daily / weekly cycle (`/daily`, `/weekly`,
-`retrospective`) or required Thomas to notice the recurrence manually.
+Previously this lag was a daily / weekly cycle (`/daily`, the since-retired
+`weekly` skill, `retrospective`) or required Thomas to notice the recurrence
+manually.
 Now it's same-turn (the file + spawn is non-blocking).
 
 ## Workflow surface (what a workflow-fix `/issue` session may touch)
