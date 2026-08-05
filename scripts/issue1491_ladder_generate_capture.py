@@ -161,7 +161,7 @@ SAMPLING_MODE_GREEDY = "greedy_temp0"
 SAMPLING_MARKER_NAME = "sampling_mode.json"
 
 
-def _resolve_sampling(greedy: bool) -> dict:
+def _resolve_sampling(greedy: bool, gen_max_tokens: int = GEN_MAX_TOKENS) -> dict:
     """Resolve the run's decoding config + its identity tag.
 
     DEFAULT (greedy=False) is byte-identical to the parent recipe (the
@@ -172,10 +172,37 @@ def _resolve_sampling(greedy: bool) -> dict:
     ceiling_draw_43/44 splits still execute as two INDEPENDENT generate
     passes — under greedy the two-draw ceiling MEASURES vLLM
     continuous-batching nondeterminism (expected ~1.0, never assumed).
+
+    ``gen_max_tokens`` (the generation token CAP) is part of the decoding
+    identity alongside ``mode`` (Path B cap-hit re-gen round): a 2048 re-gen
+    row must never be confusable with a 1024 base row, so the cap rides the
+    sampling dict into every payload/marker identity check
+    (``_sampling_cap``). The driver itself always runs the module default;
+    the cap-hit regen pass (``issue1491_caphit_regen.py``) resolves 2048.
     """
     if greedy:
-        return {"mode": SAMPLING_MODE_GREEDY, "temperature": 0.0, "top_p": 1.0}
-    return {"mode": SAMPLING_MODE_PARENT, "temperature": GEN_TEMP, "top_p": GEN_TOP_P}
+        return {
+            "mode": SAMPLING_MODE_GREEDY,
+            "temperature": 0.0,
+            "top_p": 1.0,
+            "max_tokens": int(gen_max_tokens),
+        }
+    return {
+        "mode": SAMPLING_MODE_PARENT,
+        "temperature": GEN_TEMP,
+        "top_p": GEN_TOP_P,
+        "max_tokens": int(gen_max_tokens),
+    }
+
+
+def _sampling_cap(sampling: dict) -> int:
+    """The run's generation token cap — part of the DECODING IDENTITY.
+
+    A sampling dict with no ``max_tokens`` key (hand-built or pre-regen-round)
+    maps to the module default, which is EXACT for every artifact this driver
+    ever wrote before the regen round: ``GEN_MAX_TOKENS`` was hardcoded, no
+    override existed."""
+    return int(sampling.get("max_tokens", GEN_MAX_TOKENS))
 
 
 # Assistant turn-end tail appended after the response in the teacher-forced
@@ -326,10 +353,15 @@ def _sampling_params(gen_seed: int, sampling: dict):
         n=1,
         temperature=float(sampling["temperature"]),
         top_p=float(sampling["top_p"]),
-        max_tokens=GEN_MAX_TOKENS,
+        max_tokens=_sampling_cap(sampling),
         seed=int(gen_seed),
     )
     assert sp.seed == int(gen_seed), ("realized sampling seed drift", sp.seed, gen_seed)
+    assert sp.max_tokens == _sampling_cap(sampling), (
+        "realized max_tokens drift",
+        sp.max_tokens,
+        sampling,
+    )
     assert sp.temperature == float(sampling["temperature"]), (
         "realized temperature drift",
         sp.temperature,
@@ -1017,6 +1049,7 @@ def _assert_raw_payload_matches(
     expect_shard_index: int,
     expect_chunk: int,
     expect_sampling_mode: str,
+    expect_gen_max_tokens: int = GEN_MAX_TOKENS,
 ) -> None:
     """Wave-alignment asserts shared by the capture-side join and the
     gen-resume salvage path: the consumer must iterate the SAME manifest
@@ -1030,7 +1063,13 @@ def _assert_raw_payload_matches(
     ``SAMPLING_MODE_PARENT``: every chunk this driver wrote before the greedy
     round was produced under the hardcoded parent constants (GEN_TEMP=1.0 /
     GEN_TOP_P=0.95 — no CLI override existed), so the missing-key default is
-    exact, and a greedy run still fails LOUD against any legacy chunk."""
+    exact, and a greedy run still fails LOUD against any legacy chunk.
+
+    ``expect_gen_max_tokens`` extends the SAME identity to the generation
+    token CAP (Path B cap-hit re-gen round): a 2048 re-gen chunk must never
+    join/salvage/resume a 1024 run and vice versa. Legacy/no-key payloads map
+    to ``GEN_MAX_TOKENS`` — exact, the cap was hardcoded before the regen
+    round (and every greedy base chunk wrote the key explicitly)."""
     assert int(payload["shard_index"]) == expect_shard_index, (
         "gen/capture shard mismatch",
         raw_name,
@@ -1064,6 +1103,15 @@ def _assert_raw_payload_matches(
         payload_mode,
         expect_sampling_mode,
     )
+    payload_cap = int(payload.get("gen_max_tokens", GEN_MAX_TOKENS))
+    assert payload_cap == int(expect_gen_max_tokens), (
+        "gen/capture GEN-MAX-TOKENS (cap) mismatch — the token cap is part of the "
+        "decoding identity: a 1024 base chunk must never feed a 2048 re-gen run, and "
+        "vice versa (use the regen namespace + a fresh --out-dir per cap)",
+        raw_name,
+        payload_cap,
+        int(expect_gen_max_tokens),
+    )
 
 
 def _load_local_raw_salvage(
@@ -1075,6 +1123,7 @@ def _load_local_raw_salvage(
     expect_shard_index: int,
     expect_chunk: int,
     expect_sampling_mode: str,
+    expect_gen_max_tokens: int = GEN_MAX_TOKENS,
 ) -> dict | None:
     """Return the LOCAL gen raw-chunk payload for salvage, or None if absent.
 
@@ -1101,6 +1150,7 @@ def _load_local_raw_salvage(
         expect_shard_index=expect_shard_index,
         expect_chunk=expect_chunk,
         expect_sampling_mode=expect_sampling_mode,
+        expect_gen_max_tokens=expect_gen_max_tokens,
     )
     return payload
 
@@ -1117,6 +1167,7 @@ def _load_persisted_gen_chunk(
     expect_shard_index: int,
     expect_chunk: int,
     expect_sampling_mode: str,
+    expect_gen_max_tokens: int = GEN_MAX_TOKENS,
     allow_local_only: bool = False,
 ) -> dict[int, dict]:
     """Load ONE gen-wave raw-completions chunk for ``phase_split_capture``.
@@ -1188,14 +1239,19 @@ def _load_persisted_gen_chunk(
         expect_shard_index=expect_shard_index,
         expect_chunk=expect_chunk,
         expect_sampling_mode=expect_sampling_mode,
+        expect_gen_max_tokens=expect_gen_max_tokens,
     )
     rows = {int(r["ci"]): r for r in payload["rows"]}
     assert len(rows) == len(payload["rows"]), f"{raw_name}: duplicate ci in gen rows"
     return rows
 
 
-def _download_hub_sampling_mode(stage_prefix: str, cache_dir: Path) -> str | None:
-    """Read the stage-prefix sampling marker off the Hub, or None if absent.
+def _download_hub_sampling_marker(stage_prefix: str, cache_dir: Path) -> dict | None:
+    """Read the stage-prefix sampling-marker PAYLOAD off the Hub, or None if absent.
+
+    Returns the full marker dict (``sampling_mode`` + ``gen_max_tokens`` + ...)
+    so the identity guard can compare BOTH identity fields; missing keys map
+    to the parent defaults (exact for every pre-regen-round marker).
 
     A ``LocalEntryNotFoundError`` (a 429 storm masking as a 404 — #1092/#1402
     class) is re-raised after ``retry_transient`` exhausts: "could not
@@ -1227,7 +1283,9 @@ def _download_hub_sampling_mode(stage_prefix: str, cache_dir: Path) -> str | Non
             return None
         raise
     with open(p, encoding="utf-8") as fh:
-        return str(json.load(fh).get("sampling_mode", SAMPLING_MODE_PARENT))
+        payload = json.load(fh)
+    assert isinstance(payload, dict), ("sampling marker is not a JSON object", stage_prefix)
+    return payload
 
 
 def _upload_sampling_marker(stage_prefix: str, payload: dict) -> None:
@@ -1262,6 +1320,10 @@ def _enforce_sampling_identity(
 ) -> None:
     """Refuse to mix decoding regimes at the (stage_prefix, scratch) grain.
 
+    The regime identity is the PAIR (``sampling_mode``, ``gen_max_tokens``):
+    the token cap is identity too (Path B re-gen round — a cap-2048 regen
+    prefix must never be resumed/joined by a cap-1024 run and vice versa).
+
     The chunk-level resume predicate (``done_pt``/``done_raw``) skips work by
     FILENAME without ever reading a payload, so the payload-level
     ``sampling_mode`` asserts alone cannot stop a greedy run from silently
@@ -1282,65 +1344,81 @@ def _enforce_sampling_identity(
        0's upload fails toward REFUSE (loud), never silent reuse.
     """
     mode = str(sampling["mode"])
+    cap = _sampling_cap(sampling)
     marker_payload = {
         "sampling_mode": mode,
         "temperature": float(sampling["temperature"]),
         "top_p": float(sampling["top_p"]),
-        "gen_max_tokens": GEN_MAX_TOKENS,
+        "gen_max_tokens": cap,
         "written_by": "issue1491_ladder_generate_capture",
     }
     local_marker = scratch / SAMPLING_MARKER_NAME
     if local_marker.exists():
         with open(local_marker, encoding="utf-8") as fh:
-            local_mode = str(json.load(fh).get("sampling_mode", SAMPLING_MODE_PARENT))
-        if local_mode != mode:
+            local_data = json.load(fh)
+        local_mode = str(local_data.get("sampling_mode", SAMPLING_MODE_PARENT))
+        local_cap = int(local_data.get("gen_max_tokens", GEN_MAX_TOKENS))
+        if local_mode != mode or local_cap != cap:
             raise RuntimeError(
                 f"SAMPLING-MODE mismatch (local scratch): {scratch} was written under "
-                f"'{local_mode}' but this run is '{mode}'. Refusing to resume/salvage "
-                "across decoding regimes — use a fresh --out-dir (and --hf-prefix) for "
-                "the new regime."
+                f"('{local_mode}', cap={local_cap}) but this run is ('{mode}', cap={cap}). "
+                "Refusing to resume/salvage across decoding regimes (mode OR token cap) "
+                "— use a fresh --out-dir (and --hf-prefix) for the new regime."
             )
     else:
         has_local_chunks = any(scratch.glob("shard*_chunk*.json")) or any(
             scratch.glob("shard*_chunk*.pt")
         )
-        if has_local_chunks and mode != SAMPLING_MODE_PARENT:
+        if has_local_chunks and (mode != SAMPLING_MODE_PARENT or cap != GEN_MAX_TOKENS):
             raise RuntimeError(
                 f"SAMPLING-MODE mismatch (legacy local scratch): {scratch} holds chunk "
                 "files but no sampling marker — it predates the greedy round, so its "
-                f"chunks are temperature-1.0 ('{SAMPLING_MODE_PARENT}') by construction. "
-                f"Refusing to run '{mode}' over it — use a fresh --out-dir + --hf-prefix."
+                f"chunks are temperature-1.0 ('{SAMPLING_MODE_PARENT}') at cap "
+                f"{GEN_MAX_TOKENS} by construction. Refusing to run ('{mode}', cap={cap}) "
+                "over it — use a fresh --out-dir + --hf-prefix."
             )
+    hub_marker: dict | None = None
     hub_mode: str | None = None
     if not no_upload:
-        hub_mode = _download_hub_sampling_mode(stage_prefix, cache_dir)
-        if hub_mode is not None and hub_mode != mode:
-            raise RuntimeError(
-                f"SAMPLING-MODE mismatch (Hub): {stage_prefix} is pinned to '{hub_mode}' "
-                f"but this run is '{mode}'. Refusing to resume into / publish over a "
-                "different decoding regime — use a fresh --hf-prefix."
-            )
-        if hub_mode is None and (done_pt or done_raw) and mode != SAMPLING_MODE_PARENT:
+        hub_marker = _download_hub_sampling_marker(stage_prefix, cache_dir)
+        if hub_marker is not None:
+            hub_mode = str(hub_marker.get("sampling_mode", SAMPLING_MODE_PARENT))
+            hub_cap = int(hub_marker.get("gen_max_tokens", GEN_MAX_TOKENS))
+            if hub_mode != mode or hub_cap != cap:
+                raise RuntimeError(
+                    f"SAMPLING-MODE mismatch (Hub): {stage_prefix} is pinned to "
+                    f"('{hub_mode}', cap={hub_cap}) but this run is ('{mode}', cap={cap}). "
+                    "Refusing to resume into / publish over a different decoding regime "
+                    "(mode OR token cap) — use a fresh --hf-prefix."
+                )
+        if (
+            hub_marker is None
+            and (done_pt or done_raw)
+            and (mode != SAMPLING_MODE_PARENT or cap != GEN_MAX_TOKENS)
+        ):
             raise RuntimeError(
                 f"SAMPLING-MODE mismatch (legacy Hub prefix): {stage_prefix} already holds "
                 f"{len(done_pt)} .pt / {len(done_raw)} raw chunks but no sampling marker — "
                 "they predate the greedy round, so they are temperature-1.0 "
-                f"('{SAMPLING_MODE_PARENT}') by construction. Refusing to run '{mode}' "
-                "into this prefix — use a fresh --hf-prefix."
+                f"('{SAMPLING_MODE_PARENT}') at cap {GEN_MAX_TOKENS} by construction. "
+                f"Refusing to run ('{mode}', cap={cap}) into this prefix — use a fresh "
+                "--hf-prefix."
             )
-        if hub_mode is None and shard_index == 0:
+        if hub_marker is None and shard_index == 0:
             _upload_sampling_marker(stage_prefix, marker_payload)
             logger.info(
-                "[ladder] sampling-identity: uploaded marker mode=%s -> %s/%s",
+                "[ladder] sampling-identity: uploaded marker mode=%s cap=%d -> %s/%s",
                 mode,
+                cap,
                 stage_prefix,
                 SAMPLING_MARKER_NAME,
             )
     if not local_marker.exists():
         C.write_json_atomic(local_marker, marker_payload)
     logger.info(
-        "[ladder] sampling-identity OK: mode=%s stage_prefix=%s hub_marker=%s",
+        "[ladder] sampling-identity OK: mode=%s cap=%d stage_prefix=%s hub_marker=%s",
         mode,
+        cap,
         stage_prefix,
         hub_mode if hub_mode is not None else "absent-or-local-only",
     )
@@ -1498,6 +1576,7 @@ def run_capture(args) -> int:
                 expect_shard_index=args.shard_index,
                 expect_chunk=0,
                 expect_sampling_mode=sampling["mode"],
+                expect_gen_max_tokens=_sampling_cap(sampling),
                 allow_local_only=args.no_upload,
             )
             probe_missing = [c for c in probe_cis if c not in probe_map]
@@ -1698,6 +1777,7 @@ def run_capture(args) -> int:
                     expect_shard_index=args.shard_index,
                     expect_chunk=ci_idx,
                     expect_sampling_mode=sampling["mode"],
+                    expect_gen_max_tokens=_sampling_cap(sampling),
                     allow_local_only=args.no_upload,
                 )
                 missing = [c for c in kept_cis if c not in raw_map]
@@ -1756,6 +1836,7 @@ def run_capture(args) -> int:
                         expect_shard_index=args.shard_index,
                         expect_chunk=ci_idx,
                         expect_sampling_mode=sampling["mode"],
+                        expect_gen_max_tokens=_sampling_cap(sampling),
                     )
                 if salvaged is not None:
                     sal_rows = {int(r["ci"]): r for r in salvaged["rows"]}
@@ -1818,7 +1899,7 @@ def run_capture(args) -> int:
                             "sampling_mode": sampling["mode"],
                             "temperature": sampling["temperature"],
                             "top_p": sampling["top_p"],
-                            "gen_max_tokens": GEN_MAX_TOKENS,
+                            "gen_max_tokens": _sampling_cap(sampling),
                             "n_cap_hit": n_cap_hit,
                             "rows": [
                                 {"ci": int(c), "prompt": p, "response": r, "finish_reason": f}

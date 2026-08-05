@@ -20,7 +20,7 @@ pre-round code by construction, where none of these seams existed):
    legacy chunks) and writes markers on the fresh-prefix path.
 
 Offline by construction: the hub boundary is monkeypatched with
-signature-conformant fakes (module-level ``_download_hub_sampling_mode`` /
+signature-conformant fakes (module-level ``_download_hub_sampling_marker`` /
 ``_upload_sampling_marker``); everything else executes the real bodies
 (tests/ runs in every issue's Step 9c gate — no live Hub fetch allowed).
 """
@@ -166,7 +166,7 @@ def test_guard_legacy_local_chunks_refuse_greedy(tmp_path):
     assert (scratch / D.SAMPLING_MARKER_NAME).exists()
 
 
-def _sig_download(stage_prefix: str, cache_dir: Path) -> str | None:
+def _sig_download(stage_prefix: str, cache_dir: Path) -> dict | None:
     raise NotImplementedError  # replaced per-test; signature mirrors the real helper
 
 
@@ -174,10 +174,10 @@ def test_guard_hub_marker_mismatch_refuses(tmp_path, monkeypatch):
     scratch = tmp_path / "s"
     scratch.mkdir()
 
-    def fake_download(stage_prefix: str, cache_dir: Path) -> str | None:
-        return PARENT
+    def fake_download(stage_prefix: str, cache_dir: Path) -> dict | None:
+        return {"sampling_mode": PARENT, "gen_max_tokens": D.GEN_MAX_TOKENS}
 
-    monkeypatch.setattr(D, "_download_hub_sampling_mode", fake_download)
+    monkeypatch.setattr(D, "_download_hub_sampling_marker", fake_download)
     with pytest.raises(RuntimeError, match="SAMPLING-MODE mismatch \\(Hub\\)"):
         _enforce(scratch, D._resolve_sampling(True), no_upload=False)
 
@@ -189,10 +189,10 @@ def test_guard_hub_legacy_chunks_refuse_greedy(tmp_path, monkeypatch):
     scratch = tmp_path / "s"
     scratch.mkdir()
 
-    def fake_download(stage_prefix: str, cache_dir: Path) -> str | None:
+    def fake_download(stage_prefix: str, cache_dir: Path) -> dict | None:
         return None
 
-    monkeypatch.setattr(D, "_download_hub_sampling_mode", fake_download)
+    monkeypatch.setattr(D, "_download_hub_sampling_marker", fake_download)
     with pytest.raises(RuntimeError, match="legacy Hub prefix"):
         _enforce(
             scratch,
@@ -207,13 +207,13 @@ def test_guard_fresh_hub_prefix_uploads_marker_from_shard0_only(tmp_path, monkey
     scratch.mkdir()
     uploads: list[tuple[str, dict]] = []
 
-    def fake_download(stage_prefix: str, cache_dir: Path) -> str | None:
+    def fake_download(stage_prefix: str, cache_dir: Path) -> dict | None:
         return None
 
     def fake_upload(stage_prefix: str, payload: dict) -> None:
         uploads.append((stage_prefix, payload))
 
-    monkeypatch.setattr(D, "_download_hub_sampling_mode", fake_download)
+    monkeypatch.setattr(D, "_download_hub_sampling_marker", fake_download)
     monkeypatch.setattr(D, "_upload_sampling_marker", fake_upload)
     _enforce(scratch, D._resolve_sampling(True), no_upload=False, shard_index=0)
     assert len(uploads) == 1 and uploads[0][1]["sampling_mode"] == GREEDY
