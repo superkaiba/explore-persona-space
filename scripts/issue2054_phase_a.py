@@ -1194,28 +1194,117 @@ def _verify_prejudge_staleness(out_dir: Path, variants: list[str], args) -> None
             _log(f"WARN variant={v}: prejudge pool is a --gen-mock (smoke) pool")
 
 
+def _stage_prejudge_from_hf(out_dir: Path, variant: str) -> None:
+    """Authoritatively (re)stage ONE variant's prejudge pool + staleness
+    sidecar from HF, reassembling the SHARDED upload form.
+
+    Why this is not a one-line `stage_hub_file` of `<stem>.jsonl` (r6 defect):
+    `_shard_large_jsonl_for_upload` line-splits any >9.5 MB `.jsonl` into
+    `<stem>.shardNN.jsonl` + `<stem>.manifest.json` before upload
+    (upload-policy.md — the Hub force-routes any >10 MB blob to LFS). Every
+    prejudge pool crossed that threshold for the first time at the r5 draw
+    (~6,900 rows ~ 12 MB, vs ~4,000 rows ~ 7 MB before), so on HF the plain
+    `<stem>.jsonl` name now resolves ONLY to the previous round's smaller,
+    UNSHARDED residue — 2,043 rows for char_helios against the 6,931 this
+    round produced. Staging that name silently hands the judge leg the failed
+    round's pool.
+
+    The `.done.json` staleness sidecar caught it (recorded sha vs file sha) and
+    the run halted rather than judging stale data — but a refusal is not a
+    repair, hence this helper.
+
+    Shards are verified against the manifest's per-part sha256 and reassembled
+    by exact in-order concatenation, so the rebuilt file is byte-identical to
+    what the gen leg hashed into the sidecar.
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import retry_transient, stage_hub_file
+
+    api = HfApi()
+    stem = f"scaffolds_{variant}_prejudge"
+    base = f"{TASK_PREFIX}/scaffolds/{variant}"
+    dest_dir = out_dir / variant
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    target = _prejudge_path(out_dir, variant)
+
+    manifest_remote = f"{base}/{stem}.manifest.json"
+    # Single-path LITERAL existence probe: a scoped listing would cost a
+    # full-prefix page walk to answer one yes/no, and gotchas.md names
+    # file_exists as the right call for exactly this shape.
+    has_manifest = retry_transient(
+        # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here
+        lambda: api.file_exists(HF_DATA_REPO, manifest_remote, repo_type="dataset"),
+        what=f"file_exists({manifest_remote})",
+    )
+
+    if has_manifest:
+        mpath = dest_dir / f"{stem}.manifest.json"
+        stage_hub_file(HF_DATA_REPO, manifest_remote, mpath, repo_type="dataset", overwrite=True)
+        man = json.loads(mpath.read_text(encoding="utf-8"))
+        parts = list(man.get("parts") or [])
+        if not parts:
+            raise RuntimeError(f"prejudge manifest for {variant} lists no parts: {manifest_remote}")
+        want_sha = man.get("sha256") or {}
+        local_parts: list[Path] = []
+        for name in parts:
+            lp = dest_dir / name
+            stage_hub_file(HF_DATA_REPO, f"{base}/{name}", lp, repo_type="dataset", overwrite=True)
+            got = hashlib.sha256(lp.read_bytes()).hexdigest()
+            exp = want_sha.get(name)
+            if exp and exp != got:
+                raise RuntimeError(
+                    f"prejudge shard {name} for {variant} sha mismatch: "
+                    f"{got[:12]}… != manifest {str(exp)[:12]}…"
+                )
+            local_parts.append(lp)
+        tmp = target.with_name(target.name + ".tmp")
+        with tmp.open("wb") as out:
+            for lp in local_parts:
+                out.write(lp.read_bytes())
+        os.replace(tmp, target)
+        _log(
+            f"variant={variant} prejudge reassembled from {len(local_parts)} shard(s) "
+            f"({target.stat().st_size} B)"
+        )
+    else:
+        stage_hub_file(
+            HF_DATA_REPO, f"{base}/{stem}.jsonl", target, repo_type="dataset", overwrite=True
+        )
+        _log(f"variant={variant} prejudge staged unsharded ({target.stat().st_size} B)")
+
+    # The staleness-anchor sidecar rides the same prefix, sharded or not, and
+    # is never itself large enough to shard.
+    stage_hub_file(
+        HF_DATA_REPO,
+        f"{base}/{stem}.jsonl.done.json",
+        dest_dir / f"{stem}.jsonl.done.json",
+        repo_type="dataset",
+        overwrite=True,
+    )
+
+
 def _load_prejudge(
     out_dir: Path, variants: list[str], *, from_hf: bool, args
 ) -> dict[str, list[dict]]:
     """Load per-variant prejudge pools for --stage judge (staging from HF on
     request — the gen pod uploaded them; fail-loud when absent or STALE)."""
+    # NOTE: `_stage_prejudge_from_hf` handles the SHARDED upload form; see its
+    # docstring for why the plain `<stem>.jsonl` name is not sufficient.
+    if from_hf:
+        # AUTHORITATIVE re-stage, not stage-if-missing (r6). Two reasons:
+        #   (a) `stage_hub_file` is idempotent — an existing local target
+        #       returns with NO network call — so a stale local pool from an
+        #       earlier round silently wins over the Hub copy;
+        #   (b) `--prejudge-from-hf` means "the Hub is the source of truth for
+        #       this leg", and the staleness gate below can only REFUSE a
+        #       stale local file, never repair it.
+        # overwrite=True in `_stage_prejudge_from_hf` makes the flag do what it
+        # says. The pools are ~12 MB of text each; re-staging is cheap next to
+        # judging 33k rows against the wrong pool.
+        for v in variants:
+            _stage_prejudge_from_hf(out_dir, v)
     missing = [v for v in variants if not _prejudge_path(out_dir, v).is_file()]
-    if missing and from_hf:
-        from explore_persona_space.orchestrate.hub import stage_hub_file
-
-        for v in missing:
-            for name in (
-                f"scaffolds_{v}_prejudge.jsonl",
-                # The staleness-anchor sidecar rides the same HF prefix.
-                f"scaffolds_{v}_prejudge.jsonl.done.json",
-            ):
-                stage_hub_file(
-                    HF_DATA_REPO,
-                    f"{TASK_PREFIX}/scaffolds/{v}/{name}",
-                    out_dir / v / name,
-                    repo_type="dataset",
-                )
-        missing = [v for v in variants if not _prejudge_path(out_dir, v).is_file()]
     if missing:
         raise FileNotFoundError(
             f"prejudge inputs missing for {missing}: run --stage gen first "
