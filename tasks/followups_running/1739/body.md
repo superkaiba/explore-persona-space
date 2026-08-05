@@ -30,7 +30,7 @@ relates_to:
 - Map-then-project trails the context-native direction: the Spearman rho difference is reliably below zero in 712 of 810 evil, 134 of 270 hallucination, and 230 of 810 sycophancy cells.
 - Direct regression on context activations stays the strongest deployable predictor (rho 0.71 / 0.58 / 0.74 at the largest budgets); no round-2 arm or filled transfer-roster arm beats it.
 - On a fully held-out attack-tactic family, map arms do not separate from a shuffled-direction control (+0.004 on the context variant); a direct context MLP transfers at 0.68, clear of every control.
-- The evil transfer-rung spread failure is instrument-specific, not attack-corpus-general: a graded compliance DV spreads on the old rungs (per-context SD 34.7-38.7 where the trait DV reads 0.9-12.1), and the trait DV itself passes on three fresh attack corpora.
+- The evil transfer-rung spread failure is instrument-specific, not attack-corpus-general: a graded compliance DV spreads on the two failing transfer rungs (per-context SD 36.0-38.7 where the trait DV reads 0.9-12.1), and the trait DV itself passes on three fresh attack corpora.
 - Rescue attempts fail at matched conventions — final-context extraction moves map-then-project by -0.12 to +0.03 and nonlinear oracles move ceilings under +0.01 — except a half in-domain map pool, which flips the evil difference positive (single draw and seed).
 - Caveats: the prefix-to-answer map never learns; 3-7% of rollouts carry CJK intrusion (census and arm ordering survive its exclusion); the tactic holdout is under-determined (1,906 train rows vs 3,584 dimensions); the planned teacher-forced margin companion DV was not computed.
 
