@@ -301,7 +301,7 @@ What is plotted: per-rung retention (pooled held-out mode R² over the target's 
 
 > **Figure.** *Answer-side corrections rescue base→SFT; context-side ones do not.* base→SFT: direct −0.36, context-mean offset −0.60, context reparameterization −0.74, answer-mean offset 0.43, answer rotation 0.76 (target-pair-fitted) — above the cloud-fitted two-sided general-linear 0.47. SFT→DPO reaches 0.81 with a constant and 0.87 with a gain; DPO→RLVR is 0.98–0.99 everywhere. Per-fold values for all 30 points are in the committed JSON.
 
-The rewrite is answer-side in this accounting — the answer activation cloud, not the answer text (consistent with the fixed-answer-text transfer result): context-side corrections leave base→SFT below direct transfer, while an answer-cloud constant alone recovers most of the gap.
+In this accounting the rewrite sits in the answer activation cloud, not the answer text (consistent with the fixed-answer-text transfer): context-side corrections leave base→SFT below direct transfer; an answer-cloud constant recovers most of the gap.
 
 | ladder rung | correction applied to the source map's predictions | fitted on | base→SFT | SFT→DPO | DPO→RLVR |
 |---|---|---|---|---|---|
@@ -316,7 +316,7 @@ The rewrite is answer-side in this accounting — the answer activation cloud, n
 | two-sided orthogonal | rotations on both sides | clouds + same-text pairs | 0.360 | 0.811 | 0.990 |
 | two-sided general-linear | ridge remaps on both sides | clouds + same-text pairs | 0.472 | 0.874 | 0.991 |
 
-Constant corrections are interconvertible through the map, so the rungs identify which cloud statistic carries the correction, not a mechanistic side: the context rung hurts because the correction it applies is weakly anti-aligned with the needed one, and most of it is map-reachable from a modest context-side vector. The check is in-sample, base→SFT only; the context-side rotation twin has no closed form and was not run.
+Constant corrections are interconvertible through the map, so the rungs identify which cloud statistic carries the correction, not a mechanistic side: the context rung hurts because the correction it applies is weakly anti-aligned with the needed one, and most of it is map-reachable from a modest context-side vector. The check is in-sample, base→SFT only; the context-side rotation twin has no closed form (not run).
 
 | geometry read (base→SFT) | value |
 |---|---|
