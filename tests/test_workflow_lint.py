@@ -7856,7 +7856,8 @@ def test_check_git_recipes_root_guard_selftest_fail_closed(tmp_path):
 
 
 def test_check_git_recipes_root_guard_nested_fence_recovers(tmp_path):
-    """Replicates the LIVE nested-fence shape at weekly/SKILL.md:196-204
+    """Replicates the nested-fence shape formerly at weekly/SKILL.md:196-204
+    (skill retired 2026-08-05; this fixture preserves the shape)
     (outer ```markdown fence containing an inner ```diff fence) FOLLOWED by
     a blocked bash fence: the parity-toggle parser must recover and flag the
     blocked fence at its CORRECT opener line — the naive empty-tag-closer
