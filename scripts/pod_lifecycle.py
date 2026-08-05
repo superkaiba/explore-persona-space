@@ -753,6 +753,13 @@ def _bootstrap(pod_name: str, intent_label: str = "custom", issue: int | None = 
     partial-clone + cone sparse-checkout can open the per-issue
     ``eval_results/issue_<N>`` / ``figures/issue_<N>`` cones alongside the
     default code cones (#2051). Absent ⇒ only the default code cones open.
+    bootstrap_pod.sh consumes it LOCALLY (captured into ``ISSUE_VAL`` and
+    baked into the ssh payload) — ssh forwards no env vars (#1739).
+
+    A pod that reads ANOTHER issue's committed artifacts declares the extra
+    cones via ``BOOTSTRAP_EXTRA_CONES`` (space-separated repo-relative dirs,
+    e.g. ``"eval_results/issue_722"``), exported before ``pod.py provision``
+    / ``pod.py bootstrap`` — it passes through the ``os.environ`` copy below.
     """
     print(f"\nRunning bootstrap on {pod_name} (intent={intent_label})...")
     env = os.environ.copy()
@@ -1941,7 +1948,8 @@ def _provision_wait_register_bootstrap(
         print(
             f"\nBootstrap exited with code {rc}. Pod is up but not experiment-ready.\n"
             f"Investigate, then either re-run "
-            f"`POD_INTENT={intent_label} bash scripts/bootstrap_pod.sh {name}` or\n"
+            f"`POD_INTENT={intent_label} ISSUE={args.issue} "
+            f"bash scripts/bootstrap_pod.sh {name}` or\n"
             f"`python scripts/pod.py terminate --issue {args.issue}{suffix_hint}` to discard.",
             file=sys.stderr,
         )

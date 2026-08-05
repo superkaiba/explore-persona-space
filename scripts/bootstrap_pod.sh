@@ -16,6 +16,23 @@
 #                              their feature branch (e.g. BOOTSTRAP_BRANCH=issue-501
 #                              bash scripts/bootstrap_pod.sh pod-501). Does
 #                              not affect step 3 / .env distribution.
+#   ISSUE=<n>                  Issue whose committed artifact cones
+#                              (eval_results/issue_<n>, figures/issue_<n>) are
+#                              opened in the pod's cone sparse-checkout (#2051).
+#                              Set by pod_lifecycle.py::_bootstrap (provision)
+#                              and derived from the pod name by
+#                              `pod.py bootstrap`. CONSUMED LOCALLY (captured
+#                              into ISSUE_VAL and baked into the step-4 ssh
+#                              payload): ssh_cmd forwards no env vars, so a
+#                              remote-side ${ISSUE} read is always empty — the
+#                              2026-08-04 #1739 code-only-cones bug.
+#   BOOTSTRAP_EXTRA_CONES=...  Space-separated extra sparse-checkout cone dirs
+#                              (repo-relative) for a pod that reads ANOTHER
+#                              issue's committed artifacts, e.g.
+#                              BOOTSTRAP_EXTRA_CONES="eval_results/issue_722".
+#                              Export before `pod.py provision` / `pod.py
+#                              bootstrap` (passed through via os.environ).
+#                              Also consumed locally, like ISSUE.
 #
 # Prerequisites:
 #   - SSH key at ~/.ssh/id_ed25519
@@ -217,6 +234,17 @@ fi
 # half-applied rebase and fails loud rather than leaving a broken state
 # for the next bootstrap to trip over.
 
+# LOCAL capture of the cone knobs (#1739 root cause, 2026-08-04): ssh_cmd
+# sends a plain command string and sshd forwards no env vars (AcceptEnv
+# defaults to LANG/LC_* only), so a remote-side ${ISSUE:-} reference is
+# ALWAYS empty regardless of what pod_lifecycle.py exported locally. Both
+# cone sites below interpolate these UNESCAPED (the same local-capture
+# pattern POD_INTENT_VAL uses in step 5). Incident: two pods provisioned
+# with --issue 1739 came up code-cones-only and crashed FileNotFoundError
+# on a git-tracked eval_results/issue_1739/... input mid-run.
+ISSUE_VAL="${ISSUE:-}"
+EXTRA_CONES_VAL="${BOOTSTRAP_EXTRA_CONES:-}"
+
 step 4 "Setting up git repository (branch=$BOOTSTRAP_BRANCH)"
 if ssh_cmd "
 set -eu
@@ -238,10 +266,21 @@ if [ -d $REMOTE_DIR/.git ]; then
         git config remote.origin.promisor true
         git config remote.origin.partialclonefilter blob:none
         git sparse-checkout init --cone 2>/dev/null || true
-        if [ -n \"\${ISSUE:-}\" ]; then
-            git sparse-checkout set src scripts configs tests docs \"eval_results/issue_\$ISSUE\" \"figures/issue_\$ISSUE\" 2>/dev/null || true
-        else
-            git sparse-checkout set src scripts configs tests docs 2>/dev/null || true
+        git sparse-checkout set src scripts configs tests docs 2>/dev/null || true
+    fi
+    # Per-issue / extra artifact cones — OUTSIDE the promisor-retrofit guard
+    # above, on purpose (#1739): that guard is false on every pod bootstrapped
+    # after #2051, so cone-setting nested inside it ran at most once per repo
+    # and a re-bootstrap could never open a new issue's cones. sparse-checkout
+    # add is idempotent. ISSUE_VAL / EXTRA_CONES_VAL are baked in LOCALLY by
+    # the driver above (ssh forwards no env vars). A legacy full (non-sparse)
+    # checkout already has every path and is left untouched.
+    if [ \"\$(git config --get core.sparseCheckout 2>/dev/null || true)\" = \"true\" ]; then
+        if [ -n \"$ISSUE_VAL\" ]; then
+            git sparse-checkout add \"eval_results/issue_$ISSUE_VAL\" \"figures/issue_$ISSUE_VAL\" || echo \"WARN: sparse-checkout add for issue $ISSUE_VAL failed\" >&2
+        fi
+        if [ -n \"$EXTRA_CONES_VAL\" ]; then
+            git sparse-checkout add $EXTRA_CONES_VAL || echo \"WARN: sparse-checkout add for extra cones ($EXTRA_CONES_VAL) failed\" >&2
         fi
     fi
     git stash -q 2>/dev/null || true
@@ -284,14 +323,19 @@ else
     git config remote.origin.promisor true
     git config remote.origin.partialclonefilter blob:none
     git sparse-checkout init --cone
-    # Default cones: source, configs, tests, docs; each issue's eval_results /
-    # figures cone is added on demand by the workload script when it starts
-    # writing there. \$ISSUE is exported by pod_lifecycle.py::_bootstrap so a
-    # per-issue pod also opens its own artifact cones.
-    if [ -n \"\${ISSUE:-}\" ]; then
-        git sparse-checkout set src scripts configs tests docs \"eval_results/issue_\$ISSUE\" \"figures/issue_\$ISSUE\"
+    # Default cones: source, configs, tests, docs. A per-issue pod also opens
+    # its own eval_results/figures cones: ISSUE_VAL / EXTRA_CONES_VAL are
+    # captured LOCALLY before step 4 and baked into this payload — a
+    # remote-side, escaped ISSUE read is always empty (ssh forwards no env
+    # vars; the #1739 bug). Workloads may still open further cones on demand with
+    # git sparse-checkout add.
+    if [ -n \"$ISSUE_VAL\" ]; then
+        git sparse-checkout set src scripts configs tests docs \"eval_results/issue_$ISSUE_VAL\" \"figures/issue_$ISSUE_VAL\"
     else
         git sparse-checkout set src scripts configs tests docs
+    fi
+    if [ -n \"$EXTRA_CONES_VAL\" ]; then
+        git sparse-checkout add $EXTRA_CONES_VAL
     fi
     git fetch -q --depth=1 --filter=blob:none origin \"\$BRANCH\"
     # \`git init -q -b \$BRANCH\` already created + checked out \$BRANCH, and
@@ -303,6 +347,19 @@ else
     # FETCH_HEAD via the reset.
     git reset -q --hard FETCH_HEAD
     echo \"Cloned at: \$(git log --oneline -1)\"
+fi
+# Cone verification (#1739): echo the realized cone set; when an issue was
+# declared, assert its eval_results cone actually landed. WARN loud, never
+# hard-fail — a pod that legitimately needs no committed artifacts must
+# still come up; the workload's own input read is the hard gate. A legacy
+# full (non-sparse) checkout has every path by construction, so it skips.
+if [ \"\$(git config --get core.sparseCheckout 2>/dev/null || true)\" = \"true\" ]; then
+    echo \"Sparse cones: \$(git sparse-checkout list 2>/dev/null | tr '\\n' ' ')\"
+    if [ -n \"$ISSUE_VAL\" ] && ! git sparse-checkout list 2>/dev/null | grep -qx \"eval_results/issue_$ISSUE_VAL\"; then
+        echo \"WARNING: issue-$ISSUE_VAL artifact cones MISSING from the sparse checkout — committed eval_results/figures for issue $ISSUE_VAL will be ABSENT on this pod and workloads reading them will crash FileNotFoundError. Remedy: cd $REMOTE_DIR && git sparse-checkout add eval_results/issue_$ISSUE_VAL figures/issue_$ISSUE_VAL\" >&2
+    fi
+else
+    echo \"Sparse cones: (none — full checkout)\"
 fi
 "; then
     log_ok "Repository ready"
