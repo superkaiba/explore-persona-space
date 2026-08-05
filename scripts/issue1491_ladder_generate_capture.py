@@ -685,78 +685,146 @@ def _batched_capture_parity_gate(
 # First-chunk self-gate (plan §7 Decision Gate 1)
 # ---------------------------------------------------------------------------
 
-# ADVISORY (non-aborting) reference floor for the shuffled-pairing null's R²
-# (see _self_gate_predicate; logged, never a pass/fail criterion). The gate's
-# null is a shuffle-FIT null — beta is REFIT on permuted (X, Y) pairings, then
-# scored on val — whose expected R² is ~ -1, NOT ~ 0: with the pairings
-# destroyed, the refit beta captures spurious structure rather than collapsing
-# to zero, so val predictions scatter around y_mu and SSE_null > SST. (An
-# R² ~ 0 null is the MEAN-PREDICTOR null, yhat == y_mu exactly => SSE == SST —
-# a DIFFERENT construction. A two-sided |r2_null| < 0.05 bound therefore
-# encodes the wrong null's expectation and is unsatisfiable against this
-# gate's own null on ANY input — the 2026-08-05 incident that aborted all 8
-# train_25k shards, epm:failure v3.)
+# ---- Plan §7 Gate 1: three-valued verdict (PASS / INCONCLUSIVE / FAIL) ----
 #
-# WHY the floor is ADVISORY, not binding: how far below 0 a LEGITIMATE
-# shuffle-fit null sits is CONDITIONING-DEPENDENT. At the 2,000-row mid-shard
-# trigger, n_train=1600 is fixed while h grows with the rung — 0.5B h=896
-# (n/h≈1.79, observed r2_null in [-0.990, -0.833]); 1.5B h=1536 (n/h≈1.04);
-# 3B h=2048, 7B h=3584, 14B/32B h≈5120 (n/h≈0.78/0.45/0.31 — UNDER-determined,
-# where the near-interpolating refit of shuffled targets legitimately drives
-# r2_null far below -1, with no regime-independent bound). A fixed constant
-# calibrated on one rung's regime therefore cannot be a criterion across
-# rungs — it would re-create exactly the unsatisfiable-gate incident on the
-# larger rungs. The value -3.0 (~3x below the most negative r2_null observed
-# in the scale05 calibration regime) is kept ONLY as the advisory-log
-# threshold: a breach in an over-determined regime is worth a human look; in
-# an under-determined regime it is EXPECTED.
-SELF_GATE_NULL_FLOOR = -3.0
+# The gate's null is a shuffle-FIT null — beta is REFIT on permuted (X, Y)
+# pairings, then scored on val — whose expected R² is ~ -1, NOT ~ 0: with the
+# pairings destroyed, the refit beta captures spurious structure rather than
+# collapsing to zero, so val predictions scatter around y_mu and
+# SSE_null > SST. (An R² ~ 0 null is the MEAN-PREDICTOR null, yhat == y_mu
+# exactly => SSE == SST — a DIFFERENT construction; the original two-sided
+# |r2_null| < 0.05 bound encoded that wrong expectation and was unsatisfiable
+# on ANY input — the 2026-08-05 incident that aborted all 8 train_25k shards,
+# epm:failure v3.)
+#
+# PRODUCTION CALIBRATION POINTS (all real, driving every threshold below —
+# do NOT retune by taste):
+#
+#   rung   trigger              n_train  h     n/h    r2_null          r2_fit
+#   0.5B   mid-shard            1600     896   1.79   -0.99 .. -0.83   +0.09 .. +0.16
+#   0.5B   end-of-shard resume   900     896   1.004  -1.35 .. -1.28   -0.04 .. -0.02
+#   1.5B   mid-shard            1600     1536  1.04   -3.80 .. -3.40   -0.73 .. -0.55
+#
+# Two structural facts these points establish:
+# (1) The null's magnitude scales with h ITSELF, not n/h alone — at the same
+#     n/h ≈ 1.0 the null reads -1.3 at h=896 but -3.6 at h=1536. So neither a
+#     fixed floor NOR a ratio-scaled floor on r2_null can be a criterion: a
+#     very negative null is the EXPECTED signature of a degenerate
+#     shuffle-REFIT under poor conditioning, not pathology.
+# (2) At n_train ≈ h, BOTH statistics are estimator-degenerate (#1701):
+#     r2_fit collapses to <= 0 regardless of h (-0.02 at h=896, -0.73 at
+#     h=1536) while the same capture code reads +0.09..+0.16 at n/h = 1.79.
+#     Near n ≈ h the gate therefore has NO discriminating power in EITHER
+#     direction — a broken capture and a healthy one both produce
+#     fit ≈ 0 / null « 0 / gap » 0.05 — so a binary PASS/FAIL cannot express
+#     the honest outcome. Hence the three-valued verdict:
+#
+#   PASS          gap > 0.05 AND r2_fit > 0 AND adequate conditioning
+#                 (n_train > SELF_GATE_ADEQUATE_COND * h).
+#   INCONCLUSIVE  conditioning inadequate, OR (at adequate conditioning)
+#                 gap > 0.05 with r2_fit <= 0 — the gap carried entirely by
+#                 the degenerate null. NEVER aborts; logged loudly with the
+#                 full conditioning disclosure so the record shows the gate
+#                 could not discriminate.
+#   FAIL          at ADEQUATE conditioning only: gap <= 0.05 (fit fails to
+#                 beat the shuffled null — the real broken-capture
+#                 signature) or a PREDICTIVE null (r2_null >= 0.05 —
+#                 leakage/degeneracy; a shuffle-fit null's expectation is
+#                 <= 0 in every regime). Still aborts the rung.
+#
+# SELF_GATE_ADEQUATE_COND = 1.5: the observed clusters are n/h ≈ 1.0
+# (degenerate: fit <= 0 at BOTH h=896 and h=1536) and n/h = 1.79 (the only
+# genuinely positive fit reads). 1.5 separates them; no production trigger
+# regime sits near the boundary (mid-shard n_train=1600: 1.79 for 0.5B,
+# <= 1.04 for every larger rung; resume fallbacks land ~= 1.0), so the exact
+# value between 1.04 and 1.79 is not load-bearing.
+SELF_GATE_ADEQUATE_COND = 1.5
+
+# SELF_GATE_MIN_FIT_FOR_PASS = 0.0: the observed positive reads (+0.09..+0.16)
+# vs the observed degenerate reads (-0.73..-0.02) — 0 separates the clusters
+# with margin on both sides. This is NOT a science-quality floor on the
+# ladder's R² (a fit <= 0 at adequate conditioning yields INCONCLUSIVE and
+# the rung PROCEEDS, disclosed — never FAIL): it only stops the GATE from
+# claiming a positive verdict when its own fit is non-positive, i.e. when the
+# gap is carried entirely by the null being bad.
+SELF_GATE_MIN_FIT_FOR_PASS = 0.0
+
+# ADVISORY pathology tripwire on the null — log-only, NEVER a verdict input,
+# and NOT a calibration knob (do not retune it per rung; fact (1) above is
+# why no such constant can be calibrated). Set far below the plausible
+# legitimate envelope: deepest measured legitimate nulls are -3.8 (production,
+# h=1536, n/h=1.04) and -51 (worst-case synthetic iid Gaussian at the exact
+# interpolation threshold n_train = h); h≈5120 rungs plausibly reach past
+# -10. A breach at -100 means the numbers are absurd (broken
+# centering/scaling, NaN-adjacent inputs), not a deep-but-legitimate null.
+SELF_GATE_NULL_FLOOR = -100.0
 
 
-def _self_gate_predicate(r2_fit: float, r2_null: float) -> bool:
-    """Plan §7 Gate 1 PASS predicate (see SELF_GATE_NULL_FLOOR rationale).
+def _self_gate_verdict(r2_fit: float, r2_null: float, n_train: int, h: int) -> tuple[str, str]:
+    """Plan §7 Gate 1 three-valued verdict (see the calibration block above).
 
-    PASS iff BOTH:
-    - (fit - null) > 0.05 — the plan-registered gate: the fitted map must
-      beat the shuffled-pairing null by a margin. This is the BINDING
-      test and it discriminates broken-vs-healthy capture at ANY
-      conditioning: broken capture (shuffled/garbage activations) makes
-      fit ≈ null, so gap ≈ 0, over- and under-determined alike; AND
-    - r2_null < 0.05 — the null itself must not be predictive. ONE-SIDED
-      and regime-INDEPENDENT: a shuffle-fit null's expectation is <= 0 in
-      EVERY conditioning regime (destroyed pairings carry no signal), so
-      a predictive null flags leakage/degeneracy regardless of n/h.
+    Returns ``(verdict, reason)`` with verdict in
+    {"PASS", "INCONCLUSIVE", "FAIL"}. Only FAIL aborts the rung.
 
-    Deliberately NO lower bound on r2_null in the predicate — the floor is
-    advisory-log only (SELF_GATE_NULL_FLOOR above): a legitimate null's
-    depth is conditioning-dependent, so any fixed floor false-aborts some
-    rung. And deliberately NO absolute floor on r2_fit: the ladder's
-    smallest rungs are EXPECTED to show low R² — that is the finding. A
-    fit-floor would bias the ladder by construction, admitting only scales
-    that already show high predictability.
-
-    Under-determined disclosure (#1701): at rungs where n_train < h at the
-    trigger (3B and up at the 2,000-row mid-shard trigger), BOTH R² values
-    are estimator-degenerate as SIGNAL reads. The gate remains meaningful
-    there because it is a capture-VALIDITY check on the GAP, not a signal
-    read — the caller's diag discloses n_train, h, n_train/h, and an
-    under_determined flag so no under-determined fit passes silently.
+    The binding test is the plan-registered GAP, ``(r2_fit - r2_null) >
+    0.05`` (byte-unchanged) — but it is only a DISCRIMINATING test at
+    adequate conditioning: near n_train ≈ h both R² statistics are
+    estimator-degenerate (#1701) and broken vs healthy capture produce the
+    same signature, so every outcome there is INCONCLUSIVE (disclosed,
+    never aborted). At adequate conditioning, a failed gap (or a predictive
+    null, whose expectation is <= 0 in every regime) is a genuine defect
+    and FAILs; a passed gap whose own fit is non-positive cannot claim
+    PASS (the gap is then carried entirely by the degenerate null) and is
+    INCONCLUSIVE. Deliberately NO science-quality floor on r2_fit — the
+    ladder's smallest rungs are EXPECTED to read low, and a fit <= 0 never
+    FAILs on its own; it only demotes PASS to INCONCLUSIVE.
     """
+    gap = r2_fit - r2_null
     gap_ok = (r2_fit - r2_null) > 0.05
-    null_ok = r2_null < 0.05
-    return gap_ok and null_ok
+    if n_train <= SELF_GATE_ADEQUATE_COND * h:
+        return (
+            "INCONCLUSIVE",
+            f"conditioning inadequate (n_train={n_train} <= "
+            f"{SELF_GATE_ADEQUATE_COND}x h={h}): both R2 statistics are "
+            "estimator-degenerate (#1701) — the gate cannot discriminate "
+            "broken from healthy capture in either direction here",
+        )
+    if r2_null >= 0.05:
+        return (
+            "FAIL",
+            f"shuffled-pairing null is predictive (r2_null={r2_null:.3f} >= 0.05) "
+            "at adequate conditioning — leakage/degeneracy signature",
+        )
+    if not gap_ok:
+        return (
+            "FAIL",
+            f"fit fails to beat the shuffled null (gap={gap:.3f} <= 0.05) "
+            "at adequate conditioning — the broken-capture signature",
+        )
+    if r2_fit <= SELF_GATE_MIN_FIT_FOR_PASS:
+        return (
+            "INCONCLUSIVE",
+            f"gap={gap:.3f} is carried entirely by the degenerate null "
+            f"(r2_fit={r2_fit:.3f} <= {SELF_GATE_MIN_FIT_FOR_PASS}) — a "
+            "positive verdict cannot rest on a non-positive fit",
+        )
+    return (
+        "PASS",
+        f"gap={gap:.3f} > 0.05 with positive fit (r2_fit={r2_fit:.3f}) at adequate conditioning",
+    )
 
 
 def _first_chunk_self_gate(rows: list[dict], layer_index_primary: int) -> tuple[bool, dict]:
     """Quick numpy ridge fit + shuffled-pairing null on the first ~2,000
     captured rows at the primary layer.
 
-    PASS iff ``_self_gate_predicate(r2_fit, r2_null)``: (fit - null) > 0.05
-    (binding, plan §7) AND null R² < 0.05 (binding, regime-independent).
-    The advisory null floor (SELF_GATE_NULL_FLOOR) is logged, never
-    aborting; the diag disclosure fields (h, n_train_over_h,
-    under_determined) record the conditioning per #1701 — see the
-    predicate's docstring. Returns (passed, diagnostics-dict).
+    Verdict via ``_self_gate_verdict(r2_fit, r2_null, n_train, h)`` —
+    three-valued PASS / INCONCLUSIVE / FAIL (see the calibration block
+    above the verdict function). Returns ``(passed, diag)`` where
+    ``passed = verdict != "FAIL"`` (only FAIL aborts; INCONCLUSIVE
+    proceeds, loudly disclosed) and ``diag`` carries the verdict, its
+    reason, and the #1701 conditioning disclosure (h, n_train_over_h,
+    under_determined).
     """
     if len(rows) < 500:
         return True, {"skipped": True, "reason": f"only {len(rows)} rows (< 500)"}
@@ -796,14 +864,17 @@ def _first_chunk_self_gate(rows: list[dict], layer_index_primary: int) -> tuple[
     sse_null = float(((Yva - yhat_null) ** 2).sum())
     r2_null = 1.0 - sse_null / (sst + 1e-30)
 
-    # Conditioning disclosure (#1701): at n_train < h the ridge fit is
-    # estimator-degenerate as a SIGNAL read — the gate stays meaningful as a
-    # capture-VALIDITY check on the GAP (see _self_gate_predicate), but the
-    # regime must be disclosed, never silent. These fields ride the
-    # "[ladder-gate]" log line via the printed diag.
+    # Conditioning disclosure (#1701): at n_train <= 1.5x h the ridge fit is
+    # estimator-degenerate as a SIGNAL read and the gate cannot discriminate
+    # (see the calibration block above _self_gate_verdict) — the regime must
+    # be disclosed, never silent. These fields ride the "[ladder-gate]" log
+    # line via the printed diag.
     n_over_h = float(n_train) / float(h)
     under_determined = bool(n_train < h)
+    verdict, reason = _self_gate_verdict(r2_fit, r2_null, n_train, h)
     diag = {
+        "verdict": verdict,
+        "verdict_reason": reason,
         "n_train": int(n_train),
         "n_val": int(len(Yva)),
         "h": int(h),
@@ -815,17 +886,17 @@ def _first_chunk_self_gate(rows: list[dict], layer_index_primary: int) -> tuple[
         "null_floor_advisory": SELF_GATE_NULL_FLOOR,
         "null_floor_breached": bool(r2_null <= SELF_GATE_NULL_FLOOR),
     }
-    passed = _self_gate_predicate(r2_fit, r2_null)
+    # Only FAIL aborts; INCONCLUSIVE proceeds (loudly disclosed by the caller).
+    passed = verdict != "FAIL"
     diag["passed"] = passed
     if diag["null_floor_breached"]:
-        # Advisory ONLY — never a pass/fail criterion (a legitimate
-        # shuffle-fit null's depth is conditioning-dependent; see the
-        # SELF_GATE_NULL_FLOOR rationale). Expected in under-determined
-        # trigger regimes; worth a human look when over-determined.
+        # Advisory pathology tripwire ONLY — never a verdict input, never a
+        # calibration knob (see the SELF_GATE_NULL_FLOOR rationale). A breach
+        # means the numbers are absurd, not a deep-but-legitimate null.
         logger.warning(
-            "[ladder-gate] ADVISORY: r2_null=%.3f breaches the advisory floor %.1f "
-            "(n_train/h=%.2f, under_determined=%s) — NOT a pass/fail criterion; "
-            "the verdict rests on the gap test + the predictive-null cap.",
+            "[ladder-gate] ADVISORY: r2_null=%.3f breaches the pathology tripwire %.1f "
+            "(n_train/h=%.2f, under_determined=%s) — NOT a verdict input; "
+            "numerically absurd null, inspect the capture inputs.",
             r2_null,
             SELF_GATE_NULL_FLOOR,
             n_over_h,
@@ -1277,13 +1348,27 @@ def run_capture(args) -> int:
         self_gate_fired = True
         primary_layer_index = len(layers) // 2  # f=0.679 primary is middle entry
         passed, diag = _first_chunk_self_gate(self_gate_rows, primary_layer_index)
+        verdict = diag.get("verdict") or ("PASS" if passed else "FAIL")
         logger.info(
             "[ladder-gate] first-chunk self-gate (%s, n=%d rows): %s (%s)",
             trigger,
             len(self_gate_rows),
-            "PASS" if passed else "FAIL",
+            verdict,
             diag,
         )
+        if verdict == "INCONCLUSIVE":
+            # MUST NOT abort — but the record must show, loudly and with the
+            # full conditioning disclosure, that the gate could not
+            # discriminate broken from healthy capture here (#1701).
+            logger.warning(
+                "[ladder-gate] INCONCLUSIVE (%s): %s — proceeding WITHOUT abort; "
+                "the gate has no discriminating power at this conditioning and "
+                "this rung's gate outcome is a disclosure record, not evidence "
+                "of capture health. diag=%s",
+                trigger,
+                diag.get("verdict_reason"),
+                diag,
+            )
         if passed:
             return
         # Abort THIS scale's job (other scales unaffected) via a sentinel the
