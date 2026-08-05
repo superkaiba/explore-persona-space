@@ -755,6 +755,8 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
 
     want_variants = _csv_set(getattr(args, "variants", None))
     want_regimes = _csv_set(getattr(args, "regimes", None))
+    _wb = _csv_set(getattr(args, "budgets", None))
+    want_budgets = {int(v) for v in _wb} if _wb else None
     for (variant, regime), group_cells in sorted(groups_by_vr.items()):
         if want_variants and variant not in want_variants:
             continue
@@ -845,6 +847,8 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
             units_seen.setdefault((bl, draw, seed), cell_rec)
 
         for ui, ((budget_l, draw, seed), cell_rec) in enumerate(sorted(units_seen.items())):
+            if want_budgets and int(budget_l) not in want_budgets:
+                continue
             if (variant, regime, int(budget_l), int(draw), int(seed)) in _done_units:
                 _log(f"  unit {ui + 1}/{len(units_seen)} SKIP (resumed)")
                 continue
@@ -1016,6 +1020,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--regimes",
         default=None,
         help="comma list of regimes to run (default: all); shards with --variants.",
+    )
+    ap.add_argument(
+        "--budgets",
+        default=None,
+        help="comma list of budget_l values to run (default: all). The transfer "
+        "fold aggregates budget_l=16000 units, so a headline-only pass can skip "
+        "the smaller ladder rungs.",
     )
     ap.add_argument("--n-boot", type=int, default=N_BOOT_DEFAULT)
     ap.add_argument("--n-perm", type=int, default=N_PERM_DEFAULT)
