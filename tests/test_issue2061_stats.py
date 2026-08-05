@@ -379,14 +379,27 @@ def test_write_cell_jsonl_persists_argmax_and_render(tmp_path):
 # Round-2 M2 — LEFT-parse of cell filenames (underscore corpora never vanish)
 # ---------------------------------------------------------------------------
 def test_expect_n_cells_guard():
-    # m2 (round 3): the GLOBAL null's cell axis is registered (64 cells) — the
-    # production aggregation pass fails loud on a mismatch instead of writing
-    # a silently-shrunk GLOBAL_L29.json. None = unchecked (smoke/worker form).
+    # m2 (round 3): the GLOBAL null's cell axis is registered (56 cells, v7
+    # grid) — the production aggregation pass fails loud on a mismatch instead
+    # of writing a silently-shrunk GLOBAL_L29.json. None = unchecked
+    # (smoke/worker form). The guard itself is value-agnostic.
     cells = {("base_sft", "chat", "tiny", "context", "1"): np.zeros(4)}
     assert nullmod.enforce_expected_cell_count(cells, 1, 0) is None
     assert nullmod.enforce_expected_cell_count(cells, None, 5) is None
-    msg = nullmod.enforce_expected_cell_count(cells, 64, 63)
-    assert msg is not None and "64" in msg and "63" in msg
+    msg = nullmod.enforce_expected_cell_count(cells, 56, 55)
+    assert msg is not None and "56" in msg and "55" in msg
+
+
+def test_planned_cell_count_early_guard():
+    # Round-4 review sweep: the EARLY twin fires at SETUP time on the PLANNED
+    # pair x combo x arm grid, before any per-cell refit compute is spent.
+    # Production v7 grid: 4 stage-pairs x 7 v2 combos x 2 arms = 56.
+    assert nullmod.enforce_planned_cell_count(4, 7, 2, 56) is None
+    assert nullmod.enforce_planned_cell_count(4, 7, 2, None) is None  # unchecked
+    msg = nullmod.enforce_planned_cell_count(4, 11, 2, 56)  # v1+v2 UNION shape
+    assert msg is not None and "88" in msg and "56" in msg and "BEFORE" in msg
+    msg = nullmod.enforce_planned_cell_count(4, 6, 2, 56)  # a vanished combo
+    assert msg is not None and "48" in msg
 
 
 def test_parse_r2_stem_underscore_corpora_and_fail_loud():

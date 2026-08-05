@@ -21,8 +21,10 @@ is the layout the P2 fit + P3 null consumers open directly. conv_ids
 make X/Y row alignment KEYED (consumers assert them) instead of
 resting on shard-enumeration order alone.
 
-Plan §Design + §9 P1: 5 stages × 5 corpus stems × 2 renders = ~50
-turnstores; each turnstore holds MANY `*_shardNNN.pt` files of ≤500
+Plan §Design + §9 P1 (v7 registered grid): 5 stages × 7 (render, corpus)
+combos of the REGISTERED v2 capture generation = 35 turnstores (the v1
+generation stays banked as a parked lower-n robustness arm behind
+`--generation`); each turnstore holds MANY `*_shardNNN.pt` files of ≤500
 records each (`SHARD_SIZE = 500`, issue1336_extract_turnstore.py), each
 carrying all 32 layers (~525 MB/shard). ALL shards of a turnstore are
 enumerated + concatenated in shard-index order. Batched encode at ~256
@@ -116,6 +118,31 @@ STORE_STAGE_TOKENS: dict[str, str] = {
 CANONICAL_TO_STORE_STAGE = {v: k for k, v in STORE_STAGE_TOKENS.items()}
 RENDER_TOKENS = ("chat", "naturalistic")
 
+# REGISTERED capture generation (plan v7 amendment record — the conditions
+# grid is the v2 generation ONLY: 7 (render, corpus) combos / 35 stores /
+# 56 delta cells). Without this pin the enumeration consumes the 11-combo
+# v1+v2 UNION: `parse_turnstore_name` strips the `v2_` prefix and the
+# same-cell collision fail-loud below keys on canonical (stage, render,
+# corpus), which never collides across generations because their corpus
+# stems are DISJOINT today. The v1 generation (4 combos over
+# {gsm8k_test1319, gsm8k_train5k, lmsys5k}) stays banked as a parked
+# lower-n robustness arm reachable via the `--generation` override (its
+# own plan approval — plan § Follow-ups).
+GENERATIONS = ("v1", "v2")
+REGISTERED_GENERATION = "v2"
+
+
+def turnstore_generation(name: str) -> str | None:
+    """Capture generation ('v1' | 'v2') of a REALIZED turnstore dir name.
+
+    The store marks the second capture generation with a `v2_` prefix
+    (`turnstore_v2_<stage>_...`); prefix-less turnstore names are the v1
+    generation. Returns None for a non-turnstore name.
+    """
+    if not name.startswith("turnstore_"):
+        return None
+    return "v2" if name.removeprefix("turnstore_").startswith("v2_") else "v1"
+
 
 def parse_turnstore_name(name: str) -> tuple[str, str, str] | None:
     """(canonical stage, render, corpus) from a REALIZED turnstore dir name.
@@ -138,18 +165,25 @@ def parse_turnstore_name(name: str) -> tuple[str, str, str] | None:
     return None
 
 
-def _stage_render_corpus_turnstores(revision: str | None = None) -> list[dict[str, str]]:
-    """Enumerate #1336's banked turnstores as CANONICAL (stage, render, corpus).
+def _stage_render_corpus_turnstores(
+    revision: str | None = None, generation: str = REGISTERED_GENERATION
+) -> list[dict[str, str]]:
+    """Enumerate #1336's banked `generation` turnstores as CANONICAL cells.
 
     Reads `list_repo_tree(path_in_repo="issue1336_rlvr_ladder/analysis_tensors")`
     and parses the realized `turnstore_[v2_]<stage>_<render>_<corpus>` names
-    (see STORE_STAGE_TOKENS above). Returns dicts with keys: stage, render,
-    corpus, tree_path — `tree_path` keeps the REALIZED repo path (what gets
-    fetched); the identity keys are canonical. Unparseable turnstore names
-    are WARNed (never silently dropped); two realized trees mapping to one
-    canonical cell fail loud (a v1/v2 corpus-family collision would make the
-    cell ambiguous).
+    (see STORE_STAGE_TOKENS above), keeping ONLY the requested capture
+    generation (default: the REGISTERED v2 grid — plan v7 amendment; the
+    skipped other-generation count is printed, never a silent drop). Returns
+    dicts with keys: stage, render, corpus, tree_path — `tree_path` keeps
+    the REALIZED repo path (what gets fetched); the identity keys are
+    canonical. Unparseable in-generation turnstore names are WARNed (never
+    silently dropped); two realized trees mapping to one canonical cell
+    within the generation fail loud (defensive — canonical identity would
+    be ambiguous).
     """
+    if generation not in GENERATIONS:
+        raise ValueError(f"Unknown capture generation {generation!r}; known: {GENERATIONS}")
     api = HfApi()
     # list() INSIDE the retried thunk: list_repo_tree is a LAZY generator —
     # the HTTP error raises at iteration time (#779), and pagination 504s are
@@ -169,9 +203,13 @@ def _stage_render_corpus_turnstores(revision: str | None = None) -> list[dict[st
     turnstores: list[dict[str, str]] = []
     seen: dict[tuple[str, str, str], str] = {}
     unparsed: list[str] = []
+    n_other_generation = 0
     for e in entries:
         name = Path(e.path).name
         if not name.startswith("turnstore_"):
+            continue
+        if turnstore_generation(name) != generation:
+            n_other_generation += 1
             continue
         parsed = parse_turnstore_name(name)
         if parsed is None:
@@ -182,11 +220,17 @@ def _stage_render_corpus_turnstores(revision: str | None = None) -> list[dict[st
         if key in seen:
             raise ValueError(
                 f"Ambiguous turnstore cell {key}: BOTH {seen[key]} and {e.path} parse to it "
-                "— the v1/v2 capture generations now overlap on a corpus; pin the family "
-                "explicitly before consuming."
+                f"within capture generation {generation!r} — canonical identity is ambiguous; "
+                "fix the store naming before consuming."
             )
         seen[key] = e.path
         turnstores.append({"stage": stage, "render": render, "corpus": corpus, "tree_path": e.path})
+    if n_other_generation:
+        print(
+            f"[generation-pin] {n_other_generation} turnstore(s) under {BANKED_PREFIX} outside "
+            f"the {generation!r} capture generation SKIPPED (registered grid: plan v7 amendment; "
+            "override with --generation)"
+        )
     if unparsed:
         print(
             f"[WARN] {len(unparsed)} turnstore name(s) under {BANKED_PREFIX} did not parse "
@@ -196,25 +240,31 @@ def _stage_render_corpus_turnstores(revision: str | None = None) -> list[dict[st
 
 
 def resolve_turnstore_tree(
-    stage: str, render: str, corpus: str, revision: str | None = None
+    stage: str,
+    render: str,
+    corpus: str,
+    revision: str | None = None,
+    generation: str = REGISTERED_GENERATION,
 ) -> str:
     """REALIZED repo tree path for one canonical (stage, render, corpus) cell.
 
-    Resolved against the live enumeration (so consumers never hand-build a
-    `turnstore_{stage}_...` name — the realized store carries `v2_` prefixes
-    and the `rlvr_long` stage token, and a hand-built canonical name 404s;
-    the unit-E live probe caught fitness.py doing exactly that for lmsys23k).
-    Fail-loud FileNotFoundError names the realized combos for the render.
+    Resolved against the live enumeration of the REGISTERED capture
+    generation (plan v7 amendment; `generation` override for the parked v1
+    arm) — consumers never hand-build a `turnstore_{stage}_...` name: the
+    realized store carries `v2_` prefixes and the `rlvr_long` stage token,
+    and a hand-built canonical name 404s (the unit-E live probe caught
+    fitness.py doing exactly that for lmsys23k). Fail-loud
+    FileNotFoundError names the realized combos for the render.
     """
-    stores = _stage_render_corpus_turnstores(revision=revision)
+    stores = _stage_render_corpus_turnstores(revision=revision, generation=generation)
     for t in stores:
         if (t["stage"], t["render"], t["corpus"]) == (stage, render, corpus):
             return t["tree_path"]
     available = sorted((t["stage"], t["corpus"]) for t in stores if t["render"] == render)
     raise FileNotFoundError(
         f"No realized #1336 turnstore for (stage={stage!r}, render={render!r}, "
-        f"corpus={corpus!r}); realized (stage, corpus) combos for render={render!r}: "
-        f"{available}"
+        f"corpus={corpus!r}) in capture generation {generation!r}; realized "
+        f"(stage, corpus) combos for render={render!r}: {available}"
     )
 
 
@@ -304,6 +354,7 @@ def loader_parity_smoke_gate(
     sae_revision: str | None = None,
     data_revision: str | None = None,
     state: str = "answer",
+    generation: str = REGISTERED_GENERATION,
 ) -> tuple[float, float, float]:
     """FVE-parity check: our ported encode vs `sparsify`'s own on the same rows.
 
@@ -322,7 +373,7 @@ def loader_parity_smoke_gate(
         ) from e
 
     # Find one LMSYS base-model turnstore for smoke input.
-    turnstores = _stage_render_corpus_turnstores(revision=data_revision)
+    turnstores = _stage_render_corpus_turnstores(revision=data_revision, generation=generation)
     base_lmsys = [t for t in turnstores if t["stage"] == "base" and t["corpus"].startswith("lmsys")]
     if not base_lmsys:
         raise RuntimeError("No base-stage LMSYS turnstore found for smoke gate.")
@@ -518,6 +569,16 @@ def main() -> int:
     parser.add_argument("--sae-revision", type=str, default=None)
     parser.add_argument("--data-revision", type=str, default=None)
     parser.add_argument(
+        "--generation",
+        type=str,
+        choices=GENERATIONS,
+        default=REGISTERED_GENERATION,
+        help="#1336 capture generation to enumerate/encode (default: the REGISTERED "
+        "v2 grid — plan v7 amendment: 7 combos / 35 stores / 56 delta cells; 'v1' "
+        "preserves the parked lower-n robustness arm, which needs its own plan "
+        "approval before any production dispatch).",
+    )
+    parser.add_argument(
         "--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu"
     )
     parser.add_argument(
@@ -541,6 +602,7 @@ def main() -> int:
             sae_revision=args.sae_revision,
             data_revision=args.data_revision,
             state=args.state,
+            generation=args.generation,
         )
         print(f"=== SMOKE PASS: |Δ| = {delta:.4f} < {args.smoke_bar} ===")
         if args.smoke_only:
@@ -553,8 +615,10 @@ def main() -> int:
     # download (review m4): a bad store enumeration / empty filter then costs
     # seconds, not a weights download. Enumeration depends only on
     # --data-revision, never on the weights.
-    print("[setup] Enumerating banked turnstores")
-    all_turnstores = _stage_render_corpus_turnstores(revision=args.data_revision)
+    print(f"[setup] Enumerating banked turnstores (generation={args.generation})")
+    all_turnstores = _stage_render_corpus_turnstores(
+        revision=args.data_revision, generation=args.generation
+    )
     print(f"[setup] Found {len(all_turnstores)} turnstores")
 
     if args.all_cells:

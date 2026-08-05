@@ -19,11 +19,18 @@ to this pool's grain:
 - Var-based FVE: `1 − var(x − x̂) / var(x)`, summed per-dim unbiased
   variance — applied unchanged.
 
-Pre-registered pass bar (plan §Design + §7 + §11):
+Pre-registered pass bar (plan §Design + §7 + §11; dead leg re-registered
+RELATIVE-to-base by the v7 amendment — resolves the round-2 CONCERN
+`dead-feature-bar-unsatisfiable-at-1k-pool`):
 - Base FVE reference = measured on the BASE stage's own activations.
 - PASS: every post-training stage's FVE ≥ 0.8 × base_FVE.
 - L0 ∈ [10, 200] for the fixed dictionary applied at each stage.
-- Dead-feature fraction < 10% of d_sae.
+- Activated-feature count A_s (distinct features with ≥1 activation on
+  the fixed validation slice) ≥ 0.8 × A_base. The former ABSOLUTE
+  dead-fraction bar (< 10% of d_sae) was unsatisfiable by pool-ceiling
+  arithmetic (~1,000 rows × k=32 activate ≤ 32,000 of 262,144 features
+  ⇒ dead ≥ 87.8% on EVERY stage, base included) and is now a
+  DESCRIPTIVE report field only, never a gate.
 - HARD DRIFT FLOOR (plan §7 "Halt and report (SAE-fitness gate)"): any
   stage's FVE < 0.5 × base_FVE → uninterpretable; the stage is EXCLUDED
   from the headline aggregate + carried as a scope caveat.
@@ -73,7 +80,17 @@ LAYER = 29
 STAGES = ["base", "sft", "dpo", "rlvr", "longer-rlvr"]
 OUTLIER_L2_MEDIAN_MULT = 10.0
 N_VAL_ROWS = 1000
-DEAD_FEATURE_FRACTION_BAR = 0.10
+# v7 amendment (resolves `dead-feature-bar-unsatisfiable-at-1k-pool`): the
+# absolute dead-fraction bar (dead_frac < 0.10 of d_sae) was unsatisfiable
+# by pool-ceiling arithmetic — N_VAL_ROWS=1,000 rows × k=32 activate at most
+# 32,000 of d_sae=262,144 features (fewer in practice: rows share features),
+# so dead ≥ 1 − 32,000/262,144 = 87.8% on EVERY stage, base included, and
+# every stage landed FAIL_SOFT on an arithmetic artifact. The gate leg is
+# RELATIVE-to-base instead: per-stage activated-feature count A_s ≥
+# 0.8 × A_base on the SAME fixed slice (the pool ceiling cancels; base is
+# its own reference). `dead_feature_fraction` stays a DESCRIPTIVE JSON
+# field only.
+ACTIVATED_FEATURES_PASS_FRACTION = 0.80
 L0_BAR_LO, L0_BAR_HI = 10, 200
 FVE_PASS_FRACTION = 0.80  # PASS: post-training FVE ≥ 0.8 × base_FVE (plan §Design)
 # Plan §7 kill criteria, "Halt and report (SAE-fitness gate)": FVE < 0.5 ×
@@ -138,14 +155,18 @@ def fve_l0_dead(
     x: torch.Tensor,
     weights: dict[str, torch.Tensor],
     k: int,
-) -> tuple[float, float, float, int]:
-    """Compute (FVE, L0_mean, dead_frac, n_rows) for the given activations.
+) -> tuple[float, float, float, int, int]:
+    """Compute (FVE, L0_mean, dead_frac, n_activated, n_rows) for the pool.
 
     - FVE = 1 - var(x - x_recon) / var(x), per-dim unbiased variance sum.
     - L0_mean = mean over rows of ||z||_0 (should be exactly k for a
       well-behaved TopK encoder — this is a sanity check).
-    - dead_frac = fraction of features NEVER activated across the pool
-      (should be < 10% per the pass bar).
+    - n_activated = count of DISTINCT features with ≥1 activation across
+      the pool — the v7 gate leg's A_s (relative bar: A_s ≥ 0.8 × A_base).
+    - dead_frac = fraction of features NEVER activated across the pool.
+      DESCRIPTIVE ONLY (v7 amendment): the pool ceiling n_rows × k bounds
+      the activatable features at ~32,000 of d_sae=262,144 at production
+      shape, so dead ≥ ~87.8% on every stage by arithmetic — never a gate.
     """
     with torch.no_grad():
         z = topk_encode(x, weights, k=k)
@@ -156,11 +177,12 @@ def fve_l0_dead(
         fve = 1.0 - (numerator / denominator) if denominator > 0 else float("nan")
 
         l0 = (z != 0).float().sum(dim=-1).mean().item()
-        # Any feature ever activated in the pool?
+        # Distinct features ever activated in the pool (A_s).
         activated_any = (z != 0).any(dim=0)
+        n_activated = int(activated_any.sum().item())
         dead_frac = 1.0 - activated_any.float().mean().item()
 
-    return float(fve), float(l0), float(dead_frac), int(x.shape[0])
+    return float(fve), float(l0), float(dead_frac), n_activated, int(x.shape[0])
 
 
 def evaluate_stage(
@@ -181,7 +203,7 @@ def evaluate_stage(
         state=state,
         data_revision=data_revision,
     ).to(device)
-    fve, l0, dead_frac, n = fve_l0_dead(x, weights, k=k)
+    fve, l0, dead_frac, n_activated, n = fve_l0_dead(x, weights, k=k)
     return {
         "stage": stage,
         "layer": layer,
@@ -189,6 +211,11 @@ def evaluate_stage(
         "n_rows_used": n,
         "fve": fve,
         "l0_mean": l0,
+        # Gate leg input (v7): A_s = distinct features with >=1 activation
+        # on the fixed slice; relative bar A_s >= 0.8 x A_base.
+        "n_activated_features": n_activated,
+        # DESCRIPTIVE ONLY (v7): pool ceiling n_rows x k <= 32,000 of
+        # 262,144 features => dead >= ~87.8% on every stage by arithmetic.
         "dead_feature_fraction": dead_frac,
         "l0_target": k,
         # Verifier-legible provenance of the #1482 token-pool recipe legs as
@@ -201,6 +228,12 @@ def evaluate_stage(
             ),
             "outlier_filter": f"rows with L2 > {OUTLIER_L2_MEDIAN_MULT}x pool median dropped",
             "fve": "var-based: 1 - var(x - x_hat)/var(x), per-dim unbiased, summed",
+            "dead_feature_fraction": (
+                "descriptive only (v7 amendment) — the ~1k-row x k=32 slice can "
+                "activate at most 32,000 of 262,144 features, so dead >= 87.8% on "
+                "every stage by pool-ceiling arithmetic; the gate leg is the "
+                "relative activated-feature count A_s >= 0.8 x A_base"
+            ),
         },
     }
 
@@ -216,8 +249,17 @@ def compute_pass_verdicts(
     base_fve = stage_results["base"]["fve"]
     pass_bar = FVE_PASS_FRACTION * base_fve
     hard_floor = FVE_HARD_FLOOR * base_fve
+    # A_base threaded exactly as base_FVE (v7 relative dead leg).
+    base_activated = stage_results["base"]["n_activated_features"]
+    activated_bar = ACTIVATED_FEATURES_PASS_FRACTION * base_activated
 
-    verdicts = {"base_fve": base_fve, "pass_bar": pass_bar, "hard_floor": hard_floor}
+    verdicts = {
+        "base_fve": base_fve,
+        "pass_bar": pass_bar,
+        "hard_floor": hard_floor,
+        "base_activated_features": base_activated,
+        "activated_bar": activated_bar,
+    }
     per_stage = {}
     for stage in STAGES:
         if stage not in stage_results:
@@ -227,11 +269,13 @@ def compute_pass_verdicts(
         fve_ok = r["fve"] >= pass_bar
         fve_hard = r["fve"] >= hard_floor
         l0_ok = L0_BAR_LO <= r["l0_mean"] <= L0_BAR_HI
-        dead_ok = r["dead_feature_fraction"] < DEAD_FEATURE_FRACTION_BAR
+        # v7 gate leg: A_s >= 0.8 x A_base (the absolute dead-fraction bar is
+        # retired — descriptive JSON field only; see module constants).
+        activated_ok = r["n_activated_features"] >= activated_bar
 
         if not fve_hard:
             status = "HALT_HARD_DRIFT"
-        elif not fve_ok or not l0_ok or not dead_ok:
+        elif not fve_ok or not l0_ok or not activated_ok:
             status = "FAIL_SOFT"
         else:
             status = "PASS"
@@ -240,11 +284,15 @@ def compute_pass_verdicts(
             "fve": r["fve"],
             "fve_ratio_to_base": r["fve"] / base_fve if base_fve > 0 else float("nan"),
             "l0_mean": r["l0_mean"],
+            "n_activated_features": r["n_activated_features"],
+            "activated_ratio_to_base": (
+                r["n_activated_features"] / base_activated if base_activated > 0 else float("nan")
+            ),
             "dead_feature_fraction": r["dead_feature_fraction"],
             "fve_ok": fve_ok,
             "fve_hard_ok": fve_hard,
             "l0_ok": l0_ok,
-            "dead_ok": dead_ok,
+            "activated_ok": activated_ok,
         }
     verdicts["per_stage"] = per_stage
     # Overall: PASS iff every stage PASSes; HALT_HARD_DRIFT if any stage does; else FAIL_SOFT.
@@ -333,7 +381,9 @@ def main() -> int:
             json.dump(result, f, indent=2)
         print(
             f"[stage {stage}] FVE={result['fve']:.4f} L0={result['l0_mean']:.1f} "
-            f"dead={result['dead_feature_fraction']:.3f} n={result['n_rows_used']}"
+            f"A_s={result['n_activated_features']} "
+            f"dead={result['dead_feature_fraction']:.3f} (descriptive) "
+            f"n={result['n_rows_used']}"
         )
         print(f"[write] {out_path}")
 
@@ -346,7 +396,9 @@ def main() -> int:
         print(f"\n[summary] Overall: {verdicts['overall']}")
         print(
             f"[summary] base_FVE={verdicts['base_fve']:.4f} "
-            f"pass_bar={verdicts['pass_bar']:.4f} hard_floor={verdicts['hard_floor']:.4f}"
+            f"pass_bar={verdicts['pass_bar']:.4f} hard_floor={verdicts['hard_floor']:.4f} "
+            f"A_base={verdicts['base_activated_features']} "
+            f"activated_bar={verdicts['activated_bar']:.1f}"
         )
         for stage, v in verdicts["per_stage"].items():
             if v.get("status") in {"PASS", "FAIL_SOFT", "HALT_HARD_DRIFT"}:

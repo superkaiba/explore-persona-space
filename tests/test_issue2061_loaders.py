@@ -328,6 +328,12 @@ def test_null_stage_inputs_open_sparse_payload_and_key_alignment(tmp_path, monke
 # ---------------------------------------------------------------------------
 # P4 fitness loader — answer state through the real filter/slice tail
 # ---------------------------------------------------------------------------
+def _fake_resolve_tree(stage, render, corpus, revision=None, generation="v2"):
+    """Signature mirror of issue2061_sae_encode.resolve_turnstore_tree
+    (network boundary — the real body live-enumerates the HF store)."""
+    return f"pre/turnstore_v2_{stage}_{render}_{corpus}"
+
+
 def test_fitness_loader_answer_state(tmp_path, monkeypatch):
     d = tmp_path / STEM
     _write_shard(d, 0, [0, 1, 2])
@@ -336,6 +342,7 @@ def test_fitness_loader_answer_state(tmp_path, monkeypatch):
     def fake_iter_local_shards(tree_path: str, revision: str | None = None):
         yield from (str(p) for p in ts.enumerate_shards(d))
 
+    monkeypatch.setattr(fitness, "resolve_turnstore_tree", _fake_resolve_tree)
     monkeypatch.setattr(fitness, "iter_local_shards", fake_iter_local_shards)
     x = fitness.load_lmsys_validation_activations("base", layer=LAYER, n_val_rows=3, state="answer")
     # 5 rows loaded; uniform norms so no outlier drop; sliced to n_val_rows.
@@ -358,6 +365,7 @@ def test_fitness_loader_keeps_leading_rows(tmp_path, monkeypatch):
     def fake_iter_local_shards(tree_path: str, revision: str | None = None):
         yield from (str(p) for p in ts.enumerate_shards(d))
 
+    monkeypatch.setattr(fitness, "resolve_turnstore_tree", _fake_resolve_tree)
     monkeypatch.setattr(fitness, "iter_local_shards", fake_iter_local_shards)
     x = fitness.load_lmsys_validation_activations(
         "base", layer=LAYER, n_val_rows=12, state="answer"
@@ -370,3 +378,72 @@ def test_fitness_loader_keeps_leading_rows(tmp_path, monkeypatch):
     assert torch.equal(x, expected)
     # Row 0 in particular survives (the exact row the old strip deleted).
     assert torch.equal(x[:1], _expected([0], "answer"))
+
+
+# ---------------------------------------------------------------------------
+# P4 fitness gate — v7 relative dead leg (round-4 delta 3; resolves the
+# `dead-feature-bar-unsatisfiable-at-1k-pool` CONCERN): the gate leg is
+# A_s >= 0.8 x A_base; dead_feature_fraction is descriptive-only.
+# ---------------------------------------------------------------------------
+def test_fve_l0_dead_persists_activated_count():
+    from explore_persona_space.analysis.sparsify_topk_sae import topk_encode
+
+    weights = _tiny_sae_weights()
+    rng = torch.Generator().manual_seed(11)
+    x = torch.randn(6, HIDDEN, generator=rng)
+    _fve, l0, dead_frac, n_activated, n = fitness.fve_l0_dead(x, weights, k=3)
+    z = topk_encode(x, weights, k=3)
+    expected_activated = int((z != 0).any(dim=0).sum().item())
+    assert n_activated == expected_activated
+    # dead_frac stays the exact complement of the activated count (descriptive).
+    d_sae = weights["encoder.weight"].shape[0]
+    assert dead_frac == pytest.approx(1.0 - n_activated / d_sae)
+    assert n == 6
+    assert l0 == pytest.approx(3.0)  # TopK sanity: exactly k per row
+
+
+def _stage_result(fve, n_activated, l0=32.0, dead=0.99):
+    return {
+        "fve": fve,
+        "l0_mean": l0,
+        "n_activated_features": n_activated,
+        "dead_feature_fraction": dead,
+    }
+
+
+def test_fitness_relative_activated_leg_pass_and_fail():
+    # Base: A_base=1000 => activated_bar = 800. Every stage carries a dead
+    # fraction FAR above the retired absolute 0.10 bar (the production
+    # pool-ceiling regime, dead >= 87.8%) — under the v7 relative leg that
+    # must NOT gate.
+    results = {
+        "base": _stage_result(0.80, 1000),
+        "sft": _stage_result(0.75, 800),  # exactly at the bar: >= passes
+        "dpo": _stage_result(0.75, 799),  # one below the bar: FAIL_SOFT
+        "rlvr": _stage_result(0.78, 950),
+        "longer-rlvr": _stage_result(0.79, 990),
+    }
+    v = fitness.compute_pass_verdicts(results)
+    assert v["base_activated_features"] == 1000
+    assert v["activated_bar"] == pytest.approx(800.0)
+    per = v["per_stage"]
+    # PASS branch: dead=0.99 >> the retired 0.10 bar, yet the stage PASSes.
+    assert per["sft"]["status"] == "PASS" and per["sft"]["activated_ok"] is True
+    assert per["base"]["status"] == "PASS"
+    # FAIL branch: the relative leg (and ONLY it) trips FAIL_SOFT.
+    assert per["dpo"]["status"] == "FAIL_SOFT"
+    assert per["dpo"]["activated_ok"] is False
+    assert per["dpo"]["fve_ok"] is True and per["dpo"]["l0_ok"] is True
+    assert per["dpo"]["activated_ratio_to_base"] == pytest.approx(0.799)
+    # The retired absolute-bar key is gone; the descriptive field remains.
+    assert "dead_ok" not in per["sft"]
+    assert per["sft"]["dead_feature_fraction"] == pytest.approx(0.99)
+    assert v["overall"] == "FAIL_SOFT_SOME_STAGE"
+
+    # All stages at/above the bar => overall PASS (pass branch, aggregate).
+    results["dpo"] = _stage_result(0.75, 801)
+    v2 = fitness.compute_pass_verdicts(results)
+    assert v2["overall"] == "PASS"
+    # The retired absolute bar no longer exists as a module constant.
+    assert not hasattr(fitness, "DEAD_FEATURE_FRACTION_BAR")
+    assert pytest.approx(0.80) == fitness.ACTIVATED_FEATURES_PASS_FRACTION

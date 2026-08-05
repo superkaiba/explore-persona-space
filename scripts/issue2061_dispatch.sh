@@ -172,12 +172,13 @@ run_p3_null() {
   local common=()
   p3_common_args common
   # Production aggregation guard (review m2): the registered statistic rides
-  # a fixed 64-cell axis (plan §Design), so the GLOBAL pass fails loud on a
+  # a fixed 56-cell axis (plan §Design, v7 grid — 4 stage-pairs x 7 v2
+  # (render, corpus) combos x 2 arms), so the GLOBAL pass fails loud on a
   # partial P2/P3 instead of writing a silently-shrunk GLOBAL_L29.json.
   # Deliberate sub-grid runs override via ISSUE2061_EXPECT_N_CELLS. The smoke
   # chain (run_smoke) invokes issue2061_null.py directly and never inherits
   # this — the #1345 smoke-gate-calibration discipline.
-  local args=(--all-cells --expect-n-cells "${ISSUE2061_EXPECT_N_CELLS:-64}" "${common[@]}")
+  local args=(--all-cells --expect-n-cells "${ISSUE2061_EXPECT_N_CELLS:-56}" "${common[@]}")
   if [[ "$STAGE_MODE" == "hub" ]]; then
     args+=(--stage-r2-from-hub --stage-encoded-from-hub --stage-context-from-hub
       --staging-dir "$STAGING_DIR")

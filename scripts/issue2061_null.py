@@ -5,7 +5,8 @@ null" (code-review v1 C3 / BLOCKER `p3-null-placeholder-unregistered-
 statistic` — the round-1 sign-flip placeholder is deleted):
 
   1. ONE SHARED `draw_seed_schedule = [42 + d for d in range(n_draws)]`
-     across ALL 64 (stage-pair, corpus, arm) delta cells. Draw index `d`
+     across ALL 56 (stage-pair, corpus, arm) delta cells (v7 grid: 4
+     stage-pairs x 7 v2 (render, corpus) combos x 2 arms). Draw index `d`
      uses the SAME seed on every cell (load-bearing for the per-draw
      GLOBAL max reduction).
   2. Per cell, per draw d: PERMUTE the stage label within-corpus — for
@@ -130,7 +131,7 @@ ENGINE_VERSION = "refit-v1"  # partial-checkpoint regime key
 
 
 def draw_seed_schedule(n_draws: int = N_DRAWS, base: int = DRAW_SEED_BASE) -> list[int]:
-    """The ONE shared permutation seed schedule across all 64 cells.
+    """The ONE shared permutation seed schedule across all 56 cells (v7 grid).
 
     Load-bearing for the per-draw GLOBAL max reduction: draw index `d`
     uses the SAME seed on every cell, so `max_cell max_j_d` is a coherent
@@ -640,6 +641,31 @@ def compute_global_null(
     }
 
 
+def enforce_planned_cell_count(
+    n_pairs: int,
+    n_combos: int,
+    n_arms: int,
+    expect_n_cells: int | None,
+) -> str | None:
+    """None when the PLANNED pair x combo x arm grid matches --expect-n-cells.
+
+    EARLY twin of enforce_expected_cell_count() below (round-4 review sweep):
+    a planned-grid mismatch surfaces at SETUP time, before any per-cell refit
+    compute is spent; the late guard stays the backstop for cells skipped
+    DURING the run. Value-agnostic — production passes 56 (v7 grid: 4 x 7 x
+    2); None = unchecked (smoke/worker form).
+    """
+    n_planned = n_pairs * n_combos * n_arms
+    if expect_n_cells is None or n_planned == expect_n_cells:
+        return None
+    return (
+        f"Planned cell grid {n_pairs} pair(s) x {n_combos} combo(s) x {n_arms} arm(s) "
+        f"= {n_planned} != --expect-n-cells {expect_n_cells} — failing at setup BEFORE "
+        "the per-cell battery (production v7 grid: 4 x 7 x 2 = 56; the registered "
+        "cell axis is load-bearing)."
+    )
+
+
 def enforce_expected_cell_count(
     per_cell_max_j: dict,
     expect_n_cells: int | None,
@@ -648,7 +674,7 @@ def enforce_expected_cell_count(
     """None when the GLOBAL cell axis matches --expect-n-cells (or unchecked).
 
     The GLOBAL null's cell count is load-bearing (the registered statistic
-    rides a fixed 64-cell axis, plan §Design): a partial P2 output must fail
+    rides a fixed 56-cell axis, plan §Design v7 grid): a partial P2 output must fail
     the production aggregation pass LOUD instead of writing a silently-shrunk
     GLOBAL_L29.json (review m2). Returns the error message on mismatch so the
     caller exits non-zero BEFORE writing the GLOBAL file.
@@ -797,9 +823,11 @@ def main() -> int:
         type=int,
         default=None,
         help="Fail loud when the GLOBAL aggregation covers a different number of "
-        "delta cells (production: 64 registered cells, plan §Design — a partial "
-        "P2 output must never silently shrink the registered cell axis; review "
-        "m2). Ignored by --skip-global workers; default None = unchecked.",
+        "delta cells (production: 56 registered cells, plan §Design v7 grid — a "
+        "partial P2 output must never silently shrink the registered cell axis; "
+        "review m2). Checked at setup against the PLANNED pair x combo x arm grid "
+        "(fail BEFORE the battery) and again after the run (the late backstop). "
+        "Ignored by --skip-global workers; default None = unchecked.",
     )
     parser.add_argument("--n-draws", type=int, default=N_DRAWS)
     parser.add_argument("--draw-block", type=int, default=DRAW_BLOCK)
@@ -857,6 +885,19 @@ def main() -> int:
         print("[error] No (render, corpus) combos found (use --corpus + --render, or --all-cells)")
         return 1
     print(f"[setup] (render, corpus) combos: {render_corpora}")
+
+    # EARLY cell-count fail-loud (round-4 review sweep): surface a planned-grid
+    # mismatch at SETUP time, before any per-cell refit compute is spent (the
+    # late enforce_expected_cell_count() pass below stays the backstop for
+    # cells skipped DURING the run). Workers (--skip-global) run deliberate
+    # sub-grids and never carry --expect-n-cells (argparse help above).
+    if not args.skip_global:
+        planned_error = enforce_planned_cell_count(
+            len(pairs), len(render_corpora), len(arms), args.expect_n_cells
+        )
+        if planned_error is not None:
+            print(f"[error] {planned_error}")
+            return 1
 
     per_cell_max_j: dict[tuple[str, str, str, str, str], np.ndarray] = {}
     skipped_cells: list[tuple[str, str]] = []  # (cell label, reason) — see WARN summary

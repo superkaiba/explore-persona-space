@@ -121,14 +121,15 @@ def test_p3_runner_wires_refit_inputs():
 
 
 def test_p3_aggregation_expects_registered_cell_count_but_smoke_does_not():
-    # m2 (round 3): the PRODUCTION aggregation pass carries the fail-loud
-    # 64-cell guard (registered statistic, plan §Design), while the smoke
-    # chain must NEVER inherit it — a production-n gate at smoke n is the
-    # #1345 gate-calibration class (gotchas.md).
+    # m2 (round 3) + v7 grid (round 4): the PRODUCTION aggregation pass
+    # carries the fail-loud 56-cell guard (registered statistic, plan §Design
+    # v7 — 4 stage-pairs x 7 v2 combos x 2 arms), while the smoke chain must
+    # NEVER inherit it — a production-n gate at smoke n is the #1345
+    # gate-calibration class (gotchas.md).
     m = re.search(r"run_p3_null\(\) \{(.*?)\n\}", DISPATCH, flags=re.S)
     assert m, "run_p3_null() block not found"
     assert "--expect-n-cells" in m.group(1)
-    assert "ISSUE2061_EXPECT_N_CELLS:-64" in m.group(1)
+    assert "ISSUE2061_EXPECT_N_CELLS:-56" in m.group(1)
     s = re.search(r"run_smoke\(\) \{(.*?)\n\}", DISPATCH, flags=re.S)
     assert s, "run_smoke() block not found"
     assert "--expect-n-cells" not in s.group(1)
@@ -220,29 +221,138 @@ def test_parse_turnstore_name_realized_vocabulary():
 
 
 def test_turnstore_enumeration_collision_and_unparsed_warn(monkeypatch, capsys):
-    """The v1/v2 family-collision assert fires (fail-loud, never a silent
-    overwrite) and an unknown-vocabulary name WARNs instead of silently
-    vanishing (the M2 vanishing-cell class)."""
+    """The same-cell collision assert stays fail-loud (defensive — canonical
+    identity ambiguity, never a silent overwrite) and an unknown-vocabulary
+    IN-generation name WARNs instead of silently vanishing (the M2
+    vanishing-cell class)."""
 
     class E:
         def __init__(self, p):
             self.path = p
 
+    # Within-generation same-cell collision: injective naming makes this
+    # unreachable via the real parser, so force it through the parse seam
+    # (parse_turnstore_name's real body is pinned by
+    # test_parse_turnstore_name_realized_vocabulary above).
     def fake_retry_collide(fn, *, what=""):
-        return [E("pre/turnstore_base_chat_x"), E("pre/turnstore_v2_base_chat_x")]
+        return [E("pre/turnstore_v2_base_chat_x"), E("pre/turnstore_v2_base_chat_y")]
 
     monkeypatch.setattr(enc, "retry_transient", fake_retry_collide)
+    monkeypatch.setattr(enc, "parse_turnstore_name", lambda name: ("base", "chat", "x"))
     with pytest.raises(ValueError, match="Ambiguous turnstore cell"):
         enc._stage_render_corpus_turnstores()
+    monkeypatch.undo()
 
     def fake_retry_unparsed(fn, *, what=""):
-        return [E("pre/turnstore_base_chat_x"), E("pre/turnstore_mystery_chat_x")]
+        return [E("pre/turnstore_v2_base_chat_x"), E("pre/turnstore_v2_mystery_chat_x")]
 
     monkeypatch.setattr(enc, "retry_transient", fake_retry_unparsed)
     stores = enc._stage_render_corpus_turnstores()
     out = capsys.readouterr().out
-    assert [t["tree_path"] for t in stores] == ["pre/turnstore_base_chat_x"]
-    assert "WARN" in out and "turnstore_mystery_chat_x" in out
+    assert [t["tree_path"] for t in stores] == ["pre/turnstore_v2_base_chat_x"]
+    assert "WARN" in out and "turnstore_v2_mystery_chat_x" in out
+
+
+# ---------------------------------------------------------------------------
+# v7 generation pin (round-4 delta 1): the enumeration consumes ONLY the
+# REGISTERED v2 capture generation — plan acceptance: exactly 35 stores /
+# 7 (render, corpus) combos under the pin (the landed code would otherwise
+# encode the 11-combo v1+v2 UNION).
+# ---------------------------------------------------------------------------
+# The REALIZED store shape (read-only inventory probe, epm:progress
+# 2026-08-05T21:48:40Z): 55 dirs = 5 stages x (v1: 4 combos, v2: 7 combos),
+# disjoint corpus stems, only the lmsys stems carry both renders.
+_REALIZED_STORE_STAGES = ["base", "sft", "dpo", "rlvr", "rlvr_long"]
+_REALIZED_V1_COMBOS = [
+    ("chat", "gsm8k_test1319"),
+    ("chat", "gsm8k_train5k"),
+    ("chat", "lmsys5k"),
+    ("naturalistic", "lmsys5k"),
+]
+_REALIZED_V2_COMBOS = [
+    ("chat", "gsm8k_train_full"),
+    ("chat", "if11k"),
+    ("chat", "lmsys23k"),
+    ("naturalistic", "lmsys23k"),
+    ("chat", "math7500"),
+    ("chat", "sft11k"),
+    ("chat", "uf11k"),
+]
+
+
+def _realized_store_listing():
+    names = []
+    for s in _REALIZED_STORE_STAGES:
+        for render, corpus in _REALIZED_V1_COMBOS:
+            names.append(f"pre/turnstore_{s}_{render}_{corpus}")
+        for render, corpus in _REALIZED_V2_COMBOS:
+            names.append(f"pre/turnstore_v2_{s}_{render}_{corpus}")
+    return names
+
+
+def test_generation_pin_acceptance_35_stores_7_combos(monkeypatch, capsys):
+    class E:
+        def __init__(self, p):
+            self.path = p
+
+    listing = _realized_store_listing()
+    assert len(listing) == 55  # fixture mirrors the realized store
+
+    monkeypatch.setattr(enc, "retry_transient", lambda fn, *, what="": [E(p) for p in listing])
+
+    # Default pin = REGISTERED v2 generation: exactly 35 stores / 7 combos.
+    assert enc.REGISTERED_GENERATION == "v2"
+    stores = enc._stage_render_corpus_turnstores()
+    assert len(stores) == 35
+    combos = sorted({(t["render"], t["corpus"]) for t in stores})
+    assert combos == sorted(_REALIZED_V2_COMBOS)
+    # No v1 stem leaks through the pin; every tree path is a v2 store.
+    assert all("/turnstore_v2_" in t["tree_path"] for t in stores)
+    # The 20 other-generation dirs are skipped LOUDLY, never silently.
+    out = capsys.readouterr().out
+    assert "[generation-pin] 20 turnstore(s)" in out
+
+    # --generation v1 preserves the parked lower-n robustness arm: 20/4.
+    stores_v1 = enc._stage_render_corpus_turnstores(generation="v1")
+    assert len(stores_v1) == 20
+    assert sorted({(t["render"], t["corpus"]) for t in stores_v1}) == sorted(_REALIZED_V1_COMBOS)
+    assert all("/turnstore_v2_" not in t["tree_path"] for t in stores_v1)
+
+    # Unknown generation fails loud.
+    with pytest.raises(ValueError, match="Unknown capture generation"):
+        enc._stage_render_corpus_turnstores(generation="v3")
+
+
+def test_resolve_turnstore_tree_honors_generation_pin(monkeypatch):
+    class E:
+        def __init__(self, p):
+            self.path = p
+
+    monkeypatch.setattr(
+        enc,
+        "retry_transient",
+        lambda fn, *, what="": [E(p) for p in _realized_store_listing()],
+    )
+    # A v2 cell resolves to the REALIZED v2 tree path under the default pin.
+    tree = enc.resolve_turnstore_tree("base", "chat", "lmsys23k")
+    assert tree == "pre/turnstore_v2_base_chat_lmsys23k"
+    # The 5th ladder stage resolves through the rlvr_long store token.
+    tree = enc.resolve_turnstore_tree("longer-rlvr", "chat", "gsm8k_train_full")
+    assert tree == "pre/turnstore_v2_rlvr_long_chat_gsm8k_train_full"
+    # A v1-only corpus does NOT resolve under the registered pin...
+    with pytest.raises(FileNotFoundError, match="generation 'v2'"):
+        enc.resolve_turnstore_tree("base", "chat", "lmsys5k")
+    # ...but does under the explicit v1 override (parked robustness arm).
+    tree = enc.resolve_turnstore_tree("base", "chat", "lmsys5k", generation="v1")
+    assert tree == "pre/turnstore_base_chat_lmsys5k"
+
+
+def test_turnstore_generation_helper():
+    assert enc.turnstore_generation("turnstore_base_chat_lmsys5k") == "v1"
+    assert enc.turnstore_generation("turnstore_v2_base_chat_lmsys23k") == "v2"
+    assert enc.turnstore_generation("not_a_turnstore") is None
+    # Stage token containing "v2" mid-name never mis-buckets (prefix-anchored).
+    assert enc.turnstore_generation("turnstore_rlvr_long_chat_gsm8k_train5k") == "v1"
 
 
 def test_hub_prefix_mapping_matches_plan():
