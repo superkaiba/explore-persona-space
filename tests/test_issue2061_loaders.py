@@ -26,6 +26,7 @@ with g the record's global index.
 
 from __future__ import annotations
 
+import inspect
 import json
 import sys
 from pathlib import Path
@@ -447,3 +448,42 @@ def test_fitness_relative_activated_leg_pass_and_fail():
     # The retired absolute bar no longer exists as a module constant.
     assert not hasattr(fitness, "DEAD_FEATURE_FRACTION_BAR")
     assert pytest.approx(0.80) == fitness.ACTIVATED_FEATURES_PASS_FRACTION
+
+
+def test_parity_gate_sparsify_calls_bind_against_real_api():
+    """The parity gate's `sparsify` calls must bind against the REAL API.
+
+    The gate is GPU/weights-fenced (it needs the 8.6 GB SAE + real rows), so
+    NO offline test executes its body -- which is how a fabricated signature
+    shipped: `ref.decode(z_ref)` died in production with
+    `TypeError: SparseCoder.decode() missing 1 required positional argument:
+    'top_indices'`, one pod cycle after the sparsify-pin fix.
+
+    A TopK SAE's sparse code is a (values, indices) PAIR: `encode` returns an
+    EncoderOutput namedtuple and `decode` takes both members. Signature-binding
+    against the installed distribution reproduces that TypeError offline at
+    zero cost (code-style.md: signature-bind every smoke-fenced call to an
+    imported helper).
+    """
+    sparsify = pytest.importorskip(
+        "sparsify", reason="eai-sparsify is a one-off parity reference, not a runtime dep"
+    )
+    from sparsify.fused_encoder import EncoderOutput
+
+    SparseCoder = sparsify.SparseCoder
+    sig = inspect.signature(SparseCoder.decode)
+
+    # The shipped bug: decode(self, <single arg>) does NOT bind.
+    with pytest.raises(TypeError, match="top_indices"):
+        sig.bind(object(), object())
+
+    # The corrected call: decode(self, top_acts, top_indices).
+    sig.bind(object(), object(), object())
+
+    # And the members the gate dereferences off encode()'s return value exist.
+    assert {"top_acts", "top_indices"} <= set(EncoderOutput._fields), (
+        f"EncoderOutput fields changed: {EncoderOutput._fields}"
+    )
+
+    # encode() takes exactly the activation tensor.
+    inspect.signature(SparseCoder.encode).bind(object(), object())

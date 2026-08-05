@@ -408,8 +408,15 @@ def loader_parity_smoke_gate(
 
     ref = SparseCoder.load_from_hub(SAE_REPO, hookpoint=f"layers.{layer}", device=device)
     with torch.no_grad():
-        z_ref = ref.encode(x)
-        x_recon_ref = ref.decode(z_ref)
+        # `SparseCoder.encode` returns an EncoderOutput namedtuple
+        # (top_acts, top_indices, pre_acts) -- a TopK SAE's sparse code is a
+        # (values, indices) PAIR, not a dense vector -- and `decode` takes
+        # BOTH: decode(top_acts, top_indices). Passing the EncoderOutput
+        # itself raises `TypeError: SparseCoder.decode() missing 1 required
+        # positional argument: 'top_indices'` (verified against the installed
+        # eai-sparsify 1.3.3 signature).
+        enc_ref = ref.encode(x)
+        x_recon_ref = ref.decode(enc_ref.top_acts, enc_ref.top_indices)
     fve_ref = _fve(x, x_recon_ref)
     print(f"[smoke] FVE (sparsify) = {fve_ref:.4f}")
 
