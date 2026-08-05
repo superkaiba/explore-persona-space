@@ -28,7 +28,7 @@ goal: 'On the Qwen-2.5-Instruct scale ladder (0.5B, 1.5B, 3B, 7B, 14B, 32B; 7B =
 relates_to:
 - spec-context-as-vector
 ---
-# Scale makes the answer profile more reliable, not more predictable from context: ceiling-normalized map R² is near-flat from 1.5B to 14B and drops at 32B (MODERATE confidence)
+# Scale makes a model's answer profile more reliable, not more predictable from its context (MODERATE confidence)
 
 <!-- clean-result-v4 -->
 
