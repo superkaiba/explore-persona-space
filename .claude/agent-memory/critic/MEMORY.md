@@ -1,4 +1,5 @@
 ## Statistics / criteria calibration
+- [Pilot-gated OOD rung designs](feedback_pilot_gated_ood_rung_designs.md) — n=200 pilot SE(SD)≈SD/20 + SE(p)≈0.035 is adequate for a two-sided SD+bin spread gate; don't REVISE on gate-margin
 - [Spearman threshold at N=12](feedback_spearman_threshold_n12.md) — ρ≥0.5+p<0.05 inconsistent at N=12 (crit ρ 0.576); power needs ρ≥0.73
 - [N=2 sigma + perm-cap-vs-Holm](feedback_n2_sigma_and_perm_cap.md) — N<5 stdevs collapse; B-perm needs B ≥ 10·m/α to clear Holm
 - [Per-cell Holm at N=3 seeds](feedback_per_cell_holm_at_n3_seeds.md) — exact rank tests: min p = 1/2^N; α/m below = impossible Holm (#399)
