@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 429 auto-retry hook — limiter-aware, minute-boundary-paced, storm-capped (#1448).
+# 429/529 auto-retry hook — limiter-aware, storm-capped (#1448; 529 added 2026-08-05).
 #
 # Repo mirror = source of truth. Installed to ~/.claude/hooks/on-stop-429-retry.sh
 # by `cp -p`; tests/test_on_stop_429_retry_hook.py pins mirror <-> installed sync.
@@ -10,13 +10,33 @@
 # this feature is being discussed, causing self-triggering recursion.
 #
 # SubagentStop path: no rate_limit matcher is available (SubagentStop's
-# matcher filters by agent type, not error). We detect 429 by tailing the
-# sub-agent's OWN transcript (agent_transcript_path — never the parent's
+# matcher filters by agent type, not error). We detect the error by tailing
+# the sub-agent's OWN transcript (agent_transcript_path — never the parent's
 # transcript_path) and requiring a structured isApiErrorMessage:true line
-# whose content mentions 429 / rate limit. Plain prose matches do NOT count
-# (the original false-positive recursion). Note: SubagentStop payloads carry
-# the PARENT session's session_id (verified on real captures, 2026-07-17),
-# so parallel subagent 429s in one session share that session's storm budget.
+# whose content mentions 429 / rate limit / 529 / overloaded. Plain prose
+# matches do NOT count (the original false-positive recursion). Note:
+# SubagentStop payloads carry the PARENT session's session_id (verified on
+# real captures, 2026-07-17), so parallel subagent errors in one session
+# share that session's storm budget.
+#
+# 529 Overloaded (added 2026-08-05). A 529 is SERVER-SIDE capacity, not a
+# per-minute token budget, so it gets its own pacing: minute-boundary
+# alignment is meaningless for it (nothing replenishes at the boundary).
+# Instead the wait grows with the storm counter —
+# OVERLOADED_BASE_SECS * 2^(count-1), capped at OVERLOADED_MAX_SECS, plus the
+# same jitter. Worst case 90+10=100s, inside the hook's 120s settings timeout.
+#
+# KNOWN RESIDUAL — the StopFailure path is NOT covered for 529. That path is
+# gated by the harness's matcher="rate_limit" (~/.claude/settings.json), and a
+# 529 Overloaded is not a rate limit, so a main-loop 529 most likely never
+# reaches this hook at all. The classification below handles 529 correctly IF
+# one ever arrives (strictly an improvement, never a regression), but the gate
+# is upstream. Widening it needs a verified matcher name for overloaded /
+# api_error — do NOT guess one: a wrong matcher can silently break the working
+# 429 wiring. Until then the main-loop 529 backstop remains the watcher's
+# prompt-wedge lane (autonomous_session_watch.py — counts isApiErrorMessage
+# rows, force-respawns after EPM_TICK_WEDGE_MIN_FAILED_TURNS consecutive
+# failed wake turns, default 3). SubagentStop 529s ARE covered here.
 #
 # Re-wake mechanism (exit 2 + stdout + asyncRewake) is deliberately UNCHANGED.
 # Delivery is stderr-first, stdout-fallback ("The hook's stderr, or stdout if
@@ -43,6 +63,11 @@ MAX_CONSECUTIVE="${CLAUDE_429_RETRY_MAX_CONSECUTIVE:-5}"
 RESET_WINDOW_SECS="${CLAUDE_429_RETRY_RESET_WINDOW:-600}"
 MIN_WAIT_SECS=20
 JITTER_MAX_SECS=10
+# 529-only pacing (server capacity, not a per-minute bucket): exponential in
+# the storm counter. 20/40/80/90/90 + jitter[0,10] -> worst 100s, inside the
+# 120s hook timeout declared in ~/.claude/settings.json.
+OVERLOADED_BASE_SECS=20
+OVERLOADED_MAX_SECS=90
 NO_SLEEP="${CLAUDE_429_RETRY_NO_SLEEP:-0}"  # test knob: skip the sleep, still report the wait
 FAKE_NOW="${CLAUDE_429_RETRY_FAKE_NOW:-}"   # test knob: overrides now=$(date +%s) when set
                                             # (boundary tests only — counter mtime math also
@@ -76,13 +101,13 @@ case "$event" in
     transcript=$(printf '%s' "$input" | jq -r '.agent_transcript_path // empty' 2>/dev/null || echo "")
     { [ -z "$transcript" ] || [ ! -f "$transcript" ]; } && exit 0
     # Preserved defense: require a structured isApiErrorMessage:true line on a
-    # recent transcript line whose content mentions 429 / rate limit. The 429
-    # test stays INSIDE the jq select (never a post-hoc grep over fallback
-    # text) so payload prose can never satisfy the gate; the matched line's
-    # content doubles as the limiter-classification text.
+    # recent transcript line whose content mentions 429 / rate limit / 529 /
+    # overloaded. The error test stays INSIDE the jq select (never a post-hoc
+    # grep over fallback text) so payload prose can never satisfy the gate; the
+    # matched line's content doubles as the limiter-classification text.
     err_text=$(tail -n 8 "$transcript" 2>/dev/null | jq -r -s \
       '[.[] | select(.isApiErrorMessage == true) | (.message.content // "" | tostring)
-        | select(test("429|rate.limit"; "i"))] | last // ""' \
+        | select(test("429|rate.limit|overloaded|(^|[^0-9])529([^0-9.,]|$)"; "i"))] | last // ""' \
       2>/dev/null || echo "")
     [ -z "$err_text" ] && exit 0
     ;;
@@ -96,12 +121,22 @@ esac
 active=$(printf '%s' "$input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo false)
 [ "$active" = "true" ] && exit 0
 
-# --- Limiter classification (from the 429 text) --------------------------
+# --- Error classification (from the 429/529 text) ------------------------
 # Anthropic exposes three per-minute dimensions (ITPM / OTPM / RPM); the 429
 # body names which was hit. Order matters only for determinism — the three
 # phrases are mutually exclusive substrings.
+#
+# 529 is checked FIRST and is a DIFFERENT class, not a fourth limiter: it is
+# server capacity, so it takes the exponential pacing below instead of
+# minute-boundary alignment. Match on the word "overloaded" (Anthropic's 529
+# carries type "overloaded_error" / message "Overloaded") or on a 529 that is
+# code-shaped. The digit guards are load-bearing: a bare `529` would match the
+# token counts inside a genuine 429 body (e.g. "529,000 input tokens per
+# minute") and mis-pace a rate limit as an overload.
 limiter=unknown
-if printf '%s' "$err_text" | grep -qi 'output tokens per minute'; then
+if printf '%s' "$err_text" | grep -qiE 'overloaded|(^|[^0-9])529([^0-9.,]|$)'; then
+  limiter=overloaded
+elif printf '%s' "$err_text" | grep -qi 'output tokens per minute'; then
   limiter=output-TPM
 elif printf '%s' "$err_text" | grep -qi 'input tokens per minute'; then
   limiter=input-TPM
@@ -144,13 +179,32 @@ if [ "$count" -gt "$MAX_CONSECUTIVE" ]; then
   exit 0
 fi
 
-# --- Pacing: next minute boundary (floor MIN_WAIT_SECS) + jitter ----------
-# Per-minute budgets replenish continuously (token bucket), so the binding
-# property is "wait tens of seconds"; boundary alignment per the task Goal,
-# jitter to decorrelate a fleet-wide herd. Range: [20, 89]s < 120s timeout.
-secs_to_boundary=$((60 - now % 60))
-[ "$secs_to_boundary" -lt "$MIN_WAIT_SECS" ] && secs_to_boundary=$((secs_to_boundary + 60))
-wait_secs=$((secs_to_boundary + RANDOM % (JITTER_MAX_SECS + 1)))
+# --- Pacing ---------------------------------------------------------------
+# 429 — next minute boundary (floor MIN_WAIT_SECS) + jitter. Per-minute budgets
+# replenish continuously (token bucket), so the binding property is "wait tens
+# of seconds"; boundary alignment per the task Goal, jitter to decorrelate a
+# fleet-wide herd. Range: [20, 89]s < 120s timeout.
+#
+# 529 — nothing replenishes at a minute boundary, so boundary alignment is
+# meaningless. Back off exponentially in the storm counter instead:
+# 20/40/80/90/90 + jitter[0,10] -> worst 100s, still inside the 120s timeout.
+if [ "$limiter" = overloaded ]; then
+  wait_base="$OVERLOADED_BASE_SECS"
+  n=1
+  while [ "$n" -lt "$count" ]; do
+    wait_base=$((wait_base * 2))
+    if [ "$wait_base" -ge "$OVERLOADED_MAX_SECS" ]; then
+      wait_base="$OVERLOADED_MAX_SECS"
+      break
+    fi
+    n=$((n + 1))
+  done
+  wait_secs=$((wait_base + RANDOM % (JITTER_MAX_SECS + 1)))
+else
+  secs_to_boundary=$((60 - now % 60))
+  [ "$secs_to_boundary" -lt "$MIN_WAIT_SECS" ] && secs_to_boundary=$((secs_to_boundary + 60))
+  wait_secs=$((secs_to_boundary + RANDOM % (JITTER_MAX_SECS + 1)))
+fi
 [ "$NO_SLEEP" = "1" ] || sleep "$wait_secs" 2>/dev/null || true
 
 # --- Limiter-accurate re-wake message (stdout; exit 2 + asyncRewake) ------
@@ -167,6 +221,10 @@ case "$limiter" in
     lim_desc="org-wide requests-per-minute (RPM)"
     hint="reduce parallel API calls for the next few turns"
     ;;
+  overloaded)
+    lim_desc="529 Overloaded — upstream server capacity, NOT your token budget"
+    hint="retry as-is; thinning prompts or reducing parallelism does not help an overload"
+    ;;
   *)
     lim_desc="rate limit (class unknown)"
     hint="pace token usage for the next few turns"
@@ -177,10 +235,20 @@ if [ "$event" = "SubagentStop" ]; then
   agent=$(printf '%s' "$input" | jq -r '.agent_type // empty' 2>/dev/null || echo "")
   [ -z "$agent" ] && agent=$(printf '%s' "$input" | jq -r '.agent_id // empty' 2>/dev/null || echo "")
   [ -z "$agent" ] && agent="the sub-agent"
-  printf 'A sub-agent (%s) was blocked by a 429 on the %s limit. This hook already waited %ss (to the minute boundary + jitter; retry %s/%s this storm). Re-spawn the same sub-agent with the same prompt and continue; %s.\n' \
-    "$agent" "$lim_desc" "$wait_secs" "$count" "$MAX_CONSECUTIVE" "$hint"
+  if [ "$limiter" = overloaded ]; then
+    printf 'A sub-agent (%s) was blocked by %s. This hook already waited %ss (exponential backoff + jitter; retry %s/%s this storm). Re-spawn the same sub-agent with the same prompt and continue; %s.\n' \
+      "$agent" "$lim_desc" "$wait_secs" "$count" "$MAX_CONSECUTIVE" "$hint"
+  else
+    printf 'A sub-agent (%s) was blocked by a 429 on the %s limit. This hook already waited %ss (to the minute boundary + jitter; retry %s/%s this storm). Re-spawn the same sub-agent with the same prompt and continue; %s.\n' \
+      "$agent" "$lim_desc" "$wait_secs" "$count" "$MAX_CONSECUTIVE" "$hint"
+  fi
 else
-  printf 'This session hit the %s limit (429). This hook already waited %ss (to the minute boundary + jitter; retry %s/%s this storm). Continue your prior task from where you left off; %s.\n' \
-    "$lim_desc" "$wait_secs" "$count" "$MAX_CONSECUTIVE" "$hint"
+  if [ "$limiter" = overloaded ]; then
+    printf 'This session hit %s. This hook already waited %ss (exponential backoff + jitter; retry %s/%s this storm). Continue your prior task from where you left off; %s.\n' \
+      "$lim_desc" "$wait_secs" "$count" "$MAX_CONSECUTIVE" "$hint"
+  else
+    printf 'This session hit the %s limit (429). This hook already waited %ss (to the minute boundary + jitter; retry %s/%s this storm). Continue your prior task from where you left off; %s.\n' \
+      "$lim_desc" "$wait_secs" "$count" "$MAX_CONSECUTIVE" "$hint"
+  fi
 fi
 exit 2
