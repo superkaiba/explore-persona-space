@@ -7925,8 +7925,8 @@
     "2022": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2022",
-      "status": "proposed",
+      "path": "tasks/planning/2022",
+      "status": "planning",
       "title": "workflow-fix: add eval_results/issue_1481 to tests/sparse_cones.txt (issue-1947 tests collect in sparse worktrees)"
     },
     "2023": {
