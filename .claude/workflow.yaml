@@ -31,24 +31,6 @@ version: 1
 name: eps-task-workflow
 control_plane: local_files
 
-identifiers:
-  issue_command: "/issue <N>"
-  issue_number_means: "the integer that names tasks/<status>/<N>/"
-  legacy_github_issues: "historical evidence only"
-
-substrate:
-  tasks_directory: "tasks/<status>/<N>/"
-  per_task_files:
-    - "body.md (YAML frontmatter + markdown body)"
-    - "events.jsonl (append-only epm:* markers)"
-    - "comments.jsonl (mentor comments + Claude replies)"
-    - "plans/v<K>.md (per-round plan revisions)"
-    - "plans/plan.md (symlink to latest)"
-    - "artifacts/ (figures, html artifacts, drafts)"
-    - "original-body.md (snapshot before clean-result promotion)"
-  registry: "tasks/REGISTRY.json (id -> current folder path)"
-  single_writer: "scripts/task.py (flock + git commit per operation)"
-
 # ──────────────────────────────────────────────────────────────────────
 # Issue types. Substrate-independent classification of what kind of
 # work a task represents. Restored verbatim from the GH-era yaml — the
@@ -258,34 +240,6 @@ statuses:
     user_gated: false
 
 # ──────────────────────────────────────────────────────────────────────
-# Canonical lifecycle order — the happy-path traversal an experiment
-# follows from filing to completion. Aliases live in `status_aliases`
-# below and are NOT part of this sequence.
-# ──────────────────────────────────────────────────────────────────────
-canonical_lifecycle:
-  - proposed
-  - clarifying
-  - planning
-  - plan_pending
-  - approved
-  - queued
-  - implementing
-  - code_reviewing
-  - testing
-  - running
-  - verifying
-  - interpreting
-  - reviewing
-  - awaiting_promotion
-  - completed
-
-status_aliases:
-  under_review: reviewing
-  awaiting_approval: plan_pending
-  done_experiment: completed
-  done_impl: completed
-
-# ──────────────────────────────────────────────────────────────────────
 # Priority labels. Schema-stub only: the local-files substrate does NOT
 # carry "labels" — the equivalent for clean-result classification is the
 # `classification` field in body.md frontmatter (useful / not-useful /
@@ -304,22 +258,6 @@ priority_labels:
   - name: clean-results:not-useful
     column: "Not useful"
     description: "Schema-stub only. Local substrate equivalent: frontmatter classification=not-useful after task.py promote."
-
-# ──────────────────────────────────────────────────────────────────────
-# Clarification rules. The clarifier MUST ask targeted questions only;
-# it MUST NOT add broad literature or methodological gates.
-# ──────────────────────────────────────────────────────────────────────
-clarification:
-  status: clarifying
-  required_points:
-    - specific_hypothesis
-    - expected_information_gain
-    - result_that_changes_next_action_or_belief
-    - missing_constraints_that_make_planning_invalid
-  rules:
-    - ask_few_targeted_questions
-    - advance_to_planning_if_hypothesis_and_information_gain_are_clear
-    - do_not_add_broad_literature_or_methodological_gates
 
 # ──────────────────────────────────────────────────────────────────────
 # Auto-continuation gates. Restored verbatim (with substrate
@@ -1541,24 +1479,6 @@ reviewer_pairs:
   reconciler:
     marker: epm:review-reconcile
     after_round_3_rule: "Record the final critique, choose the minimal necessary fix, and continue unless a real user-decision blocker remains."
-
-# ──────────────────────────────────────────────────────────────────────
-# Codex-primary agents. Historically `analyzer`, `planner`, and
-# `follow-up-proposer` were thin Claude wrappers that delegated their
-# work to a headless Codex session (`companion task --write --effort
-# xhigh`). On 2026-05-20 the three roles were flipped back to direct
-# Claude execution after Codex hit the OpenAI-side ~10-minute per-turn
-# wall-clock cap twice on the analyzer task #192 (turn_aborted reason=
-# interrupted, ~9m 46s into the turn), silently leaving the thread dead
-# upstream while codex-companion's status stream kept reporting
-# "running." Codex's value is now confined to the five twin reviewer
-# roles (codex-code-reviewer, codex-interpretation-critic,
-# codex-clean-result-critic, codex-critic, codex-reviewer-deprecated),
-# where prompts are short and turns reliably stay under the cap. The
-# helper at `scripts/codex_task.py` remains the dispatch path for those
-# twins.
-# ──────────────────────────────────────────────────────────────────────
-codex_primary_agents: []
 
 # ──────────────────────────────────────────────────────────────────────
 # Marker kinds. Restored to the full GH-era shape: each marker has
@@ -3106,248 +3026,11 @@ steps:
     next_expected_step: terminal
 
 # ──────────────────────────────────────────────────────────────────────
-# Pod lifecycle config. Substrate-independent at this level — `pod.py`
-# wraps RunPod regardless of how /issue gets invoked.
-# ──────────────────────────────────────────────────────────────────────
-runpod:
-  planning_contract: runpod-spec
-  launcher: "scripts/pod.py"
-  pod_naming: "epm-issue-<N>"
-  progress_reporting:
-    mechanism: scripts/pod_watch.py
-    appends_to: events.jsonl
-    epm_markers:
-      - "epm:run-launched"
-      - "epm:progress"
-      - "epm:run-finished"
-  lifecycle_commands:
-    provision: "uv run python scripts/pod.py provision --issue <N> --intent <intent>"
-    terminate: "uv run python scripts/pod.py terminate --issue <N> --yes"
-    resume: "uv run python scripts/pod.py resume --issue <N>"
-  auto_terminate_on_upload_verify_pass: true
-
-# ──────────────────────────────────────────────────────────────────────
-# Forbidden control-plane surfaces. Local-files substrate is canonical;
-# anything in this list is historical evidence only.
-# ──────────────────────────────────────────────────────────────────────
-forbidden_workflow_state:
-  - github_issues
-  - github_labels
-  - github_issue_comments
-  - github_project_board_columns
-  - sagan_postgres_writes
-  - parallel_local_state_files_outside_tasks_directory
-
-# ──────────────────────────────────────────────────────────────────────
-# Client config. The single writer + verifier.
-# ──────────────────────────────────────────────────────────────────────
-client:
-  script: scripts/task.py
-  module: explore_persona_space.task_workflow
-  auth: "none (local filesystem; flock on ~/.task-workflow/lock)"
-  mutation_rule: "scripts/task.py only; one git commit per operation; web app only appends to comments.jsonl"
-  verification: "scripts/verify_task_body.py (sentinel-gated v4 four-flat-H2 spec — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` + `**Repro:**`/`**Context:**` footer — alongside the grandfathered v3 five-flat-H2, v2 two-content-section, + legacy shapes; v4-only checks (`check_v4_structure`, `check_v4_methodology_shape`, `check_v4_word_caps`, `check_v4_results_beat`) PASS-skip on non-v4 bodies, the v3-only Data checks PASS-skip on non-v3, the v2-only `check_tldr_nested_structure` PASS-skips on v3/v4, and checks 6/16/17 run on any title-tag-confidence sentinel (v2/v3/v4); PLUS `check_concerns_audit` (Lens 14, binding-concerns; composed 2026-05-31 by task #455) dispatched separately in verify_text since it needs the sibling concerns.jsonl)"
-
-# ──────────────────────────────────────────────────────────────────────
-# Workflow-fix-on-bug protocol. Every agent (subagent or orchestrator)
-# surfaces workflow-fixable bugs via an inline `<!-- workflow-fix-candidate
-# v1 -->` block in its return text; the orchestrator FILES a kind:infra
-# workflow-fix task (pre-filled from the candidate) + spawns a background
-# `/issue <N> --auto` session to implement it via the full code-change
-# pipeline (#678, replaces the retired workflow-improver auto-spawn — user
-# directive "so we get the plan review and all this"). Full prose protocol +
-# scoping rules: .claude/rules/workflow-fix-on-bug.md.
-# Critical-rules summary: CLAUDE.md § Critical Rules.
+# Workflow-fix-on-bug protocol. Full protocol (candidate block format,
+# workflow-surface scope list, dedup key + predicate, recursion guard,
+# markers) lives in the rule file; section slimmed to this stub
+# 2026-08-05 (no code reads it).
 # ──────────────────────────────────────────────────────────────────────
 workflow_fix_on_bug:
   enabled: true
   protocol_doc: ".claude/rules/workflow-fix-on-bug.md"
-  candidate_marker_open: "<!-- workflow-fix-candidate v1 -->"
-  candidate_marker_close: "<!-- /workflow-fix-candidate -->"
-  required_candidate_fields:
-    - target_file
-    - bug_observed
-    - why_workflow_gap
-    - proposed_change
-    - diff_sketch
-    - confidence  # low | medium | high
-    - related_task
-  max_candidates_per_agent_invocation: 1
-  routed_by: orchestrator-only  # subagents NEVER file a task / spawn a session themselves
-  applies_to_workflow_surface:
-    - ".claude/agents/*.md"
-    - ".claude/skills/**/SKILL.md"
-    - ".claude/rules/*.md"
-    - ".claude/workflow.yaml"
-    - ".claude/settings.json"
-    - ".claude/settings.local.json"
-    # Persistent agent memories steer workflow-agent behavior like agent specs
-    # do; corrections / retirements of stale guidance are workflow-surface fixes
-    # (the owning agent remains the primary author of its own memory).
-    - ".claude/agent-memory/**/*.md"
-    - "CLAUDE.md"
-    - "scripts/task.py"
-    # The task-workflow API library lives under src/, not scripts/ — these two
-    # modules are workflow surface despite the general src/** out-of-scope rule.
-    - "src/explore_persona_space/task_workflow.py"
-    - "src/explore_persona_space/task_workflow_migrate.py"
-    # The unified backend router (CLAUDE.md § Compute backends): the lane
-    # implementations driven by the dispatch_issue.py / backend_poll.py pair
-    # below — workflow surface despite the general src/** exclusion. Added
-    # 2026-06-11 (#608): the GCP sentinel-drain fix had already landed in
-    # gcp.py as a workflow-fix while the list still omitted the package, and
-    # the omission nearly deflected the SLURM-lane follow-up.
-    - "src/explore_persona_space/backends/*.py"
-    - "scripts/pod.py"
-    - "scripts/pod_lifecycle.py"
-    - "scripts/pod_config.py"
-    - "scripts/pod_audit.py"
-    - "scripts/gpu_heuristics.py"
-    - "scripts/cleanup_pod.py"
-    - "scripts/pod_disk_guard.py"
-    - "scripts/runpod_api.py"
-    - "scripts/bootstrap_pod.sh"
-    - "scripts/cron_pod_audit.sh"
-    - "scripts/sync_pods.sh"
-    - "scripts/_pods_conf_path.sh"
-    - "scripts/pods.conf"
-    - "scripts/pods_ephemeral.json"
-    - "scripts/workflow_lint.py"
-    - "scripts/verify_task_body.py"
-    # The /adversarial-planner Phase 1.5.0 mechanical plan pre-pass gate
-    # (+ its test file below). Added 2026-06-12 (#633): the list predated
-    # #625's same-week merge and the omission nearly deflected an in-scope
-    # dry-run-test-coverage check addition.
-    - "scripts/verify_plan.py"
-    # The upload-verifier's artifact checklist + phantom-URL gate
-    # (--claimed-urls-file, /issue Step 8). Added 2026-06-10 (#541): the
-    # list predated the phantom-URL gate and its absence nearly deflected
-    # an in-scope URL-extractor fix.
-    - "scripts/verify_uploads.py"
-    - "scripts/audit_clean_results_body_discipline.py"
-    # The gist-publish PII redactor (daily/weekly update skills; also the
-    # documented remediation path of the pre-commit secret-shaped-string
-    # gate) + that gate itself. Added 2026-06-11 (#542): the list predated
-    # both and the omission nearly deflected an in-scope fix for the
-    # stale-registry IP-redaction gap (redact_for_gist tests red on main).
-    - "scripts/redact_for_gist.py"
-    - "scripts/check_no_secret_shaped_strings.py"
-    # The analyzer Step 1.5 exemplar loader + the sagan_state-compat shim it
-    # reads the task workflow through. Added 2026-06-11 (#608): the list
-    # predated the task-workflow rewire of these helpers and the omission
-    # nearly deflected an in-scope v2-clean-result extraction fix.
-    - "scripts/recent_clean_results.py"
-    - "scripts/task_state.py"
-    # The /issue per-EXIT-site epm:step-completed marker poster (invoked
-    # throughout .claude/skills/issue/SKILL.md; read by the §5 re-entry
-    # router + autonomous_session_watch.py). Added 2026-06-11 (#608): the
-    # third live task_state consumer was still absent from the scope lists —
-    # same stale-list class as the two entries above.
-    - "scripts/post_step_completed.py"
-    - "scripts/codex_task.py"
-    - "scripts/poll_pipeline.py"
-    # The /issue Step 6b/8 dispatch CLI + Step 6d.2 backend-agnostic bg-Bash
-    # poller (router slice 6 pair: dispatch_issue.py writes the per-issue
-    # handle sidecar, backend_poll.py reads it each tick). Added 2026-06-11
-    # (#571): the list predated the pair and its absence nearly deflected an
-    # in-scope sys.path-bootstrap fix for the documented poller invocation.
-    - "scripts/dispatch_issue.py"
-    - "scripts/backend_poll.py"
-    # The /issue Step 7 infra-vs-code failure router (mirrored by
-    # .claude/skills/issue/failure_patterns.md). Added 2026-06-10 (#557):
-    # the list predated the script and its absence nearly deflected an
-    # in-scope OOM-classification fix.
-    - "scripts/failure_classifier.py"
-    - "scripts/gh_project.py"
-    # The PM session's one-pass read-only queue-report helper (research-pm.md
-    # Mode 1 STATUS source; pm/SKILL.md boot-scan step 2). Added 2026-06-11.
-    - "scripts/pm_queue_report.py"
-    - "scripts/spawn_session.py"
-    - "scripts/pod_watch.py"
-    - "scripts/worktree_audit.py"
-    - "scripts/cron_worktree_audit.sh"
-    # The /issue Step 4a cone-mode sparse-worktree creation helper (+ its
-    # test file below). Added 2026-06-11 (#596): the list predated the
-    # helper's same-day merge and its absence nearly deflected an in-scope
-    # anchoring/validation hardening fix.
-    - "scripts/new_worktree.sh"
-    - "scripts/autonomous_session_watch.py"
-    - "scripts/cron_autonomous_session_watch.sh"
-    - "scripts/session_progress_report.py"
-    - "scripts/session_summarize.py"
-    - "scripts/session_resolver.py"
-    - "scripts/cron_session_summarize.sh"
-    - "tests/test_workflow*.py"
-    - "tests/test_task_workflow*.py"
-    - "tests/test_failure_classifier.py"
-    - "tests/test_no_pod_side_task_py_shellout.py"
-    - "tests/test_subprocess_env_explicit.py"
-    - "tests/test_autonomous_session_watch.py"
-    - "tests/test_stalled_detector_and_gc.py"
-    - "tests/test_session_progress_report.py"
-    - "tests/test_session_summarize.py"
-    - "tests/test_session_resolver.py"
-    - "tests/test_spawn_session_list_enrichment.py"
-    - "tests/test_sparse_worktree.py"
-    # Pins the workflow-fix dedup + recursion-guard predicates (#678).
-    - "tests/test_workflow_fix_dedup.py"
-    # Pins the analyzer Step 1.5 exemplar loader's v2-body extraction (#608).
-    - "tests/test_recent_clean_results.py"
-    # Pins the plan pre-pass gate's check catalog + CLI contract (#625/#633).
-    - "tests/test_verify_plan.py"
-    # Pin the gist-redaction + pre-commit secret-gate contracts (#542).
-    - "tests/test_redact_for_gist.py"
-    - "tests/test_check_no_secret_shaped_strings.py"
-    # Backend-router invariant tests (pair with the backends/*.py entry above).
-    - "tests/test_router*.py"
-    - "tests/test_backend_*.py"
-    - "tests/test_slurm_*.py"
-    - "tests/test_gcp_backend.py"
-  out_of_scope:
-    - "src/explore_persona_space/**"
-    - "configs/**"
-    - "scripts/train.py"
-    - "scripts/eval.py"
-    - "scripts/run_sweep.py"
-    - "scripts/generate_*.py"
-    - "scripts/analyze_results.py"
-    - "tasks/**"
-    - "eval_results/**"
-    - "figures/**"
-  recursion_guard:
-    env_var: "EPM_WORKFLOW_FIX_SESSION"          # in-session convenience flag, set at /issue Step 0 when the durable signal is present
-    durable_signal: "workflow_fix_target: line in the task body's ## Provenance block"  # survives watcher respawn (primary; task_workflow.is_workflow_fix_session)
-    behavior: "A session under EITHER signal logs+notifies candidates it raises; it NEVER auto-files/spawns MORE workflow-fix tasks for its own findings (analogue of AUTO_REVIEW_DISABLED). Escape valve: such a session CAN still emit candidate blocks — they are parked/notified, not silently dropped."
-  dedup_key: "(target_file, fingerprint)"        # fp = sha256(normalize(proposed_change)+'||'+normalize(bug_observed))[:12]; task_workflow.wf_fix_fingerprint
-  dedup_predicate: "A candidate is a duplicate iff an OPEN kind:infra task has a workflow-fix: or daily-fix: title prefix (task_workflow.WF_FIX_TITLE_PREFIXES; #1180 cross-channel) AND a wf-fix-fp:<fp> tag matching the fingerprint AND a ## Provenance workflow_fix_target line EXACTLY matching target_file AND status NOT in {completed, archived}. Same file + DIFFERENT fingerprint is NOT a duplicate (it files its own task). Impl: task_workflow.is_open_workflow_fix_task; tested in tests/test_workflow_fix_dedup.py."
-  dedup_surfaces:
-    primary: "title prefix 'workflow-fix:' or 'daily-fix:' (task_workflow.WF_FIX_TITLE_PREFIXES, one per filing channel; via task.py new --title / set_title) + tag 'wf-fix-fp:<fp>' (via add-tag) — both round-trip through view --json / REGISTRY"
-    fallback: "grep the literal 'workflow_fix_target:' line in body.md ## Provenance (written verbatim via --body-file)"
-    never: "set_body — strips leading frontmatter except paper/abstract; NEVER route a dedup key through it"
-  spawn_command: "uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto"
-  orchestrator_actions:
-    - "If running under the recursion guard (workflow_fix_target Provenance line OR EPM_WORKFLOW_FIX_SESSION=1): LOG epm:workflow-fix-candidate v1 (note: parked — EPM_WORKFLOW_FIX_SESSION), notify, STOP (do NOT file/spawn)"
-    - "Grep the workflow surface for the pattern; populate target_file (comma-separated list or glob when uniform); record the grep cmd + hit count for the body's verified-at-filing: line — BINDING (#1307): per-target hits for each named target_file (a presence claim with a 0-hit named target is a mis-target: re-grep repo-wide + correct target_file first); a nonexistence claim records a repo-wide relocation grep; an ABSENCE claim about a text-matching guard (substring list / regex classifier / transient-error predicate) additionally needs a semantic probe (run the predicate against the claimed text and/or grep fragments/substrings of it repo-wide) + a landed-fix history check (git log --oneline --since='7 days ago' -- <target_file>) — a verbatim-literal 0-hit grep alone is not absence evidence (#1386/#1360); a presence hit binds only after its surrounding lines are READ (context consistency, #1383) — a hit whose context already implements the proposed change is a landed fix → dedup/archive, never a new filing (#1330/#1309); every hex token cited as a commit is rev-parse-verified at compose time — a non-resolving token is cited as a transcript/session reference, never a commit (#1467); an artifact-state absence claim (tag/field absent from a cited task's artifact read as 'dropped at filing') binds only after the task folder's git history shows the value was never applied — git log --follow --format='%h %s' -- <body.md> at compose time (path via task.py find <M>; --follow traces the status git mvs; task.py commits are self-describing: create/add-tag/remove-tag) — a remove-tag commit explaining the absence, or a create-commit diff carrying the value, refutes the drop claim (#1497); a \"no marker posted / no record exists\" claim on task #M's events is verified at compose time with uv run python scripts/task.py view <M> --json | jq '.events' (or a kind+sentinel filter) — a found marker refutes the claim, the real defect is a triage/read-back miss (#1667, clause (f)); before naming target_file, trace the failing behavior ONE call-hop past the observed symptom (grep -rn '<wrong-value-field>' src/ scripts/) to name the site that CONSTRUCTS the wrong value, not the caller that consumes/propagates it — record both sites, re-run the dedup fingerprint against the corrected target (#1669, clause (g)); a \"candidate/park/record was dropped or lost\" claim binds only after enumerating the downstream tool's documented suppression predicates (grep -n 'suppress\\|skip\\|dedup\\|routed' <tool>) and checking each against the specific record — a correctly-suppressed record refutes the claim, the real gap is observability, not \"record lost\" (#1680, clause (h))"
-    - "Compute fp = task_workflow.wf_fix_fingerprint(proposed_change, bug_observed)"
-    - "DEDUP: if task_workflow.is_open_workflow_fix_task(target_file, fp) returns an id, log epm:workflow-fix-candidate v1 (note: deduped against #M), continue — do NOT double-file (a same-file DIFFERENT-fp candidate is NOT a dup, file it)"
-    - "Post epm:workflow-fix-candidate v1 to the PARENT task's events.jsonl (or .claude/cache/workflow-fix-events.jsonl if no task) with candidate fields + routing decision inline"
-    - "File the task: task.py new --kind infra --title 'workflow-fix: <proposed_change, <=60 chars>' --body-file <template> --origin-prompt '<verbatim candidate>' (template: rule doc § Body-file template; ## Provenance carries the workflow_fix_target + fingerprint lines verbatim; ## Workflow gap carries the verified-at-filing: grep-evidence line, or n/a — reason)"
-    - "Tag the dedup keys: task.py add-tag <N> wf-fix; task.py add-tag <N> wf-fix-fp:<fp>"
-    - "Spawn the session: spawn_session.py spawn-issue --issue <N> --auto (ALWAYS --auto as of 2026-08-04 — the architectural-greenlight carve-out is REMOVED; never spawn without --auto and never set plan architectural: true, which is inert)"
-    - "Post epm:workflow-fix-task-filed v1 on the PARENT task; continue current work without blocking — the child /issue session implements the fix via the full code-change pipeline"
-    - "On the child reaching completed (its Step 10d merged to main): post epm:workflow-fix-applied v1 on the PARENT task (applied_task #N, merge_sha). On the child reaching blocked/archived without merging, or spawn-failure: post epm:workflow-fix-failed v1 on the PARENT task"
-  suppress_filing_when:
-    - "Running under the recursion guard (workflow_fix_target Provenance line OR EPM_WORKFLOW_FIX_SESSION=1): log+notify the candidate, do NOT file/spawn (the recursion_guard above)"
-    - "An OPEN kind:infra workflow-fix task already exists for the SAME (target_file, fingerprint) — log 'deduped against #M', no new task (a DISTINCT bug on the same file, different fingerprint, is NOT a dup — file it)"
-    - "Candidate's target_file is in out_of_scope (log marker; flag emitting agent's misclassification in the marker body)"
-    - "RETIRED 2026-08-04 — an architectural / public-contract proposed_change (rename a status enum, remove the Codex ensemble, change a marker schema or task.py subcommand) is NO LONGER a suppression reason: it is filed + spawned --auto like any other in-scope candidate (§ architectural greenlight — REMOVED). LOW CONFIDENCE alone is likewise NOT a suppression reason (2026-06-11): a candidate naming a concrete file + change is filed at any confidence; the spawned session's planner may deflect with a reasoned no-change report"
-    - "Nothing concrete to dispatch — prose names no specific workflow-surface file AND no specific change (log the marker for the dashboard; nothing to file)"
-  child_review: "The spawned /issue session owns its OWN review — the standard Claude+Codex code-reviewer ensemble (cap 5 rounds, /issue Step 5) + the inline test-verdict gate. No separate ensemble_review here; the full /issue pipeline replaces the old workflow-improver + single code-reviewer loop."
-  forbidden_emitters:
-    - codex-code-reviewer  # Codex twins exit cleanly; verdict body only
-    - codex-critic
-    - codex-interpretation-critic
-    - codex-clean-result-critic
-    - codex-follow-up-critic
-  forbidden_during:
-    - "AUTO_REVIEW_DISABLED=1 sentinel present in agent prompt (nested review/diagnostic loop)"
