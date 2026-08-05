@@ -1,10 +1,13 @@
 """P2 per-feature ridge fit for task #2061.
 
 Reads:
-- P1 output: `data/issue_2061/sae_encoded/<stage>_<render>_<corpus>_L29.pt` —
-  SAE-encoded answer targets (n_rows, d_sae=262144), from
+- P1 output: `data/issue_2061/sae_encoded/<stage>_<render>_<corpus>_answer_L29.pt`
+  — SAE-encoded ANSWER targets (n_rows, d_sae=262144), from
   `scripts/issue2061_sae_encode.py`.
-- #1336's banked context activations (prefix + context arms), same shard as P1.
+- #1336's banked arm inputs (prefix + context slot states), loaded from ALL
+  `*_shardNNN.pt` files of each locally-staged turnstore in shard-index order
+  (same enumeration as P1, so X/Y rows align). Payload schema + realized
+  pooling convention: `scripts/issue2061_turnstore.py`.
 
 Fits, per (stage, render, corpus, arm) cell:
 - K=5 group folds, fold seed 0 (inherited from #1336, plan §10).
@@ -39,6 +42,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -51,6 +55,15 @@ from explore_persona_space.experiments.issue_779.fit_h import (
     ridge_fit_predict_fast_layer_batched,
 )
 
+# Sibling-script import (bare module name via the script-dir sys.path insert —
+# the issue1336_extract_turnstore.py pattern; works in script mode AND under
+# the tests' `sys.path.insert(scripts)` import).
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
+
+import issue2061_turnstore as ts  # noqa: E402
+
 LAYER = 29
 D_IN = 4096
 K_FOLDS = 5
@@ -59,34 +72,19 @@ LAMBDA_GRID = np.logspace(-2, 4, 13)
 DOF_CAP_FRACTION = 0.9  # plan §7 under-determined-cell mitigation
 
 
-def _load_context_activations(shard_path: Path, arm: str, layer: int = LAYER) -> np.ndarray:
-    """Load context activations for one turnstore's shard.
+def _load_arm_inputs(turnstore_dir: Path, arm: str, layer: int = LAYER) -> np.ndarray:
+    """(n, d_in) float32 arm inputs from ALL shards of one LOCAL turnstore dir.
 
-    `arm` selects prefix vs context pooling. Schema fallback is the same as
-    the encode script — verify at first launch.
+    `arm` selects the banked #1336 slot state — "prefix" -> the prefix-header
+    slot, "context" -> the a1-assistant-header slot (end of the context).
+    Realized convention + fail-loud schema assert live in
+    `issue2061_turnstore` (see its docstring; plan §12(4)). Shards are
+    enumerated in shard-index order, matching the encode script's row order,
+    so X rows align with the encoded Y rows by construction.
     """
-    obj = torch.load(shard_path, map_location="cpu", weights_only=True)
-    key_candidates = {
-        "prefix": [
-            f"prefix_L{layer}",
-            f"prefix_layer_{layer}",
-            "prefix",
-        ],
-        "context": [
-            f"context_L{layer}",
-            f"context_layer_{layer}",
-            "context",
-        ],
-    }
-    if isinstance(obj, dict):
-        for k in key_candidates[arm]:
-            if k in obj:
-                acts = obj[k]
-                if acts.ndim == 3:
-                    acts = acts[:, layer, :]
-                return acts.float().numpy()
-        raise KeyError(f"No {arm}-arm key in {shard_path} (keys: {list(obj.keys())})")
-    raise TypeError(f"Unrecognized shard: {shard_path} type={type(obj)}")
+    shard_paths = ts.enumerate_shards(turnstore_dir)
+    x, _conv_ids = ts.load_state_from_shards(shard_paths, state=arm, layer=layer)
+    return x.numpy()
 
 
 def _make_folds(n: int, k: int = K_FOLDS, seed: int = FOLD_SEED) -> list[np.ndarray]:
@@ -98,7 +96,7 @@ def _make_folds(n: int, k: int = K_FOLDS, seed: int = FOLD_SEED) -> list[np.ndar
 
 
 def fit_cell(
-    context_shard: Path,
+    turnstore_dir: Path,
     encoded_shard: Path,
     arm: str,
     output_path: Path,
@@ -106,8 +104,8 @@ def fit_cell(
     device: str = "cpu",
 ) -> None:
     """Fit ridge for one (stage, render, corpus, arm) cell + write JSONL."""
-    print(f"[fit] context={context_shard.name} arm={arm} encoded={encoded_shard.name}")
-    X = _load_context_activations(context_shard, arm, layer=layer)  # (n, d_in)
+    print(f"[fit] turnstore={turnstore_dir.name} arm={arm} encoded={encoded_shard.name}")
+    X = _load_arm_inputs(turnstore_dir, arm, layer=layer)  # (n, d_in)
     Y = (
         torch.load(encoded_shard, map_location="cpu", weights_only=True).float().numpy()
     )  # (n, d_sae)
@@ -233,17 +231,29 @@ def main() -> int:
     args = parser.parse_args()
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    encoded_files = sorted(args.encoded_dir.glob("*_L*.pt"))
+    # Y targets are the ANSWER-state encodes only (plan §Design target Y).
+    encoded_files = sorted(args.encoded_dir.glob(f"*_answer_L{LAYER}.pt"))
     if not encoded_files:
-        print(f"[error] No encoded shards in {args.encoded_dir}")
+        print(f"[error] No '*_answer_L{LAYER}.pt' encoded targets in {args.encoded_dir}")
         return 1
 
-    def parse_cell(path: Path) -> tuple[str, str, str]:
-        # <stage>_<render>_<corpus>_L<layer>.pt
-        parts = path.stem.rsplit("_", 3)
-        return parts[0], parts[1], parts[2]
+    enc_re = re.compile(rf"^(?P<cell>.+)_answer_L{LAYER}$")
 
-    targets: list[tuple[Path, str, str, str]] = []
+    def parse_cell(path: Path) -> tuple[str, str, str]:
+        # <stage>_<render>_<corpus>_answer_L<layer>.pt. stage/render never
+        # contain '_', so a LEFT split of the cell part keeps underscore
+        # corpora (gsm8k_test1319) intact.
+        m = enc_re.match(path.stem)
+        if m is None:
+            raise ValueError(
+                f"Unrecognized encoded-target filename {path.name}; expected "
+                f"<stage>_<render>_<corpus>_answer_L{LAYER}.pt "
+                "(scripts/issue2061_sae_encode.py::encode_turnstore)."
+            )
+        stage, render, corpus = m.group("cell").split("_", 2)
+        return stage, render, corpus
+
+    targets: list[tuple[Path, str, str, str, str]] = []
     for enc_path in encoded_files:
         stage, render, corpus = parse_cell(enc_path)
         if not args.all_cells:
@@ -263,20 +273,16 @@ def main() -> int:
 
     for i, (enc_path, stage, render, corpus, arm) in enumerate(targets, start=1):
         print(f"\n=== [{i}/{len(targets)}] {stage}/{render}/{corpus}/{arm} ===")
-        context_shard = (
-            args.context_shard_dir
-            / f"turnstore_{stage}_{render}_{corpus}"
-            / f"turnstore_{stage}_{render}_{corpus}_shard000.pt"
-        )
-        if not context_shard.exists():
-            print(f"[skip] Missing context shard: {context_shard}")
+        turnstore_dir = args.context_shard_dir / f"turnstore_{stage}_{render}_{corpus}"
+        if not turnstore_dir.is_dir():
+            print(f"[skip] Missing turnstore dir: {turnstore_dir}")
             continue
         output_path = args.output_dir / f"{stage}_{render}_{corpus}_{arm}_L{LAYER}.jsonl"
         if output_path.exists():
             print(f"[skip] Exists: {output_path}")
             continue
         fit_cell(
-            context_shard=context_shard,
+            turnstore_dir=turnstore_dir,
             encoded_shard=enc_path,
             arm=arm,
             output_path=output_path,

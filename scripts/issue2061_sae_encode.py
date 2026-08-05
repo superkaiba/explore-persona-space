@@ -4,11 +4,19 @@ Reads #1336's banked layer-29 activations from the HF data repo
 (`superkaiba1/explore-persona-space-data/issue1336_rlvr_ladder/analysis_tensors/turnstore_<stage>_<render>_<corpus>/`),
 runs the fixed EleutherAI/sae-llama-3.1-8b-64x TopK encoder (via the
 ported `topk_encode` in analysis/sparsify_topk_sae), and emits per-cell
-sparse SAE-feature-vector shards under `data/issue_2061/sae_encoded/`.
+SAE-feature-vector targets under `data/issue_2061/sae_encoded/` as
+`<stage>_<render>_<corpus>_<state>_L<layer>.pt` (default state: `answer`
+— the plan §Design target Y = SAE encode of the ANSWER state, i.e. the
+a1 turn profile of the #1336 turnstore; see
+`scripts/issue2061_turnstore.py` for the realized payload schema +
+pooling convention).
 
 Plan §Design + §9 P1: 5 stages × 5 corpus stems × 2 renders = ~50
-turnstores; each turnstore holds all 32 layers per shard (~525 MB).
-Batched encode at ~256 rows/batch; ~5 GB output per shard chunk.
+turnstores; each turnstore holds MANY `*_shardNNN.pt` files of ≤500
+records each (`SHARD_SIZE = 500`, issue1336_extract_turnstore.py), each
+carrying all 32 layers (~525 MB/shard). ALL shards of a turnstore are
+enumerated + concatenated in shard-index order. Batched encode at ~256
+rows/batch; ~5 GB output per shard chunk.
 
 Loader-parity FVE smoke gate (plan §Design 'Loader adapter'):
     |FVE_ported - FVE_reference| < 0.05
@@ -38,6 +46,16 @@ from explore_persona_space.analysis.sparsify_topk_sae import (
     topk_encode,
     topk_reconstruct,
 )
+
+# Sibling-script import (bare module name via the script-dir sys.path insert —
+# the issue1336_extract_turnstore.py pattern; works in script mode AND under
+# the tests' `sys.path.insert(scripts)` import).
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
+
+import issue2061_turnstore as ts  # noqa: E402
+
 
 # Layer 29 is the nearest banked+SAE-available layer (L30 is #1336's headline
 # but not SAE-available for this dictionary). See plan §11 Layer row.
@@ -95,65 +113,72 @@ def _stage_render_corpus_turnstores(revision: str | None = None) -> list[dict[st
     return turnstores
 
 
-def _load_context_activations(
+def hub_shard_files(tree_path: str, revision: str | None = None) -> list[str]:
+    """Repo-relative paths of ALL `*_shardNNN.pt` files under one turnstore tree.
+
+    Scoped `list_repo_tree(path_in_repo=<tree>)` per the #833 recipe (never a
+    bare full-repo listing); numeric shard-index sort; fail-loud when the tree
+    holds no shards. Shared with `issue2061_fitness.py`.
+    """
+    api = HfApi()
+    entries = list(
+        api.list_repo_tree(
+            repo_id=DATA_REPO,
+            path_in_repo=tree_path,
+            repo_type="dataset",
+            revision=revision,
+        )
+    )
+    hits: list[tuple[int, str]] = []
+    for e in entries:
+        m = ts.SHARD_NAME_RE.search(Path(e.path).name)
+        if m:
+            hits.append((int(m.group(1)), e.path))
+    if not hits:
+        raise FileNotFoundError(
+            f"No '*_shardNNN.pt' files under {DATA_REPO}/{tree_path} "
+            f"(revision={revision}); tree entries: "
+            f"{[Path(e.path).name for e in entries][:10]}"
+        )
+    return [p for _, p in sorted(hits)]
+
+
+def iter_local_shards(tree_path: str, revision: str | None = None):
+    """Yield LOCAL paths of one turnstore's shards, downloading lazily in order.
+
+    Lazy so `load_state_from_shards(max_rows=...)` stops FETCHING once enough
+    rows are accumulated (the smoke gate needs ~2-3 shards, not all ~46).
+    """
+    for rel in hub_shard_files(tree_path, revision=revision):
+        yield hf_hub_download(
+            repo_id=DATA_REPO,
+            filename=rel,
+            repo_type="dataset",
+            revision=revision,
+        )
+
+
+def _load_turnstore_state(
     tree_path: str,
+    state: str,
     layer: int,
     revision: str | None = None,
     max_rows: int | None = None,
 ) -> torch.Tensor:
-    """Load layer-`layer` slice of one turnstore's shard.
+    """(n_rows, d_in) float32 rows of one state across ALL shards of a turnstore.
 
-    Each turnstore holds ONE shard `<name>_shard000.pt` carrying all 32 layers
-    stacked as (n_rows, n_layers, d_in). Returns (n_rows, d_in) for the
-    requested layer.
-
-    Layer indexing is intra-file: the shard's `.pt` structure is what #1336
-    persisted; verify at Phase 1.5 by inspecting one shard's keys.
+    Real #1336 payload schema + state extraction live in
+    `issue2061_turnstore.extract_state_rows` (fail-loud schema assert per
+    shard). `state`: "answer" (a1 turn profile — the plan target Y),
+    "context" (a1-header slot state), or "prefix" (prefix-header slot state).
     """
-    shard_name = Path(tree_path).name + "_shard000.pt"
-    shard_relpath = f"{tree_path}/{shard_name}"
-    local_path = hf_hub_download(
-        repo_id=DATA_REPO,
-        filename=shard_relpath,
-        repo_type="dataset",
-        revision=revision,
+    x, _conv_ids = ts.load_state_from_shards(
+        iter_local_shards(tree_path, revision=revision),
+        state=state,
+        layer=layer,
+        max_rows=max_rows,
     )
-    obj = torch.load(local_path, map_location="cpu", weights_only=True)
-    # #1336's shard format: assume {"context_L29": tensor, ...} or a stacked
-    # multi-layer tensor. Two possible schemas; verify at implementation time.
-    if isinstance(obj, dict):
-        # Prefer explicit per-layer key if present.
-        for key in [f"context_L{layer}", f"context_layer_{layer}", f"L{layer}", f"layer_{layer}"]:
-            if key in obj:
-                acts = obj[key]
-                break
-        else:
-            # Fallback: stacked (n_rows, n_layers, d_in) under a canonical key.
-            for key in ["context", "activations", "acts"]:
-                if key in obj:
-                    stacked = obj[key]
-                    if stacked.ndim == 3:
-                        acts = stacked[:, layer, :]
-                        break
-            else:
-                raise KeyError(
-                    f"Shard at {shard_relpath} has keys {list(obj.keys())}; "
-                    f"no layer-{layer} slice recognized. Inspect shard schema."
-                )
-    elif isinstance(obj, torch.Tensor):
-        if obj.ndim == 3:
-            acts = obj[:, layer, :]
-        else:
-            raise ValueError(
-                f"Shard at {shard_relpath} is a bare tensor of shape {tuple(obj.shape)}; "
-                f"expected (n_rows, n_layers, d_in)."
-            )
-    else:
-        raise TypeError(f"Unrecognized shard object type: {type(obj)}")
-
-    if max_rows is not None:
-        acts = acts[:max_rows]
-    return acts.float().contiguous()
+    return x
 
 
 def loader_parity_smoke_gate(
@@ -163,6 +188,7 @@ def loader_parity_smoke_gate(
     device: str = "cuda" if torch.cuda.is_available() else "cpu",
     sae_revision: str | None = None,
     data_revision: str | None = None,
+    state: str = "answer",
 ) -> tuple[float, float, float]:
     """FVE-parity check: our ported encode vs `sparsify`'s own on the same rows.
 
@@ -186,10 +212,14 @@ def loader_parity_smoke_gate(
     if not base_lmsys:
         raise RuntimeError("No base-stage LMSYS turnstore found for smoke gate.")
     smoke_ts = base_lmsys[0]
-    print(f"[smoke] Loading {n_smoke_rows} rows from {smoke_ts['tree_path']} layer={layer}")
+    print(
+        f"[smoke] Loading {n_smoke_rows} rows from {smoke_ts['tree_path']} "
+        f"state={state} layer={layer}"
+    )
 
-    x = _load_context_activations(
+    x = _load_turnstore_state(
         smoke_ts["tree_path"],
+        state=state,
         layer=layer,
         revision=data_revision,
         max_rows=n_smoke_rows,
@@ -248,28 +278,36 @@ def encode_turnstore(
     device: str = "cuda",
     max_rows: int | None = None,
     revision: str | None = None,
+    state: str = "answer",
 ) -> Path:
-    """Encode one (stage, render, corpus) turnstore's context activations.
+    """Encode one (stage, render, corpus) turnstore's `state` rows (ALL shards).
 
-    Writes `<output_dir>/<stage>_<render>_<corpus>_L<layer>.pt` carrying
-    the sparse SAE feature matrix (n_rows, d_sae) as float32 (chunked to
-    manage RAM; d_sae=262144 float32 at n_rows=1000 = ~1 GB).
+    Default `state="answer"` — the plan §Design target Y (SAE encode of the
+    a1 answer-profile rows). Writes
+    `<output_dir>/<stage>_<render>_<corpus>_<state>_L<layer>.pt` carrying the
+    SAE feature matrix (n_rows, d_sae) as float32 (chunked to manage RAM;
+    d_sae=262144 float32 at n_rows=1000 = ~1 GB). NOTE the plan §10 path
+    template omits `<render>`; it is included here to keep the two renders of
+    one (stage, corpus) from colliding (deviation flagged in the Unit A
+    report).
     """
     output_path = (
-        output_dir / f"{turnstore['stage']}_{turnstore['render']}_{turnstore['corpus']}_L{layer}.pt"
+        output_dir
+        / f"{turnstore['stage']}_{turnstore['render']}_{turnstore['corpus']}_{state}_L{layer}.pt"
     )
     if output_path.exists():
         print(f"[skip] {output_path} exists")
         return output_path
 
-    x = _load_context_activations(
+    x = _load_turnstore_state(
         turnstore["tree_path"],
+        state=state,
         layer=layer,
         revision=revision,
         max_rows=max_rows,
     ).to(device)
     n = x.shape[0]
-    print(f"[encode] {turnstore['tree_path']} L{layer} n={n} d_in={x.shape[1]}")
+    print(f"[encode] {turnstore['tree_path']} state={state} L{layer} n={n} d_in={x.shape[1]}")
 
     encoded_chunks: list[torch.Tensor] = []
     t0 = time.time()
@@ -303,6 +341,13 @@ def main() -> int:
     )
     parser.add_argument("--smoke-bar", type=float, default=0.05)
     parser.add_argument("--smoke-rows", type=int, default=1000)
+    parser.add_argument(
+        "--state",
+        type=str,
+        choices=sorted(ts.STATE_SPEC),
+        default="answer",
+        help="Which banked state to encode (default: answer — the plan target Y).",
+    )
     parser.add_argument("--layer", type=int, default=LAYER)
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE)
     parser.add_argument("--max-rows", type=int, default=None, help="Cap rows per turnstore (debug)")
@@ -324,6 +369,7 @@ def main() -> int:
             device=args.device,
             sae_revision=args.sae_revision,
             data_revision=args.data_revision,
+            state=args.state,
         )
         print(f"=== SMOKE PASS: |Δ| = {delta:.4f} < {args.smoke_bar} ===")
         if args.smoke_only:
@@ -362,11 +408,15 @@ def main() -> int:
 
     manifest_path = args.output_dir / "encode_manifest.jsonl"
     with manifest_path.open("a") as manifest:
-        for i, ts in enumerate(targets, start=1):
-            print(f"\n=== [{i}/{len(targets)}] {ts['stage']}/{ts['render']}/{ts['corpus']} ===")
+        # NOTE: loop var deliberately NOT named `ts` — that would shadow the
+        # issue2061_turnstore module alias inside main().
+        for i, cell in enumerate(targets, start=1):
+            print(
+                f"\n=== [{i}/{len(targets)}] {cell['stage']}/{cell['render']}/{cell['corpus']} ==="
+            )
             t0 = time.time()
             output_path = encode_turnstore(
-                ts,
+                cell,
                 weights=weights,
                 k=k,
                 output_dir=args.output_dir,
@@ -375,14 +425,16 @@ def main() -> int:
                 device=args.device,
                 max_rows=args.max_rows,
                 revision=args.data_revision,
+                state=args.state,
             )
             elapsed = time.time() - t0
             manifest.write(
                 json.dumps(
                     {
-                        "stage": ts["stage"],
-                        "render": ts["render"],
-                        "corpus": ts["corpus"],
+                        "stage": cell["stage"],
+                        "render": cell["render"],
+                        "corpus": cell["corpus"],
+                        "state": args.state,
                         "layer": args.layer,
                         "output_path": str(output_path.relative_to(args.output_dir.parent.parent))
                         if output_path.is_absolute()

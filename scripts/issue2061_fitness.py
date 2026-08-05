@@ -44,6 +44,19 @@ from explore_persona_space.analysis.sparsify_topk_sae import (
     topk_reconstruct,
 )
 
+# Sibling-script imports (bare module names via the script-dir sys.path
+# insert — the issue1336_extract_turnstore.py pattern; works in script mode
+# AND under the tests' `sys.path.insert(scripts)` import). BANKED_PREFIX +
+# the lazy shard-download generator are owned by the P1 encode script (one
+# source of truth for the hub layout); the payload schema/extraction lives
+# in issue2061_turnstore.
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
+
+import issue2061_turnstore as ts  # noqa: E402
+from issue2061_sae_encode import BANKED_PREFIX, iter_local_shards  # noqa: E402
+
 LAYER = 29
 STAGES = ["base", "sft", "dpo", "rlvr", "longer-rlvr"]
 BOS_STRIP = 8  # first 8 positions per #1482 recipe
@@ -60,35 +73,35 @@ def load_lmsys_validation_activations(
     layer: int = LAYER,
     n_val_rows: int = N_VAL_ROWS,
     render: str = "chat",
+    state: str = "answer",
     data_revision: str | None = None,
 ) -> torch.Tensor:
-    """Load ~n_val_rows layer-`layer` context activations from the stage's
-    LMSYS chat turnstore. Applies BOS-strip + outlier-norm filter per the
-    #1482 recipe.
+    """~n_val_rows pooled layer-`layer` rows from the stage's LMSYS turnstore.
+
+    Enumerates ALL `*_shardNNN.pt` files of the turnstore (lazy download via
+    `issue2061_sae_encode.iter_local_shards` — only as many shards as needed
+    are fetched) and extracts one banked state per row via
+    `issue2061_turnstore.extract_state_rows` (fail-loud schema assert; real
+    #1336 write_shards payload). Default `state="answer"` — the a1
+    answer-profile rows, i.e. the SAME pool this pipeline SAE-encodes as the
+    target Y (plan §Design), which is the pool whose cross-stage SAE fitness
+    this P4 gate exists to control.
+
+    NOTE (flagged in the Unit A report): the #1482 recipe's BOS-strip is
+    per-TOKEN-pool semantics; this pool is per-CONVERSATION pooled rows (no
+    BOS row exists — slots/profiles all sit past the BOS position), so the
+    row-level strip below drops the first 8 conversations. Kept for
+    plan-§Design parity; vacuous beyond that.
     """
-    from huggingface_hub import hf_hub_download
-
-    tree_path = f"issue1336_rlvr_ladder/analysis_tensors/turnstore_{stage}_{render}_lmsys23k"
-    shard = hf_hub_download(
-        repo_id="superkaiba1/explore-persona-space-data",
-        filename=f"{tree_path}/turnstore_{stage}_{render}_lmsys23k_shard000.pt",
-        repo_type="dataset",
-        revision=data_revision,
+    tree_path = f"{BANKED_PREFIX}/turnstore_{stage}_{render}_lmsys23k"
+    # Margin above the target so BOS-strip (8 rows) + outlier drops still
+    # leave ~n_val_rows after filtering.
+    x, _conv_ids = ts.load_state_from_shards(
+        iter_local_shards(tree_path, revision=data_revision),
+        state=state,
+        layer=layer,
+        max_rows=n_val_rows + BOS_STRIP + 32,
     )
-    obj = torch.load(shard, map_location="cpu", weights_only=True)
-    if isinstance(obj, dict):
-        for k in [f"context_L{layer}", f"context_layer_{layer}", "context"]:
-            if k in obj:
-                x = obj[k]
-                if x.ndim == 3:
-                    x = x[:, layer, :]
-                break
-        else:
-            raise KeyError(f"No context-layer-{layer} key in {shard}")
-    else:
-        x = obj[:, layer, :] if obj.ndim == 3 else obj
-
-    x = x.float()
     # BOS-strip (first 8 rows of the ordered pool, per #1482).
     if x.shape[0] > BOS_STRIP:
         x = x[BOS_STRIP:]
@@ -139,6 +152,7 @@ def evaluate_stage(
     layer: int = LAYER,
     n_val_rows: int = N_VAL_ROWS,
     device: str = "cuda",
+    state: str = "answer",
     data_revision: str | None = None,
 ) -> dict:
     """Compute FVE/L0/dead_frac for one stage on its LMSYS validation slice."""
@@ -146,12 +160,14 @@ def evaluate_stage(
         stage,
         layer=layer,
         n_val_rows=n_val_rows,
+        state=state,
         data_revision=data_revision,
     ).to(device)
     fve, l0, dead_frac, n = fve_l0_dead(x, weights, k=k)
     return {
         "stage": stage,
         "layer": layer,
+        "state": state,
         "n_rows_used": n,
         "fve": fve,
         "l0_mean": l0,
@@ -220,6 +236,13 @@ def main() -> int:
     parser.add_argument("--stage", type=str, choices=STAGES, default=None)
     parser.add_argument("--all-stages", action="store_true")
     parser.add_argument("--layer", type=int, default=LAYER)
+    parser.add_argument(
+        "--state",
+        type=str,
+        choices=sorted(ts.STATE_SPEC),
+        default="answer",
+        help="Which banked state to evaluate (default: answer — the pool the pipeline encodes).",
+    )
     parser.add_argument("--n-val-rows", type=int, default=N_VAL_ROWS)
     parser.add_argument("--output-dir", type=Path, default=Path("eval_results/issue_2061/fitness"))
     parser.add_argument("--sae-revision", type=str, default=None)
@@ -260,6 +283,7 @@ def main() -> int:
                 layer=args.layer,
                 n_val_rows=args.n_val_rows,
                 device=args.device,
+                state=args.state,
                 data_revision=args.data_revision,
             )
         except Exception as e:
