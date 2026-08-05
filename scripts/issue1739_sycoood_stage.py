@@ -424,12 +424,14 @@ def stream_train_queries(*, max_shards: int | None = None) -> tuple[list[dict], 
     from huggingface_hub import HfApi, hf_hub_download
 
     from explore_persona_space.experiments.issue_1739.constants import HF_DATA_REPO
+    from explore_persona_space.orchestrate import hub
 
+    # Scoped + RETRIED listing (never a bare list_repo_tree): a transient 504 on
+    # a cursor page is un-retried by huggingface_hub, which would abort the whole
+    # 60-shard scan and — with the empty-pool guard below — fail the round.
     api = HfApi()
-    tree = api.list_repo_tree(
-        HF_DATA_REPO, path_in_repo=TRAIN_SHARD_PREFIX, repo_type="dataset", recursive=False
-    )
-    shards = sorted(e.path for e in tree if Path(e.path).name.startswith(TRAIN_SHARD_STEM))
+    paths = hub.list_hf_files_under_path(api, HF_DATA_REPO, TRAIN_SHARD_PREFIX, repo_type="dataset")
+    shards = sorted(p for p in paths if Path(p).name.startswith(TRAIN_SHARD_STEM))
     if max_shards is not None:
         shards = shards[:max_shards]
     if not shards:
@@ -439,7 +441,12 @@ def stream_train_queries(*, max_shards: int | None = None) -> tuple[list[dict], 
     n_records = 0
     t0 = time.time()
     for i, shard in enumerate(shards):
-        local = hf_hub_download(HF_DATA_REPO, shard, repo_type="dataset")
+        # Retried download: a 429/504 on any one of ~60 shards would otherwise
+        # abort the scan mid-stream.
+        local = hub.retry_transient(
+            lambda s=shard: hf_hub_download(HF_DATA_REPO, s, repo_type="dataset"),
+            what=f"download {shard}",
+        )
         try:
             with open(local, encoding="utf-8") as fh:
                 for line in fh:
