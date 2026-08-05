@@ -8460,8 +8460,8 @@
     "2093": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2093",
-      "status": "proposed",
+      "path": "tasks/planning/2093",
+      "status": "planning",
       "title": "curate near-ceiling agent-memory indexes (merge duplicates, retire superseded)"
     },
     "21": {
