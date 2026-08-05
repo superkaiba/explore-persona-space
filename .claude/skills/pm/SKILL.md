@@ -136,7 +136,7 @@ flow. The PM's job is dispatch, not execution.
       human tasks, papers to read (`~/lit-review/` digest +
       `to-read.md` + `docs/papers.md` queued), Wednesday mentor-meeting
       prep (`/mentor-update-slides`; week-scale consolidation now runs
-      nightly in `/daily`, `/weekly` is a manual deep-dive only),
+      nightly in `/daily` — the `weekly` skill was retired 2026-08-05),
       proposed-queue pruning (gated on the TRUE `proposed` count — NOT
       inflated by `on_hold`; route the archive pass at `on_hold`
       instead when it is the parked backlog that warrants pruning),

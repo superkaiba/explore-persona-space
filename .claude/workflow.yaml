@@ -3225,7 +3225,7 @@ workflow_fix_on_bug:
     # an in-scope URL-extractor fix.
     - "scripts/verify_uploads.py"
     - "scripts/audit_clean_results_body_discipline.py"
-    # The gist-publish PII redactor (daily/weekly update skills; also the
+    # The gist-publish PII redactor (the daily update skill; also the
     # documented remediation path of the pre-commit secret-shaped-string
     # gate) + that gate itself. Added 2026-06-11 (#542): the list predated
     # both and the omission nearly deflected an in-scope fix for the

@@ -761,8 +761,8 @@ adding a pass means adding a numbered item here AND bumping the digit:
    :func:`_triage_observer_sweep_issue` then filters to
    ``{awaiting_promotion, reviewing}`` with ``has_clean_result: true``;
    events.jsonl-mtime freshness gate ``EPM_UNFOLDED_ROUND_LOOKBACK_H``
-   (default 336h / 14d — covers a mentor-break park while the /daily and
-   /weekly sweeps own anything older). Hourly self-gate
+   (default 336h / 14d — covers a mentor-break park while the /daily
+   sweep owns anything older). Hourly self-gate
    (``EPM_UNFOLDED_ROUND_INTERVAL_HOURS``, 1h; attempt-stamp saved BEFORE
    collecting so a crashing evaluation is bounded to one error sidecar
    row per interval — the registry-drift precedent). Dedicated sidecar
@@ -6955,7 +6955,7 @@ PHRASE_WINDOW_LINES: int = 2
 #: task (default 14d). #1639 sat 2 days pre-detection — the FLOOR is
 #: >= ~72h; 14d covers a long weekend + a week of un-monitored parking
 #: (mentor-break shape). Beyond 14d, a body carrying a stale pending
-#: phrase is presumed truly abandoned (the /daily and /weekly sweeps own
+#: phrase is presumed truly abandoned (the /daily sweep owns
 #: that class). Env EPM_UNFOLDED_ROUND_LOOKBACK_H, read at CALL time.
 UNFOLDED_ROUND_LOOKBACK_H: float = 336.0
 #: Self-gate throttle. Sub-hour recurrence provides no operational value
@@ -9531,7 +9531,7 @@ def partial_bundle_pass(dry_run: bool) -> bool:
 # fresh outage detected 30 min after the last read doesn't wait ~23h to fire,
 # but 10-min-tick cadence is unnecessary since the alert threshold is 24h).
 # The count only enters the push text; a slightly stale count between the
-# hourly refresh and the next daily/weekly push is fine.
+# hourly refresh and the next daily push is fine.
 CODEX_OUTAGE_INTERVAL_HOURS = 1.0
 # First-alert threshold since detected_at_iso — 24h gives a full working day
 # of "give the outage a chance to self-resolve" before paging the operator on

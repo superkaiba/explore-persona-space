@@ -34,7 +34,7 @@ A thing is ONE or the OTHER, never both.
 ## Use a Skill when ALL of these hold
 
 - The task is a workflow or convention that any agent might follow.
-  Example: `paper-plots` (chart-building protocol), `weekly` (parallel
+  Example: `paper-plots` (chart-building protocol), `daily` (nightly
   fan-out orchestrator), `clean-results` (manual consolidation steps).
 - No fresh-context requirement — it's fine for the caller to see it all.
 - The "knowledge" is reusable reference material, not a persona.
@@ -157,9 +157,7 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `clean-results` | Manual consolidation / promotion protocol |
 | `paper-plots` | Chart-building reference patterns + style spec |
 | `daily` | Daily fan-out orchestrator: spawns parallel subagents (today: daily summary), each emits its own gist |
-| `weekly` | Weekly fan-out orchestrator: spawns parallel subagents (summary, workflow-optimization, code-hygiene, mentor-prep), each emits its own gist |
 | `experiment-runner` | Pre-flight + monitoring protocol for ML runs |
-| `auto-experiment-runner` | Overnight queue automation |
 | `experiment-proposer` | Prioritization ranking |
 | `ideation` | Brainstorming protocol |
 | `independent-reviewer` | Shared Principles-of-Honest-Analysis reference for analyzer + clean-result-critic (formerly: + reviewer, retired 2026-05-13) |

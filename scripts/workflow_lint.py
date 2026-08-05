@@ -2897,7 +2897,7 @@ def _resolve_autonomous_ask_target_files(roots: list[Path] | None) -> list[Path]
     """The autonomous-asks check is narrower than ``check_asks``: it only
     scopes to ``.claude/skills/issue/SKILL.md`` (the per-issue orchestrator
     that ever runs in autonomous mode) and the agents it dispatches. Other
-    skills (``/daily``, ``/weekly``, ``/pm``, etc.) never run under
+    skills (``/daily``, ``/pm``, etc.) never run under
     ``EPM_AUTONOMOUS_SESSION``, so an AskUserQuestion in them is fine
     without the autonomous-mode annotation.
     """
@@ -9792,8 +9792,9 @@ def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
     fence, ANY fence line with the SAME token CLOSES it (the closer's tag is
     ignored), while a DIFFERENT-token fence line is body content (the
     CommonMark reading). The naive "closer = same token with EMPTY tag" rule
-    demonstrably desyncs on the live nested-fence shape at
-    ``.claude/skills/weekly/SKILL.md:196-204`` (an outer ```` ```markdown ````
+    demonstrably desyncs on the nested-fence shape formerly at
+    ``.claude/skills/weekly/SKILL.md:196-204`` (skill retired 2026-08-05;
+    the shape is preserved in the fixture test) (an outer ```` ```markdown ````
     fence whose body contains an inner ```` ```diff ```` fence): the inner
     tagged line must CLOSE the outer fence, or the bare ```` ``` ```` two
     lines later opens a phantom fence that swallows the git-bearing

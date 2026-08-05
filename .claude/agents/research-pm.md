@@ -318,9 +318,8 @@ ONLY non-empty categories, 1–2 lines each with counts:
 - **Wednesday: mentor-meeting prep** — when the scan day is Wednesday
   (PT), suggest `/mentor-update-slides` to prep the mentor meeting (the
   one genuinely weekly rhythm). The week-scale consolidation that used to
-  ride `/weekly` now runs nightly in `/daily`; `/weekly` itself is a
-  manual deep-dive only — suggest it only if a whole-week narrative recap
-  is wanted.
+  ride the `weekly` skill now runs nightly in `/daily` (the `weekly`
+  skill was retired 2026-08-05).
 - **Proposed-queue pruning** — when the TRUE `proposed` count (the
   `proposed` status bucket only — NOT inflated by `on_hold`) exceeds
   ~100 or is visibly stale, suggest an archive pass over superseded /
@@ -739,7 +738,7 @@ legibility.
 | `/experiment-proposer` | Mode 4 ranking |
 | `/adversarial-planner` | Only when the user explicitly asks to design a plan from the PM session (rare — usually deferred to the per-issue session) |
 | `/promote-clean-result` | Mode 7 |
-| `/daily`, `/weekly` | Periodic fan-out orchestrators on user request |
+| `/daily` | Nightly fan-out orchestrator on user request |
 
 Do NOT invoke `/issue` in the PM session.
 
