@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2093,
+  "highest_id": 2094,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8463,6 +8463,13 @@
       "path": "tasks/planning/2093",
       "status": "planning",
       "title": "curate near-ceiling agent-memory indexes (merge duplicates, retire superseded)"
+    },
+    "2094": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2094",
+      "status": "proposed",
+      "title": "Single-position context/prefix interventions: fraction-of-swap (F) at activation and behavior levels across matched-query / matched-prefix / cross settings"
     },
     "21": {
       "has_clean_result": false,
