@@ -1,3 +1,12 @@
+---
+description: Full workflow-fix-on-bug protocol (candidate emission, filing, dedup, recursion guard); the CLAUDE.md Critical-Rules bullet is the always-on summary
+paths:
+  - "scripts/file_infra_task.py"
+  - "scripts/sweep_parked_wf_candidates.py"
+  - "scripts/daily_drive_filings.py"
+  - "src/explore_persona_space/task_workflow.py"
+---
+
 # Workflow-fix-on-bug protocol
 
 When any agent — subagent or orchestrator — hits a bug caused by a gap

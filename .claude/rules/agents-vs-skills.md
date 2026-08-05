@@ -1,3 +1,10 @@
+---
+description: Agent-vs-skill casting rule + the current ontology tables; apply when creating or restructuring anything under .claude/
+paths:
+  - ".claude/agents/**"
+  - ".claude/skills/**"
+---
+
 # When to use an Agent vs a Skill
 
 A distinction that kept getting muddled. Apply this rule when creating or
