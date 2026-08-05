@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2097,
+  "highest_id": 2098,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8492,6 +8492,13 @@
       "path": "tasks/proposed/2097",
       "status": "proposed",
       "title": "workflow-fix: mechanize local-disk headroom for staging + VM fits"
+    },
+    "2098": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2098",
+      "status": "proposed",
+      "title": "workflow-fix: clarify --map-files takes one list-file path"
     },
     "21": {
       "has_clean_result": false,
