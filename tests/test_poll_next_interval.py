@@ -526,6 +526,15 @@ def test_skill_sleep_chain_clamped_at_540_per_call() -> None:
     # else-arm, so a future reword cannot invert the fail-toward-coverage
     # default (non-1800 / missing / unparseable -> the fixed 540s chain).
     assert skill.index('result.get("next_interval") == 1800') < skill.index("interval = 540")
+    # Both-sources phrasing: after #1924 the tick JSON arrives from either
+    # a bg-Bash exit OR the quiet-wait Monitor notification. The Step 6d.2
+    # prose must name BOTH sources so a byte-precise reader cannot
+    # conclude `result` is only set from bg-Bash ticks (#1996).
+    assert "quiet-wait Monitor" in skill
+    assert (
+        "bg-Bash exit OR quiet-wait Monitor" in skill
+        or "bg-Bash exit or quiet-wait Monitor" in skill
+    )
 
 
 def test_main_json_line_includes_next_interval(

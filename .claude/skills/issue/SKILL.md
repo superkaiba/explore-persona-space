@@ -4838,9 +4838,11 @@ Post `epm:launch v1` containing:
 ##### Step 6d.2: Orchestrator polling loop (bg-Bash chained)
 
 Enter a polling loop that runs in THIS orchestrator's context. Each tick
-is a single bg-Bash call that sleeps then runs the BACKEND-AGNOSTIC
-poller once; the harness re-invokes the orchestrator when the bg-Bash
-exits, which is when one tick has completed:
+delivers ONE tick-JSON line via one of two harness-re-invocation sources
+— either a bg-Bash exit (the fixed 540s chain, the default) or the
+#1924 quiet-wait Monitor's terminal-stdout notification (the sanctioned
+long-wait shape when `next_interval == 1800`). Both sources feed the
+SAME `result` variable and route identically:
 
 **Trigger-dense tag adoption (at loop entry, BEFORE the first tick —
 #1587; the producer side of the #1556/#1574 digest chain).** Apply the
@@ -4932,10 +4934,11 @@ while True:
     # `next_interval` falls to the fixed 540s chain (fail toward
     # coverage).
     #
-    # `result` below = the parsed JSON line from the PREVIOUS tick's
-    # bg-Bash output (the same `result` the status branch below reads);
-    # its `next_interval` field is the quiet-wait branch key — it never
-    # sets a bg-Bash sleep.
+    # `result` below = the parsed JSON line from the PREVIOUS tick — either
+    # the bg-Bash exit's stdout (fixed 540s else-arm) OR the quiet-wait
+    # Monitor's terminal-stdout notification (#1924 branch, the same
+    # `result` the status branch below reads); its `next_interval` field
+    # is the quiet-wait branch key — it never sets a bg-Bash sleep.
     quiet_wait = (
         result is not None
         and result.get("status") == "running"
@@ -4981,14 +4984,16 @@ while True:
                 f"sleep {interval} && uv run python scripts/backend_poll.py --issue {N}"
             ),
         )
-    # Harness re-invokes orchestrator on bg-Bash exit. To WAIT on bg
+    # Harness re-invokes orchestrator on bg-Bash exit OR quiet-wait Monitor
+    # notification (#1924 — the wait+poll runs in one unit, so the
+    # Monitor's terminal stdout IS the tick JSON). To WAIT on bg
     # work, simply END THE TURN with a one-sentence status — NEVER emit
     # no-op Bash calls to idle (`sleep 1` "yield turn", `true` no-ops):
     # each burns a tool call + context for nothing (33x and 49x in two
-    # 2026-06-10 sessions). Read the JSON line from stdout (the LAST
-    # line of the bg-Bash output — parse per § Tick-parse
-    # field-preservation below; a status-only parse is BANNED) and
-    # decide:
+    # 2026-06-10 sessions). Read the JSON line from stdout — the LAST line
+    # of either source (bg-Bash exit output or the quiet-wait Monitor
+    # notification, #1924) — parse per § Tick-parse field-preservation
+    # below; a status-only parse is BANNED. Decide:
     #
     #   status == "done"           -> exit loop; transition to status:verifying; go to Step 7.
     #   status == "gate"           -> a pod-side sentinel carried a non-empty
