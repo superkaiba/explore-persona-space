@@ -1,7 +1,6 @@
 ---
-title: 'Scale makes the answer profile more reliable, not more predictable from context:
-  ceiling-normalized map R² is near-flat from 1.5B to 14B and drops at 32B (MODERATE
-  confidence)'
+title: Scale makes a model's answer profile more reliable, not more predictable from
+  its context (MODERATE confidence)
 kind: experiment
 tags:
 - context-geometry
