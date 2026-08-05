@@ -2,7 +2,8 @@
 title: 'Deterministic vs stochastic decoding: answer-vector variance, mapping quality,
   and behavioral-expression prediction'
 kind: experiment
-tags: []
+tags:
+- trigger-dense
 created_at: '2026-08-05T19:42:24Z'
 has_clean_result: false
 parent_id: 1073
