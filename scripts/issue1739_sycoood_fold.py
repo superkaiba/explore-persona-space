@@ -164,13 +164,41 @@ def _rank_survival(summary: list[dict], ref_rung: str = "aita") -> list[dict]:
     return out
 
 
-def _wildchat_reference(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
-    rows = json.loads(path.read_text()).get("coverage", [])
-    return [
-        r for r in rows if r.get("behavior") == "sycophancy" and r.get("rung") == "wildchat_rung"
-    ]
+def _wildchat_reference(path: Path, round3_root: Path | None = None) -> list[dict]:
+    out: list[dict] = []
+    if path.exists():
+        rows = json.loads(path.read_text()).get("coverage", [])
+        out += [
+            {**r, "source": "armfill_round/coverage.json"}
+            for r in rows
+            if r.get("behavior") == "sycophancy" and r.get("rung") == "wildchat_rung"
+        ]
+    if round3_root is not None:
+        for variant in ("context_end", "prefix_end"):
+            f = (
+                round3_root
+                / f"sycophancy_wildchat_rung_{variant}/wildchat_rung/sycophancy/all_arms_spearman.json"
+            )
+            if not f.exists():
+                continue
+            for r in json.loads(f.read_text()).get("transfer_rows", []):
+                if r.get("rho_frozen") is None:
+                    continue
+                out.append(
+                    {
+                        "behavior": "sycophancy",
+                        "rung": "wildchat_rung",
+                        "variant": variant,
+                        "arm": r.get("arm"),
+                        "rho_frozen": r.get("rho_frozen"),
+                        "ci_lo": (r.get("ci_frozen") or [None, None])[0],
+                        "ci_hi": (r.get("ci_frozen") or [None, None])[1],
+                        "n_eval": r.get("n_eval"),
+                        "layer": r.get("layer"),
+                        "source": "armfill_round3/arms101718",
+                    }
+                )
+    return out
 
 
 def _figures(summary, ceilings, out_dir: Path, variant: str, regime: str):
@@ -287,7 +315,10 @@ def main() -> int:
     summary = _aggregate(metrics["metric_rows"], budget_l=args.budget)
     ceilings = _ceilings(Path(args.base_dv), Path(args.new_dv))
     rank = _rank_survival(summary)
-    wc = _wildchat_reference(Path(args.wildchat_coverage))
+    wc = _wildchat_reference(
+        Path(args.wildchat_coverage),
+        round3_root=Path("eval_results/issue_1739/armfill_round3/arms101718"),
+    )
 
     payload = {
         "behavior": "sycophancy",
