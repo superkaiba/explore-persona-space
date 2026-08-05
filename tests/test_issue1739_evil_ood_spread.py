@@ -724,6 +724,54 @@ def test_holdout_rung_production_wires_pre_phase_rss_guard() -> None:
     assert "map_fit=False" in src
 
 
+def test_holdout_ridge_folds_default_is_arm10_compatible() -> None:
+    """The default --ridge-folds is 'all' -> ridge_folds=None: the holdout
+    roster is FIXED all-16 incl. arm10_stacked, which needs ridge preds on
+    EVERY fold. Pre-fix the transfer call hardcoded ridge_folds=(0,) and the
+    2026-08-05 18:38:46Z run died at arms.py's contract violation AFTER a
+    full CV pass (rc=1). 'all' also pins comparability with armfill's OOD
+    arm10 rows (--ridge-folds all, markers v430/v450)."""
+    import scripts.issue1739_holdout_rung as hr
+
+    args = hr._parse_args([])
+    assert args.ridge_folds == "all"
+    assert hr._ridge_folds_arg(args) is None
+    # the discarded-skip opt-out still maps to (0,) for arm10-free rosters
+    args_skip = hr._parse_args(["--ridge-folds", "discarded-skip"])
+    assert hr._ridge_folds_arg(args_skip) == (0,)
+
+
+def test_holdout_startup_validation_refuses_arm10_with_fold_subset() -> None:
+    """_validate_ridge_folds_roster fails at STARTUP (seconds) on the
+    arm10 + fold-subset incompatibility that pre-fix only surfaced at the
+    transfer pass, 25+ min in (after the CV pass)."""
+    import pytest as _pytest
+
+    import scripts.issue1739_holdout_rung as hr
+
+    roster_with_arm10 = ["arm1_ctx_e1", "arm10_stacked", "arm16_surface_feat"]
+    with _pytest.raises(RuntimeError, match="arm10_stacked"):
+        hr._validate_ridge_folds_roster(roster_with_arm10, (0,))
+    # all-fold ridge preds: compatible with arm10
+    hr._validate_ridge_folds_roster(roster_with_arm10, None)
+    # arm10-free roster: the fold subset is legal
+    hr._validate_ridge_folds_roster(["arm1_ctx_e1", "arm4_ridge_ctx"], (0,))
+
+
+def test_holdout_transfer_call_threads_ridge_folds() -> None:
+    """The transfer-pass run_cell_multi call threads the validated
+    ridge_folds variable — the pre-fix hardcoded literal (0,) is banned
+    (it is what bypassed the startup validation's premise and killed the
+    18:38:46Z run at arms.py:784)."""
+    import inspect
+
+    import scripts.issue1739_holdout_rung as hr
+
+    src = inspect.getsource(hr._fit_eval_variant)
+    assert "ridge_folds=ridge_folds" in src
+    assert "ridge_folds=(0,)" not in src
+
+
 # ---------------------------------------------------------------------------
 # Pilot-judge selection + spread-instrument pins (task #1739 item-A gate).
 #

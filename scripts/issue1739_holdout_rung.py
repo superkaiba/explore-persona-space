@@ -17,7 +17,9 @@ the SAME labeled activation store / DV dataset the committed sibling
    (``run_cell_multi`` — batched matrix ops, multi-regime shared rb-indep
    work), using group-level folds (N_FOLDS) for train-side frozen-layer
    selection, then scores the held-out cluster transfer-style (fold-2
-   train-vs-eval cell, ``ridge_folds=(0,)``).
+   train-vs-eval cell; ``--ridge-folds`` mirrors the armfill sibling and
+   defaults to ``all`` because the fixed all-16 roster carries
+   ``arm10_stacked``, which needs ridge preds on EVERY fold).
 4. Evaluates on the held-out cluster: Spearman rho(arm score, DV) per arm +
    detection metrics (AUROC / AP / precision@k, k=10,50; binarized at the
    bottom-bin boundary ``dv >= GATE2_BOTTOM_BIN_EDGE``) with N_BOOT=500
@@ -212,6 +214,42 @@ def _select_holdout(
 
 
 # ---------------------------------------------------------------------------
+# ridge-folds threading (mirrors scripts/issue1739_rescore_ood_armfill.py)
+# ---------------------------------------------------------------------------
+
+
+def _ridge_folds_arg(args: argparse.Namespace) -> tuple[int, ...] | None:
+    """None when --ridge-folds all (the default here).
+
+    arm10_stacked needs ridge predictions on EVERY fold; under the transfer
+    leg's ``(0,)`` discarded-fold skip ``run_cell_multi`` RAISES, so arm10
+    cannot be scored without ``all``. Outputs for the other arms are unchanged
+    either way -- ``(0,)`` only avoids computing a fold whose predictions are
+    discarded -- at the cost of one extra Gram+eigh per cell. Mirrors the
+    armfill sibling's ``_ridge_folds_arg`` (which ran the OOD legs with
+    ``--ridge-folds all``, the comparability pin for arm10 rows).
+    """
+    return None if getattr(args, "ridge_folds", "all") == "all" else (0,)
+
+
+def _validate_ridge_folds_roster(roster: list[str], ridge_folds: tuple[int, ...] | None) -> None:
+    """Fail at STARTUP on an arm10/ridge_folds mismatch, not after the CV pass.
+
+    ``arms.run_cell_multi`` raises the same contract violation, but only when
+    the TRANSFER pass reaches it -- 25+ min after launch (the 2026-08-05
+    18:38:46Z rc=1: a full CV pass completed, then the transfer call died at
+    arms.py's ``arm10_stacked needs ridge preds on EVERY fold``). This guard
+    runs before any store/U-pool work so the incompatibility costs seconds.
+    """
+    if "arm10_stacked" in roster and ridge_folds is not None:
+        raise RuntimeError(
+            "arm10_stacked needs ridge preds on EVERY fold (no ridge_folds "
+            "subset): pass --ridge-folds all (the default), or drop arm10 "
+            "from the roster -- refusing at startup rather than after the CV pass"
+        )
+
+
+# ---------------------------------------------------------------------------
 # frozen linear-map loader (main-grid persisted map; scripts/issue1739_fits._save_map)
 # ---------------------------------------------------------------------------
 
@@ -318,8 +356,13 @@ def _fit_eval_variant(
     n_perm: int,
     seed: int,
     device: str,
+    ridge_folds: tuple[int, ...] | None = None,
 ) -> tuple[list[dict], list[dict], list[dict], list[dict]]:
     """One variant: CV frozen-layer selection on non-holdout, transfer-score holdout.
+
+    ``ridge_folds`` threads to the TRANSFER pass only (the CV pass always fits
+    every fold); ``None`` (all folds) is REQUIRED whenever ``arm10_stacked``
+    is in the roster -- validated at startup by ``_validate_ridge_folds_roster``.
 
     Returns ``(metric_rows, perm_rows, preds_rows, skip_rows)``. The frozen
     layer per (regime, arm) is selected on the NON-holdout OOF Spearman only
@@ -409,7 +452,7 @@ def _fit_eval_variant(
     )
     _log(f"[{variant}] transfer pass: {n_tr} train rows -> {n_ev} holdout rows")
     t0 = time.time()
-    tr_out = arms.run_cell_multi(datas, cell_t, arms=roster, device=device, ridge_folds=(0,))
+    tr_out = arms.run_cell_multi(datas, cell_t, arms=roster, device=device, ridge_folds=ridge_folds)
     _log(f"[{variant}] transfer pass done in {time.time() - t0:.1f}s")
 
     dv_ev = np.asarray(dv, dtype=np.float64)[hold_idx]
@@ -702,6 +745,11 @@ def _run_production(args: argparse.Namespace) -> int:
 
     roster = [a for a in arms.ARM_REGISTRY if a in set(_ALL16_NAMES)]
     _log(f"arm roster ({len(roster)}): {roster}")
+    ridge_folds = _ridge_folds_arg(args)
+    _validate_ridge_folds_roster(roster, ridge_folds)
+    _log(
+        f"ridge folds: {args.ridge_folds!r} -> {ridge_folds!r} (arm10-compatible: {ridge_folds is None})"
+    )
     regimes = list(args.regimes)
 
     all_metric_rows: list[dict] = []
@@ -798,6 +846,7 @@ def _run_production(args: argparse.Namespace) -> int:
             n_perm=n_perm,
             seed=seed,
             device=args.device,
+            ridge_folds=ridge_folds,
         )
         all_metric_rows.extend(m_rows)
         all_perm_rows.extend(p_rows)
@@ -827,6 +876,7 @@ def _run_production(args: argparse.Namespace) -> int:
             "n_folds": n_folds,
             "seed": seed,
             "store_revision": revision,
+            "ridge_folds": args.ridge_folds,
             "pos_rule": f"dv >= {floor_edge} (bottom-bin boundary, gates.py)",
             "no_map_arms": bool(args.no_map_arms),
             "no_text_arms": bool(args.no_text_arms),
@@ -937,6 +987,7 @@ def _run_smoke(args: argparse.Namespace) -> int:
             n_perm=SMOKE_N_PERM,
             seed=int(args.seed),
             device="cpu",
+            ridge_folds=_ridge_folds_arg(args),
         )
         metric_rows.extend(m_rows)
         perm_rows.extend(p_rows)
@@ -1025,6 +1076,17 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--min-cluster-n", type=int, default=HOLDOUT_MIN_N_DEFAULT)
     ap.add_argument("--min-cluster-sd", type=float, default=HOLDOUT_MIN_SD_DEFAULT)
+    ap.add_argument(
+        "--ridge-folds",
+        choices=("discarded-skip", "all"),
+        default="all",
+        help=(
+            "'all' -> ridge_folds=None on the transfer pass, REQUIRED for "
+            "arm10_stacked (the fixed all-16 roster carries it; armfill's OOD "
+            "legs ran --ridge-folds all -- the arm10 comparability pin). "
+            "'discarded-skip' -> (0,) is legal only for arm10-free rosters."
+        ),
+    )
     ap.add_argument("--n-boot", type=int, default=None, help="default: constants.N_BOOT")
     ap.add_argument("--n-perm", type=int, default=None, help="default: constants.N_PERM")
     ap.add_argument("--n-folds", type=int, default=None, help="default: constants.N_FOLDS")
