@@ -30,6 +30,22 @@ paths:
 > the `cpu5m-16-128` row; the #677 typed terminal stays as the fail-loud
 > floor for a future unmapped CPU intent).
 
+> **#2054 — RUNPOD IS THE FIRST AUTO LANE (user directive 2026-08-05:
+> "make sure that STARTING A NEW POD THROUGH ANTHROPIC SAETY ORG IS FIRST
+> RESORT").** The RunPod team account is the shared Anthropic
+> fellows/safety org pool — a sponsored pool, not discretionary spend — so
+> `DEFAULT_AUTO_LANE_ORDER` now leads with `runpod`
+> (`("runpod", "fellows", "nibi", "fir", "mila")` flag-ON;
+> `("runpod", "fellows", "gcp", "nibi", "fir", "mila")` under the #2028
+> rollback build). The runpod-first lane launches via the SAME machinery as
+> the #656 terminal rung (`reason: auto_runpod_first`); a capacity miss
+> with nothing provisioned falls through to the lanes behind it, and the
+> terminal rung SURVIVES as the end-of-chain RunPod retry
+> (`reason: auto_fallback_runpod`). Every GCP→RunPod FAILOVER trigger below
+> is unchanged. The local `pod_lifecycle` account-$/hr cap guard became
+> ADVISORY-ONLY in the same change (it can never refuse or stall a
+> provision; the RunPod console cap is the enforcement point).
+
 CLAUDE.md § "Compute backends — multi-lane router" carries the always-on
 summary; this file is the full policy + the #658 motivating incident, and
 loads when you touch the router / GCP backend code. The router module
@@ -407,9 +423,10 @@ Five distinct GCP-failure paths, ALL ending at the same
   (#680; see "Ladder order" below — short jobs spot A100-80 → spot A100-40
   → flex-start A100-80 → on-demand A100-80 → on-demand A100-40; long /
   unknown jobs flex-start A100-80 → on-demand A100-80 → on-demand A100-40,
-  NO spot), then the free SLURM lanes, then falls through to RunPod as the
-  LAST rung (`reason: auto_fallback_runpod`, #656). RunPod never first,
-  never skipping a cheaper rung. The A100-40 rungs are fits-40 intents
+  NO spot), then the free SLURM lanes, then falls through to the RunPod
+  terminal rung (`reason: auto_fallback_runpod`, #656) — since #2054 an
+  end-of-chain RETRY (RunPod already led the order as lane 1,
+  `reason: auto_runpod_first`). The A100-40 rungs are fits-40 intents
   only, and — #1468 — only when the dispatch declares no
   `--min-gpu-mem-gb` above `gcp.A100_40_USABLE_GIB` = 38 GiB (incident
   #1315: HF+vLLM co-residency died at engine init on the 39.49 GiB card).
@@ -487,23 +504,107 @@ artifacts on an explicit `--backend <slurm>` pin) STILL surfaces
 `WorkloadSurfacedError` (it is not GCP; no failover) → `failure_class:
 code` → `status:blocked`.
 
+### Cross-session pivot — resolve the owner before provisioning (#2067)
+
+**A pivoting session that provisions a pod on a task it does not own MUST
+first resolve the owner.** A durable marker alone does NOT wake a live
+owner: on 2026-08-03 a session pivoted #1345's lane and provisioned
+`pod-1345-charcapa` (8×H200) recording only an `epm:progress` marker; the
+owning session kept waiting on the abandoned fellows queue (~20h out) while
+the pod sat 74+ min at 0% GPU (~$54) until a third session found the orphan.
+"I do not own this task" means: this session is not the registered /
+issue-mapped session for task N (check `scripts/spawn_session.py list`'s
+issue column), and it was not spawned to run `/issue N`.
+
+**Pre-pivot owner resolution (tri-state — the pivoter-side sibling of the
+#1667 `_wedge_owner_live` probe).** Resolve the owner to LIVE | DEAD |
+UNKNOWN from three evidence sources, ALL read fresh at pivot time:
+
+- **Registration:** a registration file for task N exists —
+  `~/.eps-autonomous/issue-<N>.json` (autonomous spawn) or
+  `~/.eps-autonomous/manual-issue-<N>.json` (`spawn_session.py
+  register-current`) — naming a `happy_session_id` that
+  `spawn_session.py list` still shows as a live session; a cwd-mapped
+  daemon child on the issue worktree counts the same as a registration.
+- **Recent markers:** any non-watcher marker on task N's events within
+  the last 2h (the `EPM_WEDGE_OWNER_RECENT_H` window #1667 uses) — read
+  via `task.py view <N> --json`, excluding watcher-posted kinds.
+- **Transcript freshness:** the registered session's transcript mtime
+  within the same 2h window.
+
+LIVE = a live registered/cwd-mapped session exists (regardless of
+transcript age) OR any recent non-watcher marker within the window.
+DEAD = registration absent-or-stale (no live session for the recorded
+`happy_session_id`) AND no non-watcher marker within the window AND no
+fresh transcript. UNKNOWN = any evidence source unreadable (list RPC
+failure, marker read failure, missing daemon) — never coerce a read
+failure to DEAD.
+
+**Action table:**
+
+| Owner state | Pivoting session does |
+|---|---|
+| **LIVE** | REFUSE the pivot — do NOT provision. Post `epm:progress` on N (`pivot-refused: owner <sid> LIVE via <evidence>; proposed lane <old> -> <new>`) so the owner's next marker read sees the proposal; the LIVE owner decides its own lane. Never `spawn_session.py stop` a LIVE owner to clear the way. |
+| **DEAD** | SANCTIONED TAKEOVER, in order: (1) `spawn_session.py stop --session-id <sid>` on the dead owner's session id if one is registered (clean stop; auto-unregisters, #1455) — else `spawn_session.py unregister --issue N` for a stale registration (never `rm` on `~/.eps-autonomous/`); (2) post the takeover marker (recording contract below); (3) cancel/tear down the abandoned lane's queued work (e.g. `scancel` the SLURM job) so the old lane cannot double-run — **on teardown FAILURE, do NOT proceed to (4)**: HOLD the provision (refuse this pivot), record the teardown-failure in the takeover marker's `residual` field (`residual=lane-teardown-failed: <cmd> exit <rc>`), and surface for user triage. Provisioning past a live abandoned-lane job re-opens the double-run risk this rule exists to close; (4) provision. |
+| **UNKNOWN** | REFUSE — treat as LIVE (the fail-safe direction, mirroring #1667: uncertainty never licenses the destructive/irreversible arm). Post the same `pivot-refused` marker with `owner UNKNOWN via <which read failed>`; retry resolution next tick or surface to the user. |
+
+**Recording contract.** Every resolution outcome posts ONE
+`epm:progress` marker on task N via `task.py post-marker` BEFORE any
+provision, note grammar:
+`pivot-ownership: <refused|takeover>; owner=<sid|none>; state=<LIVE|DEAD|UNKNOWN>; evidence=<registration|markers|transcript reads, one clause each>; lane <old> -> <new>; by-session=<this sid>`.
+On a DEAD takeover the marker is posted AFTER the stop/unregister and
+BEFORE the provision, so any concurrent reader sees ownership already
+resolved to the pivoter. The marker is the durable RECORD; the
+stop/unregister is what actually prevents the dead owner's respawn from
+re-claiming the lane — neither substitutes for the other.
+
+**Relation to the #1667 wedge owner-liveness guard (Part C watcher
+backstop):** #1667 is WATCHER-side — it gates terminate-vs-defer on an
+already-wedged pod; #2067 is PIVOTER-side — it gates
+provision-vs-abort/takeover before a pod exists. Two different call
+sites, one shared conceptual probe (tri-state owner liveness, literal-DEAD
+required for the irreversible arm, uncertainty fails safe).
+
+**Race note — owner returns alive between DEAD determination and
+`spawn_session.py stop`.** The DEAD arm is guarded by TRIPLE
+simultaneous evidence (registration absent-or-stale AND no non-watcher
+marker within 2h AND no fresh transcript), so a mis-classification would
+require all three sources reading stale at the same instant an owner is
+in fact live — an adversarial contrivance, not a normal-operation shape.
+The residual race (owner genuinely dies, then respawns during the ~1s
+window between DEAD determination and `spawn_session.py stop`) degrades
+safely: `stop`'s auto-unregister (#1455) prevents the respawned owner
+from re-claiming ownership, and the takeover marker posted BEFORE
+`provision` is the durable record any concurrent reader sees. The window
+is therefore safe by construction — no split-ownership can arise from
+this race.
+
+**Sibling rule:** CLAUDE.md § teammate coordination ("one implementer per
+file set") — the compute analogue: one owner per task's compute; never
+provision into split-ownership.
+
 ### Ladder order (length-aware, #680)
 
-NOTE (#1609/#2028): under the standing auto default the free `fellows`
-(charmander H200) SLURM lane leads and the auto order carries NO gcp rung —
-`DEFAULT_AUTO_LANE_ORDER = ("fellows", "nibi", "fir", "mila")` (#2028; the
-5-lane fellows-then-GCP order `("fellows", "gcp", "nibi", "fir", "mila")` is
-the flag-off rollback build) — so a fellows capacity miss /
+NOTE (#1609/#2028/#2054): under the standing auto default the RUNPOD lane
+leads (#2054 — the Anthropic-org pool; a capacity miss falls through), then
+the free `fellows` (charmander H200) SLURM lane, and the auto order carries
+NO gcp rung —
+`DEFAULT_AUTO_LANE_ORDER = ("runpod", "fellows", "nibi", "fir", "mila")`
+(#2028/#2054; the runpod-first 6-lane order
+`("runpod", "fellows", "gcp", "nibi", "fir", "mila")` is the flag-off
+rollback build) — so a fellows capacity miss /
 dead endpoint / PENDING-at-cap park (after the granted-QoS ladder
 high-eur → normal-eur → low-eur park-fails on the AUTO path, #1899:
 scancel + re-submit per `ClusterConfig.qos_ladder` rung, fallback rungs
 parked `EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS` — default 300 s — each;
 explicit `backend: fellows` pins never walk the ladder) advances to the
 free DRAC/Mila lanes (this GCP ladder is entered only under the flag-off
-rollback); RunPod stays the terminal rung. Fellows rollback: flip the
+rollback); RunPod stays the terminal RETRY rung behind its #2054
+first-lane position. Fellows rollback: flip the
 fellows `CLUSTER_CONFIGS` row to `available=False` or set
-`EPM_AUTO_LANE_ORDER=nibi,fir,mila` (both instant, no code revert; a `gcp`
-entry in the env order raises while `GCP_PROVISIONING_DISABLED` is on).
+`EPM_AUTO_LANE_ORDER=runpod,nibi,fir,mila` (both instant, no code revert; a
+`gcp` entry in the env order raises while `GCP_PROVISIONING_DISABLED` is
+on; `runpod` is a legal entry as of #2054).
 Sentinel drain: fellows is a DRAINED lane as of
 #1898 — the VM-side poller drains `/workspace/logs/issue-<N>-*.json` over
 `ssh charmander` each poll tick (`slurm_monitor.drain_cluster_sentinels`,
@@ -1115,6 +1216,77 @@ per rung, bounded only by the daily cap 8.
 (d) Every TERMINATED+`failed` poll now issues one extra `_workload_started`
 guest-attribute probe (perf-only; the probe-failure fallback keeps
 `terminal_terminated`, never manufacturing a setup classification).
+
+### Workload-phase FLEX preemption on checkpoint-less legs → escalate to STANDARD (#1999)
+
+A DISTINCT sibling of the pre-workload boot-loop breaker above: when a
+GCP FLEX_START workload has ALREADY STARTED (positive workload signal:
+`workload` / `relaunched_workload` phase observed) and is PREEMPTED
+mid-run past ~2h wall AND the leg has NO mid-run checkpoints from which
+to resume, the per-issue-session's crash-fix/relaunch loop escalates the
+next attempt to STANDARD (on-demand) provisioning rather than re-booking
+FLEX_START on the same rung. Trigger conjuncts, all three required:
+
+- **Workload-STARTED preemption** — a `terminal_terminated` /
+  `terminal_workload_failed` observation preceded by a positive workload
+  signal (RESET of the #1029 boot-loop streak is the same signal); the
+  pre-workload boot-loop clause above owns the setup-phase case.
+- **Wall time ≥ ~2h** at kill (env `EPS_FLEX_ESCALATE_MIN_WALL_H`,
+  default 2.0) — a short preempted leg is cheap to re-book on FLEX and
+  the length-aware ladder already prices this in.
+- **No mid-run checkpoint the leg can resume from** — declared at PLAN
+  TIME (§9 phase row: `resume_from_checkpoint: no` / `yes`) OR inferred
+  from the phase's own kill-recovery contract (a per-batch checkpoint
+  wired into the driver counts as `yes`; a from-scratch train/eval fits
+  `no`). The clause covers the `no` case; a `yes` leg re-books FLEX as
+  today.
+
+**Disposition:** the RELAUNCH for a matching leg is dispatched with
+`dispatch_issue.py launch ... --provisioning-model STANDARD` (or the
+equivalent auto-router override that skips the FLEX rung for this leg —
+mechanism opt-in per below). The FLEX rung is NOT permanently blocklisted
+for this rung/issue — the escalation binds to the RE-LAUNCH after the
+matching workload-phase preemption; a subsequent leg with a different
+checkpoint contract re-enters the ladder normally.
+
+**Distinctions:**
+
+- **vs. § Pre-workload boot-loop (#1029):** the boot-loop clause covers
+  ≥N=2 pre-workload deaths on the SAME rung (setup-phase failures) and
+  fails OVER to RunPod. This clause covers ONE workload-phase preemption
+  on a checkpoint-less long leg and escalates provisioning IN-LADDER to
+  STANDARD — no RunPod pivot, no daily-cap changes.
+- **vs. length-aware ladder short-vs-long branch (#680):** the ladder
+  already bars spot for long jobs. FLEX_START is deliberately KEPT for
+  long jobs because it is non-preemptible ONCE RUNNING (per the current
+  ladder prose, line 611-613). This clause adds a further length +
+  no-checkpoint refinement: FLEX's queue-time preemption absorption
+  becomes a liability when the WORKLOAD-STARTED preemption then costs a
+  full 2h+ replay.
+- **vs. #659 workload-crash (`gcp_workload_failover_runpod`):** #659
+  fails OVER to RunPod on a workload crash of ANY class. This clause
+  triggers on a preemption specifically (`terminal_terminated` +
+  workload-started signal + FLEX_START provenance), escalates
+  in-provisioning without leaving GCP, and only for legs meeting the
+  ≥2h + checkpoint-less conjunction.
+
+**Rule-text-only for v1; mechanization is a follow-up.** The clause
+above binds PLAN-TIME (§9 row `resume_from_checkpoint:` declaration,
+critic-enforced) and PER-SESSION relaunch decisions (the crash-fix loop
+reads the declaration + the preemption evidence). A future `kind: infra`
+follow-up MAY mechanize the escalation in
+`backends/router._flex_start_rung` / `dispatch_issue.py` (a
+`--flex-escalate-after-workload-preemption` flag, or a durable-lease
+record analogous to `Lease.gcp_boot_death_streaks`) — deferred to keep
+this task's diff to rule-text only. Incident #1739 (2026-08-01): oodhall2
+(FLEX_START replacement) was preempted rc=137 at transfer unit 30/45
+(~2h in, 16:37Z on a checkpoint-less serial leg); a third FLEX attempt
+(oodhall3) launched anyway; the switch to STANDARD came only at
+20:37-20:41Z ("no FLEX_START preemption — the fix"), five total attempts
+to land the hallucination OOD leg. Critic enforcement: Methodology lens
+item 16 FLEX ESCALATION EXTENSION
+(`.claude/rules/critic-lens-reference.md`); no verify_plan.py backstop
+in v1.
 
 ### Remaining gap — the hung-but-RUNNING / frozen non-terminal phase (#667)
 

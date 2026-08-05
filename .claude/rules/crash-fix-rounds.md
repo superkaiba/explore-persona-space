@@ -113,6 +113,17 @@ with five elements:
    copies are effectively out of `wipe`'s reach — crash-persist
    diagnostics are forensic record, prefer a fresh resume prefix) |
    `fresh-output-path / --no-resume` (the relaunch writes/reads elsewhere)
+   | `hf-force-reupload → <affected HF prefixes>` (when the fix
+   invalidates artifacts ALREADY uploaded to HF, name the affected HF
+   prefixes and force re-upload with `resume_skip=False` — or write to a
+   fresh prefix; a presence-check `resume_skip=True` upload silently
+   retains corrupted artifacts for downstream reusers. #1902: 62 store
+   leaf prefixes force re-uploaded.)
+   | `wipe-derived-sentinels → <sentinel paths>` (downstream phase
+   sentinels / done-markers whose inputs the fix invalidated are wiped
+   or quarantined, even on a `--from-phase` relaunch that would not
+   otherwise touch them. #1902 attempt 11: stale pre-fix fits sentinels
+   forced attempt 11.)
    | `N/A — <reason>` (no resume state written; or fresh instance AND no
    remote resume fetch).
 
@@ -552,6 +563,28 @@ mid-run rebase of `issue-<N>` re-opens the gap there (out of scope
 here, noted for the record). The implementer's
 own same-pod smoke-slice confirmation (element 2) is UNCHANGED and is
 not a "relaunch" under this section.
+
+**Shared-module propagation (REQUIRED — when the fix touches shared library
+code).** When the crash-fix touches SHARED library code — anything under
+`src/explore_persona_space/orchestrate/`, `src/explore_persona_space/backends/`,
+`src/explore_persona_space/eval/`, `src/explore_persona_space/train/`, OR any
+shared `scripts/` helper (any `scripts/` file NOT of the form
+`scripts/issue<N>_*.py`, which are issue-local by construction) — the SAME
+round either (a) LANDS the fix on `main` (via the worktree rebase-merge at
+Step 10d, a scratch-worktree push per CLAUDE.md § Concurrent repo-root
+committers), OR (b) posts an EXPLICIT propagation note naming which sibling
+issues' running trees carry the stale code (an `epm:progress` note whose
+leading token is `shared-module-propagation`, listing the sibling issue ids
+the fix must reach — the standing observability convention for fleet-visible
+cross-issue signals). A round-local branch fix on a shared module is an
+INCOMPLETE round: the shared library remains stale on every sibling issue's
+running tree until the fix lands on main. Failure evidence: `#1979 → #1947,
+22c2ddb2d3 landed after both crashes`. Scope boundary vs the neighboring
+§ Mid-run pushes to a live-synced branch: that section governs PUSH TIMING to
+avoid dirty-worker sync refusal on the crashing issue's OWN branch; this
+clause governs FIX PROPAGATION to SIBLING issues' branches (a different
+failure axis — sibling trees have their own live workers whose crashes the
+unpropagated fix does not prevent).
 
 ### Mid-run pushes to a live-synced branch (enumerate live workers FIRST)
 

@@ -139,6 +139,22 @@ Behaviours:
   substitution into a shell variable FIRST, then pass the variable as the
   note) never matches. No waiver: reword prose that would match (the
   #1743 r2 precedent).
+* ``--check-sha-pin-domain`` (also bundled into the no-flags default run):
+  scan every ``*.py`` under ``scripts/`` + ``src/explore_persona_space/``
+  for whole-string 64-hex literals (the sha-pin constant shape) and FAIL a
+  hex duplicated across >= 2 modules when a site declares NO content
+  DOMAIN (the #1776/#1491 wrong-domain propagation class: a new module
+  copies an INDEX-array digest as a bare ``VAL_SHA256`` and a consumer
+  asserts PROMPT digests against it — can never pass on ANY input) or
+  when sites declare CONFLICTING domains (INDEX vs PROMPT, ...). Declare
+  via an adjacent ``# SHA_PIN_DOMAIN: <INDEX|IDS|PROMPT|BYTES|CONTENT>``
+  comment or a domain token in the binding name; waive a site with
+  ``# SHA_PIN_DOMAIN_EXEMPT: <reason>``. Legacy duplicated hexes are
+  frozen as ``(hex[:12], file)`` pairs in
+  :data:`SHA_PIN_DOMAIN_GRANDFATHER` (a grandfathered hex copied into a
+  NEW file still FAILs; a stale entry FAILs the run — the set shrinks,
+  never silently grows). Conflicts have NO allowlist escape. Prose rule:
+  ``.claude/rules/gotchas.md`` "A sha pin lives in a DOMAIN" (#2079).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -1516,6 +1532,36 @@ AGENT_TOOLS_MENTION_EXCEPTIONS: dict[tuple[str, str], str] = {
         "--check-no-workflow-improver-spawn bans it); Agent( appears only in "
         "historical examples of the retired auto-spawn pattern and a "
         "grep-target example"
+    ),
+    ("critic-lean.md", "WebFetch"): (
+        "lean twin (#2062): the body's `no WebSearch/WebFetch` line NEGATES "
+        "the tool — descriptive-not-instructive; the lean drops WebFetch by "
+        "design (fixed-overhead reduction is the whole point of the twin)"
+    ),
+    ("critic-lean.md", "WebSearch"): (
+        "lean twin (#2062): the body's `no WebSearch/WebFetch` line NEGATES "
+        "the tool — descriptive-not-instructive; the lean drops WebSearch by "
+        "design (fixed-overhead reduction is the whole point of the twin)"
+    ),
+    ("critic-lean.md", "mcp__arxiv"): (
+        "lean twin (#2062): the body's `(no mcp__arxiv, no mcp__arxiv-latex)` "
+        "line NEGATES the tool — descriptive-not-instructive; the lean drops "
+        "MCP tools by design (fixed-overhead reduction is the whole point)"
+    ),
+    ("critic-lean.md", "mcp__arxiv-latex"): (
+        "lean twin (#2062): the body's `(no mcp__arxiv, no mcp__arxiv-latex)` "
+        "line NEGATES the tool — descriptive-not-instructive; the lean drops "
+        "MCP tools by design (fixed-overhead reduction is the whole point)"
+    ),
+    ("planner-lean.md", "WebFetch"): (
+        "lean twin (#2062): the body's `no WebSearch/WebFetch` line NEGATES "
+        "the tool — descriptive-not-instructive; the lean drops WebFetch by "
+        "design (fixed-overhead reduction is the whole point of the twin)"
+    ),
+    ("planner-lean.md", "WebSearch"): (
+        "lean twin (#2062): the body's `no WebSearch/WebFetch` line NEGATES "
+        "the tool — descriptive-not-instructive; the lean drops WebSearch by "
+        "design (fixed-overhead reduction is the whole point of the twin)"
     ),
 }
 
@@ -11900,6 +11946,11 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
+    # measured 139,109 B post-#2002 (Step 0.6 coordinating paragraph naming
+    # the Resume-matrix + real-production-out-root-unit smoke coverage
+    # requirements as `smoke-run-missing` blocker-tagged coverage checks;
+    # incident driver: #1947 P0/P4/P5 + #1315 r6 + #1112 r6; cap = measured
+    # + ~1.2 KB. Prior: 137_400 —
     # measured 135,813 B post-#1805 (Step 4 round-new-script no-flags lint
     # duty — executable diff-adds trigger gate in the fenced pre-pass block
     # + attribution / waiver-remedy / stale-family prose — plan-mandated
@@ -11943,7 +11994,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # reads), 99,000 — measured 98,126 B post-#1230 (Step 6 durability-pin
     # shipping duty), 97,000 — measured 96,072 B post-#1119, 95,000 —
     # measured 94,126 B post-#1115)
-    "code-reviewer.md": 137_400,
+    "code-reviewer.md": 140_300,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -11966,21 +12017,27 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
     # 47,930 B post-#881)
     "codex-code-reviewer.md": 62_800,
-    # measured 76,274 B post-#1692 (item 5 Axis 1 import-resolution leg,
-    # Axis 2 per-arm resolution attestation, PASS_PARTIAL verdict +
-    # post-marker template extension — plan-mandated growth; cap =
-    # measured + ~0.23 KB, with condensing sweep across older Rationale
-    # / incident prose to stay near budget. Prior: 74,500 — measured
-    # 74,240 B post-#1682 (Report Format SHA-verbatim rule), 74,000 —
-    # measured 73,554 B post-#1572 (step-10 staged-index verification
-    # pointer), 73,000 — measured 72,240 B post-#1449 (After-
-    # implementation step-7 plan-glob parity self-check), 72,000 —
-    # measured 71,114 B post-#1409 (data-dependent-gates smoke duty in
-    # checklist item 3 + item-5 cross-ref), 69,800 — measured 68,888 B
-    # post-#1384 (per-arm-class smoke-coverage clause), 67,900 — measured
+    # measured 84,278 B post-#2002 (Resume-matrix + real production
+    # out-root unit smoke-contract requirements + matching marker
+    # `notes:` sub-blocks; incident driver: #1947 P0/P4/P5 + #1315 r6 +
+    # #1112 r6 resume-branch defect concentration — five persisted
+    # agent memories promoted to gated contract; cap = measured +
+    # ~1.2 KB. Prior: 80_500 — measured 76,274 B post-#1692 (item 5
+    # Axis 1 import-resolution leg, Axis 2 per-arm resolution
+    # attestation, PASS_PARTIAL verdict + post-marker template
+    # extension — plan-mandated growth; cap = measured + ~0.23 KB,
+    # with condensing sweep across older Rationale / incident prose to
+    # stay near budget. Prior: 74,500 — measured 74,240 B post-#1682
+    # (Report Format SHA-verbatim rule), 74,000 — measured 73,554 B
+    # post-#1572 (step-10 staged-index verification pointer), 73,000 —
+    # measured 72,240 B post-#1449 (After-implementation step-7
+    # plan-glob parity self-check), 72,000 — measured 71,114 B
+    # post-#1409 (data-dependent-gates smoke duty in checklist item 3
+    # + item-5 cross-ref), 69,800 — measured 68,888 B post-#1384
+    # (per-arm-class smoke-coverage clause), 67,900 — measured
     # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
     # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 80_500,
+    "experiment-implementer.md": 85_500,
     # measured 79,611 B post-#1720 (§ Local runs pre-emptive NOT-RUN escape
     # for Step 9c-selected slow tests — mirrors implementer.md L174; ~500 B
     # growth; cap = measured + ~0.9 KB. Prior: 79_500 —
@@ -12822,6 +12879,250 @@ def check_agents_note_argv_verdict(*, agents_dir: Path | None = None) -> list[st
     return errors
 
 
+# ── --check-sha-pin-domain (#2079; the #1776/#1491 wrong-domain class) ───────
+# A sha pin digests ONE representation (int64 INDEX arrays vs PROMPT strings
+# vs file BYTES); a consumer comparing a digest computed in a DIFFERENT
+# domain fails on EVERY input and masquerades as upstream data drift
+# (.claude/rules/gotchas.md "A sha pin lives in a DOMAIN"). The #1491 pre-fix
+# shape (git show 9f43b03e43^) copied the #779 fixed_split INDEX-array
+# digests into a new module as bare VAL_SHA256/TEST_SHA256 and asserted
+# prompt-string digests against them — an assert that could never pass.
+SHA_PIN_DOMAIN_VOCAB: tuple[str, ...] = ("INDEX", "IDS", "PROMPT", "BYTES", "CONTENT")
+# A WHOLE-STRING 64-hex literal (the pin-constant shape). Hexes embedded in a
+# longer string (URLs, hub paths) are out of scope by design — they are not
+# pin bindings a consumer asserts against.
+_SHA_PIN_HEX_RE = re.compile(r"([\"'])([0-9a-f]{64})\1")
+_SHA_PIN_ANNOT_RE = re.compile(r"#\s*SHA_PIN_DOMAIN:\s*([A-Z]+)\b")
+_SHA_PIN_EXEMPT_RE = re.compile(r"#\s*SHA_PIN_DOMAIN_EXEMPT:\s*\S")
+_SHA_PIN_ASSIGN_RE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=]*)?=(?!=)")
+_SHA_PIN_DICT_KEY_RE = re.compile(r"([\"'])([A-Za-z0-9_.\-]+)\1\s*:\s*[\"'][0-9a-f]{64}[\"']")
+_SHA_PIN_WORD_RE = re.compile(r"[A-Za-z]+")
+# Multi-line list/dict/paren literals put the hex lines BELOW the binding —
+# resolve the nearest preceding assignment target within this many lines.
+_SHA_PIN_BINDING_LOOKBACK = 5
+# Frozen grandfather — (hex[:12], repo-relative POSIX path) PAIRS for the
+# legacy duplicated hexes that predate this check (the JUDGE_PIN allowlist
+# snapshot idiom; regenerated from the live tree 2026-08-05, task #2079).
+# The PAIR grain is load-bearing: a grandfathered hex COPIED INTO A NEW FILE
+# still FAILs (exactly the #1491 propagation vector) while today's legacy
+# sites stay green. A stale entry (no longer matching an undeclared
+# cross-module pin site) FAILs the default run — the set can shrink, never
+# silently grow: a NEW cross-module pin site declares its domain instead of
+# being added here. Conflicting declarations have NO allowlist escape.
+SHA_PIN_DOMAIN_GRANDFATHER: frozenset[tuple[str, str]] = frozenset(
+    {
+        # #612 dose-matched sycophancy pool sha, re-pinned by #650:
+        ("0d78e82262bf", "src/explore_persona_space/experiments/issue_650/__init__.py"),
+        (
+            "0d78e82262bf",
+            "src/explore_persona_space/experiments/sycophancy_onpolicy_612/__init__.py",
+        ),
+        # #612 software_engineer train-pool sha, re-pinned by #642:
+        ("12fdeb3bbb8b", "scripts/issue_642/i642_common.py"),
+        (
+            "12fdeb3bbb8b",
+            "src/explore_persona_space/experiments/sycophancy_onpolicy_612/__init__.py",
+        ),
+        # #612 villain train-pool sha, re-pinned by #642 (v4 canned pool):
+        ("1b72c008ff70", "scripts/issue_642/i642_common.py"),
+        (
+            "1b72c008ff70",
+            "src/explore_persona_space/experiments/sycophancy_onpolicy_612/__init__.py",
+        ),
+        # #922 maps bundle sha (fixed-point slow-modes input + provenance repair):
+        ("1f1aaa839473", "scripts/issue922_fixed_point_slow_modes.py"),
+        ("1f1aaa839473", "scripts/issue922_repair_provenance.py"),
+        # #823/#952 shared analysis input-bundle sha (BUNDLE_SHA256 in both rigs):
+        ("46c06e89c513", "src/explore_persona_space/experiments/issue_823/run_823.py"),
+        ("46c06e89c513", "src/explore_persona_space/experiments/issue_952/run_952.py"),
+        # TRACKS prompt-membership sha: #1335 declares PROMPT via binding name;
+        # #1417's TRACKS_SHA256 copy predates the declaration convention:
+        ("55c5d462ac01", "scripts/issue1417_render.py"),
+        # #1482 SAE holdout-split sha shared by the three analysis scripts:
+        ("7957d689748e", "scripts/issue1482_early_layer.py"),
+        ("7957d689748e", "scripts/issue1482_error_analysis.py"),
+        ("7957d689748e", "scripts/issue1482_run_length.py"),
+        # #1481/#1947 marker eval-bank sha:
+        ("7c08c15bea17", "scripts/issue1481_marker.py"),
+        ("7c08c15bea17", "scripts/issue1947_datagen.py"),
+        # #1482 SAE fit-manifest sha (early_layer + run_length):
+        ("88d344675fbb", "scripts/issue1482_early_layer.py"),
+        ("88d344675fbb", "scripts/issue1482_run_length.py"),
+        # #594 probe-pool sha pinned by the #658/#810 fitters + #667 analysis:
+        ("ad687becec26", "scripts/issue658_common.py"),
+        ("ad687becec26", "scripts/issue810_adhoc_lofo_heatmaps.py"),
+        ("ad687becec26", "scripts/issue810_common.py"),
+        ("ad687becec26", "src/explore_persona_space/analysis/issue667/__init__.py"),
+        # #612 wrong-claims train-200 sha, re-pinned by #653:
+        ("c3ac7cef9d11", "src/explore_persona_space/experiments/issue_653/__init__.py"),
+        (
+            "c3ac7cef9d11",
+            "src/explore_persona_space/experiments/sycophancy_onpolicy_612/__init__.py",
+        ),
+        # UltraChat/G1 probe-pool sha (#658 extract + #810 common):
+        ("f277f8c3e255", "scripts/issue658_extract_base_store.py"),
+        ("f277f8c3e255", "scripts/issue810_common.py"),
+    }
+)
+
+
+def _sha_pin_binding_name(lines: list[str], idx: int) -> tuple[str, int]:
+    """Resolve the binding name + binding-line index for the hex at ``lines[idx]``.
+
+    A same-line dict key wins, then a same-line assignment target, then the
+    nearest preceding assignment target within
+    :data:`_SHA_PIN_BINDING_LOOKBACK` lines (multi-line list/dict/paren
+    literals, including the annotated ``NAME: Final[str] = (`` shape), else
+    ``<bare>`` anchored at the hex line.
+    """
+    dict_key = _SHA_PIN_DICT_KEY_RE.search(lines[idx])
+    if dict_key:
+        return dict_key.group(2), idx
+    same_line = _SHA_PIN_ASSIGN_RE.match(lines[idx])
+    if same_line:
+        return same_line.group(1), idx
+    for back in range(1, _SHA_PIN_BINDING_LOOKBACK + 1):
+        j = idx - back
+        if j < 0:
+            break
+        preceding = _SHA_PIN_ASSIGN_RE.match(lines[j])
+        if preceding:
+            return preceding.group(1), j
+    return "<bare>", idx
+
+
+def _sha_pin_resolve(lines: list[str], idx: int, name: str, bidx: int) -> tuple[str, str]:
+    """Resolve one pin site's domain disposition -> ``(kind, domain)``.
+
+    ``kind`` is ``"exempt"`` | ``"domain"`` | ``"undeclared"``. An adjacent
+    ``# SHA_PIN_DOMAIN_EXEMPT: <reason>`` wins, then an adjacent
+    ``# SHA_PIN_DOMAIN: <TOKEN>`` annotation, then a
+    :data:`SHA_PIN_DOMAIN_VOCAB` token in the binding name
+    (case-insensitive whole-word). "Adjacent" = the hex line, the line
+    immediately above it, the binding line, or the line immediately above
+    the binding line — covering trailing comments, preceding-line comments,
+    and the multi-line paren-assignment shape where the annotation sits
+    above the assignment target.
+    """
+    candidates = sorted({idx, max(idx - 1, 0), bidx, max(bidx - 1, 0)})
+    for j in candidates:
+        if _SHA_PIN_EXEMPT_RE.search(lines[j]):
+            return "exempt", ""
+    for j in candidates:
+        annot = _SHA_PIN_ANNOT_RE.search(lines[j])
+        if annot:
+            return "domain", annot.group(1)
+    words = {w.upper() for w in _SHA_PIN_WORD_RE.findall(name)}
+    for token in SHA_PIN_DOMAIN_VOCAB:
+        if token in words:
+            return "domain", token
+    return "undeclared", ""
+
+
+def _sha_pin_sites(root: Path) -> dict[str, list[tuple[str, int, str, str, str]]]:
+    """Scan ``scripts/`` + ``src/explore_persona_space/`` ``*.py`` for
+    whole-string 64-hex literals.
+
+    Returns ``{hex: [(relpath, lineno, binding, kind, domain), ...]}``. An
+    unreadable (non-UTF-8) file is skipped with a stderr notice, never a
+    crash (the ``check_jsonl_splitlines`` precedent).
+    """
+    sites: dict[str, list[tuple[str, int, str, str, str]]] = {}
+    for scan_root in (root / "scripts", root / "src" / "explore_persona_space"):
+        if not scan_root.exists():
+            continue
+        for path in sorted(scan_root.rglob("*.py")):
+            if not path.is_file():
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                sys.stderr.write(
+                    f"workflow_lint: notice: sha-pin-domain skipped unreadable file {path}\n"
+                )
+                continue
+            lines = text.split("\n")
+            rel = path.relative_to(root).as_posix()
+            for i, line in enumerate(lines):
+                for match in _SHA_PIN_HEX_RE.finditer(line):
+                    hex_val = match.group(2)
+                    name, bidx = _sha_pin_binding_name(lines, i)
+                    kind, domain = _sha_pin_resolve(lines, i, name, bidx)
+                    sites.setdefault(hex_val, []).append((rel, i + 1, name, kind, domain))
+    return sites
+
+
+def check_sha_pin_domain(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL cross-module 64-hex sha pins with an undeclared or conflicting
+    content DOMAIN (#2079 — the #1776/#1491 wrong-domain class).
+
+    Predicate (calibrated on the 2026-08-05 live tree):
+
+    1. Collect whole-string 64-hex literals under ``scripts/*.py`` +
+       ``src/explore_persona_space/**/*.py`` (NOT ``tests/`` — fixtures
+       legitimately re-pin; NOT non-.py files). The binding name is the
+       same-line dict key, else the same-line assignment target, else the
+       nearest preceding assignment target within
+       :data:`_SHA_PIN_BINDING_LOOKBACK` lines, else ``<bare>``.
+    2. Keep hexes appearing in >= 2 DISTINCT modules.
+    3. Per site, resolve a domain: an adjacent ``# SHA_PIN_DOMAIN: <TOKEN>``
+       comment wins; else a :data:`SHA_PIN_DOMAIN_VOCAB` token in the
+       binding name (case-insensitive word match). An adjacent
+       ``# SHA_PIN_DOMAIN_EXEMPT: <reason>`` exempts the SITE.
+    4. FAIL rows: **conflict** — >= 2 sites resolve to DIFFERENT domains
+       (one row per declared site; NO allowlist escape); **undeclared** — a
+       site resolves no domain and its ``(hex[:12], file)`` pair is not in
+       :data:`SHA_PIN_DOMAIN_GRANDFATHER`; **grandfather-stale** — a
+       grandfather entry no longer matching an undeclared cross-module pin
+       site (forces cleanup: the set shrinks, never silently grows).
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None and the check scans under :data:`_REPO_ROOT`. Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    consumed: set[tuple[str, str]] = set()
+    for hex_val, site_list in sorted(_sha_pin_sites(root).items()):
+        files = sorted({site[0] for site in site_list})
+        if len(files) < 2:
+            continue
+        active = [site for site in site_list if site[3] != "exempt"]
+        declared = sorted({site[4] for site in active if site[3] == "domain"})
+        for rel, lineno, name, kind, domain in active:
+            if kind == "domain" and len(declared) >= 2:
+                errors.append(
+                    f"sha-pin-domain/{rel}:{lineno}: conflicting content domains "
+                    f"{declared} for cross-module sha pin {hex_val[:12]}... (this "
+                    f"site: {domain}; binding `{name}`; sites: {files}). A pin "
+                    f"digests ONE representation — reconcile the declarations; "
+                    f"conflicts have no allowlist escape (#2079; #1776/#1491)"
+                )
+            elif kind == "undeclared":
+                pair = (hex_val[:12], rel)
+                if pair in SHA_PIN_DOMAIN_GRANDFATHER:
+                    consumed.add(pair)
+                    continue
+                others = [f for f in files if f != rel]
+                errors.append(
+                    f"sha-pin-domain/{rel}:{lineno}: undeclared cross-module sha pin "
+                    f"{hex_val[:12]}... (binding `{name}`; also pinned in {others}). "
+                    f"Declare the content domain — a `# SHA_PIN_DOMAIN: "
+                    f"<{'|'.join(SHA_PIN_DOMAIN_VOCAB)}>` comment on the pin line or "
+                    f"the line above, or a domain token in the binding name — or "
+                    f"waive the site with `# SHA_PIN_DOMAIN_EXEMPT: <reason>` "
+                    f"(#2079; the #1776/#1491 wrong-domain class)"
+                )
+    for hex12, rel in sorted(SHA_PIN_DOMAIN_GRANDFATHER - consumed):
+        errors.append(
+            f"sha-pin-domain/grandfather-stale: ({hex12!r}, {rel!r}) in "
+            f"SHA_PIN_DOMAIN_GRANDFATHER no longer matches an undeclared "
+            f"cross-module 64-hex pin site — remove the entry (the grandfather "
+            f"shrinks, never silently grows; #2079)"
+        )
+    return errors
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispatch ladder; one branch per check flag, extracting it would just relocate the ladder
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -13626,6 +13927,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "waiver: reword instead (the #1743 r2 precedent). Bundled into "
         "the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-sha-pin-domain",
+        action="store_true",
+        help="FAIL a whole-string 64-hex sha pin duplicated across >= 2 "
+        "scripts/src modules when a site declares no content DOMAIN "
+        "(undeclared copy — the #1776/#1491 wrong-domain class) or when "
+        "sites declare conflicting domains (INDEX vs PROMPT, ...). Declare "
+        "via an adjacent `# SHA_PIN_DOMAIN: <INDEX|IDS|PROMPT|BYTES|"
+        "CONTENT>` comment or a domain token in the binding name; waive a "
+        "site with `# SHA_PIN_DOMAIN_EXEMPT: <reason>`. Legacy sites are "
+        "frozen as (hex12, file) pairs in SHA_PIN_DOMAIN_GRANDFATHER — a "
+        "stale entry FAILs; conflicts have no allowlist escape. Bundled "
+        "into the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     if args.regen_hf_routing_snapshot:
@@ -13718,6 +14033,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_poller_marker_consumers
         or args.check_skill_bang_backtick
         or args.check_agents_note_argv_verdict
+        or args.check_sha_pin_domain
     )
 
     errors: list[str] = []
@@ -13872,6 +14188,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_skill_bang_backtick())
     if args.check_agents_note_argv_verdict or no_flags:
         errors.extend(check_agents_note_argv_verdict())
+    if args.check_sha_pin_domain or no_flags:
+        errors.extend(check_sha_pin_domain())
 
     if errors:
         for err in errors:

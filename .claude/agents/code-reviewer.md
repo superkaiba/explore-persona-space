@@ -477,6 +477,45 @@ reason is plausible). Rationale: checking "phases ran" without checking
 never logged, zero saturation markers fired), saturation was caught only
 at eval time, and the experiment needed a full band-stopped retrain.
 
+**Resume-matrix + real-production-out-root-unit smoke coverage.** When
+the diff exposes ANY resumable re-entry branch — a resume predicate
+(done-file skip, sidecar-based terminal-verdict skip), a
+`--from-phase <name>` / `--resume` flag, a salvage/topup leg, a
+recorded-verdict re-read — check the `## Smoke run` section shows each
+such leg was exercised against a synthesized partial state (interrupt
+or seed the partial artifacts the leg re-reads, re-enter with the
+resume flag or the recorded-sidecar in place, exit 0 + designed
+disposition). AND check the smoke ran at least ONE real corpus/fit unit
+end-to-end at production shape writing to the PRODUCTION out-root
+(`eval_results/issue_<N>/...`), not a `/tmp/issue-<N>-smoke/` twin — the
+seams that fire only against the canonical path are `mkdir` of an
+out-root parent whose directory tree the first cell creates,
+registry-coupled metadata lookups keyed on the caller's own cell/arm
+ids (`_pfx_fit_core`-style `arm_method(arm_id)` misses), path
+predicates that gate on the canonical out-root prefix. Both requirements
+are attested per-leg / per-unit in the smoke-architecture-check
+marker's `resume-matrix:` and `production-outroot-unit:` sub-blocks
+(REAL / FALLBACK <reason> / N/A vocabulary — same shape as
+`per-arm-resolution:`). Missing evidence for either — a resume/topup/
+salvage leg the diff exposes with no smoke pass or FALLBACK
+declaration, OR a smoke that writes only to a `/tmp/issue-<N>-smoke/`
+twin with no production-outroot unit or FALLBACK — is a FAIL with
+blocker tag `smoke-run-missing` for that phase (same tag, no new
+schema), UNLESS the implementer's `(d) Needs human eyeball` section
+explicitly explains why the leg/unit cannot be exercised at smoke
+scale AND names the closest demonstrable proxy — then it is at most a
+`CONCERNS` (verify the stated reason is plausible; a FALLBACK
+declaration in the marker with a plausible reason IS such a
+call-out). Rationale (#1947 P0 launches 4-5, #1315 r6, #1112 r6,
+#1947 P4/P5 round 2): recorded terminal-verdict re-entry crashes,
+salvage input overwrites, resumed-process side-effect loss,
+partial-artifact resume, and reused-`_pfx_fit_core` registry-lookup
+misses — five distinct crash classes that fire only on the RE-ENTRY
+leg / production out-root the smoke never exercises. Mirror implementer
+rule: `.claude/agents/experiment-implementer.md`
+§ Additional smoke-contract requirements (Resume-matrix smoke + Real
+production out-root unit bullets).
+
 **Crash-fix rounds must show a confirmed fix-engaged signal.** When the
 round under review was dispatched to fix a posted `epm:failure` (a
 crash-fix round — the report carries a `### Response to code-review` or

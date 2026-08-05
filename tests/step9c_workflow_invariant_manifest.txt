@@ -69,6 +69,7 @@ tests/test_no_direct_task_path_construction.py
 tests/test_no_dollar_budget_caps.py
 tests/test_no_per_file_raw_completions_loop.py
 tests/test_no_pod_side_task_py_shellout.py
+tests/test_no_progress_respawn.py
 tests/test_ownership_probe_exemplar_bracketed.py
 tests/test_plan_handoff_path_convention.py
 tests/test_plan_patch.py
@@ -100,5 +101,6 @@ tests/test_workflow_fix_rule_closed_sibling_reconciliation.py
 tests/test_workflow_hub_upload_as_file.py
 tests/test_workflow_lint.py
 tests/test_workflow_lint_dotenv_check.py
+tests/test_workflow_lint_failover_pivot_pin.py
 tests/test_workflow_lint_inline_round_duty_mirror.py
 tests/test_workflow_yaml.py

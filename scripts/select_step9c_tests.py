@@ -332,6 +332,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
     # bundling + drift-detection semantics pin
     "tests/test_workflow_lint_inline_round_duty_mirror.py",
+    # NEW (#2067) — .claude/rules/compute-backend-failover.md
+    # `### Cross-session pivot — resolve the owner before provisioning (#2067)`
+    # prose pin: H3 header + pivoter-duty sentence + UNKNOWN-treat-as-LIVE token.
+    "tests/test_workflow_lint_failover_pivot_pin.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
     # NEW (#1735) — rule reconciliation pin: workflow-fix-on-bug.md §
@@ -346,6 +350,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_no_dollar_budget_caps.py",
     "tests/test_no_per_file_raw_completions_loop.py",
     "tests/test_no_pod_side_task_py_shellout.py",
+    # NEW (#2058) — no-progress respawn lane: fingerprint helper +
+    # `compute_issue_verdict` NO-PROGRESS-RESPAWN arm + heartbeat sentinel
+    # set. Unit A ships the pure predicate; Unit B wires the watcher pass.
+    "tests/test_no_progress_respawn.py",
     # group 4 — verifiers
     "tests/test_verify_plan.py",
     "tests/test_verify_task_body.py",
