@@ -332,9 +332,9 @@
   {
    "behavior": "sycophancy",
    "setting": "aita",
-   "setting_label": "held-out in-distribution \u2014 r/socialskills (= half the train pool)",
-   "setting_role": "held-out in-distribution",
-   "setting_identity": "r/socialskills (= half the train pool)",
+   "setting_label": "OOD transfer \u2014 held-out Reddit r/socialskills",
+   "setting_role": "OOD transfer",
+   "setting_identity": "held-out Reddit r/socialskills",
    "coding": "drop (unchanged)",
    "n_contexts": 1304,
    "mean": 18.109771216768912,

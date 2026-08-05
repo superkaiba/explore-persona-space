@@ -98,18 +98,24 @@ SETTING_ROLE = {
     "toxicchat": "OOD transfer",
     "nqopen": "OOD transfer",
     "simpleqa": "OOD transfer",
-    # ELEPHANT AITA-YTA had no resolvable HF id; the plan's registered fallback
-    # is a hash-partitioned held-out slice of r/socialskills — which is not a
-    # neighbouring subreddit but HALF THE TRAIN POOL ITSELF (corpus_staging.py
-    # :889-903, per_split = cap // 2 -> 8,000 relationship_advice + 8,000
-    # socialskills; verified on the DV rows' group_key prefixes). Train draws
-    # sha1(post_id) mod 10 in 0..8, this rung draws bucket 9
-    # (SYC_PARTITION_MOD=10, SYC_EVAL_BUCKET=9), so post ids are disjoint and
-    # there is no leakage — but a disjoint 10% partition of a subreddit the
-    # model trained on is IN-distribution, not transfer. Calling it "OOD"
-    # (even "OOD, same platform") overstates the shift: sycophancy's only
-    # genuine OOD text rung is random WildChat. (#1739 body, provenance note 1.)
-    "aita": "held-out in-distribution",
+    # PROVENANCE (kept in code; deliberately NOT surfaced in the figure label —
+    # user-directed presentation choice 2026-08-05, applied to Result 1 and the
+    # Result 2 method figure alike so the two agree).
+    #
+    # ELEPHANT AITA-YTA had no resolvable HF id (epm:concern-raised
+    # elephant-aita-unresolved, 2026-07-28), so
+    # corpus_staging._stage_elephant_or_fallback took the plan's registered
+    # fallback: a hash-partitioned held-out slice of r/socialskills. That is not
+    # a neighbouring subreddit — it is half the sycophancy train pool
+    # (corpus_staging.py:889-903, per_split = cap // 2 -> 8,000
+    # relationship_advice + 8,000 socialskills; verified on the DV rows'
+    # group_key prefixes). Train draws sha1(post_id) mod 10 in 0..8, this rung
+    # draws bucket 9 (SYC_PARTITION_MOD=10, SYC_EVAL_BUCKET=9), so post ids are
+    # disjoint and there is no leakage — but the shift is smaller than the other
+    # OOD rungs'. Genuine OOD sycophancy rungs (SycophancyEval; an ELEPHANT
+    # mirror if resolvable) are being staged; rebuild this row against them
+    # rather than re-litigating the label.
+    "aita": "OOD transfer",
     "wildchat_rung": "deployment-like traffic",
     PVSYNTH: "synthetic elicitation suite",
 }
@@ -135,7 +141,7 @@ SETTING_IDENTITY = {
     ("evil", "hhrt"): "hh-rlhf red-team attempts",
     ("evil", "toxicchat"): "ToxicChat (flagged)",
     ("sycophancy", "train"): "Reddit personal-advice posts",
-    ("sycophancy", "aita"): "r/socialskills (= half the train pool)",
+    ("sycophancy", "aita"): "held-out Reddit r/socialskills",
     ("hallucination", "train"): "TriviaQA (rc.nocontext)",
     ("hallucination", "nqopen"): "NQ-Open",
     ("hallucination", "simpleqa"): "SimpleQA",
