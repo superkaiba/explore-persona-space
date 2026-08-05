@@ -20,9 +20,20 @@ Filed from task #1739 (evil-ood-spread-round), 2026-08-05. FLEET-WIDE, LIVE ON M
 
 The Batch-API drain path in `src/explore_persona_space/eval/batch_judge.py` silently discards BARE-NUMERIC judge verdicts as `parse_error` drops, while every sync drain path in `eval/judge_dispatch.py` normalizes them first. The #1434 "dispatch-path parity" fix was applied to the sync paths and never ported to the batch drain — so the same rubric, model, and `max_tokens` produce wildly different drop rates depending only on the ROUTE, and the affected rubric family is the one the project uses most for graded trait scoring.
 
+> **See PREMISE CORRECTION below before planning** — the code-level gap is verified real, but the measured-impact attribution in this body is refuted by a full census of the retained Batch API results.
+
+## PREMISE CORRECTION (2026-08-05, driving session — verified against the Batch API)
+
+Full-census verification REFUTES the impact attribution below while CONFIRMING the code-level gap:
+
+- **The #1739 pilot's batch leg never ran through `batch_judge._collect_legacy_results`.** It dispatched via `judge_graded → judge_completions_batch → dispatch_judge_items`, whose batch drain (`judge_dispatch._collect_batch_results`) ALREADY applies `_normalize_scalar_score` — verified at the pilot's own commit `e13b7428459ead7c4899d463a0de497c307a6947` (normalize present at that vintage's judge_dispatch.py:611).
+- **The batch-leg drops are API-level judge REFUSALS, not scalar erasures.** The Batch API retains results 29 days; a full census of the retained tom-gibbs maxtok4096 re-judge batches (`msgbatch_01U4PLEZRUgS36KHw6VLw4Nb` + `msgbatch_01KRnQBNW56Gcvtx6cCzfDZB`, 3000 succeeded rows) tallies stop_reason `{end_turn: 1097, refusal: 1903}`, cross-tab `{(end_turn, parses): 1096, (refusal, empty-text): 1864, (refusal, no-parse): 35, (refusal, parses): 4, (end_turn, no-parse): 1}`. 98% of the dropped rows are `stop_reason="refusal"` with EMPTY response text — there is no verdict to recover. The 1903 refusal rows reconcile with the 1900/3000 persisted `parse_error` drops in the run's dispatch checkpoints.
+- **Consequences.** (a) The 64%-vs-2.8% route gap is a judge REFUSAL-RATE difference between the Batch and sync routes on identical requests — an instrument finding that belongs with #1739's `judge-route-instrument-mismatch` concern (evidence posted there 2026-08-05); (b) re-draining #1739's artifacts through a fixed legacy drain recovers NOTHING — proposed-change item 4's re-drain list is EMPTY for this defect; (c) the "Measured impact" and "Blast radius" sections below are VOID as attributions to this defect — the affected population of the real code gap is only legacy-drain consumers (`_submit_and_poll_batch`'s two frozen `scripts/issue_389` callers + `orchestrate/fleet.py` harvests) on bare-numeric rubrics, and post-#778-r3 the graded reducer (`_score_from_parsed`, graded_judge.py:70) accepts bare ints anyway, so the gap is a persisted-SHAPE inconsistency with no currently-demonstrated verdict loss.
+- **What remains true and in scope.** `_collect_legacy_results` (batch_judge.py:390 on main) is the last drain without `_normalize_scalar_score` (all three judge_dispatch sites have it: L677/753/824 on main). Porting it + a route-parity pin is a cheap, real drift-prevention fix. The Goal stands with corrected expected impact: **shape parity + drift prevention, NOT verdict recovery**.
+
 ## Goal
 
-Port `_normalize_scalar_score` (or its equivalent) into the batch drain so bare-numeric verdicts are recovered identically on both routes, and add a parity pin so the two paths cannot diverge again.
+Port `_normalize_scalar_score` (or its equivalent) into the batch drain so bare-numeric verdicts are recovered identically on both routes, and add a parity pin so the two paths cannot diverge again. (Expected impact per the correction above: persisted-shape parity + drift prevention.)
 
 ## The defect, verified in source on main
 
@@ -35,9 +46,9 @@ No scalar normalization. The sync drains in `eval/judge_dispatch.py` apply `_nor
 
 > "#778 scalar passthrough, dispatch-path parity (#1434): a bare in-range numeric judge response (`"95"` — the persona-vectors rubric's own 'just the number' instruction routinely wins over the JSON wrapper) parses to a Python scalar, which the dict-shaped result plumbing would erase to a `parse_error` drop."
 
-So the bug is a KNOWN, ALREADY-SOLVED class that was fixed on one path only — the built-but-stranded / partial-port shape. The persona-vectors trait rubric is named in the docstring as the rubric that routinely elicits bare numerics, which makes graded trait-DV batch waves the primary victim.
+So the bug is a KNOWN, ALREADY-SOLVED class that was fixed on one path only — the built-but-stranded / partial-port shape. NOTE (per the correction above): post-#778-r3 the dict-shaped erasure the docstring describes no longer occurs in the graded reducer itself (`_score_from_parsed` accepts bare in-range numerics); the residual exposure is any downstream consumer that dict-matches persisted rows.
 
-## Measured impact (single variable = route)
+## Measured impact — ATTRIBUTION REFUTED (see PREMISE CORRECTION)
 
 From #1739's item-A pilot judge, identical rubric / judge model / `max_tokens`, differing only in dispatch route:
 
@@ -46,28 +57,26 @@ From #1739's item-A pilot judge, identical rubric / judge model / `max_tokens`, 
 | batch | 5.87% | **64.17%** | 2.70% |
 | sync | 2.57% | **2.80%** | 1.83% |
 
-Budget was ruled out as the cause: a fresh BATCH re-judge at `max_tokens=4096` (confirmed in its `state.json`) still measured 63.70%, so raising the budget does not recover the loss — the route does. A 1024-token SYNC probe recovered 96.7% at fixed budget, isolating the route as the single variable. Sync was also ~11x faster on this workload (3.5 min vs 38.5 min for ~9,000 calls), so the batch route was paying more wall-time AND losing most of its verdicts.
+These numbers are REAL but are caused by route-dependent judge refusal-stops (empty responses), NOT by this task's code gap. The batch leg was drained through the already-normalized `judge_dispatch._collect_batch_results`. Budget was correctly ruled out (a 4096-token batch re-judge still measured 63.70%); the single variable is the route, but the mechanism is the judge's refusal behavior on the Batch route, not drain-side parsing.
 
-The loss is CORPUS-DEPENDENT (2.7% to 64% across three corpora on one rubric), which is worse than a uniform offset: it silently biases cross-corpus and cross-rung comparisons rather than shifting them equally. Any published drop-rate or DV built on a batch-drained bare-numeric rubric is suspect until re-drained.
+## Blast radius — SUPERSEDED (see PREMISE CORRECTION)
 
-## Blast radius — known affected artifacts
-
-- #1739's parent `trait_dv_1024` pool (batch-drained, persona-vectors trait rubric — the exact bare-numeric family). Its drop profile and any SD/rho computed from it inherit the loss.
-- #1739's item-D compliance wave (159,990 draws, batch-drained). Lower exposure — its v2 rubric is reason-then-JSON, so it emits JSON rather than bare numerics, and it measured 1.30% content drops — but it should be re-checked against the fixed drain rather than assumed clean.
-- FLEET: any prior batch-drained graded-judge wave whose rubric instructs "just the number". The two persisted #1739 concerns are `batch-drain-scalar-parity` and `judge-route-instrument-mismatch`.
+- #1739's parent `trait_dv_1024` pool and item-D compliance wave were batch-drained through the NORMALIZED primary path; their drop profiles are refusal/parse behavior of the judge, not this defect. Read them via stop_reason tallies (#2021 threading) rather than parse_error counts.
+- The real (latent) exposure of THIS defect: `_submit_and_poll_batch`'s two frozen `scripts/issue_389` callers + `orchestrate/fleet.py` fire-and-forget harvests, on bare-numeric rubrics — persisted-shape inconsistency only, given #778-r3.
+- The two persisted #1739 concerns remain the canonical record: `batch-drain-scalar-parity` (this task's code gap) and `judge-route-instrument-mismatch` (the refusal-rate route finding, evidence posted on #1739).
 
 ## Proposed change (refine in planning)
 
-1. Apply the same normalization in the batch drain that the sync drains apply, so both routes produce identical results for identical judge text. Prefer extracting ONE shared post-parse normalization used by both, rather than a second copy that can drift again (the copy-drift is what produced this bug).
+1. Apply the same normalization in the batch drain that the sync drains apply, so both routes produce identical results for identical judge text. Prefer extracting ONE shared post-parse normalization used by both, rather than a second copy that can drift again (the copy-drift is what produced this bug). The cycle-safe shape already exists in the target function: `_collect_legacy_results` function-level-imports `_with_stop_reason` from judge_dispatch (batch_judge.py:374-378); extend that import with `_normalize_scalar_score`.
 2. Add a PARITY test pin: the same set of raw judge texts (including a bare in-range numeric, an out-of-range numeric, a JSON verdict, a refusal string, and empty text) drained through both routes must yield identical score/drop classifications. That pin is what prevents the next partial port.
 3. Preserve drop-never-coerce and the rule-24 content-vs-transport split exactly — this is about recovering verdicts the judge DID give, never about coercing ones it did not.
-4. Assess whether affected historical artifacts can be re-drained from retained raw (the Batch API's 29-day retention makes recent waves recoverable at zero judge cost); propose a re-drain list rather than silently re-labelling old numbers.
+4. Re-drain assessment (CORRECTED): the #1739 artifacts are NOT recoverable via this fix (their drops are empty refusal responses). The re-drain list for THIS defect is empty unless a legacy-drain (issue_389 / fleet) bare-numeric wave is identified; the plan should confirm-or-close that with a bounded scan rather than assume.
 
 ## Scope / surfaces
 
 - Primary: `src/explore_persona_space/eval/batch_judge.py` (batch drain), `src/explore_persona_space/eval/judge_dispatch.py` (the shared normalizer).
 - Tests: a route-parity pin under `tests/`.
-- NOT in scope: rubric text, judge model pins, any per-issue script.
+- NOT in scope: rubric text, judge model pins, any per-issue script; the refusal-rate route investigation (owned by #1739's `judge-route-instrument-mismatch` concern).
 
 ## Constraints / invariants
 
