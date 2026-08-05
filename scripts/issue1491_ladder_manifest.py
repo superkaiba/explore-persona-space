@@ -10,9 +10,11 @@ Per plan §4.1 (task #1491, v4, approved 2026-08-03), the manifest contains:
   525,485 LMSYS entries of the parent manifest (seed 42).
 - ``val_400`` + ``test_1000`` — the pinned #779 split, deterministically
   re-derived via ``sample_disjoint_n50k(...)['round1']`` +
-  ``_valtest_prompts_from_round1``; asserted to hash to the committed
-  ``val_sha256`` / ``test_sha256`` values from
-  ``eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json``.
+  ``_valtest_prompts_from_round1``; membership confirmed in THREE frozen
+  domains (``_assert_pinned_membership`` — round-1 prompt sha, fixed_split
+  INDEX pins, val/test prompt digests; the #1776 three-domain port. The
+  committed ``n1m_fits.json`` ``val_sha256``/``test_sha256`` values are
+  INDEX-array digests, never compared against prompt hashes).
 - ``wc_test_1k`` — 1,000 WildChat rows sampled from the 434,515 WildChat
   entries of the parent manifest (disjoint from ``train_25k`` by corpus).
 - ``tierB_3600`` — the first 3,600 ids of ``train_25k`` in sampled order.
@@ -70,11 +72,15 @@ from issue779_ffc_n1m_generate_capture import (  # type: ignore  # noqa: E402
     _valtest_prompts_from_round1,
     N_ROUND1,
 )
-from issue779_ffc_n50k_generate_capture import sample_disjoint_n50k  # type: ignore  # noqa: E402
+from issue779_ffc_n50k_generate_capture import (  # type: ignore  # noqa: E402
+    _sha_ids_or_prompts,
+    sample_disjoint_n50k,
+)
 
-# fixed_split lives in the fair-comparison module referenced by n1m via
-# ``import issue779_fitter_fair_comparison as F``; we import the same way.
-import issue779_fitter_fair_comparison as F  # type: ignore  # noqa: E402
+# The INDEX-pin source for the three-domain membership check (P0 crash fix —
+# port of issue1776_contexts.py @ 04ce114b8fb2). Module-top is safe: the n1m
+# import above already runs load_dotenv() before any torch import (#847).
+import issue779_ffc_n50k_fits as N50F  # type: ignore  # noqa: E402
 
 logger = logging.getLogger("issue1491_ladder_manifest")
 
@@ -91,23 +97,35 @@ PARENT_NEW_PROMPT_SHA256 = "2b14762a15d316c602332a749ebd87c733d687d4165eb5d0038c
 LADDER_HF_REPO = "superkaiba1/explore-persona-space-data"
 LADDER_HF_PREFIX = "issue1491_scale_ladder/manifest"
 
-# Split sizes + parent-anchor pinned val/test SHAs (from
-# eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json .split @ 507bf182f6).
+# Split sizes.
 N_TRAIN_25K = 25_000
 N_VAL_400 = 400
 N_TEST_1000 = 1000
 N_WC_TEST_1K = 1000
 N_TIERB_3600 = 3600
-VAL_SHA256 = "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613"
-TEST_SHA256 = "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d"
 
-# fixed_split arguments (parent-anchor): 5000 round-1 rows partitioned into
-# 3600 train + 400 val + 1000 test with seed 42.
-FIXED_SPLIT_N = 5000
-FIXED_SPLIT_TRAIN = 3600
-FIXED_SPLIT_VAL = 400
-FIXED_SPLIT_TEST = 1000
-FIXED_SPLIT_SEED = 42
+# ── Pinned membership shas — THREE frozen domains (P0 crash fix, #1776 port) ──
+#
+# A sha pin lives in a DOMAIN (.claude/rules/gotchas.md). The two INDEX pins
+# below are sha256 digests of the ORIGINAL #779 round's
+# fixed_split(5000, 3600, 400, 1000, 42) int64 INDEX arrays (F._sha_ids — the
+# domain of N50F._pinned_original_shas / the committed fair_comparison.json).
+# They are NOT prompt-string digests: the P0 production crash (pod-1491,
+# att rp-20260805T043306Z) asserted a PROMPT digest against them, a compare
+# that can never pass on any input. Compare them only against index digests.
+VAL_400_INDEX_SHA = "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613"
+TEST_1000_INDEX_SHA = "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d"
+# Frozen round-1 PROMPT-membership sha — N10._sha_prompts / N50._sha_ids_or_prompts
+# (b"\x00"-separated) over the 5,000 round-1 first-turns = the #779 n1m sampling
+# manifest's used_shas.round1. A live re-stream reproducing it holds EXACTLY the
+# pinned membership — the REAL LMSYS stream-drift guard.
+ROUND1_PROMPT_SHA = "d40546cd7059780afc50188a0902247a9c2ce49f67ff3d651b87a934a56b8805"
+# Derived prompt-list digests of the pinned val-400 / test-1000 (round1[idx]
+# under the pinned split), frozen 2026-07-29 by #1776 from a VM re-stream whose
+# round-1 sha matched ROUND1_PROMPT_SHA and whose recomputed split-index shas
+# matched the INDEX pins — the tertiary composition check.
+VAL_400_PROMPT_SHA = "e8c8beb0fed383674c08e19cb6d9a56ca781d5182ba77cab138af33c06aed738"
+TEST_1000_PROMPT_SHA = "bb60a2827bdc11675699414cda787c9be8ad3b836e9f529a528dc59a6726d9ef"
 
 # Over-length filter budget (parent commit bd9f6865de).
 OVERLENGTH_MAX_MODEL_LEN = 8192
@@ -490,34 +508,67 @@ def _derive_valtest_prompts(
     assert len(round1) == N_ROUND1, (
         f"sample_disjoint_n50k returned {len(round1)} round-1 rows, expected {N_ROUND1}"
     )
+    # The parent's documented recovery path (issue779_ffc_n1m_generate_capture
+    # L186-214): applies the ORIGINAL round's fixed_split(5000, 3600, 400, 1000,
+    # 42) val/test indices to round1 and returns the 1,400 prompts as
+    # list(val) + list(test) — so [:400] is val_400 and [400:] is test_1000
+    # (order-equivalence pinned by tests/test_issue1491_manifest_sha_domains.py
+    # ::test_valtest_parent_return_value_order). The pre-fix code discarded this
+    # return value and re-derived the same slices by hand.
     valtest = _valtest_prompts_from_round1(round1, check_ctx0=not smoke)
-    # fixed_split partitions the 5000 round-1 into (train_3600, val_400, test_1000).
-    _r1_train, val, test = F.fixed_split(
-        FIXED_SPLIT_N,
-        FIXED_SPLIT_TRAIN,
-        FIXED_SPLIT_VAL,
-        FIXED_SPLIT_TEST,
-        FIXED_SPLIT_SEED,
-    )
-    # _valtest_prompts_from_round1 returns the 1400 pinned val+test prompt strings
-    # in row order; slice against the fixed_split indices to recover val/test.
-    # Convention: fixed_split returns train_indices, val_indices, test_indices.
-    val_prompts = [round1[i] for i in val]
-    test_prompts = [round1[i] for i in test]
-    # Sanity: valtest should equal val_prompts + test_prompts (contains 1400 rows).
-    assert len(valtest) == len(val_prompts) + len(test_prompts), (
-        f"valtest={len(valtest)} != val+test={len(val_prompts) + len(test_prompts)}"
-    )
+    assert len(valtest) == N_VAL_400 + N_TEST_1000, len(valtest)
+    val_prompts = valtest[:N_VAL_400]
+    test_prompts = valtest[N_VAL_400:]
     return round1, val_prompts, test_prompts
 
 
-def _sha256_prompt_list(prompts: list[str]) -> str:
-    """SHA256 of a list of prompts, canonicalized as newline-joined UTF-8."""
-    h = hashlib.sha256()
-    for p in prompts:
-        h.update(p.encode("utf-8"))
-        h.update(b"\n")
-    return h.hexdigest()
+def _assert_pinned_membership(
+    round1: list[str], val_prompts: list[str], test_prompts: list[str]
+) -> None:
+    """Three-domain membership check (port of #1776's fix, 04ce114b8fb2).
+
+    Each pin is compared within its OWN domain (the P0 crash compared a
+    prompt digest against index-array digests — see the constants block):
+
+      1. round-1 prompt MEMBERSHIP: the parent hasher ``_sha_ids_or_prompts``
+         (== ``N10._sha_prompts``, ``b"\\x00"``-separated) over the 5,000
+         re-streamed round-1 prompts equals the frozen #779 n1m
+         sampling-manifest ``used_shas.round1`` — the real stream-drift guard;
+      2. split identity: the INDEX pins equal the shas recomputed from the
+         committed #779 ``fair_comparison.json`` split params
+         (``N50F._pinned_original_shas``) — passes by construction unless the
+         split recipe drifts;
+      3. composition: the derived val/test PROMPT digests equal the frozen
+         prompt-domain pins.
+    """
+    got_r1 = _sha_ids_or_prompts(round1)
+    assert got_r1 == ROUND1_PROMPT_SHA, (
+        f"round-1 prompt-membership drift: {got_r1} != frozen {ROUND1_PROMPT_SHA} "
+        "(#779 n1m sampling_manifest used_shas.round1) — the LMSYS stream changed; "
+        "the pinned val-400/test-1000 cannot be recovered from a re-stream"
+    )
+    pinned = N50F._pinned_original_shas(N50F.DEFAULT_ORIG_DIR)
+    assert pinned["val_sha256"] == VAL_400_INDEX_SHA, (
+        f"val-400 INDEX-sha pin drifted from the #779 artifact: {pinned} != "
+        f"{VAL_400_INDEX_SHA} (index-array domain, F._sha_ids)"
+    )
+    assert pinned["test_sha256"] == TEST_1000_INDEX_SHA, (
+        f"test-1000 INDEX-sha pin drifted from the #779 artifact: {pinned} != "
+        f"{TEST_1000_INDEX_SHA} (index-array domain, F._sha_ids)"
+    )
+    got_val = _sha_ids_or_prompts(val_prompts)
+    got_test = _sha_ids_or_prompts(test_prompts)
+    assert got_val == VAL_400_PROMPT_SHA, (
+        f"pinned val-400 PROMPT-digest drift: {got_val} != {VAL_400_PROMPT_SHA}"
+    )
+    assert got_test == TEST_1000_PROMPT_SHA, (
+        f"pinned test-1000 PROMPT-digest drift: {got_test} != {TEST_1000_PROMPT_SHA}"
+    )
+    print(
+        "[ladder-manifest] pinned-membership confirmed: round1 prompt sha + "
+        "index pins + val/test prompt digests all match (three-domain check)",
+        flush=True,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -623,20 +674,17 @@ def build_manifest(out_dir: Path, *, smoke: bool = False, dry_run: bool = False)
             {"conversation": [{"role": "user", "content": f"smoke r1 q{i}"}]}
             for i in range(N_ROUND1 + 10)
         ]
-        _, val_prompts, test_prompts = _derive_valtest_prompts(
+        round1, val_prompts, test_prompts = _derive_valtest_prompts(
             smoke=True, smoke_stream=smoke_stream
         )
     else:
-        _, val_prompts, test_prompts = _derive_valtest_prompts(smoke=False)
+        round1, val_prompts, test_prompts = _derive_valtest_prompts(smoke=False)
 
     assert len(val_prompts) == N_VAL_400, f"val_400 size wrong: {len(val_prompts)}"
     assert len(test_prompts) == N_TEST_1000, f"test_1000 size wrong: {len(test_prompts)}"
-    # SHA anchor asserts (production only; smoke uses synthetic streams).
+    # Three-domain membership check (production only; smoke uses synthetic streams).
     if not smoke:
-        val_sha = _sha256_prompt_list(val_prompts)
-        test_sha = _sha256_prompt_list(test_prompts)
-        assert val_sha == VAL_SHA256, f"val_sha256 drift: got {val_sha}, expected {VAL_SHA256}"
-        assert test_sha == TEST_SHA256, f"test_sha256 drift: got {test_sha}, expected {TEST_SHA256}"
+        _assert_pinned_membership(round1, val_prompts, test_prompts)
     val_rows = [{"prompt": p, "corpus": "lmsys", "split": "val"} for p in val_prompts]
     test_rows = [{"prompt": p, "corpus": "lmsys", "split": "test"} for p in test_prompts]
 
@@ -723,13 +771,15 @@ def build_manifest(out_dir: Path, *, smoke: bool = False, dry_run: bool = False)
                 "kept": len(val_kept),
                 "skipped": len(val_skip),
                 "declared": N_VAL_400,
-                "sha256": VAL_SHA256,
+                "index_sha256": VAL_400_INDEX_SHA,
+                "prompt_sha256": None if smoke else VAL_400_PROMPT_SHA,
             },
             "test_1000": {
                 "kept": len(test_kept),
                 "skipped": len(test_skip),
                 "declared": N_TEST_1000,
-                "sha256": TEST_SHA256,
+                "index_sha256": TEST_1000_INDEX_SHA,
+                "prompt_sha256": None if smoke else TEST_1000_PROMPT_SHA,
             },
             "wc_test_1k": {
                 "kept": len(wc_kept),
@@ -740,6 +790,18 @@ def build_manifest(out_dir: Path, *, smoke: bool = False, dry_run: bool = False)
                 "kept": len(tierb_kept),
                 "declared": N_TIERB_3600,
             },
+        },
+        # The three-domain membership pins the production build verified
+        # (_assert_pinned_membership; None in smoke — synthetic streams).
+        # Mirrors issue1776_contexts.py's split_pins block (04ce114b8fb2).
+        "split_pins": None
+        if smoke
+        else {
+            "val_400_index_sha": VAL_400_INDEX_SHA,
+            "test_1000_index_sha": TEST_1000_INDEX_SHA,
+            "round1_prompt_sha": ROUND1_PROMPT_SHA,
+            "val_400_prompt_sha": VAL_400_PROMPT_SHA,
+            "test_1000_prompt_sha": TEST_1000_PROMPT_SHA,
         },
         "output_files": SPLIT_FILES,
     }
