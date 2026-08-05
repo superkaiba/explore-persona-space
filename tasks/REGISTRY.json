@@ -8382,8 +8382,8 @@
     "2083": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2083",
-      "status": "proposed",
+      "path": "tasks/archived/2083",
+      "status": "archived",
       "title": "workflow-fix: root-draft observer misses untracked strays under scripts/"
     },
     "209": {
