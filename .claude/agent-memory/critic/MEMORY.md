@@ -17,6 +17,8 @@
 - [Seed-conditioned cluster bootstrap](feedback_seed_conditioned_cluster_bootstrap.md) — 2-seed cluster CIs understate run noise ~5x (#571)
 - [Best-of-group selection asymmetry](feedback_bestofgroup_selection_asymmetry.md) — biased when K differs 10-30x; report K (#545)
 - [Diagnostic-gated null-family selection](feedback_diagnostic_gated_null_family_selection.md) — OK iff DV-independent gate + between-regimes threshold + neutral-family conjunction (#778 v7)
+- [Single-generation selection axis](feedback_single_generation_selection_axis.md) — near-duplicate union cells = double-counted stringency; single-gen axis + parked robustness arm (#2061)
+- [Pool-ceiling absolute gate](feedback_pool_ceiling_absolute_gate.md) — rows×k ≪ d_sae makes absolute fraction bars unsatisfiable; base-relative on shared slice (#2061)
 
 ## Threshold / calibration provenance
 - [Subset-mismatched threshold calibration](feedback_subset_mismatched_threshold_calibration.md) — recompute same-subset per-prompt (#558)
