@@ -86,9 +86,11 @@ if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
 from issue1739_compliance_pilot import (  # noqa: E402
+    COMPLIANCE_JUDGE_SYSTEM_PROMPT,
     COMPLIANCE_RUBRIC,
     DV_ID,
     RUBRIC_FAMILY,
+    reduce_compliance_draws,
 )
 
 logger = logging.getLogger(__name__)
@@ -340,10 +342,15 @@ def _judge_rung_real(
 ) -> dict:
     """Dispatch through the sanctioned Batch client (production path).
 
-    Returns a per-rung report with per-item scores + rule-24 split.
+    v2 (kept CONSISTENT with the pilot instrument — same rubric, same
+    compliance-scoped system prompt, same refusal-split extraction): calls
+    ``judge_completions_batch`` DIRECTLY under ``keep_raw_judge_text()``
+    retention, then reduces with the pilot module's
+    :func:`reduce_compliance_draws`. Returns a per-rung report with per-item
+    scores + the rule-24 split, with the v2 refusal-vs-parse-fail sub-split.
     """
-    from explore_persona_space.eval.graded_judge import judge_graded
-    from explore_persona_space.eval.judge_dispatch import graded_temperature
+    from explore_persona_space.eval.batch_judge import judge_completions_batch
+    from explore_persona_space.eval.judge_dispatch import graded_temperature, keep_raw_judge_text
 
     items = [
         (
@@ -353,31 +360,63 @@ def _judge_rung_real(
         )
         for p in payloads
     ]
+    for item_id, _q, _a in items:
+        if "__" in item_id:
+            raise ValueError(f"item_id must not contain '__' (custom_id delimiter): {item_id!r}")
+    completions: dict[str, dict[str, list[str]]] = {}
+    for item_id, question, answer in items:
+        completions[item_id] = {question: [answer] * n_draws}
+
+    def format_user_msg(question: str, answer: str) -> str:
+        return rubric.replace("{question}", question).replace("{answer}", answer)
+
     out_dir.mkdir(parents=True, exist_ok=True)
     save_raw = out_dir / "judge_raw_compliance_full.json"
-    with graded_temperature(temperature):
-        result = judge_graded(
-            items,
-            rubric,
-            n_draws=n_draws,
-            cache_dir=cache_dir,
-            save_raw=save_raw,
+    with graded_temperature(temperature), keep_raw_judge_text():
+        judge_completions_batch(
+            completions=completions,
+            judge_system_prompt=COMPLIANCE_JUDGE_SYSTEM_PROMPT,
+            format_user_msg=format_user_msg,
             judge_model=judge_model,
             max_tokens=max_tokens,
+            cache_dir=cache_dir,
+            save_raw=save_raw,
             dry_run=dry_run,
-            threshold_base=threshold_base,
+            **({"threshold_base": threshold_base} if threshold_base is not None else {}),
         )
+    if dry_run:
+        return {
+            "n_items": len(items),
+            "scores": {},
+            "per_item_scores": {},
+            "per_item_draw_counts": {},
+            "n_total_draws": 0,
+            "n_dropped_draws_content": 0,
+            "n_refusal_draws": 0,
+            "n_parse_fail_draws": 0,
+            "n_transport_lost_draws": 0,
+            "per_item_transport_losses": {},
+            "judge_raw_path": str(save_raw),
+            "note": "dry-run — no draws dispatched",
+        }
+    reduced = reduce_compliance_draws(save_raw, items)
+    drop = reduced["per_arm_drop"]
     return {
         "n_items": len(items),
-        "scores": dict(result.scores),
-        "per_item_scores": dict(result.per_item_scores),
-        "per_item_draw_counts": dict(result.per_item_draw_counts),
-        "n_total_draws": int(result.n_total_draws),
-        # Rule-24 split — keep content vs transport DISTINCT under
-        # unambiguous names (never blended).
-        "n_dropped_draws_content": int(result.n_dropped_draws),
-        "n_transport_lost_draws": int(result.n_transport_lost_draws),
-        "per_item_transport_losses": dict(getattr(result, "per_item_transport_losses", {}) or {}),
+        "scores": dict(reduced["scores"]),
+        "per_item_scores": dict(reduced["per_item_scores"]),
+        "per_item_draw_counts": dict(reduced["per_item_draw_counts"]),
+        "n_total_draws": int(drop["n_total_draws"]),
+        # Rule-24 split — content vs transport DISTINCT under unambiguous
+        # names (never blended), with the v2 refusal-vs-parse-fail sub-split.
+        "n_dropped_draws_content": int(drop["n_dropped_draws"]),
+        "n_refusal_draws": int(drop["n_refusal_draws"]),
+        "n_parse_fail_draws": int(drop["n_parse_fail_draws"]),
+        "n_rescued_draws": int(drop["n_rescued_draws"]),
+        "refusal_frac": float(drop["refusal_frac"]),
+        "parse_fail_frac": float(drop["parse_fail_frac"]),
+        "n_transport_lost_draws": int(drop["n_transport_lost_draws"]),
+        "per_item_transport_losses": dict(reduced["per_item_transport_losses"]),
         "judge_raw_path": str(save_raw),
     }
 
