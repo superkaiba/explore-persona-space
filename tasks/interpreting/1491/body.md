@@ -7,7 +7,7 @@ tags:
 - context-geometry
 - scale
 created_at: '2026-07-18T01:29:58Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 779
 origin_prompt: 'Can you run an experiment to test how this mapping changes with scale
   of the model: - [ ] Does model''s behavior get more predictable with scale?'
