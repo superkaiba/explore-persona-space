@@ -35,9 +35,11 @@ for _p in (str(_REPO_ROOT / "scripts"), str(_REPO_ROOT / "src")):
 import issue1345_strip_scaffolds as strip_cli  # noqa: E402
 import issue2054_capture as capture  # noqa: E402
 import issue2054_forms as forms  # noqa: E402
+import issue2054_ladder as ladder  # noqa: E402
 import issue2054_phase_a as phase_a  # noqa: E402
 import issue2054_phase_c as phase_c  # noqa: E402
 import issue2054_phase_d as phase_d  # noqa: E402
+import issue2054_resume as resume  # noqa: E402
 import issue2054_shard_launch as shard_launch  # noqa: E402
 
 SEP = forms.CELL_KEY_SEP
@@ -345,3 +347,62 @@ def test_aggregate_digests_capture_shape(tmp_path):
     shard_launch.shard_digest_path(comp, tmp_path, 1, 2).unlink()
     with pytest.raises(FileNotFoundError):
         shard_launch.aggregate_digests(comp, tmp_path, 2)
+
+
+# ---------------------------------------------------------------------------
+# NaN-aware resume-regime equality (Unit F smoke catch: the ladder's
+# target_ceiling is legitimately NaN at degenerate/smoke n, and bare != makes
+# nan != nan mark EVERY re-entry "regime changed" — the pair recomputes
+# forever instead of resuming)
+# ---------------------------------------------------------------------------
+def test_regime_diff_treats_nan_as_equal():
+    nan = float("nan")
+    assert resume.regime_values_equal(nan, nan)
+    assert not resume.regime_values_equal(nan, 1.0)
+    assert not resume.regime_values_equal(1.0, nan)
+    assert resume.regime_diff({"c": nan, "s": 137}, {"c": nan, "s": 137}) == []
+    assert resume.regime_diff({"c": nan}, {"c": 0.5}) == ["c"]
+
+
+def test_ladder_pair_resume_skips_on_nan_target_ceiling(tmp_path):
+    """A rung JSON whose regime carries a NaN target_ceiling must SKIP on an
+    identical re-entry (failed pre-fix: 'regime keys changed: [target_ceiling]')."""
+    expected = {
+        "source": "s",
+        "target": "t",
+        "arm": "context",
+        "n_rungs": 9,
+        "seed": 137,
+        "bootstrap_draws": 0,
+        "pilot": False,
+        "dry_run": False,
+        "target_ceiling": float("nan"),
+        "intersection_sha256": "abc",
+        "fold_map_k": 5,
+        "fold_map_seed": 137,
+    }
+    rung = {
+        k: expected[k]
+        for k in (
+            "source",
+            "target",
+            "arm",
+            "n_rungs",
+            "seed",
+            "bootstrap_draws",
+            "pilot",
+            "dry_run",
+            "target_ceiling",
+            "intersection_sha256",
+        )
+    }
+    rung["fold_map"] = {"k": 5, "seed": 137}
+    rung["arm_report"] = {"status": "ok"}
+    out = tmp_path / "rung.json"
+    out.write_text(json.dumps(rung), encoding="utf-8")  # NaN literal round-trips
+    skip, why = ladder._pair_resume_check(out, expected)
+    assert skip, why
+    # A genuinely different ceiling still recomputes.
+    expected2 = dict(expected, target_ceiling=0.4)
+    skip2, why2 = ladder._pair_resume_check(out, expected2)
+    assert not skip2 and "target_ceiling" in why2
