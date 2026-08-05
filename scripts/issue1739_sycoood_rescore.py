@@ -715,12 +715,39 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
     perm_null_records: list[dict] = []
     preds_counts: dict[str, int] = {r: 0 for r in OOD_RUNGS}
     preds_dir.mkdir(parents=True, exist_ok=True)
-    _preds_fh = {
-        r: open(preds_dir / _preds_filename(behavior, r), "w", encoding="utf-8") for r in OOD_RUNGS
-    }
     _metric_rows_path = out_dir / "metric_rows.jsonl"
     _metric_rows_path.parent.mkdir(parents=True, exist_ok=True)
-    _metric_fh = open(_metric_rows_path, "w", encoding="utf-8")
+
+    # RESUME (#1739): load per-unit rows an earlier attempt already persisted and
+    # SKIP those units. Two OOM kills proved the grid must survive being killed
+    # mid-run; rows + preds are APPENDED, so a resumed run extends the same
+    # artifacts instead of truncating them.
+    _done_units: set[tuple[str, str, int, int, int]] = set()
+    if _metric_rows_path.exists():
+        for line in _metric_rows_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            rec = json.loads(line)
+            all_rows.append(rec)
+            _done_units.add(
+                (
+                    str(rec["variant"]),
+                    str(rec["regime"]),
+                    int(rec["budget_l"]),
+                    int(rec["draw"]),
+                    int(rec["seed"]),
+                )
+            )
+        _log(f"resume: {len(all_rows)} metric rows / {len(_done_units)} completed units")
+    _preds_fh = {
+        r: open(preds_dir / _preds_filename(behavior, r), "a", encoding="utf-8") for r in OOD_RUNGS
+    }
+    for _r in OOD_RUNGS:
+        _pf = preds_dir / _preds_filename(behavior, _r)
+        preds_counts[_r] = (
+            sum(1 for ln in _pf.open(encoding="utf-8") if ln.strip()) if _pf.exists() else 0
+        )
+    _metric_fh = open(_metric_rows_path, "a", encoding="utf-8")
 
     dv_ev = np.asarray(tbl_ev.dv, dtype=np.float64)
     rungs_ev = [str(r) for r in tbl_ev.row_rungs]
@@ -818,6 +845,9 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
             units_seen.setdefault((bl, draw, seed), cell_rec)
 
         for ui, ((budget_l, draw, seed), cell_rec) in enumerate(sorted(units_seen.items())):
+            if (variant, regime, int(budget_l), int(draw), int(seed)) in _done_units:
+                _log(f"  unit {ui + 1}/{len(units_seen)} SKIP (resumed)")
+                continue
             _log(f"  unit {ui + 1}/{len(units_seen)} budget_l={budget_l} draw={draw} seed={seed}")
 
             cell = fits.realize_budget_cell(tbl_tr.groups, budget_l=budget_l, draw=draw, seed=seed)
