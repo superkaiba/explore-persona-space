@@ -124,7 +124,7 @@ round** — no other generation is in scope (see Result 5: the K=20 subsample is
 
 ### Pre-registrations and standing assumptions
 
-- **K = 5 throughout** (the banked #1739 grain), except the optional Result 5 K=20 subsample.
+- **K = 5 throughout, no exceptions** (the banked #1739 grain; the K=20 subsample is OUT OF SCOPE per the user directive — see Result 5).
   #1073's generic arm is K=10 — where the two meet, K is a **stated deviation, never silent**.
   Every Δ / variance statistic scales with K, so bars at different K are not comparable.
 - **Read-out layers frozen in advance** (L14 / L19 / L26, per #1738). Not selected on results — a
