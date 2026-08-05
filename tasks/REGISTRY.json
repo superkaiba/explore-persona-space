@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2094,
+  "highest_id": 2095,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8471,6 +8471,13 @@
       "path": "tasks/planning/2094",
       "status": "planning",
       "title": "Single-position context/prefix interventions: fraction-of-swap (F) at activation and behavior levels across matched-query / matched-prefix / cross settings"
+    },
+    "2095": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2095",
+      "status": "proposed",
+      "title": "workflow-fix: sweep /mnt/eps-data/$USER staging in disk janitors"
     },
     "21": {
       "has_clean_result": false,
