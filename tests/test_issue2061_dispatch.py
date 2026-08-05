@@ -456,3 +456,46 @@ def test_upload_dir_refuses_empty(tmp_path, monkeypatch):
         pytest.raises(RuntimeError, match="no files"),
     ):
         hio.upload_dir(empty, "fitness")
+
+
+def test_parity_gate_call_sites_install_sparsify_pinned_and_fail_loud():
+    """Both loader-parity-gate call sites must provision `sparsify` first.
+
+    The gate is the FIRST action of `--smoke-only` and `--smoke-then-encode`
+    and HARD-FAILS without `sparsify` (issue2061_sae_encode.py:364-372).
+    sparsify is a deliberate one-off, so neither uv.lock nor
+    bootstrap_pod.sh carries it: without this provisioning a fresh pod dies
+    at the gate before doing any encode work, burning a provision cycle.
+    """
+    # The helper exists, pins a version, and is env-overridable.
+    m = re.search(r"ensure_sparsify\(\) \{(.*?)\n\}", DISPATCH, flags=re.S)
+    assert m, "ensure_sparsify() helper missing"
+    body = m.group(1)
+    assert "uv pip install" in body, "helper does not install sparsify"
+    assert "sparsify==" in body, "sparsify install is NOT version-pinned"
+    assert "ISSUE2061_SPARSIFY_VERSION" in body, "pin is not env-overridable"
+    # Fail-loud: never swallow an install failure. A missing reference
+    # implementation means the parity gate cannot be honestly run.
+    # Check EXECUTABLE lines only -- the helper's own comment names the
+    # banned swallow forms in prose, which a naive substring scan matches.
+    code = "\n".join(ln for ln in body.split("\n") if not ln.strip().startswith("#"))
+    assert "|| true" not in code and "|| echo" not in code, "sparsify install must be fail-loud"
+
+    # Call site 1: the production P1 leg (--smoke-then-encode).
+    p1 = re.search(r"run_p1_encode\(\) \{(.*?)\n\}", DISPATCH, flags=re.S)
+    assert p1, "run_p1_encode() missing"
+    assert "ensure_sparsify" in p1.group(1), (
+        "run_p1_encode does not provision sparsify before the parity gate"
+    )
+
+    # Call site 2: the --smoke-only full chain, which runs the gate directly.
+    smoke = re.search(r"run_smoke\(\) \{(.*?)\n\}", DISPATCH, flags=re.S)
+    assert smoke, "run_smoke() missing"
+    sbody = smoke.group(1)
+    assert "ensure_sparsify" in sbody, (
+        "run_smoke does not provision sparsify before the parity gate"
+    )
+    # Ordering is load-bearing: install must precede the gate invocation.
+    assert sbody.index("ensure_sparsify") < sbody.index("--smoke-only"), (
+        "sparsify install must come BEFORE the --smoke-only parity gate"
+    )

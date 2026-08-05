@@ -83,6 +83,25 @@ run() {
   if [[ "$DRY" != "1" ]]; then "$@"; fi
 }
 
+ensure_sparsify() {
+  # Plan §7 registers the loader-parity FVE gate, which runs as the FIRST
+  # action of BOTH --smoke-only and --smoke-then-encode and HARD-FAILS
+  # without the `sparsify` package (issue2061_sae_encode.py:364-372).
+  #
+  # sparsify is a DELIBERATE one-off, not a runtime dep -- so neither
+  # uv.lock nor bootstrap_pod.sh carries it, and on a fresh pod P1 dies at
+  # the gate before doing any encode work (fail-fast as designed, but it
+  # costs a provision + bootstrap cycle).
+  #
+  # PINNED on purpose: sparsify is the parity REFERENCE implementation, so
+  # an unpinned install could drift and either spuriously fail the gate or
+  # spuriously pass it. 1.3.3 is the version the reference read was
+  # verified against. Idempotent (a satisfied requirement is a no-op) and
+  # fail-loud (no `|| true`) -- if the reference cannot be installed, the
+  # parity gate cannot be honestly run.
+  run uv pip install "sparsify==${ISSUE2061_SPARSIFY_VERSION:-1.3.3}"
+}
+
 p3_device() {
   if [[ -n "${ISSUE2061_P3_DEVICE:-}" ]]; then
     echo "$ISSUE2061_P3_DEVICE"
@@ -125,6 +144,7 @@ cell_filter_args() {
 # ─── production phase runners ────────────────────────────────────────────────
 run_p1_encode() {
   echo "[phase=p1_encode]"
+  ensure_sparsify
   mkdir -p "$ENCODED_DIR"
   local filters=()
   cell_filter_args filters
@@ -324,6 +344,7 @@ run_smoke() {
   fi
 
   echo "[phase=smoke_p1_parity]"
+  ensure_sparsify
   run uv run python scripts/issue2061_sae_encode.py --smoke-only
 
   echo "[phase=smoke_p1_encode]"
