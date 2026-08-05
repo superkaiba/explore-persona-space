@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2078,
+  "highest_id": 2079,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8343,6 +8343,13 @@
       "path": "tasks/archived/2078",
       "status": "archived",
       "title": "workflow-fix: register eval_results/issue_1481 sparse cone (Step 9c collection abort)"
+    },
+    "2079": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2079",
+      "status": "proposed",
+      "title": "workflow-fix: lint cross-module sha-pin domain agreement (#1776/#1491 class)"
     },
     "208": {
       "has_clean_result": false,
