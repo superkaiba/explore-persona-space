@@ -7624,8 +7624,8 @@
     "1985": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/1985",
-      "status": "blocked",
+      "path": "tasks/archived/1985",
+      "status": "archived",
       "title": "workflow-fix: pre_reg audit synonym classes for plan-verdict framing"
     },
     "1986": {
