@@ -256,3 +256,132 @@ def test_formats_for_unlicensed_formats_return_base_so_the_assert_fires():
     # fail-loud shape (gsm8k_train5k is v1-only; its v2 sibling is the
     # concat corpus gsm8k_train_full).
     assert g._formats_for("gsm8k_train5k", "naturalistic") == ("chat",)
+
+
+# ---------------------------------------------------------------------------
+# 6. dispatcher wiring (round 5c) — the SEPARATE gen_v2_nat phase
+# ---------------------------------------------------------------------------
+_DISPATCH = REPO_ROOT / "scripts" / "issue1336_dispatch.sh"
+
+
+def _registry_preamble() -> str:
+    """The registry_lines_v2 heredoc python preamble, verbatim from the .sh."""
+    import re
+
+    m = re.search(
+        r"registry_lines_v2\(\) \{.*?<<'PY'\n(.*?)\nPY\n\}",
+        _DISPATCH.read_text(),
+        re.S,
+    )
+    assert m, "registry_lines_v2 heredoc not found in issue1336_dispatch.sh"
+    return m.group(1)
+
+
+def _phase_body(name: str) -> str:
+    import re
+
+    m = re.search(rf"^phase_{name}\(\) \{{\n(.*?)\n\}}$", _DISPATCH.read_text(), re.S | re.M)
+    assert m, f"phase_{name} not found in issue1336_dispatch.sh"
+    return m.group(1)
+
+
+def _job_builder_expr(phase_body: str) -> str:
+    import re
+
+    m = re.search(r"registry_lines_v2 '\n(.*?)\n' > \"\$jobs\"", phase_body, re.S)
+    assert m, "job-builder expression not found in phase body"
+    return m.group(1)
+
+
+def _run_registry(expr: str, *, smoke: bool, monkeypatch, capsys) -> str:
+    """Execute the dispatcher's REAL registry preamble + expression in-process.
+
+    Mirrors the shell invocation exactly: SMOKE_ENV in the environment, the
+    expression as sys.argv[1], the preamble exec'd in fresh globals.
+    """
+    monkeypatch.setenv("SMOKE_ENV", "1" if smoke else "0")
+    monkeypatch.setattr(sys, "argv", ["registry_lines_v2", expr])
+    exec(compile(_registry_preamble(), "<registry_lines_v2>", "exec"), {})
+    return capsys.readouterr().out
+
+
+def test_dispatch_nat_gen_corpora_all_seven_production_two_class_smoke(monkeypatch, capsys):
+    # Production: ALL SEVEN v2 corpora — the V2_FULLY_REUSED_GEN exclusion is
+    # CHAT-only (no naturalistic wave-1 exists), so gsm8k_test1319 generates.
+    prod = _run_registry(
+        "print(','.join(nat_gen_corpora))", smoke=False, monkeypatch=monkeypatch, capsys=capsys
+    )
+    assert prod.strip().split(",") == list(cm.V2_CORPORA)
+    assert "gsm8k_test1319" in prod
+    # Smoke: the same two-class pair as the chat arm (concat + fresh-build).
+    smoke = _run_registry(
+        "print(','.join(nat_gen_corpora))", smoke=True, monkeypatch=monkeypatch, capsys=capsys
+    )
+    assert smoke.strip().split(",") == ["lmsys23k", "sft11k"]
+    # Chat gen set byte-unchanged: still excludes the fully-reused corpus.
+    chat = _run_registry(
+        "print(','.join(gen_corpora))", smoke=False, monkeypatch=monkeypatch, capsys=capsys
+    )
+    assert chat.strip().split(",") == [c for c in cm.V2_CORPORA if c not in cm.V2_FULLY_REUSED_GEN]
+
+
+def test_dispatch_natgen_jobs_carry_gen_format_chat_jobs_do_not(monkeypatch, capsys):
+    nat_expr = _job_builder_expr(_phase_body("gen_v2_nat"))
+    out = _run_registry(nat_expr, smoke=False, monkeypatch=monkeypatch, capsys=capsys)
+    lines = [ln for ln in out.split("\n") if ln.strip()]
+    assert len(lines) == len(list(cm.MODELS)) * len(cm.V2_CORPORA)  # 5 x 7 = 35
+    names = set()
+    for ln in lines:
+        name, cmd = ln.split("\t", 1)
+        names.add(name)
+        assert "--gen-format naturalistic" in cmd, ln
+        assert "--upload" in cmd, ln
+    assert names == {f"{m}__{c}" for m in cm.MODELS for c in cm.V2_CORPORA}
+    assert lines[0].startswith("rlvr__")  # gen_v2's rlvr-first ordering kept
+
+    # Chat arm byte-unchanged: its job lines never carry --gen-format.
+    chat_expr = _job_builder_expr(_phase_body("gen_v2"))
+    chat_out = _run_registry(chat_expr, smoke=False, monkeypatch=monkeypatch, capsys=capsys)
+    assert chat_out.strip()
+    assert "--gen-format" not in chat_out
+
+
+def test_dispatch_natgen_done_keys_never_collide_with_chat(tmp_path):
+    """Phase-level AND job-level done-file keys are disjoint across the arms,
+    so pre-existing chat done files can never skip a naturalistic job (and
+    vice versa)."""
+    import subprocess
+
+    keys = {}
+    for phase in ("gen_v2", "gen_v2_nat"):
+        got = subprocess.run(
+            ["bash", str(_DISPATCH), "__phase_key", phase],
+            capture_output=True,
+            text=True,
+            cwd=tmp_path,
+            timeout=120,
+        )
+        assert got.returncode == 0, got.stderr
+        keys[phase] = got.stdout.strip().splitlines()[-1]
+    assert keys["gen_v2"] == "gen_v2"
+    assert keys["gen_v2_nat"] == "gen_v2_nat"  # distinct phase_gen_v2_nat.done
+
+    body = _phase_body("gen_v2_nat")
+    # run_queue's phase arg keys per-job done files gen_v2_nat__{m}__{c}.done.
+    assert 'run_queue gen_v2_nat "$jobs"' in body
+    assert "jobs_gen_v2_nat.tsv" in body
+    assert "gen_v2_nat__prep.done" in body
+    # Audit mirror reads the format-keyed cell dir + writes non-colliding
+    # audit_{m}_{corpus}__gen_naturalistic.json names.
+    assert 'cm.gen_cell_key(c, "naturalistic")' in body
+
+
+def test_dispatch_all_v2_chain_does_not_run_the_naturalistic_arm():
+    import re
+
+    text = _DISPATCH.read_text()
+    m = re.search(r"^all_v2\)\n(.*?)^\s*;;\s*$", text, re.S | re.M)
+    assert m, "all_v2 case arm not found"
+    assert "gen_v2_nat" not in m.group(1)  # separate invocation by design
+    # ... but the single-phase case DOES accept it.
+    assert re.search(r"^c_stage \| .*\| gen_v2_nat \|", text, re.M)

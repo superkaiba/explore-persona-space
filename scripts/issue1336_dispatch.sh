@@ -1629,6 +1629,12 @@ gen_corpora = (
     if smoke
     else [c for c in cm.V2_CORPORA if c not in cm.V2_FULLY_REUSED_GEN]
 )
+# NATURALISTIC gen corpus set (round 5b; user directive: "run naturalistic on
+# everything (but only the full context arm)"): ALL SEVEN v2 corpora. The
+# V2_FULLY_REUSED_GEN exclusion above is CHAT-only (wave-1 CHAT gens are
+# reused; NO naturalistic wave-1 exists), so gsm8k_test1319 IS generated
+# here. Smoke keeps gen_corpora's two-class pair (concat + fresh-build).
+nat_gen_corpora = ["lmsys23k", "sft11k"] if smoke else list(cm.V2_CORPORA)
 fit_corpora = list(cm.SMOKE_CORPORA_V2) if smoke else list(cm.V2_CORPORA)
 fit_cells = cm.cells_v2_for(tuple(models), tuple(fit_corpora))
 capture_cells = [
@@ -2076,6 +2082,86 @@ for m in models:
         shutil.copyfile(src, dst_dir / f"audit_{m}_{c}.json")
         n += 1
 print(f"[gen_v2] mirrored {n} audits -> {dst_dir}")
+'
+}
+
+phase_gen_v2_nat() {
+    # Round 5b: ON-POLICY NATURALISTIC generation over ALL SEVEN v2 corpora
+    # (--gen-format naturalistic; gen-side registry cm.V2_GEN_FORMATS). A
+    # SEPARATE invocation from the chat arm by design: its OWN queue phase
+    # name keys per-job done files as gen_v2_nat__{model}__{corpus}.done and
+    # its OWN phase done-file phase_gen_v2_nat.done, so pre-existing chat
+    # gen_v2__*.done files can never skip a naturalistic job and this phase
+    # never marks chat jobs done. Outputs land in format-keyed gen cell dirs
+    # ({corpus}__gen_naturalistic via cm.gen_cell_key) + HF prefixes, so the
+    # chat arm's artifacts are untouchable from here. Generation is
+    # fit-arm-agnostic; the context-arm-only constraint (V2_PREFIX_ARM
+    # unchanged) binds at the capture/fit registries, not here.
+    echo "[phase=gen_v2_nat]"
+    _headroom_v2 gen_v2_nat 10
+    if [ "$SMOKE" -eq 1 ] && [ "$NGPU" -eq 0 ]; then
+        # GPU-less smoke host: same recorded-STUB contract as gen_v2, via the
+        # on-policy naturalistic fixture (engine boundary faked ONLY).
+        if [ ! -f "$DONE_DIR/gen_v2_nat__fixture.done" ]; then
+            uv run python scripts/issue1336_smoke_fixtures.py gen-natural \
+                >> "$JOB_LOG_DIR/gen_v2_nat__fixture.log" 2>&1
+            touch "$DONE_DIR/gen_v2_nat__fixture.done"
+        fi
+        echo "[gen_v2_nat] STUB: vLLM engine leg skipped on GPU-less host (smoke_fixtures gen-natural faked ONLY the engine boundary; real engine path requires a GPU)"
+        return 0
+    fi
+    # CPU staging: prep is format-blind (shared prompt JSONLs; run_prep skips
+    # per-corpus files that already exist) but this arm needs ALL SEVEN
+    # corpora staged — gsm8k_test1319 included, which the chat prep list
+    # excludes — so it runs under its OWN done key rather than trusting a
+    # chat-run gen_v2__prep.done.
+    if [ ! -f "$DONE_DIR/gen_v2_nat__prep.done" ]; then
+        local nat_corpora
+        nat_corpora=$(registry_lines_v2 'print(",".join(nat_gen_corpora))')
+        uv run python scripts/issue1336_gen_answers.py --prep --corpora "$nat_corpora" \
+            $SMOKE_FLAG >> "$JOB_LOG_DIR/gen_v2_nat__prep.log" 2>&1
+        touch "$DONE_DIR/gen_v2_nat__prep.done"
+        echo "[gen_v2_nat] corpus prep complete ($nat_corpora)"
+    fi
+    # One vLLM job per (model, corpus) — 35 jobs production (5 models x 7
+    # corpora), work-conserving across the realized width; rlvr first (same
+    # ordering convention as gen_v2). Per-cell --upload persists rollout TEXT
+    # to HF BEFORE any downstream reduction (upload policy).
+    local jobs="$DONE_DIR/jobs_gen_v2_nat.tsv"
+    registry_lines_v2 '
+flags = "--smoke" if smoke else "--upload"
+order = ["rlvr", "base", "sft", "dpo", "rlvr_long"]
+for m in [m for m in order if m in models]:
+    for c in nat_gen_corpora:
+        print(
+            f"{m}__{c}\tuv run python scripts/issue1336_gen_answers.py "
+            f"--model {m} --corpora {c} --gen-format naturalistic {flags}"
+        )
+' > "$jobs"
+    run_queue gen_v2_nat "$jobs"
+    # Mirror generation audits into the eval tree (keep-rate figure inputs).
+    # Naturalistic audits live in the format-keyed cell dir
+    # ({corpus}__gen_naturalistic), and the mirrored filename carries the
+    # full gen cell key so chat mirrors (audit_{m}_{corpus}.json) are never
+    # overwritten.
+    SMOKE_ENV=$SMOKE OUT_ENV="$OUT_DIR" registry_lines_v2 '
+import json
+import shutil
+from pathlib import Path
+
+root = Path("data/issue_1336") / ("gen_smoke" if smoke else "gen")
+dst_dir = Path(os.environ["OUT_ENV"]) / "gen_audits_v2"
+dst_dir.mkdir(parents=True, exist_ok=True)
+n = 0
+for m in models:
+    for c in nat_gen_corpora:
+        cell = cm.gen_cell_key(c, "naturalistic")
+        src = root / m / cell / "audit.json"
+        assert src.exists(), f"missing gen audit {src}"
+        json.loads(src.read_text())  # fail loud on a truncated write
+        shutil.copyfile(src, dst_dir / f"audit_{m}_{cell}.json")
+        n += 1
+print(f"[gen_v2_nat] mirrored {n} audits -> {dst_dir}")
 '
 }
 
@@ -2693,7 +2779,9 @@ all_v2)
     write_results_sentinel_v2 false
     echo "[phase=done]"
     ;;
-c_stage | g0v2 | g2_parity | gen_v2 | extract_v2 | fit_v2 | ladder | upload_v2)
+c_stage | g0v2 | g2_parity | gen_v2 | gen_v2_nat | extract_v2 | fit_v2 | ladder | upload_v2)
+    # gen_v2_nat is deliberately NOT in the all_v2 chain: the naturalistic
+    # arm is a SEPARATE invocation from the chat arm (round 5b).
     run_phase "$PHASE_ARG"
     echo "[dispatch1336] single-phase invocation of $PHASE_ARG complete (no terminal done line)"
     ;;
@@ -2753,7 +2841,7 @@ __phase_key)
     exit 0
     ;;
 *)
-    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit|all_v2|c_stage|g0v2|g2_parity|gen_v2|extract_v2|fit_v2|ladder|upload_v2|all_v3|c_pool [--smoke]" >&2
+    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit|all_v2|c_stage|g0v2|g2_parity|gen_v2|gen_v2_nat|extract_v2|fit_v2|ladder|upload_v2|all_v3|c_pool [--smoke]" >&2
     exit 2
     ;;
 esac
