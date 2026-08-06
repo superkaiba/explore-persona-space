@@ -54,9 +54,9 @@
     }
   },
   "repro": {
-    "git_commit": "e24c95ff3fbff03a93a4f8fe0b92e4031b5fb24a",
+    "git_commit": "5552c3e3c7fa190cbc116859b3bdb450f09e01f7",
     "torch": "2.8.0+cu128",
     "numpy": "2.2.6",
-    "timestamp": "2026-08-06T13:49:21.228883+00:00"
+    "timestamp": "2026-08-06T14:28:53.734088+00:00"
   }
 }

@@ -1,0 +1,119 @@
+{
+  "combos": [
+    {
+      "combo_id": "add00",
+      "pair_1": "mp--bare__q1--bare__q2",
+      "pair_2": "mp--bare__q1--bare__q3",
+      "context_a": "bare__q1",
+      "read": "span_L14",
+      "cos_add": 0.6617597341537476,
+      "norm_ratio": 0.8298647999763489
+    },
+    {
+      "combo_id": "add00",
+      "pair_1": "mp--bare__q1--bare__q2",
+      "pair_2": "mp--bare__q1--bare__q3",
+      "context_a": "bare__q1",
+      "read": "span_L26",
+      "cos_add": 0.6548140645027161,
+      "norm_ratio": 0.778518795967102
+    },
+    {
+      "combo_id": "add01",
+      "pair_1": "mp--persona__q1--persona__q2",
+      "pair_2": "mp--persona__q1--persona__q3",
+      "context_a": "persona__q1",
+      "read": "span_L14",
+      "cos_add": 0.272151917219162,
+      "norm_ratio": 0.6103777289390564
+    },
+    {
+      "combo_id": "add01",
+      "pair_1": "mp--persona__q1--persona__q2",
+      "pair_2": "mp--persona__q1--persona__q3",
+      "context_a": "persona__q1",
+      "read": "span_L26",
+      "cos_add": 0.1694650799036026,
+      "norm_ratio": 0.5675678253173828
+    },
+    {
+      "combo_id": "add02",
+      "pair_1": "mp--conv__q1--conv__q2",
+      "pair_2": "mp--conv__q1--conv__q3",
+      "context_a": "conv__q1",
+      "read": "span_L14",
+      "cos_add": 0.43209975957870483,
+      "norm_ratio": 0.6303788423538208
+    },
+    {
+      "combo_id": "add02",
+      "pair_1": "mp--conv__q1--conv__q2",
+      "pair_2": "mp--conv__q1--conv__q3",
+      "context_a": "conv__q1",
+      "read": "span_L26",
+      "cos_add": 0.452995240688324,
+      "norm_ratio": 0.5897257328033447
+    },
+    {
+      "combo_id": "add03",
+      "pair_1": "mp--bare__q2--bare__q3",
+      "pair_2": "mp--bare__q2--bare__q4",
+      "context_a": "bare__q2",
+      "read": "span_L14",
+      "cos_add": 0.8836249709129333,
+      "norm_ratio": 0.5598751902580261
+    },
+    {
+      "combo_id": "add03",
+      "pair_1": "mp--bare__q2--bare__q3",
+      "pair_2": "mp--bare__q2--bare__q4",
+      "context_a": "bare__q2",
+      "read": "span_L26",
+      "cos_add": 0.8706826567649841,
+      "norm_ratio": 0.5597026944160461
+    },
+    {
+      "combo_id": "add04",
+      "pair_1": "mp--persona__q2--persona__q3",
+      "pair_2": "mp--persona__q2--persona__q4",
+      "context_a": "persona__q2",
+      "read": "span_L14",
+      "cos_add": 0.716829776763916,
+      "norm_ratio": 0.5330724716186523
+    },
+    {
+      "combo_id": "add04",
+      "pair_1": "mp--persona__q2--persona__q3",
+      "pair_2": "mp--persona__q2--persona__q4",
+      "context_a": "persona__q2",
+      "read": "span_L26",
+      "cos_add": 0.7764341831207275,
+      "norm_ratio": 0.48256799578666687
+    },
+    {
+      "combo_id": "add05",
+      "pair_1": "mp--conv__q2--conv__q3",
+      "pair_2": "mp--conv__q2--conv__q4",
+      "context_a": "conv__q2",
+      "read": "span_L14",
+      "cos_add": 0.9999887347221375,
+      "norm_ratio": 0.49983617663383484
+    },
+    {
+      "combo_id": "add05",
+      "pair_1": "mp--conv__q2--conv__q3",
+      "pair_2": "mp--conv__q2--conv__q4",
+      "context_a": "conv__q2",
+      "read": "span_L26",
+      "cos_add": 0.9999650716781616,
+      "norm_ratio": 0.49957337975502014
+    }
+  ],
+  "steer_layer": 14,
+  "repro": {
+    "git_commit": "5552c3e3c7fa190cbc116859b3bdb450f09e01f7",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp": "2026-08-06T14:28:53.788367+00:00"
+  }
+}

@@ -1,16 +1,16 @@
 {
   "criterion": "P7 fit pilot (plan §9): 1 fold timed through the production entrypoint",
-  "s_per_fold": 0.2922792620956898,
+  "s_per_fold": 0.30479280836880207,
   "n_fold_fits_projected": 300,
-  "projected_wall_h": 0.024356605174640816,
+  "projected_wall_h": 0.02539940069740017,
   "planned_wall_h": 1.5,
   "refusal_threshold_h": 4.5,
-  "recommended_fence_h": 0.04871321034928163,
+  "recommended_fence_h": 0.05079880139480034,
   "allowed": true,
   "repro": {
-    "git_commit": "e24c95ff3fbff03a93a4f8fe0b92e4031b5fb24a",
+    "git_commit": "5552c3e3c7fa190cbc116859b3bdb450f09e01f7",
     "torch": "2.8.0+cu128",
     "numpy": "2.2.6",
-    "timestamp": "2026-08-06T13:46:59.061740+00:00"
+    "timestamp": "2026-08-06T14:26:32.996033+00:00"
   }
 }
