@@ -70,7 +70,7 @@
     "swift-lsp@claude-plugins-official": false
   },
   "env": {
-    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "1000000"
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "600000"
   },
   "hooks": {
     "PreToolUse": [
