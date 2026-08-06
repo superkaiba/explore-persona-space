@@ -1,0 +1,6542 @@
+{
+  "artifact": "answers_conflicts_audit",
+  "conflicts": [
+    {
+      "canonical_sha8": "918d28ec",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1076",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2168,
+          "sha8": "918d28ec"
+        },
+        "char_wren": {
+          "chars": 2164,
+          "sha8": "bdc7091b"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "fd6dabbf",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1090",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 242,
+          "sha8": "4019dbb7"
+        },
+        "char_helios": {
+          "chars": 241,
+          "sha8": "fd6dabbf"
+        },
+        "char_vex": {
+          "chars": 241,
+          "sha8": "fd6dabbf"
+        },
+        "char_wren": {
+          "chars": 241,
+          "sha8": "fd6dabbf"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 241,
+          "sha8": "fd6dabbf"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "4209cf5d",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1124",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 3421,
+          "sha8": "4209cf5d"
+        },
+        "char_vex": {
+          "chars": 3421,
+          "sha8": "4209cf5d"
+        },
+        "char_wren": {
+          "chars": 3421,
+          "sha8": "4209cf5d"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 3419,
+          "sha8": "29e31817"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "1ba0f5db",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1128",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 698,
+          "sha8": "1ba0f5db"
+        },
+        "char_vex": {
+          "chars": 698,
+          "sha8": "1ba0f5db"
+        },
+        "char_wren": {
+          "chars": 698,
+          "sha8": "1ba0f5db"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 697,
+          "sha8": "f9356102"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "e10dd578",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1137",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 627,
+          "sha8": "e10dd578"
+        },
+        "char_helios": {
+          "chars": 627,
+          "sha8": "e10dd578"
+        },
+        "char_vex": {
+          "chars": 629,
+          "sha8": "7bd9fec1"
+        },
+        "char_wren": {
+          "chars": 627,
+          "sha8": "e10dd578"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 627,
+          "sha8": "e10dd578"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s1154",
+      "disposition": "excluded",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2671,
+          "sha8": "5d3a5b42"
+        },
+        "char_helios": {
+          "chars": 2671,
+          "sha8": "a49c3686"
+        },
+        "char_vex": {
+          "chars": 2671,
+          "sha8": "a49c3686"
+        },
+        "char_wren": {
+          "chars": 2671,
+          "sha8": "a49c3686"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2671,
+          "sha8": "a49c3686"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s1189",
+      "disposition": "excluded",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 476,
+          "sha8": "219a678e"
+        },
+        "char_helios": {
+          "chars": 476,
+          "sha8": "e36b2e3e"
+        },
+        "char_vex": {
+          "chars": 476,
+          "sha8": "7eb1d878"
+        },
+        "char_wren": {
+          "chars": 476,
+          "sha8": "219a678e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "bb510a85",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1193",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 634,
+          "sha8": "bb510a85"
+        },
+        "char_wren": {
+          "chars": 634,
+          "sha8": "bb510a85"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 633,
+          "sha8": "0905dea7"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "3d5e34b3",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1213",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_wren": {
+          "chars": 1778,
+          "sha8": "7289f149"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1779,
+          "sha8": "3d5e34b3"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "6c881d90",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1259",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 351,
+          "sha8": "0aab87bd"
+        },
+        "char_helios": {
+          "chars": 350,
+          "sha8": "6c881d90"
+        },
+        "char_vex": {
+          "chars": 350,
+          "sha8": "6c881d90"
+        },
+        "char_wren": {
+          "chars": 352,
+          "sha8": "ba90718e"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 350,
+          "sha8": "6c881d90"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "7dde4ac8",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1282",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 174,
+          "sha8": "4a2e359c"
+        },
+        "char_helios": {
+          "chars": 176,
+          "sha8": "7dde4ac8"
+        },
+        "char_vex": {
+          "chars": 172,
+          "sha8": "5678d094"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 176,
+          "sha8": "7dde4ac8"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "801a90c3",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1285",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2134,
+          "sha8": "801a90c3"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2137,
+          "sha8": "a54568e5"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f4316fdc",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1352",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2587,
+          "sha8": "f4316fdc"
+        },
+        "char_vex": {
+          "chars": 2580,
+          "sha8": "a5d63ebc"
+        },
+        "char_wren": {
+          "chars": 2587,
+          "sha8": "f4316fdc"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "3cca218d",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1356",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2565,
+          "sha8": "3cca218d"
+        },
+        "char_helios": {
+          "chars": 2564,
+          "sha8": "2988cf57"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2565,
+          "sha8": "3cca218d"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5debf016",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1361",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 356,
+          "sha8": "4a98cd9e"
+        },
+        "char_helios": {
+          "chars": 355,
+          "sha8": "5debf016"
+        },
+        "char_vex": {
+          "chars": 355,
+          "sha8": "5debf016"
+        },
+        "char_wren": {
+          "chars": 355,
+          "sha8": "5debf016"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 355,
+          "sha8": "5debf016"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "ad1dfa93",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1365",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2736,
+          "sha8": "ad1dfa93"
+        },
+        "char_helios": {
+          "chars": 2736,
+          "sha8": "ad1dfa93"
+        },
+        "char_wren": {
+          "chars": 2737,
+          "sha8": "8d0225a8"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2736,
+          "sha8": "ad1dfa93"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "799a2d5c",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1374",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2410,
+          "sha8": "9aa6bc86"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2384,
+          "sha8": "799a2d5c"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "9aa528ba",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1387",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 271,
+          "sha8": "9aa528ba"
+        },
+        "char_vex": {
+          "chars": 265,
+          "sha8": "c8c4be82"
+        },
+        "char_wren": {
+          "chars": 271,
+          "sha8": "9aa528ba"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5e4eaa4e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1416",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 121,
+          "sha8": "28ea8a20"
+        },
+        "char_vex": {
+          "chars": 121,
+          "sha8": "5e4eaa4e"
+        },
+        "char_wren": {
+          "chars": 121,
+          "sha8": "5e4eaa4e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "cf131fce",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s142",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1632,
+          "sha8": "cf131fce"
+        },
+        "char_helios": {
+          "chars": 1631,
+          "sha8": "e273549e"
+        },
+        "char_wren": {
+          "chars": 1632,
+          "sha8": "cf131fce"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1631,
+          "sha8": "e273549e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "6a2fb75b",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1420",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1054,
+          "sha8": "6a2fb75b"
+        },
+        "char_helios": {
+          "chars": 1054,
+          "sha8": "a71fd25d"
+        },
+        "char_wren": {
+          "chars": 1054,
+          "sha8": "6a2fb75b"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "e3cac74a",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1432",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1577,
+          "sha8": "e3cac74a"
+        },
+        "char_vex": {
+          "chars": 1577,
+          "sha8": "e3cac74a"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1568,
+          "sha8": "47c89ddd"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f44f0d31",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1489",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 749,
+          "sha8": "f44f0d31"
+        },
+        "char_helios": {
+          "chars": 746,
+          "sha8": "f9e6f465"
+        },
+        "char_vex": {
+          "chars": 749,
+          "sha8": "f44f0d31"
+        },
+        "char_wren": {
+          "chars": 749,
+          "sha8": "f44f0d31"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "b4fe11c0",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s149",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 106,
+          "sha8": "78a68746"
+        },
+        "char_helios": {
+          "chars": 97,
+          "sha8": "b4fe11c0"
+        },
+        "char_vex": {
+          "chars": 98,
+          "sha8": "c574046a"
+        },
+        "char_wren": {
+          "chars": 98,
+          "sha8": "c574046a"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 97,
+          "sha8": "b4fe11c0"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "12d5545c",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1511",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1954,
+          "sha8": "12d5545c"
+        },
+        "char_wren": {
+          "chars": 1951,
+          "sha8": "80f58069"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1954,
+          "sha8": "12d5545c"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "4c020ce7",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s153",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1703,
+          "sha8": "4c020ce7"
+        },
+        "char_helios": {
+          "chars": 1703,
+          "sha8": "4c020ce7"
+        },
+        "char_wren": {
+          "chars": 1703,
+          "sha8": "4c020ce7"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1700,
+          "sha8": "ae7adbc6"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "4054d190",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1530",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_vex": {
+          "chars": 2471,
+          "sha8": "4054d190"
+        },
+        "char_wren": {
+          "chars": 2466,
+          "sha8": "d26c4e3c"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "390027f9",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1548",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 919,
+          "sha8": "390027f9"
+        },
+        "char_helios": {
+          "chars": 919,
+          "sha8": "390027f9"
+        },
+        "char_vex": {
+          "chars": 919,
+          "sha8": "390027f9"
+        },
+        "char_wren": {
+          "chars": 921,
+          "sha8": "10e26696"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 919,
+          "sha8": "390027f9"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "92f7e2b3",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1579",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 748,
+          "sha8": "92f7e2b3"
+        },
+        "char_helios": {
+          "chars": 748,
+          "sha8": "92f7e2b3"
+        },
+        "char_vex": {
+          "chars": 741,
+          "sha8": "07b91ec1"
+        },
+        "char_wren": {
+          "chars": 748,
+          "sha8": "92f7e2b3"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 741,
+          "sha8": "9666fcc2"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "0a091a65",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1616",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 749,
+          "sha8": "0a091a65"
+        },
+        "char_helios": {
+          "chars": 749,
+          "sha8": "0a091a65"
+        },
+        "char_wren": {
+          "chars": 748,
+          "sha8": "ded0e0b8"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 750,
+          "sha8": "f66e37e6"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d16b1c66",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1620",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 291,
+          "sha8": "0a91d9af"
+        },
+        "char_helios": {
+          "chars": 292,
+          "sha8": "d16b1c66"
+        },
+        "char_wren": {
+          "chars": 292,
+          "sha8": "d16b1c66"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 292,
+          "sha8": "d16b1c66"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s1633",
+      "disposition": "excluded",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1213,
+          "sha8": "75ba51c9"
+        },
+        "char_vex": {
+          "chars": 1215,
+          "sha8": "d3be4315"
+        },
+        "char_wren": {
+          "chars": 1215,
+          "sha8": "d3be4315"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "ed7da485",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s166",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2160,
+          "sha8": "ed7da485"
+        },
+        "char_helios": {
+          "chars": 2156,
+          "sha8": "aa2c1827"
+        },
+        "char_wren": {
+          "chars": 2160,
+          "sha8": "ed7da485"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2160,
+          "sha8": "ed7da485"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d23a2934",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1661",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1383,
+          "sha8": "d23a2934"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1337,
+          "sha8": "e376e38b"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "a328a82d",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1707",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1375,
+          "sha8": "cfdaba7d"
+        },
+        "char_vex": {
+          "chars": 1374,
+          "sha8": "a328a82d"
+        },
+        "char_wren": {
+          "chars": 1374,
+          "sha8": "a328a82d"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1374,
+          "sha8": "a328a82d"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "8ec5bebe",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1711",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1280,
+          "sha8": "de18833e"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1278,
+          "sha8": "8ec5bebe"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "96a4a2ec",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s173",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1265,
+          "sha8": "96a4a2ec"
+        },
+        "char_helios": {
+          "chars": 1265,
+          "sha8": "96a4a2ec"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1264,
+          "sha8": "ff0a5997"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "152cc5a7",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1745",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1936,
+          "sha8": "152cc5a7"
+        },
+        "char_wren": {
+          "chars": 1937,
+          "sha8": "ac543ca7"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1936,
+          "sha8": "152cc5a7"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5a7e238f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1757",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1977,
+          "sha8": "5a7e238f"
+        },
+        "char_wren": {
+          "chars": 1977,
+          "sha8": "5a7e238f"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1978,
+          "sha8": "4b3cf3f1"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "3026bd90",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s177",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1086,
+          "sha8": "3026bd90"
+        },
+        "char_helios": {
+          "chars": 1088,
+          "sha8": "9e95711d"
+        },
+        "char_vex": {
+          "chars": 1086,
+          "sha8": "3026bd90"
+        },
+        "char_wren": {
+          "chars": 1088,
+          "sha8": "9e95711d"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1083,
+          "sha8": "ea47fe6a"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "038f9857",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1778",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 251,
+          "sha8": "038f9857"
+        },
+        "char_helios": {
+          "chars": 250,
+          "sha8": "9cd1d0ee"
+        },
+        "char_vex": {
+          "chars": 251,
+          "sha8": "038f9857"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 252,
+          "sha8": "1d2a906f"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "bab23622",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1792",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1795,
+          "sha8": "bab23622"
+        },
+        "char_helios": {
+          "chars": 1795,
+          "sha8": "bab23622"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1786,
+          "sha8": "19d749a7"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d66e541b",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1796",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1962,
+          "sha8": "d66e541b"
+        },
+        "char_vex": {
+          "chars": 1962,
+          "sha8": "d66e541b"
+        },
+        "char_wren": {
+          "chars": 1960,
+          "sha8": "c0a40c2a"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5e0c2d41",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1805",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2488,
+          "sha8": "92015e7b"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2489,
+          "sha8": "5e0c2d41"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "80268343",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1817",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2306,
+          "sha8": "80268343"
+        },
+        "char_vex": {
+          "chars": 2306,
+          "sha8": "80268343"
+        },
+        "char_wren": {
+          "chars": 2304,
+          "sha8": "9eede902"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "0866c7e9",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1823",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2901,
+          "sha8": "0866c7e9"
+        },
+        "char_helios": {
+          "chars": 2901,
+          "sha8": "0866c7e9"
+        },
+        "char_vex": {
+          "chars": 2902,
+          "sha8": "e0d8f0cd"
+        },
+        "char_wren": {
+          "chars": 2901,
+          "sha8": "0866c7e9"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f7a0eb05",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1831",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 597,
+          "sha8": "7e9accc7"
+        },
+        "char_vex": {
+          "chars": 598,
+          "sha8": "f7a0eb05"
+        },
+        "char_wren": {
+          "chars": 598,
+          "sha8": "f7a0eb05"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 598,
+          "sha8": "f7a0eb05"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "be9fed2f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1859",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 289,
+          "sha8": "be9fed2f"
+        },
+        "char_helios": {
+          "chars": 292,
+          "sha8": "d16b1c66"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "de0ddfc8",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1873",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 413,
+          "sha8": "0f500127"
+        },
+        "char_helios": {
+          "chars": 414,
+          "sha8": "de0ddfc8"
+        },
+        "char_vex": {
+          "chars": 414,
+          "sha8": "de0ddfc8"
+        },
+        "char_wren": {
+          "chars": 414,
+          "sha8": "de0ddfc8"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "18cae4dc",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1874",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 155,
+          "sha8": "18cae4dc"
+        },
+        "char_wren": {
+          "chars": 156,
+          "sha8": "d7dfe419"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c3fd5c43",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1880",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2731,
+          "sha8": "c3fd5c43"
+        },
+        "char_helios": {
+          "chars": 2732,
+          "sha8": "e9d3c7ec"
+        },
+        "char_vex": {
+          "chars": 2732,
+          "sha8": "e9d3c7ec"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2731,
+          "sha8": "c3fd5c43"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "e9167d6c",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1883",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2678,
+          "sha8": "f3db8d45"
+        },
+        "char_helios": {
+          "chars": 2681,
+          "sha8": "e9167d6c"
+        },
+        "char_vex": {
+          "chars": 2681,
+          "sha8": "e9167d6c"
+        },
+        "char_wren": {
+          "chars": 2681,
+          "sha8": "e9167d6c"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2681,
+          "sha8": "e9167d6c"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f605dffb",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1902",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1791,
+          "sha8": "f605dffb"
+        },
+        "char_helios": {
+          "chars": 1792,
+          "sha8": "9d066752"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1791,
+          "sha8": "f605dffb"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2d5ba072",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1905",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 418,
+          "sha8": "2d5ba072"
+        },
+        "char_helios": {
+          "chars": 418,
+          "sha8": "2d5ba072"
+        },
+        "char_vex": {
+          "chars": 419,
+          "sha8": "4342efea"
+        },
+        "char_wren": {
+          "chars": 418,
+          "sha8": "2d5ba072"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 418,
+          "sha8": "2d5ba072"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d42ccd2f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1910",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2279,
+          "sha8": "d42ccd2f"
+        },
+        "char_helios": {
+          "chars": 2279,
+          "sha8": "d42ccd2f"
+        },
+        "char_vex": {
+          "chars": 2279,
+          "sha8": "d42ccd2f"
+        },
+        "char_wren": {
+          "chars": 2279,
+          "sha8": "d42ccd2f"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2278,
+          "sha8": "e43daeb8"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "947348fa",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1919",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1303,
+          "sha8": "947348fa"
+        },
+        "char_helios": {
+          "chars": 1304,
+          "sha8": "01dfd28b"
+        },
+        "char_vex": {
+          "chars": 1303,
+          "sha8": "947348fa"
+        },
+        "char_wren": {
+          "chars": 1303,
+          "sha8": "947348fa"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1303,
+          "sha8": "947348fa"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "7bc299df",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1931",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 766,
+          "sha8": "7af4a15b"
+        },
+        "char_helios": {
+          "chars": 769,
+          "sha8": "7bc299df"
+        },
+        "char_vex": {
+          "chars": 769,
+          "sha8": "7bc299df"
+        },
+        "char_wren": {
+          "chars": 769,
+          "sha8": "7bc299df"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 769,
+          "sha8": "7bc299df"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "119f8f11",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1937",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 832,
+          "sha8": "119f8f11"
+        },
+        "char_helios": {
+          "chars": 870,
+          "sha8": "d07a95fd"
+        },
+        "char_vex": {
+          "chars": 832,
+          "sha8": "119f8f11"
+        },
+        "char_wren": {
+          "chars": 832,
+          "sha8": "119f8f11"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "ef007700",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1944",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2042,
+          "sha8": "ef007700"
+        },
+        "char_helios": {
+          "chars": 2042,
+          "sha8": "ef007700"
+        },
+        "char_vex": {
+          "chars": 2042,
+          "sha8": "ef007700"
+        },
+        "char_wren": {
+          "chars": 2042,
+          "sha8": "ef007700"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2038,
+          "sha8": "3b7676f0"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c39867aa",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1977",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1315,
+          "sha8": "da1e6ef7"
+        },
+        "char_vex": {
+          "chars": 1316,
+          "sha8": "c39867aa"
+        },
+        "char_wren": {
+          "chars": 1316,
+          "sha8": "c39867aa"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1316,
+          "sha8": "c39867aa"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "008882c4",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1991",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1402,
+          "sha8": "4c091922"
+        },
+        "char_helios": {
+          "chars": 1348,
+          "sha8": "008882c4"
+        },
+        "char_wren": {
+          "chars": 1348,
+          "sha8": "008882c4"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "be11d6bd",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2023",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2131,
+          "sha8": "be11d6bd"
+        },
+        "char_wren": {
+          "chars": 2131,
+          "sha8": "be11d6bd"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2136,
+          "sha8": "6eb11f11"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "dcc0dbc9",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2024",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2418,
+          "sha8": "dcc0dbc9"
+        },
+        "char_vex": {
+          "chars": 2418,
+          "sha8": "dcc0dbc9"
+        },
+        "char_wren": {
+          "chars": 2416,
+          "sha8": "18597052"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2418,
+          "sha8": "dcc0dbc9"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "00f57a20",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2039",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1145,
+          "sha8": "00f57a20"
+        },
+        "char_vex": {
+          "chars": 1138,
+          "sha8": "1d713514"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "acdab2e2",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2073",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1081,
+          "sha8": "71c694f1"
+        },
+        "char_vex": {
+          "chars": 1087,
+          "sha8": "acdab2e2"
+        },
+        "char_wren": {
+          "chars": 1087,
+          "sha8": "acdab2e2"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "8a80a652",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2077",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 46,
+          "sha8": "8a80a652"
+        },
+        "char_helios": {
+          "chars": 46,
+          "sha8": "5237dc5c"
+        },
+        "char_vex": {
+          "chars": 46,
+          "sha8": "8a80a652"
+        },
+        "char_wren": {
+          "chars": 46,
+          "sha8": "5237dc5c"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 46,
+          "sha8": "8a80a652"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "19759e2c",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2078",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2780,
+          "sha8": "2985798c"
+        },
+        "char_helios": {
+          "chars": 2779,
+          "sha8": "19759e2c"
+        },
+        "char_vex": {
+          "chars": 2779,
+          "sha8": "19759e2c"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2dc33e55",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2103",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1204,
+          "sha8": "2dc33e55"
+        },
+        "char_helios": {
+          "chars": 1204,
+          "sha8": "2dc33e55"
+        },
+        "char_vex": {
+          "chars": 1203,
+          "sha8": "369dca4e"
+        },
+        "char_wren": {
+          "chars": 1204,
+          "sha8": "2dc33e55"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5dcaa6c4",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2228",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 136,
+          "sha8": "5dcaa6c4"
+        },
+        "char_helios": {
+          "chars": 136,
+          "sha8": "3ae1b355"
+        },
+        "char_wren": {
+          "chars": 136,
+          "sha8": "5dcaa6c4"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 136,
+          "sha8": "5dcaa6c4"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d0baa0c8",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s226",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 589,
+          "sha8": "3c8f31f3"
+        },
+        "char_helios": {
+          "chars": 587,
+          "sha8": "d0baa0c8"
+        },
+        "char_vex": {
+          "chars": 588,
+          "sha8": "df351a13"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 587,
+          "sha8": "d0baa0c8"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "a8929235",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2267",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 573,
+          "sha8": "a8929235"
+        },
+        "char_wren": {
+          "chars": 573,
+          "sha8": "a8929235"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 593,
+          "sha8": "4263b1e2"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "59f7efff",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2270",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 513,
+          "sha8": "59f7efff"
+        },
+        "char_helios": {
+          "chars": 513,
+          "sha8": "59f7efff"
+        },
+        "char_vex": {
+          "chars": 513,
+          "sha8": "59f7efff"
+        },
+        "char_wren": {
+          "chars": 507,
+          "sha8": "a4b70df9"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2ae95784",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2279",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1979,
+          "sha8": "2ae95784"
+        },
+        "char_helios": {
+          "chars": 1979,
+          "sha8": "2ae95784"
+        },
+        "char_wren": {
+          "chars": 1979,
+          "sha8": "2ae95784"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1975,
+          "sha8": "62651982"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "6613c582",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2280",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1505,
+          "sha8": "6613c582"
+        },
+        "char_vex": {
+          "chars": 1505,
+          "sha8": "6613c582"
+        },
+        "char_wren": {
+          "chars": 1504,
+          "sha8": "7288a248"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1504,
+          "sha8": "7288a248"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "6d20bdd9",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2294",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2464,
+          "sha8": "74f6b5ca"
+        },
+        "char_wren": {
+          "chars": 2459,
+          "sha8": "d6cedd57"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2454,
+          "sha8": "6d20bdd9"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "48d54544",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2340",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_vex": {
+          "chars": 2402,
+          "sha8": "48d54544"
+        },
+        "char_wren": {
+          "chars": 2407,
+          "sha8": "abe78ef4"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2402,
+          "sha8": "48d54544"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "956dbde6",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2341",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2094,
+          "sha8": "956dbde6"
+        },
+        "char_helios": {
+          "chars": 2090,
+          "sha8": "41ae077f"
+        },
+        "char_vex": {
+          "chars": 2094,
+          "sha8": "956dbde6"
+        },
+        "char_wren": {
+          "chars": 2094,
+          "sha8": "956dbde6"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2090,
+          "sha8": "41ae077f"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "e0ccad89",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2347",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 514,
+          "sha8": "e0ccad89"
+        },
+        "char_helios": {
+          "chars": 514,
+          "sha8": "e0ccad89"
+        },
+        "char_vex": {
+          "chars": 514,
+          "sha8": "e0ccad89"
+        },
+        "char_wren": {
+          "chars": 514,
+          "sha8": "e0ccad89"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 515,
+          "sha8": "4043e328"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "cc0dac2e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2353",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1933,
+          "sha8": "cc0dac2e"
+        },
+        "char_helios": {
+          "chars": 1933,
+          "sha8": "cc0dac2e"
+        },
+        "char_vex": {
+          "chars": 1933,
+          "sha8": "cc0dac2e"
+        },
+        "char_wren": {
+          "chars": 1929,
+          "sha8": "2c802c80"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1929,
+          "sha8": "2c802c80"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "a7fea5c1",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2358",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_vex": {
+          "chars": 2186,
+          "sha8": "bddff003"
+        },
+        "char_wren": {
+          "chars": 2182,
+          "sha8": "a7fea5c1"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "17a23eb3",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2393",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1363,
+          "sha8": "0356293d"
+        },
+        "char_helios": {
+          "chars": 1366,
+          "sha8": "17a23eb3"
+        },
+        "char_vex": {
+          "chars": 1363,
+          "sha8": "0356293d"
+        },
+        "char_wren": {
+          "chars": 1366,
+          "sha8": "17a23eb3"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1366,
+          "sha8": "17a23eb3"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "babb1d8e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2402",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1394,
+          "sha8": "f83291d7"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1402,
+          "sha8": "babb1d8e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "3031c019",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2413",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 3157,
+          "sha8": "a085db56"
+        },
+        "char_vex": {
+          "chars": 3156,
+          "sha8": "3031c019"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "7da5d34a",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2422",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_vex": {
+          "chars": 1974,
+          "sha8": "cf2c9316"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1975,
+          "sha8": "7da5d34a"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "017d18d1",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s244",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2464,
+          "sha8": "017d18d1"
+        },
+        "char_vex": {
+          "chars": 2464,
+          "sha8": "017d18d1"
+        },
+        "char_wren": {
+          "chars": 2464,
+          "sha8": "017d18d1"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2459,
+          "sha8": "cb7056f7"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2b6965f6",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2444",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 869,
+          "sha8": "2b6965f6"
+        },
+        "char_vex": {
+          "chars": 870,
+          "sha8": "876390ea"
+        },
+        "char_wren": {
+          "chars": 869,
+          "sha8": "2b6965f6"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "b65259ba",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2452",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1341,
+          "sha8": "b65259ba"
+        },
+        "char_helios": {
+          "chars": 1341,
+          "sha8": "b65259ba"
+        },
+        "char_vex": {
+          "chars": 1342,
+          "sha8": "302f82c5"
+        },
+        "char_wren": {
+          "chars": 1341,
+          "sha8": "b65259ba"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "118eee33",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2453",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 3286,
+          "sha8": "118eee33"
+        },
+        "char_helios": {
+          "chars": 3287,
+          "sha8": "c6ddf1bd"
+        },
+        "char_wren": {
+          "chars": 3286,
+          "sha8": "118eee33"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 3286,
+          "sha8": "118eee33"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "3e97bff7",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2458",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2429,
+          "sha8": "3e97bff7"
+        },
+        "char_helios": {
+          "chars": 2428,
+          "sha8": "de60e7f5"
+        },
+        "char_wren": {
+          "chars": 2429,
+          "sha8": "3e97bff7"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2429,
+          "sha8": "3e97bff7"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "0689f764",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2466",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1301,
+          "sha8": "f58cc519"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1300,
+          "sha8": "0689f764"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5f776187",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s252",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1051,
+          "sha8": "5f776187"
+        },
+        "char_helios": {
+          "chars": 1053,
+          "sha8": "7d0dc38a"
+        },
+        "char_vex": {
+          "chars": 1051,
+          "sha8": "5f776187"
+        },
+        "char_wren": {
+          "chars": 1053,
+          "sha8": "7d0dc38a"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1054,
+          "sha8": "2a699320"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f43c241a",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2563",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1960,
+          "sha8": "f43c241a"
+        },
+        "char_helios": {
+          "chars": 1960,
+          "sha8": "f43c241a"
+        },
+        "char_vex": {
+          "chars": 1960,
+          "sha8": "f43c241a"
+        },
+        "char_wren": {
+          "chars": 1956,
+          "sha8": "04a7c85c"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1960,
+          "sha8": "f43c241a"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "89e7ac36",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s257",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 915,
+          "sha8": "89e7ac36"
+        },
+        "char_vex": {
+          "chars": 915,
+          "sha8": "89e7ac36"
+        },
+        "char_wren": {
+          "chars": 916,
+          "sha8": "9d9d4b1e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c0c812da",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s261",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2556,
+          "sha8": "c0c812da"
+        },
+        "char_helios": {
+          "chars": 2556,
+          "sha8": "c0c812da"
+        },
+        "char_vex": {
+          "chars": 2556,
+          "sha8": "c0c812da"
+        },
+        "char_wren": {
+          "chars": 2555,
+          "sha8": "6bbd8513"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2570,
+          "sha8": "80815ba6"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s2637",
+      "disposition": "excluded",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 3732,
+          "sha8": "99788fe3"
+        },
+        "char_helios": {
+          "chars": 3732,
+          "sha8": "86c47e2b"
+        },
+        "char_vex": {
+          "chars": 3732,
+          "sha8": "99788fe3"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 3732,
+          "sha8": "3ae193c2"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "47a54f3f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2653",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 527,
+          "sha8": "47a54f3f"
+        },
+        "char_vex": {
+          "chars": 529,
+          "sha8": "a13dd473"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "bedde3c9",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2654",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_vex": {
+          "chars": 1693,
+          "sha8": "bedde3c9"
+        },
+        "char_wren": {
+          "chars": 1693,
+          "sha8": "bedde3c9"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1694,
+          "sha8": "c0229abb"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s2663",
+      "disposition": "excluded",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2028,
+          "sha8": "4aee8c22"
+        },
+        "char_vex": {
+          "chars": 2028,
+          "sha8": "4aee8c22"
+        },
+        "char_wren": {
+          "chars": 2028,
+          "sha8": "42a925fb"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2028,
+          "sha8": "4aee8c22"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "38f904e7",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2702",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 792,
+          "sha8": "38f904e7"
+        },
+        "char_helios": {
+          "chars": 796,
+          "sha8": "2ca1f840"
+        },
+        "char_vex": {
+          "chars": 792,
+          "sha8": "38f904e7"
+        },
+        "char_wren": {
+          "chars": 792,
+          "sha8": "38f904e7"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s2703",
+      "disposition": "excluded",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1374,
+          "sha8": "37007a40"
+        },
+        "char_vex": {
+          "chars": 1374,
+          "sha8": "a345d2f7"
+        },
+        "char_wren": {
+          "chars": 1374,
+          "sha8": "37007a40"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1374,
+          "sha8": "37007a40"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "efa6d11e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2708",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2122,
+          "sha8": "04b2e7c6"
+        },
+        "char_vex": {
+          "chars": 2126,
+          "sha8": "efa6d11e"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2126,
+          "sha8": "efa6d11e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "81ff93e4",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2743",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2188,
+          "sha8": "81ff93e4"
+        },
+        "char_helios": {
+          "chars": 2188,
+          "sha8": "81ff93e4"
+        },
+        "char_vex": {
+          "chars": 2188,
+          "sha8": "81ff93e4"
+        },
+        "char_wren": {
+          "chars": 2188,
+          "sha8": "81ff93e4"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2184,
+          "sha8": "57ec60ae"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "de3d20aa",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2768",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 448,
+          "sha8": "de3d20aa"
+        },
+        "char_helios": {
+          "chars": 449,
+          "sha8": "fb01e610"
+        },
+        "char_vex": {
+          "chars": 448,
+          "sha8": "de3d20aa"
+        },
+        "char_wren": {
+          "chars": 448,
+          "sha8": "de3d20aa"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 448,
+          "sha8": "de3d20aa"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s2771",
+      "disposition": "excluded",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 941,
+          "sha8": "7862a061"
+        },
+        "char_helios": {
+          "chars": 941,
+          "sha8": "9ffa29fc"
+        },
+        "char_vex": {
+          "chars": 941,
+          "sha8": "7862a061"
+        },
+        "char_wren": {
+          "chars": 941,
+          "sha8": "7862a061"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 941,
+          "sha8": "7862a061"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "75866179",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2797",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 686,
+          "sha8": "75866179"
+        },
+        "char_vex": {
+          "chars": 685,
+          "sha8": "d13a5ba3"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "75007f79",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2821",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 735,
+          "sha8": "75007f79"
+        },
+        "char_vex": {
+          "chars": 734,
+          "sha8": "bf01d2d1"
+        },
+        "char_wren": {
+          "chars": 735,
+          "sha8": "75007f79"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 734,
+          "sha8": "bf01d2d1"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "16fadadf",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2822",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 783,
+          "sha8": "16fadadf"
+        },
+        "char_wren": {
+          "chars": 782,
+          "sha8": "f49af896"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "bee7cce4",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2834",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 941,
+          "sha8": "bee7cce4"
+        },
+        "char_wren": {
+          "chars": 941,
+          "sha8": "bee7cce4"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 939,
+          "sha8": "94214592"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s2894",
+      "disposition": "excluded",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1937,
+          "sha8": "22473a24"
+        },
+        "char_wren": {
+          "chars": 1933,
+          "sha8": "2e12ece5"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1937,
+          "sha8": "22473a24"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "0cc773c6",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2906",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 975,
+          "sha8": "8fe020a1"
+        },
+        "char_wren": {
+          "chars": 974,
+          "sha8": "0cc773c6"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 974,
+          "sha8": "0cc773c6"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c96a5098",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2916",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 723,
+          "sha8": "c96a5098"
+        },
+        "char_helios": {
+          "chars": 723,
+          "sha8": "c96a5098"
+        },
+        "char_wren": {
+          "chars": 720,
+          "sha8": "28f89b3c"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 723,
+          "sha8": "c96a5098"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "00e9fcfc",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2923",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 219,
+          "sha8": "00e9fcfc"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 220,
+          "sha8": "1a722d69"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c26007cc",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2925",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 932,
+          "sha8": "c26007cc"
+        },
+        "char_vex": {
+          "chars": 934,
+          "sha8": "f6e64d1a"
+        },
+        "char_wren": {
+          "chars": 932,
+          "sha8": "c26007cc"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 932,
+          "sha8": "c26007cc"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5b961e8c",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2934",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2359,
+          "sha8": "5b961e8c"
+        },
+        "char_wren": {
+          "chars": 2364,
+          "sha8": "541d1d08"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2359,
+          "sha8": "5b961e8c"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2ee62b9e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2947",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 410,
+          "sha8": "2ee62b9e"
+        },
+        "char_wren": {
+          "chars": 419,
+          "sha8": "91a6c1c9"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 410,
+          "sha8": "2ee62b9e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2fb90c65",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3025",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2594,
+          "sha8": "2fb90c65"
+        },
+        "char_wren": {
+          "chars": 2589,
+          "sha8": "5c0faf74"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2594,
+          "sha8": "2fb90c65"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d2dbe522",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3087",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2589,
+          "sha8": "d2dbe522"
+        },
+        "char_helios": {
+          "chars": 2601,
+          "sha8": "bc1ddfd7"
+        },
+        "char_vex": {
+          "chars": 2589,
+          "sha8": "d2dbe522"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2589,
+          "sha8": "d2dbe522"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "e8911a89",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3104",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 111,
+          "sha8": "d43c1bc9"
+        },
+        "char_helios": {
+          "chars": 109,
+          "sha8": "e8911a89"
+        },
+        "char_vex": {
+          "chars": 113,
+          "sha8": "f3369679"
+        },
+        "char_wren": {
+          "chars": 109,
+          "sha8": "e8911a89"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 109,
+          "sha8": "e8911a89"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "22be0db0",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s311",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 218,
+          "sha8": "22be0db0"
+        },
+        "char_helios": {
+          "chars": 218,
+          "sha8": "22be0db0"
+        },
+        "char_vex": {
+          "chars": 218,
+          "sha8": "22be0db0"
+        },
+        "char_wren": {
+          "chars": 220,
+          "sha8": "6bd04484"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 218,
+          "sha8": "22be0db0"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "88e52260",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3135",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 552,
+          "sha8": "e323f834"
+        },
+        "char_helios": {
+          "chars": 551,
+          "sha8": "88e52260"
+        },
+        "char_wren": {
+          "chars": 551,
+          "sha8": "88e52260"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 551,
+          "sha8": "88e52260"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5fd07f1f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3136",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 540,
+          "sha8": "522d39f9"
+        },
+        "char_helios": {
+          "chars": 541,
+          "sha8": "5fd07f1f"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 541,
+          "sha8": "5fd07f1f"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "6a7622d4",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3140",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 769,
+          "sha8": "6a7622d4"
+        },
+        "char_vex": {
+          "chars": 769,
+          "sha8": "6a7622d4"
+        },
+        "char_wren": {
+          "chars": 775,
+          "sha8": "f8bb772c"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 769,
+          "sha8": "6a7622d4"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "7e0403dc",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3161",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_wren": {
+          "chars": 606,
+          "sha8": "813cbcca"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 606,
+          "sha8": "7e0403dc"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5f3f0faf",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3177",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 318,
+          "sha8": "b405063f"
+        },
+        "char_wren": {
+          "chars": 321,
+          "sha8": "adbdb11a"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 319,
+          "sha8": "5f3f0faf"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "7a096dd2",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3193",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 755,
+          "sha8": "a5dd1532"
+        },
+        "char_helios": {
+          "chars": 754,
+          "sha8": "1005986c"
+        },
+        "char_vex": {
+          "chars": 755,
+          "sha8": "a5dd1532"
+        },
+        "char_wren": {
+          "chars": 753,
+          "sha8": "7a096dd2"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 753,
+          "sha8": "7a096dd2"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2b838869",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3197",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1138,
+          "sha8": "2b838869"
+        },
+        "char_helios": {
+          "chars": 1139,
+          "sha8": "994715ba"
+        },
+        "char_vex": {
+          "chars": 1138,
+          "sha8": "2b838869"
+        },
+        "char_wren": {
+          "chars": 1138,
+          "sha8": "2b838869"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1138,
+          "sha8": "2b838869"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "ecc05e56",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s320",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2315,
+          "sha8": "ecc05e56"
+        },
+        "char_helios": {
+          "chars": 2310,
+          "sha8": "68404a5b"
+        },
+        "char_vex": {
+          "chars": 2315,
+          "sha8": "ecc05e56"
+        },
+        "char_wren": {
+          "chars": 2315,
+          "sha8": "ecc05e56"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2315,
+          "sha8": "ecc05e56"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "466898db",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3208",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1397,
+          "sha8": "e8a61be1"
+        },
+        "char_vex": {
+          "chars": 1399,
+          "sha8": "466898db"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d131d1a0",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3210",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 530,
+          "sha8": "380efaa3"
+        },
+        "char_helios": {
+          "chars": 529,
+          "sha8": "d131d1a0"
+        },
+        "char_vex": {
+          "chars": 529,
+          "sha8": "d131d1a0"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 529,
+          "sha8": "d131d1a0"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "b73f058f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3219",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 3149,
+          "sha8": "b73f058f"
+        },
+        "char_vex": {
+          "chars": 3150,
+          "sha8": "c96f5d2d"
+        },
+        "char_wren": {
+          "chars": 3149,
+          "sha8": "b73f058f"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 3149,
+          "sha8": "b73f058f"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5041b43e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3220",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1036,
+          "sha8": "5041b43e"
+        },
+        "char_vex": {
+          "chars": 1038,
+          "sha8": "ee4a7817"
+        },
+        "char_wren": {
+          "chars": 1038,
+          "sha8": "ee4a7817"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1036,
+          "sha8": "5041b43e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "6cf53171",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3229",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 302,
+          "sha8": "6cf53171"
+        },
+        "char_helios": {
+          "chars": 304,
+          "sha8": "5db538ce"
+        },
+        "char_wren": {
+          "chars": 302,
+          "sha8": "6cf53171"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 306,
+          "sha8": "fd4eca62"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5f5622ce",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3259",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1804,
+          "sha8": "8694bf85"
+        },
+        "char_vex": {
+          "chars": 1802,
+          "sha8": "d5447c7c"
+        },
+        "char_wren": {
+          "chars": 1803,
+          "sha8": "5f5622ce"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "ecce9bc0",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s327",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_vex": {
+          "chars": 1234,
+          "sha8": "ecce9bc0"
+        },
+        "char_wren": {
+          "chars": 1232,
+          "sha8": "f66514a3"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1234,
+          "sha8": "ecce9bc0"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s3271",
+      "disposition": "excluded",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 3553,
+          "sha8": "f4019ae4"
+        },
+        "char_helios": {
+          "chars": 3553,
+          "sha8": "f4019ae4"
+        },
+        "char_vex": {
+          "chars": 3553,
+          "sha8": "ecd9099b"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 3553,
+          "sha8": "f4019ae4"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5a48778d",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s329",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 100,
+          "sha8": "8cc5310a"
+        },
+        "char_vex": {
+          "chars": 102,
+          "sha8": "5a48778d"
+        },
+        "char_wren": {
+          "chars": 102,
+          "sha8": "5a48778d"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 102,
+          "sha8": "5a48778d"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "9bcb471f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s331",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1471,
+          "sha8": "9bcb471f"
+        },
+        "char_vex": {
+          "chars": 1471,
+          "sha8": "9bcb471f"
+        },
+        "char_wren": {
+          "chars": 1463,
+          "sha8": "97c0088c"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1471,
+          "sha8": "9bcb471f"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "ac548a18",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s334",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1426,
+          "sha8": "ac548a18"
+        },
+        "char_vex": {
+          "chars": 1426,
+          "sha8": "ac548a18"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1422,
+          "sha8": "5f4c8bf7"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "df1921e2",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3370",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1866,
+          "sha8": "df1921e2"
+        },
+        "char_helios": {
+          "chars": 1862,
+          "sha8": "cbfef22a"
+        },
+        "char_vex": {
+          "chars": 1866,
+          "sha8": "df1921e2"
+        },
+        "char_wren": {
+          "chars": 1866,
+          "sha8": "df1921e2"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1862,
+          "sha8": "cbfef22a"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "a3ebc0c0",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3372",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 618,
+          "sha8": "a3ebc0c0"
+        },
+        "char_vex": {
+          "chars": 618,
+          "sha8": "a3ebc0c0"
+        },
+        "char_wren": {
+          "chars": 617,
+          "sha8": "b75c1136"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "ad8f78b7",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s339",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2333,
+          "sha8": "dca2172b"
+        },
+        "char_helios": {
+          "chars": 2338,
+          "sha8": "ad8f78b7"
+        },
+        "char_vex": {
+          "chars": 2338,
+          "sha8": "ad8f78b7"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2338,
+          "sha8": "ad8f78b7"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2c500c17",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3423",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 695,
+          "sha8": "2c500c17"
+        },
+        "char_wren": {
+          "chars": 696,
+          "sha8": "a8051549"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "bf38f7b8",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s344",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 115,
+          "sha8": "bf38f7b8"
+        },
+        "char_vex": {
+          "chars": 115,
+          "sha8": "bf38f7b8"
+        },
+        "char_wren": {
+          "chars": 125,
+          "sha8": "7ef7ee04"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 115,
+          "sha8": "bf38f7b8"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "bd49a30e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3463",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2254,
+          "sha8": "bd49a30e"
+        },
+        "char_wren": {
+          "chars": 2254,
+          "sha8": "bd49a30e"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2255,
+          "sha8": "82860dff"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "e23de7a3",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3466",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 159,
+          "sha8": "e23de7a3"
+        },
+        "char_helios": {
+          "chars": 159,
+          "sha8": "e23de7a3"
+        },
+        "char_vex": {
+          "chars": 160,
+          "sha8": "9cff2ec3"
+        },
+        "char_wren": {
+          "chars": 159,
+          "sha8": "e23de7a3"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "6a14951e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3512",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 835,
+          "sha8": "6a14951e"
+        },
+        "char_vex": {
+          "chars": 835,
+          "sha8": "6a14951e"
+        },
+        "char_wren": {
+          "chars": 835,
+          "sha8": "6a14951e"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 837,
+          "sha8": "270143b7"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "983d7495",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3529",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1004,
+          "sha8": "983d7495"
+        },
+        "char_vex": {
+          "chars": 1004,
+          "sha8": "983d7495"
+        },
+        "char_wren": {
+          "chars": 1046,
+          "sha8": "2ec6e588"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c7e06b51",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3561",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 657,
+          "sha8": "60a2491d"
+        },
+        "char_helios": {
+          "chars": 656,
+          "sha8": "c7e06b51"
+        },
+        "char_vex": {
+          "chars": 658,
+          "sha8": "a49b9f03"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 656,
+          "sha8": "c7e06b51"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "1aab8751",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3563",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1135,
+          "sha8": "1aab8751"
+        },
+        "char_vex": {
+          "chars": 1133,
+          "sha8": "463597b0"
+        },
+        "char_wren": {
+          "chars": 1135,
+          "sha8": "1aab8751"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "ceb37285",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3582",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1394,
+          "sha8": "ceb37285"
+        },
+        "char_vex": {
+          "chars": 1394,
+          "sha8": "ceb37285"
+        },
+        "char_wren": {
+          "chars": 1394,
+          "sha8": "ceb37285"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1392,
+          "sha8": "a7ef0aeb"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "7cdafb40",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3605",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_wren": {
+          "chars": 1909,
+          "sha8": "bed7bdbe"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1906,
+          "sha8": "7cdafb40"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "05099d21",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s363",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2489,
+          "sha8": "05099d21"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2488,
+          "sha8": "15c4673d"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "66cbe647",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3642",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_vex": {
+          "chars": 1081,
+          "sha8": "70724670"
+        },
+        "char_wren": {
+          "chars": 1079,
+          "sha8": "66cbe647"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1079,
+          "sha8": "66cbe647"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "488536c2",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3648",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2043,
+          "sha8": "488536c2"
+        },
+        "char_wren": {
+          "chars": 2043,
+          "sha8": "488536c2"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2034,
+          "sha8": "586139de"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c01e2f2f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3659",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2921,
+          "sha8": "90604306"
+        },
+        "char_helios": {
+          "chars": 2920,
+          "sha8": "c01e2f2f"
+        },
+        "char_vex": {
+          "chars": 2920,
+          "sha8": "c01e2f2f"
+        },
+        "char_wren": {
+          "chars": 2920,
+          "sha8": "c01e2f2f"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2920,
+          "sha8": "c01e2f2f"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c14b7195",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s366",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2152,
+          "sha8": "c14b7195"
+        },
+        "char_helios": {
+          "chars": 2152,
+          "sha8": "c14b7195"
+        },
+        "char_vex": {
+          "chars": 2148,
+          "sha8": "3e003a8f"
+        },
+        "char_wren": {
+          "chars": 2148,
+          "sha8": "3e003a8f"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2152,
+          "sha8": "c14b7195"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "0b9e0c5a",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3669",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1689,
+          "sha8": "779d77bf"
+        },
+        "char_vex": {
+          "chars": 1687,
+          "sha8": "0b9e0c5a"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "3f8debbd",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3676",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1329,
+          "sha8": "3f8debbd"
+        },
+        "char_vex": {
+          "chars": 1329,
+          "sha8": "3f8debbd"
+        },
+        "char_wren": {
+          "chars": 1330,
+          "sha8": "9912b800"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "824e6144",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3687",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 527,
+          "sha8": "824e6144"
+        },
+        "char_helios": {
+          "chars": 527,
+          "sha8": "824e6144"
+        },
+        "char_wren": {
+          "chars": 526,
+          "sha8": "a236351f"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 526,
+          "sha8": "a236351f"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2b2ddd50",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3710",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 649,
+          "sha8": "ea317956"
+        },
+        "char_helios": {
+          "chars": 648,
+          "sha8": "b0acffad"
+        },
+        "char_vex": {
+          "chars": 650,
+          "sha8": "2b2ddd50"
+        },
+        "char_wren": {
+          "chars": 650,
+          "sha8": "2b2ddd50"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "4b5e4934",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3712",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1722,
+          "sha8": "6d6fe0d5"
+        },
+        "char_vex": {
+          "chars": 1721,
+          "sha8": "4b5e4934"
+        },
+        "char_wren": {
+          "chars": 1721,
+          "sha8": "4b5e4934"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1721,
+          "sha8": "4b5e4934"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c4d49de3",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3733",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2218,
+          "sha8": "c4d49de3"
+        },
+        "char_vex": {
+          "chars": 2218,
+          "sha8": "c4d49de3"
+        },
+        "char_wren": {
+          "chars": 2219,
+          "sha8": "8f559487"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f505f50e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3740",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1089,
+          "sha8": "16eb0fef"
+        },
+        "char_helios": {
+          "chars": 1088,
+          "sha8": "f505f50e"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1088,
+          "sha8": "f505f50e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d62a6296",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3758",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 185,
+          "sha8": "d62a6296"
+        },
+        "char_vex": {
+          "chars": 185,
+          "sha8": "d62a6296"
+        },
+        "char_wren": {
+          "chars": 186,
+          "sha8": "aaab6a40"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 185,
+          "sha8": "d62a6296"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "b5861fef",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3760",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 456,
+          "sha8": "e5c9d66f"
+        },
+        "char_vex": {
+          "chars": 457,
+          "sha8": "b5861fef"
+        },
+        "char_wren": {
+          "chars": 457,
+          "sha8": "b5861fef"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 451,
+          "sha8": "77bbe29a"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "8e74fb32",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3766",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 887,
+          "sha8": "b9ba7cfe"
+        },
+        "char_vex": {
+          "chars": 887,
+          "sha8": "8e74fb32"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "a21e5312",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3779",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1062,
+          "sha8": "c61a063b"
+        },
+        "char_vex": {
+          "chars": 1059,
+          "sha8": "a21e5312"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1059,
+          "sha8": "a21e5312"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "64c85486",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3881",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 626,
+          "sha8": "d34449c4"
+        },
+        "char_vex": {
+          "chars": 628,
+          "sha8": "64c85486"
+        },
+        "char_wren": {
+          "chars": 628,
+          "sha8": "64c85486"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 626,
+          "sha8": "d34449c4"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2cb0f51f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3882",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 231,
+          "sha8": "2cb0f51f"
+        },
+        "char_vex": {
+          "chars": 230,
+          "sha8": "c66ebab4"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s3884",
+      "disposition": "excluded",
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2653,
+          "sha8": "e469e44f"
+        },
+        "char_helios": {
+          "chars": 2653,
+          "sha8": "537b2fc7"
+        },
+        "char_vex": {
+          "chars": 2653,
+          "sha8": "e469e44f"
+        },
+        "char_wren": {
+          "chars": 2653,
+          "sha8": "e469e44f"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2568,
+          "sha8": "00171534"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "cbda1239",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3886",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_wren": {
+          "chars": 2054,
+          "sha8": "cbda1239"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2045,
+          "sha8": "d7ac246f"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "a3d645b2",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3900",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2178,
+          "sha8": "1c8386ec"
+        },
+        "char_helios": {
+          "chars": 2183,
+          "sha8": "a3d645b2"
+        },
+        "char_vex": {
+          "chars": 2183,
+          "sha8": "a3d645b2"
+        },
+        "char_wren": {
+          "chars": 2183,
+          "sha8": "a3d645b2"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2178,
+          "sha8": "1c8386ec"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "0d29cb30",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3975",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_vex": {
+          "chars": 834,
+          "sha8": "0d29cb30"
+        },
+        "char_wren": {
+          "chars": 834,
+          "sha8": "0d29cb30"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 836,
+          "sha8": "9b46714d"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s3981",
+      "disposition": "excluded",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 635,
+          "sha8": "54669839"
+        },
+        "char_vex": {
+          "chars": 636,
+          "sha8": "15bf1f79"
+        },
+        "char_wren": {
+          "chars": 635,
+          "sha8": "7caecb3f"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 635,
+          "sha8": "54669839"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f126a419",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3992",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2589,
+          "sha8": "f126a419"
+        },
+        "char_wren": {
+          "chars": 2589,
+          "sha8": "f126a419"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2597,
+          "sha8": "ad477c89"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "0ebc1ac5",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s40",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 966,
+          "sha8": "0ebc1ac5"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 962,
+          "sha8": "548e756e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f1ea229f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s400",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2440,
+          "sha8": "f1ea229f"
+        },
+        "char_vex": {
+          "chars": 2440,
+          "sha8": "f1ea229f"
+        },
+        "char_wren": {
+          "chars": 2440,
+          "sha8": "f1ea229f"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2435,
+          "sha8": "2df31026"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s4014",
+      "disposition": "excluded",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2161,
+          "sha8": "034b9ba5"
+        },
+        "char_helios": {
+          "chars": 2161,
+          "sha8": "ec251de5"
+        },
+        "char_vex": {
+          "chars": 2161,
+          "sha8": "034b9ba5"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2161,
+          "sha8": "034b9ba5"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "22cec30e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4033",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1847,
+          "sha8": "c0c50eed"
+        },
+        "char_vex": {
+          "chars": 1844,
+          "sha8": "22cec30e"
+        },
+        "char_wren": {
+          "chars": 1844,
+          "sha8": "22cec30e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c4b36fea",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4034",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 373,
+          "sha8": "c4b36fea"
+        },
+        "char_vex": {
+          "chars": 373,
+          "sha8": "c4b36fea"
+        },
+        "char_wren": {
+          "chars": 374,
+          "sha8": "dd646f7e"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 373,
+          "sha8": "c4b36fea"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d56fcaa0",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4043",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1380,
+          "sha8": "d56fcaa0"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1379,
+          "sha8": "dc1824a7"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d5102f41",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4046",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 733,
+          "sha8": "d5102f41"
+        },
+        "char_helios": {
+          "chars": 734,
+          "sha8": "fb566d3c"
+        },
+        "char_vex": {
+          "chars": 733,
+          "sha8": "d5102f41"
+        },
+        "char_wren": {
+          "chars": 733,
+          "sha8": "d5102f41"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 733,
+          "sha8": "d5102f41"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5e21cf0e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4053",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2056,
+          "sha8": "5e21cf0e"
+        },
+        "char_wren": {
+          "chars": 2056,
+          "sha8": "5e21cf0e"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2057,
+          "sha8": "d74f79c2"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "8eb0b1de",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4095",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1669,
+          "sha8": "8eb0b1de"
+        },
+        "char_vex": {
+          "chars": 1669,
+          "sha8": "8eb0b1de"
+        },
+        "char_wren": {
+          "chars": 1670,
+          "sha8": "7d671a82"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1669,
+          "sha8": "8eb0b1de"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "9d0c5f88",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4145",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2833,
+          "sha8": "9d0c5f88"
+        },
+        "char_vex": {
+          "chars": 2834,
+          "sha8": "07d66de7"
+        },
+        "char_wren": {
+          "chars": 2833,
+          "sha8": "9d0c5f88"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "98d5b067",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4163",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 571,
+          "sha8": "98d5b067"
+        },
+        "char_vex": {
+          "chars": 571,
+          "sha8": "98d5b067"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 561,
+          "sha8": "a3efbfa6"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "74630ffc",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4187",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_vex": {
+          "chars": 711,
+          "sha8": "74630ffc"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 709,
+          "sha8": "91578792"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "02f1b7f3",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4191",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2206,
+          "sha8": "1982f0cd"
+        },
+        "char_wren": {
+          "chars": 2208,
+          "sha8": "a31eb6e7"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2202,
+          "sha8": "02f1b7f3"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c305f3de",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4194",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_vex": {
+          "chars": 756,
+          "sha8": "f89c91f5"
+        },
+        "char_wren": {
+          "chars": 757,
+          "sha8": "c305f3de"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "6416330d",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4202",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_vex": {
+          "chars": 96,
+          "sha8": "6416330d"
+        },
+        "char_wren": {
+          "chars": 96,
+          "sha8": "6416330d"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 95,
+          "sha8": "6cfad6a7"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "323ef757",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4208",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_vex": {
+          "chars": 2582,
+          "sha8": "64478f2e"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2583,
+          "sha8": "323ef757"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c1495e91",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4214",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1498,
+          "sha8": "c1495e91"
+        },
+        "char_vex": {
+          "chars": 1503,
+          "sha8": "9f9138d1"
+        },
+        "char_wren": {
+          "chars": 1498,
+          "sha8": "c1495e91"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1498,
+          "sha8": "c1495e91"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "890a9567",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4239",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2762,
+          "sha8": "890a9567"
+        },
+        "char_helios": {
+          "chars": 2749,
+          "sha8": "d127df05"
+        },
+        "char_vex": {
+          "chars": 2762,
+          "sha8": "890a9567"
+        },
+        "char_wren": {
+          "chars": 2762,
+          "sha8": "890a9567"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2762,
+          "sha8": "890a9567"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "441a29d7",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4250",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2212,
+          "sha8": "441a29d7"
+        },
+        "char_helios": {
+          "chars": 2212,
+          "sha8": "441a29d7"
+        },
+        "char_wren": {
+          "chars": 2212,
+          "sha8": "441a29d7"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2208,
+          "sha8": "378c544b"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2e2464ce",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4251",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 121,
+          "sha8": "cfc412d9"
+        },
+        "char_helios": {
+          "chars": 122,
+          "sha8": "2e2464ce"
+        },
+        "char_vex": {
+          "chars": 122,
+          "sha8": "2e2464ce"
+        },
+        "char_wren": {
+          "chars": 122,
+          "sha8": "2e2464ce"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 122,
+          "sha8": "2e2464ce"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f50934dd",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4260",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2134,
+          "sha8": "f50934dd"
+        },
+        "char_helios": {
+          "chars": 2134,
+          "sha8": "f50934dd"
+        },
+        "char_vex": {
+          "chars": 2131,
+          "sha8": "c8f1566c"
+        },
+        "char_wren": {
+          "chars": 2134,
+          "sha8": "f50934dd"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2134,
+          "sha8": "f50934dd"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "53ff8264",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4268",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_vex": {
+          "chars": 2383,
+          "sha8": "f6f8757d"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2378,
+          "sha8": "53ff8264"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "49b2c9bc",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4274",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2747,
+          "sha8": "8ddb12b0"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2746,
+          "sha8": "49b2c9bc"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2a079322",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4276",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 610,
+          "sha8": "2a079322"
+        },
+        "char_helios": {
+          "chars": 609,
+          "sha8": "f20faf06"
+        },
+        "char_vex": {
+          "chars": 609,
+          "sha8": "f20faf06"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 610,
+          "sha8": "2a079322"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "75691317",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4285",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 660,
+          "sha8": "75691317"
+        },
+        "char_vex": {
+          "chars": 660,
+          "sha8": "75691317"
+        },
+        "char_wren": {
+          "chars": 659,
+          "sha8": "a1e437b5"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "7e5af4fa",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4295",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2216,
+          "sha8": "7e5af4fa"
+        },
+        "char_helios": {
+          "chars": 2212,
+          "sha8": "03bf7a45"
+        },
+        "char_vex": {
+          "chars": 2216,
+          "sha8": "7e5af4fa"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2216,
+          "sha8": "7e5af4fa"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f830fea0",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4314",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2312,
+          "sha8": "f830fea0"
+        },
+        "char_vex": {
+          "chars": 2312,
+          "sha8": "f830fea0"
+        },
+        "char_wren": {
+          "chars": 2312,
+          "sha8": "f830fea0"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2310,
+          "sha8": "ff449e98"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5486074f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4322",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2060,
+          "sha8": "5486074f"
+        },
+        "char_helios": {
+          "chars": 2064,
+          "sha8": "d98f77ba"
+        },
+        "char_vex": {
+          "chars": 2064,
+          "sha8": "d98f77ba"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2060,
+          "sha8": "5486074f"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "ab393797",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4366",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2058,
+          "sha8": "5b9ebcf2"
+        },
+        "char_helios": {
+          "chars": 2057,
+          "sha8": "ab393797"
+        },
+        "char_vex": {
+          "chars": 2057,
+          "sha8": "ab393797"
+        },
+        "char_wren": {
+          "chars": 2057,
+          "sha8": "ab393797"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2057,
+          "sha8": "ab393797"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "4dd5aabf",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s442",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1301,
+          "sha8": "4dd5aabf"
+        },
+        "char_helios": {
+          "chars": 1302,
+          "sha8": "e070f4d6"
+        },
+        "char_wren": {
+          "chars": 1301,
+          "sha8": "4dd5aabf"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "59417848",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4452",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1237,
+          "sha8": "170b1d50"
+        },
+        "char_helios": {
+          "chars": 1241,
+          "sha8": "59417848"
+        },
+        "char_vex": {
+          "chars": 1241,
+          "sha8": "59417848"
+        },
+        "char_wren": {
+          "chars": 1239,
+          "sha8": "8bf1e792"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c75f417f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4475",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2063,
+          "sha8": "fd1b99fe"
+        },
+        "char_wren": {
+          "chars": 2066,
+          "sha8": "c75f417f"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s4489",
+      "disposition": "excluded",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1811,
+          "sha8": "1fdff0b2"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1811,
+          "sha8": "afd13220"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "4863e388",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4511",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2303,
+          "sha8": "bc5d6758"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2302,
+          "sha8": "4863e388"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "5d198871",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4526",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1151,
+          "sha8": "ef6ca4f8"
+        },
+        "char_vex": {
+          "chars": 1150,
+          "sha8": "5d198871"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "cb8ee8e0",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4555",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_vex": {
+          "chars": 1263,
+          "sha8": "cb8ee8e0"
+        },
+        "char_wren": {
+          "chars": 1263,
+          "sha8": "cb8ee8e0"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1264,
+          "sha8": "f7b571fb"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "4b9e2d17",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4567",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2123,
+          "sha8": "4b9e2d17"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2122,
+          "sha8": "b7708626"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c3bc847b",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4578",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 435,
+          "sha8": "c3bc847b"
+        },
+        "char_wren": {
+          "chars": 433,
+          "sha8": "ddeb208b"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "8232fd6c",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4582",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1863,
+          "sha8": "8232fd6c"
+        },
+        "char_wren": {
+          "chars": 1863,
+          "sha8": "8232fd6c"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1859,
+          "sha8": "855c1e86"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "ecd8a488",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4594",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 358,
+          "sha8": "ecd8a488"
+        },
+        "char_wren": {
+          "chars": 360,
+          "sha8": "8116d57d"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 358,
+          "sha8": "ecd8a488"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "765a39fd",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4598",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 918,
+          "sha8": "8e55db32"
+        },
+        "char_helios": {
+          "chars": 917,
+          "sha8": "765a39fd"
+        },
+        "char_vex": {
+          "chars": 918,
+          "sha8": "8e55db32"
+        },
+        "char_wren": {
+          "chars": 917,
+          "sha8": "765a39fd"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 917,
+          "sha8": "765a39fd"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2a562067",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4599",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2258,
+          "sha8": "2a562067"
+        },
+        "char_vex": {
+          "chars": 2255,
+          "sha8": "2fa1c201"
+        },
+        "char_wren": {
+          "chars": 2260,
+          "sha8": "2f9193b0"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d43c1bc9",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4619",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 111,
+          "sha8": "d43c1bc9"
+        },
+        "char_helios": {
+          "chars": 109,
+          "sha8": "e8911a89"
+        },
+        "char_vex": {
+          "chars": 111,
+          "sha8": "d43c1bc9"
+        },
+        "char_wren": {
+          "chars": 111,
+          "sha8": "d43c1bc9"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2a569a05",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s464",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_vex": {
+          "chars": 1417,
+          "sha8": "2a569a05"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1414,
+          "sha8": "c5d3f194"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "9cdbca91",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s467",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 225,
+          "sha8": "aafc2b42"
+        },
+        "char_helios": {
+          "chars": 227,
+          "sha8": "9cdbca91"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "efd6e688",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4677",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1046,
+          "sha8": "efd6e688"
+        },
+        "char_vex": {
+          "chars": 1046,
+          "sha8": "efd6e688"
+        },
+        "char_wren": {
+          "chars": 1046,
+          "sha8": "efd6e688"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1044,
+          "sha8": "3e2fbd60"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "95b5b14e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4694",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 4,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 557,
+          "sha8": "244d0867"
+        },
+        "char_helios": {
+          "chars": 548,
+          "sha8": "95b5b14e"
+        },
+        "char_vex": {
+          "chars": 555,
+          "sha8": "8ff40f0c"
+        },
+        "char_wren": {
+          "chars": 547,
+          "sha8": "e59569c5"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 548,
+          "sha8": "95b5b14e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "403a142b",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4699",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 73,
+          "sha8": "403a142b"
+        },
+        "char_helios": {
+          "chars": 73,
+          "sha8": "403a142b"
+        },
+        "char_vex": {
+          "chars": 73,
+          "sha8": "403a142b"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 74,
+          "sha8": "be9c7236"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "e2010316",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4704",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1361,
+          "sha8": "e2010316"
+        },
+        "char_helios": {
+          "chars": 1361,
+          "sha8": "e2010316"
+        },
+        "char_wren": {
+          "chars": 1361,
+          "sha8": "e2010316"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1352,
+          "sha8": "1f58a25b"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f3f40f60",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4715",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1575,
+          "sha8": "f3f40f60"
+        },
+        "char_helios": {
+          "chars": 1575,
+          "sha8": "f3f40f60"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1487,
+          "sha8": "751251a3"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "879dc3a3",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s472",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 941,
+          "sha8": "879dc3a3"
+        },
+        "char_helios": {
+          "chars": 938,
+          "sha8": "efbb7512"
+        },
+        "char_vex": {
+          "chars": 941,
+          "sha8": "879dc3a3"
+        },
+        "char_wren": {
+          "chars": 938,
+          "sha8": "efbb7512"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "4c5345c6",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4732",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2361,
+          "sha8": "4c5345c6"
+        },
+        "char_wren": {
+          "chars": 2361,
+          "sha8": "f18b91e5"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "afc77159",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4809",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2129,
+          "sha8": "afc77159"
+        },
+        "char_helios": {
+          "chars": 2129,
+          "sha8": "afc77159"
+        },
+        "char_wren": {
+          "chars": 2129,
+          "sha8": "afc77159"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2125,
+          "sha8": "1ac346a1"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "91c7932c",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4811",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_vex": {
+          "chars": 43,
+          "sha8": "91c7932c"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 43,
+          "sha8": "a6b5bd80"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "bbe6cc44",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4859",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 157,
+          "sha8": "d24e9dbd"
+        },
+        "char_vex": {
+          "chars": 165,
+          "sha8": "bbe6cc44"
+        },
+        "char_wren": {
+          "chars": 157,
+          "sha8": "c919b8ce"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2dca50fd",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4865",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2685,
+          "sha8": "2dca50fd"
+        },
+        "char_vex": {
+          "chars": 2697,
+          "sha8": "3cacfb3b"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "4fa18238",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s493",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1208,
+          "sha8": "4fa18238"
+        },
+        "char_helios": {
+          "chars": 1208,
+          "sha8": "4fa18238"
+        },
+        "char_vex": {
+          "chars": 1208,
+          "sha8": "4fa18238"
+        },
+        "char_wren": {
+          "chars": 1209,
+          "sha8": "e709e24d"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "03723853",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4951",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 546,
+          "sha8": "03723853"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 545,
+          "sha8": "87be9a8b"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c6ce5bfb",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s496",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1481,
+          "sha8": "1ce9d311"
+        },
+        "char_helios": {
+          "chars": 1473,
+          "sha8": "c6ce5bfb"
+        },
+        "char_vex": {
+          "chars": 1473,
+          "sha8": "c6ce5bfb"
+        },
+        "char_wren": {
+          "chars": 1480,
+          "sha8": "49b1df67"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "aeb3fad7",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4969",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 806,
+          "sha8": "aeb3fad7"
+        },
+        "char_helios": {
+          "chars": 806,
+          "sha8": "aeb3fad7"
+        },
+        "char_vex": {
+          "chars": 806,
+          "sha8": "aeb3fad7"
+        },
+        "char_wren": {
+          "chars": 807,
+          "sha8": "70f7aaa8"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 806,
+          "sha8": "aeb3fad7"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "965259a2",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s500",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 4,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2021,
+          "sha8": "100304dc"
+        },
+        "char_helios": {
+          "chars": 2023,
+          "sha8": "751e9ecf"
+        },
+        "char_vex": {
+          "chars": 2020,
+          "sha8": "d6fdf697"
+        },
+        "char_wren": {
+          "chars": 2022,
+          "sha8": "965259a2"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2022,
+          "sha8": "965259a2"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "a5988278",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s51",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2492,
+          "sha8": "a5988278"
+        },
+        "char_helios": {
+          "chars": 2493,
+          "sha8": "78c6e0b8"
+        },
+        "char_wren": {
+          "chars": 2492,
+          "sha8": "a5988278"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2492,
+          "sha8": "a5988278"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "53708e7a",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s540",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1458,
+          "sha8": "614e9437"
+        },
+        "char_vex": {
+          "chars": 1457,
+          "sha8": "53708e7a"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "cdd5fbbc",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s548",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 500,
+          "sha8": "cdd5fbbc"
+        },
+        "char_wren": {
+          "chars": 502,
+          "sha8": "0f8cdca7"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 500,
+          "sha8": "cdd5fbbc"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s554",
+      "disposition": "excluded",
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 397,
+          "sha8": "1ba03443"
+        },
+        "char_helios": {
+          "chars": 397,
+          "sha8": "1ba03443"
+        },
+        "char_vex": {
+          "chars": 397,
+          "sha8": "3179ea01"
+        },
+        "char_wren": {
+          "chars": 397,
+          "sha8": "1ba03443"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 405,
+          "sha8": "a4aea90d"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "b41e2daf",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s556",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 913,
+          "sha8": "593fe643"
+        },
+        "char_wren": {
+          "chars": 914,
+          "sha8": "b41e2daf"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 914,
+          "sha8": "b41e2daf"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "27369c0b",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s562",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_wren": {
+          "chars": 1431,
+          "sha8": "5b5e1919"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1413,
+          "sha8": "27369c0b"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "9f030d95",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s580",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1117,
+          "sha8": "9f030d95"
+        },
+        "char_helios": {
+          "chars": 1114,
+          "sha8": "0116918b"
+        },
+        "char_vex": {
+          "chars": 1117,
+          "sha8": "9f030d95"
+        },
+        "char_wren": {
+          "chars": 1117,
+          "sha8": "9f030d95"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "1e57d5b8",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s596",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 75,
+          "sha8": "1e57d5b8"
+        },
+        "char_helios": {
+          "chars": 75,
+          "sha8": "1e57d5b8"
+        },
+        "char_vex": {
+          "chars": 75,
+          "sha8": "1e57d5b8"
+        },
+        "char_wren": {
+          "chars": 75,
+          "sha8": "5fc036c0"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 75,
+          "sha8": "1e57d5b8"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "9c3b92cb",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s597",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1836,
+          "sha8": "9c3b92cb"
+        },
+        "char_wren": {
+          "chars": 1836,
+          "sha8": "9c3b92cb"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1829,
+          "sha8": "6ee6d54b"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f6a9b265",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s60",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1974,
+          "sha8": "f6a9b265"
+        },
+        "char_wren": {
+          "chars": 1970,
+          "sha8": "11fdb195"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1974,
+          "sha8": "f6a9b265"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "96d7c830",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s65",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1234,
+          "sha8": "e8380bd3"
+        },
+        "char_helios": {
+          "chars": 1235,
+          "sha8": "96d7c830"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "f35602b1",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s650",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2838,
+          "sha8": "f35602b1"
+        },
+        "char_helios": {
+          "chars": 2838,
+          "sha8": "f35602b1"
+        },
+        "char_wren": {
+          "chars": 2838,
+          "sha8": "f35602b1"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2824,
+          "sha8": "2e5fe84d"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "b4b5bc89",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s663",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1856,
+          "sha8": "b4b5bc89"
+        },
+        "char_helios": {
+          "chars": 1856,
+          "sha8": "b4b5bc89"
+        },
+        "char_vex": {
+          "chars": 1856,
+          "sha8": "b4b5bc89"
+        },
+        "char_wren": {
+          "chars": 1853,
+          "sha8": "b938fcd0"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1856,
+          "sha8": "b4b5bc89"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "8679e7ad",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s712",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 384,
+          "sha8": "8679e7ad"
+        },
+        "char_wren": {
+          "chars": 384,
+          "sha8": "8679e7ad"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 383,
+          "sha8": "7dd62ad2"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "e81a27f5",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s720",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1898,
+          "sha8": "e81a27f5"
+        },
+        "char_helios": {
+          "chars": 1898,
+          "sha8": "e81a27f5"
+        },
+        "char_wren": {
+          "chars": 1894,
+          "sha8": "78d6d03c"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1898,
+          "sha8": "e81a27f5"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "208e75f2",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s732",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1944,
+          "sha8": "047ddc99"
+        },
+        "char_vex": {
+          "chars": 1950,
+          "sha8": "208e75f2"
+        },
+        "char_wren": {
+          "chars": 1950,
+          "sha8": "208e75f2"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "3be29d65",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s742",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1023,
+          "sha8": "bcae8378"
+        },
+        "char_helios": {
+          "chars": 1020,
+          "sha8": "3be29d65"
+        },
+        "char_vex": {
+          "chars": 1023,
+          "sha8": "bcae8378"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1020,
+          "sha8": "3be29d65"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "2eeda4f9",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s743",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2009,
+          "sha8": "2eeda4f9"
+        },
+        "char_helios": {
+          "chars": 2009,
+          "sha8": "2eeda4f9"
+        },
+        "char_vex": {
+          "chars": 2009,
+          "sha8": "2eeda4f9"
+        },
+        "char_wren": {
+          "chars": 2005,
+          "sha8": "7bb64a3d"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "040269bd",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s782",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 492,
+          "sha8": "ffaec105"
+        },
+        "char_wren": {
+          "chars": 493,
+          "sha8": "040269bd"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "c32bc116",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s796",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1013,
+          "sha8": "ef46a0b5"
+        },
+        "char_helios": {
+          "chars": 977,
+          "sha8": "c32bc116"
+        },
+        "char_vex": {
+          "chars": 977,
+          "sha8": "c32bc116"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "6a13d80d",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s817",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1652,
+          "sha8": "6a13d80d"
+        },
+        "char_wren": {
+          "chars": 1646,
+          "sha8": "de47e0a2"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1652,
+          "sha8": "6a13d80d"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "8885952f",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s82",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 267,
+          "sha8": "edd316cb"
+        },
+        "char_wren": {
+          "chars": 269,
+          "sha8": "9a152a6c"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 272,
+          "sha8": "8885952f"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d4168af1",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s839",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2560,
+          "sha8": "d4168af1"
+        },
+        "char_vex": {
+          "chars": 2560,
+          "sha8": "d4168af1"
+        },
+        "char_wren": {
+          "chars": 2560,
+          "sha8": "d4168af1"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2549,
+          "sha8": "1c10fe7b"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s850",
+      "disposition": "excluded",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2774,
+          "sha8": "e70e00bd"
+        },
+        "char_helios": {
+          "chars": 2774,
+          "sha8": "e70e00bd"
+        },
+        "char_vex": {
+          "chars": 2774,
+          "sha8": "61cf70d3"
+        },
+        "char_wren": {
+          "chars": 2774,
+          "sha8": "e70e00bd"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2774,
+          "sha8": "e70e00bd"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "9c266334",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s865",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_vex": {
+          "chars": 2008,
+          "sha8": "b4169d76"
+        },
+        "char_wren": {
+          "chars": 2016,
+          "sha8": "9c266334"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "20df90c0",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s876",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1549,
+          "sha8": "20df90c0"
+        },
+        "char_helios": {
+          "chars": 1539,
+          "sha8": "5e52a91b"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1549,
+          "sha8": "20df90c0"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "e64426d5",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s877",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 753,
+          "sha8": "e64426d5"
+        },
+        "char_helios": {
+          "chars": 753,
+          "sha8": "e64426d5"
+        },
+        "char_vex": {
+          "chars": 753,
+          "sha8": "e64426d5"
+        },
+        "char_wren": {
+          "chars": 753,
+          "sha8": "e64426d5"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 751,
+          "sha8": "af126d3e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "22c3d449",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s884",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2332,
+          "sha8": "61f809e2"
+        },
+        "char_helios": {
+          "chars": 2329,
+          "sha8": "b11653ab"
+        },
+        "char_vex": {
+          "chars": 2329,
+          "sha8": "b11653ab"
+        },
+        "char_wren": {
+          "chars": 2336,
+          "sha8": "22c3d449"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2336,
+          "sha8": "22c3d449"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "70ae6785",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s931",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 707,
+          "sha8": "8ca7a000"
+        },
+        "char_vex": {
+          "chars": 705,
+          "sha8": "70ae6785"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 705,
+          "sha8": "70ae6785"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "fcddc5d0",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s932",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2135,
+          "sha8": "a24b52b1"
+        },
+        "char_wren": {
+          "chars": 2131,
+          "sha8": "fcddc5d0"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2131,
+          "sha8": "fcddc5d0"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "02d3602d",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s963",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2337,
+          "sha8": "8c249502"
+        },
+        "char_helios": {
+          "chars": 2341,
+          "sha8": "02d3602d"
+        },
+        "char_wren": {
+          "chars": 2341,
+          "sha8": "02d3602d"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2341,
+          "sha8": "02d3602d"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "65ccef43",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s988",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1901,
+          "sha8": "65ccef43"
+        },
+        "char_wren": {
+          "chars": 1905,
+          "sha8": "403e609a"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1901,
+          "sha8": "65ccef43"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "0d7d5fda",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s992",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 926,
+          "sha8": "0d7d5fda"
+        },
+        "char_helios": {
+          "chars": 923,
+          "sha8": "f7e71f36"
+        },
+        "char_vex": {
+          "chars": 926,
+          "sha8": "0d7d5fda"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 926,
+          "sha8": "0d7d5fda"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "7de1d639",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s998",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_helios": {
+          "chars": 2298,
+          "sha8": "e7897801"
+        },
+        "char_vex": {
+          "chars": 2298,
+          "sha8": "e7897801"
+        },
+        "char_wren": {
+          "chars": 2302,
+          "sha8": "7de1d639"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2302,
+          "sha8": "7de1d639"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "git_commit": "a0b89ed5bb759777ee20d6adf7d3840bc6d63782",
+    "n": 270,
+    "pinned_parent_revision": "7159e5804d",
+    "script": "issue2054_build_answers.py",
+    "seed": 137,
+    "timestamp": "2026-08-05T18:48:44Z"
+  },
+  "per_variant_floor_report": {
+    "char_dana": {
+      "admitted": 6097,
+      "floor": 4480,
+      "margin": 1605,
+      "post_exclusion": 6085,
+      "substantive_excluded_hits": 12
+    },
+    "char_helios": {
+      "admitted": 7304,
+      "floor": 4480,
+      "margin": 2812,
+      "post_exclusion": 7292,
+      "substantive_excluded_hits": 12
+    },
+    "char_vex": {
+      "admitted": 5689,
+      "floor": 4480,
+      "margin": 1196,
+      "post_exclusion": 5676,
+      "substantive_excluded_hits": 13
+    },
+    "char_wren": {
+      "admitted": 6330,
+      "floor": 4480,
+      "margin": 1839,
+      "post_exclusion": 6319,
+      "substantive_excluded_hits": 11
+    },
+    "conversation_paired_stories_assistant": {
+      "admitted": 7221,
+      "floor": 4480,
+      "margin": 2728,
+      "post_exclusion": 7208,
+      "substantive_excluded_hits": 13
+    }
+  },
+  "resolution_rules": {
+    "hard_cap": "substantive_excluded > max(20, 2% of stripped union) -> raise",
+    "normalization": "norm(s) = \" \".join(s.split())",
+    "prefix_truncation": "canonicalized: maximal normalized superstring; majority/sha tie-break among byte forms carrying it",
+    "substantive": "excluded from the required set (manifest below)",
+    "whitespace_only": "canonicalized: majority byte form across variants; tie -> lexicographically smallest sha256 (order-independent)"
+  },
+  "tallies": {
+    "conflict_prefix_canonicalized": 0,
+    "conflict_substantive_excluded": 15,
+    "conflict_ws_canonicalized": 255,
+    "cross_variant_conflict": 270,
+    "cross_variant_conflicts_hard": 0
+  },
+  "utc": "2026-08-05T18:48:44.032959+00:00"
+}

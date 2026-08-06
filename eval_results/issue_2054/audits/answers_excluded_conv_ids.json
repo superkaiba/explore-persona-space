@@ -1,0 +1,69 @@
+{
+  "artifact": "answers_excluded_conv_ids",
+  "class": "substantive",
+  "consumer": "scripts/issue2054_phase_b.py \u2014 DROP these conv_ids (never scaffold-fallback: their cross-variant answers diverge substantively, so a per-variant fallback re-breaks the 2x2 byte-fixed answer invariant)",
+  "excluded": [
+    "stripped_s1154",
+    "stripped_s1189",
+    "stripped_s1633",
+    "stripped_s2637",
+    "stripped_s2663",
+    "stripped_s2703",
+    "stripped_s2771",
+    "stripped_s2894",
+    "stripped_s3271",
+    "stripped_s3884",
+    "stripped_s3981",
+    "stripped_s4014",
+    "stripped_s4489",
+    "stripped_s554",
+    "stripped_s850"
+  ],
+  "metadata": {
+    "git_commit": "a0b89ed5bb759777ee20d6adf7d3840bc6d63782",
+    "n": 15,
+    "pinned_parent_revision": "7159e5804d",
+    "script": "issue2054_build_answers.py",
+    "seed": 137,
+    "timestamp": "2026-08-05T18:48:44Z"
+  },
+  "n_excluded": 15,
+  "per_variant_floor_report": {
+    "char_dana": {
+      "admitted": 6097,
+      "floor": 4480,
+      "margin": 1605,
+      "post_exclusion": 6085,
+      "substantive_excluded_hits": 12
+    },
+    "char_helios": {
+      "admitted": 7304,
+      "floor": 4480,
+      "margin": 2812,
+      "post_exclusion": 7292,
+      "substantive_excluded_hits": 12
+    },
+    "char_vex": {
+      "admitted": 5689,
+      "floor": 4480,
+      "margin": 1196,
+      "post_exclusion": 5676,
+      "substantive_excluded_hits": 13
+    },
+    "char_wren": {
+      "admitted": 6330,
+      "floor": 4480,
+      "margin": 1839,
+      "post_exclusion": 6319,
+      "substantive_excluded_hits": 11
+    },
+    "conversation_paired_stories_assistant": {
+      "admitted": 7221,
+      "floor": 4480,
+      "margin": 2728,
+      "post_exclusion": 7208,
+      "substantive_excluded_hits": 13
+    }
+  },
+  "utc": "2026-08-05T18:48:44.039581+00:00"
+}
