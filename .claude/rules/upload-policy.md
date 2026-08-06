@@ -321,8 +321,9 @@ DETECTABLE. Requirements:
   work is a demonstrated incident class (#1092: a guessed `timeout 3000s`
   killed a healthy ~25 min/cell run, exit=124), and a "generous" 1 h constant
   would kill a legitimately-retrying multi-file staging under a 429 storm.
-  For `stage_hub_prefix` the built-in arm is `EPM_HF_STAGE_TIMEOUT_S` (unset
-  = OFF; expiry flushes a stalled-file diagnostic then hard-exits
+  For `stage_hub_prefix` the built-in arm is `EPM_HF_STAGE_TIMEOUT_S`
+  (unset/empty/non-positive = OFF — `0` is how a caller spells "disabled",
+  never a 0 s fence; expiry flushes a stalled-file diagnostic then hard-exits
   `os._exit(STAGE_HUB_PREFIX_TIMEOUT_RC)`, rc 87 — a raise cannot produce an
   rc when a worker is parked in native `xet_get`, because
   `concurrent.futures`' atexit hook joins its non-daemon workers).
