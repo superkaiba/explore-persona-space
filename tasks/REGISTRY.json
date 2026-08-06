@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2127,
+  "highest_id": 2128,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8723,6 +8723,13 @@
       "path": "tasks/proposed/2127",
       "status": "proposed",
       "title": "daily-fix: sweep /tmp gate scratch; HF-backedness gate"
+    },
+    "2128": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2128",
+      "status": "proposed",
+      "title": "daily-fix: spawn stop --kill must TERM inner claude pid"
     },
     "213": {
       "has_clean_result": false,
