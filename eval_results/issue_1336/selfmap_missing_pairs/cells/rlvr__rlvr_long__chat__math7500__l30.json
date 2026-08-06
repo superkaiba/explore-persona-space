@@ -1,0 +1,191 @@
+{
+  "elapsed_s": 76.26180929131806,
+  "metadata": {
+    "device": "cpu",
+    "git_commit": "a057a683cbb2f68e53cb913c361edcbf6dbf520d",
+    "numpy": "2.2.6",
+    "script": "scripts/issue1336_selfmap_missing_pairs.py",
+    "timestamp": "2026-08-06T19:49:15Z",
+    "torch": "2.8.0+cu128"
+  },
+  "records": [
+    {
+      "corpus": "math7500",
+      "cross_r2": 0.5546832963719931,
+      "cross_r2_globalmu": 0.5549587406166099,
+      "d": 4096,
+      "degenerate_n_lt_d": false,
+      "fit_seed": 0,
+      "format": "chat",
+      "layer": 30,
+      "n": 7455,
+      "n_folds": 5,
+      "n_train_max": 5964,
+      "n_train_min": 5964,
+      "pair": "rlvr__rlvr_long",
+      "r2": 0.3279390700433682,
+      "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
+      "r2_globalmu": 0.3283547636692309,
+      "selected_lambda": {
+        "A_ctx_rev": [
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379
+        ],
+        "W_s": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "cross": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "within": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ]
+      },
+      "selectors": {
+        "A_ctx_rev": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "W_s": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "cross": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "within": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ]
+      },
+      "source": "rlvr",
+      "target": "rlvr_long",
+      "tier": 0,
+      "within_r2": 0.5620779736144402,
+      "within_r2_globalmu": 0.5623488439877635
+    },
+    {
+      "corpus": "math7500",
+      "cross_r2": 0.5546832963719931,
+      "cross_r2_globalmu": 0.5549587406166099,
+      "d": 4096,
+      "degenerate_n_lt_d": false,
+      "fit_seed": 0,
+      "format": "chat",
+      "layer": 30,
+      "n": 7455,
+      "n_folds": 5,
+      "n_train_max": 5964,
+      "n_train_min": 5964,
+      "pair": "rlvr__rlvr_long",
+      "r2": 0.5170929536823242,
+      "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
+      "r2_globalmu": 0.5173916488929675,
+      "selected_lambda": {
+        "A_ctx_rev": [
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379,
+          316.2277660168379
+        ],
+        "W_s": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "cross": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "within": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ]
+      },
+      "selectors": {
+        "A_ctx_rev": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "W_s": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "cross": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ],
+        "within": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ]
+      },
+      "source": "rlvr",
+      "target": "rlvr_long",
+      "tier": 6,
+      "within_r2": 0.5620779736144402,
+      "within_r2_globalmu": 0.5623488439877635
+    }
+  ],
+  "resume_key": {
+    "algebra_version": "v2-foldlocal-2-cross",
+    "corpus": "math7500",
+    "fit_seed": 0,
+    "format": "chat",
+    "grid_sha": "90c25fa4156d2530",
+    "layer": 30,
+    "n_folds": 5,
+    "n_inner": 2,
+    "source": "rlvr",
+    "target": "rlvr_long"
+  }
+}
