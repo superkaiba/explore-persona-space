@@ -70,17 +70,22 @@ def test_annotate_donor_stratification():
 
 
 def test_degenerate_self_predicate():
-    # structural triple (covers STEERED rows, which carry no donor label)
-    deg = {"setting": "matched_prefix", "slot": "pe", "dose": "replace"}
-    assert A.degenerate_self(deg)
+    # structural pair (covers STEERED rows, which carry no donor label):
+    # ALL doses at mp x pe are structurally zero — replace AND the additive
+    # doses (round 5, concern mp-pe-additive-degenerate-cells; fails pre-fix
+    # on every additive dose below).
+    assert A.degenerate_self({"setting": "matched_prefix", "slot": "pe", "dose": "replace"})
+    for dose in ("a0.5", "a1", "a2", "a4"):
+        assert A.degenerate_self({"setting": "matched_prefix", "slot": "pe", "dose": dose}), dose
     # machine-readable null-row label (round 3: donor_pair_id='self:<pair_id>')
     assert A.degenerate_self({"donor_pair_id": "self:mp--bare__q1--bare__q2", "setting": "cross"})
     # already-marked f-table rows round-trip through the field
     assert A.degenerate_self({"degenerate_self": True})
-    # every neighbor combination stays eligible
-    assert not A.degenerate_self({"setting": "matched_query", "slot": "pe", "dose": "replace"})
-    assert not A.degenerate_self({"setting": "matched_prefix", "slot": "ce", "dose": "replace"})
-    assert not A.degenerate_self({"setting": "matched_prefix", "slot": "pe", "dose": "a1"})
+    # every neighbor combination stays eligible (all doses)
+    for dose in ("a1", "replace"):
+        assert not A.degenerate_self({"setting": "matched_query", "slot": "pe", "dose": dose})
+        assert not A.degenerate_self({"setting": "matched_prefix", "slot": "ce", "dose": dose})
+        assert not A.degenerate_self({"setting": "cross", "slot": "pe", "dose": dose})
 
 
 # ── f-table assembly fixtures ──────────────────────────────────────────
@@ -268,26 +273,43 @@ def test_ftable_rows_carry_degenerate_self_marked_never_dropped(pairs, pairs_by_
         donor_pair_id=f"self:{mp.pair_id}",
         **over,
     )
-    control = _mk_grid_row(mp)  # ce x a1 — eligible
-    rows = [steered, null, control]
-    lk = _mk_lookups(
-        rows, [90, 90, 90], {(i, "query", s): 50 for i in range(3) for s in ("a", "b")}
+    # ADDITIVE mp x pe rows are the SAME structurally-zero class (round 5,
+    # concern mp-pe-additive-degenerate-cells; fails pre-fix): the steered add
+    # injects the zero-canonicalized Delta, the null a zero payload recorded
+    # under a SEEDED donor id (a real pair id — never 'self:').
+    add_over = {"slot": "pe", "layer_variant": "L19", "layers": [19], "dose": "a1", "alpha": 1.0}
+    add_steered = _mk_grid_row(mp, block_key="pe|L19|a1|A|steered", **add_over)
+    donor = next(p for p in pairs if p.setting == "matched_prefix" and p.pair_id != mp.pair_id)
+    add_null = _mk_grid_row(
+        mp,
+        arm="null",
+        block_key="pe|L19|a1|A|null",
+        donor_pair_id=donor.pair_id,
+        **add_over,
     )
+    control = _mk_grid_row(mp)  # ce x a1 — eligible
+    rows = [steered, null, add_steered, add_null, control]
+    lk = _mk_lookups(rows, [90] * 5, {(i, "query", s): 50 for i in range(5) for s in ("a", "b")})
     out = _assemble(rows, lk, _pair_stats_for(mp, "query"), pairs_by_id)
-    # marked (machine-readable field), NEVER dropped: all three rows present
+    # marked (machine-readable field), NEVER dropped: all five rows present
     # with their computed reads intact.
-    assert [r["degenerate_self"] for r in out] == [True, True, False]
-    assert len(out) == 3
+    assert [r["degenerate_self"] for r in out] == [True, True, True, True, False]
+    assert len(out) == 5
     for r in out:
         assert "f_act" in r and "f_act_raw" in r and "f_beh" in r
 
 
 def test_bootstrap_eligible_rows_excludes_only_degenerate_self():
     deg = {"setting": "matched_prefix", "slot": "pe", "dose": "replace", "arm": "steered"}
+    # additive mp x pe rows are excluded exactly like replace ones (round 5,
+    # concern mp-pe-additive-degenerate-cells; fails pre-fix).
+    deg_add = {"setting": "matched_prefix", "slot": "pe", "dose": "a2", "arm": "steered"}
     ok = {"setting": "matched_prefix", "slot": "ce", "dose": "replace", "arm": "steered"}
-    kept, n_excluded = A.bootstrap_eligible_rows([deg, ok, {**deg, "arm": "null"}])
+    kept, n_excluded = A.bootstrap_eligible_rows(
+        [deg, deg_add, ok, {**deg, "arm": "null"}, {**deg_add, "arm": "null"}]
+    )
     assert kept == [ok]
-    assert n_excluded == 2
+    assert n_excluded == 4
 
 
 def test_transport_summary_excludes_degenerate_from_pooled_mean():
@@ -308,6 +330,25 @@ def test_transport_summary_excludes_degenerate_from_pooled_mean():
     ]
     cells = A.transport_summary_cells(rows)
     rec = cells["m1738_pe_L19|replace|A|steered"]
+    assert rec["n"] == 2 and rec["n_degenerate_self"] == 2 and rec["n_nan"] == 0
+    assert rec["mean_cosine"] == pytest.approx(0.3)
+
+
+def test_transport_summary_excludes_additive_degenerate_structurally():
+    # An mp x pe ADDITIVE row with NO machine-readable field (the structural
+    # predicate arm) must be excluded from the pooled mean exactly like the
+    # replace class (round 5, concern mp-pe-additive-degenerate-cells; fails
+    # pre-fix: the 0.9 value entered n/sum and moved the mean).
+    base = {"map_id": "m1738_pe_L19", "slot": "pe", "dose": "a1", "vec_type": "A"}
+    rows = [
+        {**base, "arm": "steered", "setting": "cross", "cosine_tail": 0.4},
+        {**base, "arm": "steered", "setting": "matched_query", "cosine_tail": 0.2},
+        {**base, "arm": "steered", "setting": "matched_prefix", "cosine_tail": 0.9},
+        # ...and the production shape: zero payload => cosine undefined.
+        {**base, "arm": "steered", "setting": "matched_prefix", "cosine_tail": None},
+    ]
+    cells = A.transport_summary_cells(rows)
+    rec = cells["m1738_pe_L19|a1|A|steered"]
     assert rec["n"] == 2 and rec["n_degenerate_self"] == 2 and rec["n_nan"] == 0
     assert rec["mean_cosine"] == pytest.approx(0.3)
 
@@ -468,23 +509,23 @@ def test_select_stage2_cap_and_dedupe():
 
 
 def test_select_stage2_never_picks_degenerate_self_cells():
-    # the degenerate family carries the BEST raw values at an IN-restriction
+    # the degenerate families carry the BEST raw values at an IN-restriction
     # layer (pe allows L26) — selection over a structurally-zero contrast is
-    # meaningless, so the modest legit family must win (fails pre-fix).
+    # meaningless, so the modest legit family must win (fails pre-fix; the
+    # a1 family is the round-5 additive class, concern
+    # mp-pe-additive-degenerate-cells).
     rows = [
         _sel_row("matched_prefix", "pe", "L26", 99.0, f"p{i}", dose="replace") for i in range(4)
     ]
+    rows += [_sel_row("matched_prefix", "pe", "L26", 98.0, f"p{i}", dose="a1") for i in range(4)]
     rows += [_sel_row("matched_prefix", "ce", "L14", 1.0, f"p{i}") for i in range(4)]
     sel = A.select_best_cells(rows)
-    assert sel["degenerate_self_excluded"] == 4
+    assert sel["degenerate_self_excluded"] == 8
     picked = sel["selections"]["matched_prefix|activation"]
     assert (picked["slot"], picked["dose"]) == ("ce", "a1")
     for cell in sel["cells"]:
-        assert not (
-            cell["setting"] == "matched_prefix"
-            and cell["slot"] == "pe"
-            and cell["dose"] == "replace"
-        ), cell
+        # NO mp x pe cell is ever selectable — any dose (round 5 widening).
+        assert not (cell["setting"] == "matched_prefix" and cell["slot"] == "pe"), cell
     assert "self-transfer" in sel["selection_rule"]
 
 

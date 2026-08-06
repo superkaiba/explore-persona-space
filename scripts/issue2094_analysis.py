@@ -19,9 +19,9 @@ Subcommand-structured via ``--phase``:
                    F_beh over unit D's judge scores (coherent-only per the >60
                    gate), traversal companion, cap-hit NEXT TO incoherence,
                    Type-B donor annotation, ``degenerate_self`` marking of the
-                   degenerate-by-design mp x pe x replace cells (marked, never
-                   dropped; excluded from aggregate reads / bootstrap draws /
-                   stage-2 eligibility); cell-coverage SET-CHECK (plan §7,
+                   degenerate-by-design mp x pe cells — all doses (marked,
+                   never dropped; excluded from aggregate reads / bootstrap
+                   draws / stage-2 eligibility); cell-coverage SET-CHECK (plan §7,
                    distinct rc on mismatch).
 - ``transport``    transport cosines at banked-map cells only (ce L14/L19 + the
                    DECLARED L26 transport-only extension; pe L14/L19/L26), with
@@ -734,27 +734,27 @@ def annotate_donor(row: dict) -> dict:
 
 
 def degenerate_self(row: dict) -> bool:
-    """True for the degenerate-BY-DESIGN matched-prefix pe x replace cells.
+    """True for the degenerate-BY-DESIGN matched-prefix pe cells — ALL doses.
 
     At pe (prefix-internal) a matched-prefix pair's ``V_B(pe) == V_A(pe)``
-    (same prefix tokens => same state by the causal identity), so the steered
-    replace installs the recipient's OWN state (a no-op) and the matched null
-    reproduces the recipient's OWN ``V_B`` (``donor_pair_id ==
-    'self:<pair_id>'``) — both arms structurally-zero contrasts (round 3,
-    concern ``self-degenerate-cells-analysis-treatment``). Such rows are
-    MARKED in every per-cell table (never dropped) and EXCLUDED from
-    specificity/F aggregate reads, bootstrap draws, and stage-2 selection
-    eligibility.
+    (same prefix tokens => same state by the causal identity), so EVERY
+    dose's steered edit is a no-op: the additive doses (a0.5-a4) inject the
+    zero-canonicalized Delta and replace installs the recipient's OWN state;
+    the matched nulls mirror each no-op (zero payload with a seeded
+    provenance donor id on additive rows; ``donor_pair_id ==
+    'self:<pair_id>'`` on replace rows) — both arms structurally-zero
+    contrasts (round 3, concern ``self-degenerate-cells-analysis-treatment``;
+    round 5 widened from dose=="replace" to all doses, concern
+    ``mp-pe-additive-degenerate-cells``). Such rows are MARKED in every
+    per-cell table (never dropped) and EXCLUDED from specificity/F aggregate
+    reads, bootstrap draws, and stage-2 selection eligibility. (mp x pe rows
+    are Type A by construction — Type B runs at ce only.)
     """
     if "degenerate_self" in row:  # rows already marked by assemble_shard_rows
         return bool(row["degenerate_self"])
     if str(row.get("donor_pair_id") or "").startswith("self:"):
         return True
-    return (
-        row.get("setting") == "matched_prefix"
-        and row.get("slot") == "pe"
-        and row.get("dose") == "replace"
-    )
+    return row.get("setting") == "matched_prefix" and row.get("slot") == "pe"
 
 
 def _f_act_for_rows(
@@ -924,9 +924,10 @@ def coverage_check(produced: set[tuple[str, str]], expected: set[tuple[str, str]
 def _ftables_regime(cfg: AnalysisConfig) -> str:
     key = json.dumps(
         {
-            # v2: rows carry the machine-readable ``degenerate_self`` flag
-            # (schema change => stale parts must not resume-mix).
-            "code": "ftables-v2",
+            # v3: ``degenerate_self`` covers ALL mp x pe doses (additive AND
+            # replace — concern mp-pe-additive-degenerate-cells); v2 parts
+            # carry stale flag values => stale parts must not resume-mix.
+            "code": "ftables-v3",
             "coherence_threshold": COHERENCE_THRESHOLD,
             "primary_read_layer": PRIMARY_READ_LAYER,
             "profiles": cfg.profiles,
@@ -1226,7 +1227,7 @@ def phase_transport(cfg: AnalysisConfig) -> int:
             "cells": transport_summary_cells(out_rows),
             "note": "cosines use the tail-inclusive va_tail pooling (map-lineage parity, "
             "plan §6); donor-null rows are the in-design control; degenerate-by-design "
-            "self-transfer rows (matched-prefix x pe x replace) are counted "
+            "self-transfer rows (matched-prefix x pe, all doses) are counted "
             "(n_degenerate_self) but EXCLUDED from every pooled mean",
             "repro": _repro(),
         },
@@ -1989,8 +1990,9 @@ def phase_bootstrap(cfg: AnalysisConfig) -> int:
             "seed": BOOTSTRAP_SEED,
             "resample_axis": "pairs (pair-clustered, within setting)",
             "degenerate_self_excluded": n_degenerate_excluded,
-            "note": "degenerate-by-design self-transfer rows (matched-prefix x pe x "
-            "replace; concern self-degenerate-cells-analysis-treatment) are excluded "
+            "note": "degenerate-by-design self-transfer rows (matched-prefix x pe, all "
+            "doses; concerns self-degenerate-cells-analysis-treatment + "
+            "mp-pe-additive-degenerate-cells) are excluded "
             "from every family's observed mean + draws",
             "families": out,
             "repro": _repro(),

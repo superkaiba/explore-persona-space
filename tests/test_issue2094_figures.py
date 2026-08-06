@@ -188,21 +188,34 @@ def test_heatmap_never_suppresses_low_coherence_value():
 def test_degenerate_self_row_predicate_and_split():
     deg_struct = _row(setting="matched_prefix", slot="pe", dose="replace")
     assert F.degenerate_self_row(deg_struct)
+    # ALL additive doses at mp x pe are the same structurally-zero class
+    # (round 5, concern mp-pe-additive-degenerate-cells; fails pre-fix).
+    deg_adds = [
+        _row(setting="matched_prefix", slot="pe", dose=d) for d in ("a0.5", "a1", "a2", "a4")
+    ]
+    for r in deg_adds:
+        assert F.degenerate_self_row(r), r["dose"]
     assert F.degenerate_self_row({"degenerate_self": True})
     assert F.degenerate_self_row({"donor_pair_id": "self:mp--bare__q1--bare__q2"})
     ok = _row(setting="matched_prefix", slot="ce", dose="replace")
     assert not F.degenerate_self_row(ok)
+    assert not F.degenerate_self_row(_row(setting="matched_prefix", slot="ce", dose="a1"))
     assert not F.degenerate_self_row(_row(setting="cross", slot="pe", dose="replace"))
-    kept, n = F.split_degenerate([deg_struct, ok])
-    assert kept == [ok] and n == 1
+    assert not F.degenerate_self_row(_row(setting="cross", slot="pe", dose="a1"))
+    kept, n = F.split_degenerate([deg_struct, *deg_adds, ok])
+    assert kept == [ok] and n == 5
 
 
 def test_heatmap_marks_degenerate_cells_value_kept():
-    rows = _grid_rows()  # includes matched-prefix pe x replace rows
+    rows = _grid_rows()  # includes matched-prefix pe rows at every dose
     agg = F.aggregate_cells(rows, "f_act")
     cell = agg[("matched_prefix", "replace", "pe", "L14")]
     assert cell.degenerate_frac == 1.0
     assert cell.mean is not None  # value kept — marked, never suppressed
+    # additive mp x pe cells are marked too (round 5; fails pre-fix)
+    add_cell = agg[("matched_prefix", "a1", "pe", "L14")]
+    assert add_cell.degenerate_frac == 1.0
+    assert add_cell.mean is not None
     assert agg[("matched_prefix", "a1", "ce", "L14")].degenerate_frac == 0.0
     fig = F.fig_f_heatmap(rows, "f_act", "F_act")
     labels = {a.get_label() for ax in fig.axes for a in ax.collections}
@@ -214,6 +227,9 @@ def test_heatmap_marks_degenerate_cells_value_kept():
 def test_aggregate_panels_unmoved_by_degenerate_rows():
     base = [r for r in _grid_rows() if not F.degenerate_self_row(r)]
     extreme = _row(setting="matched_prefix", slot="pe", dose="replace", f_act=99.0, f_beh_q=99.0)
+    # additive mp x pe extreme — same exclusion class (round 5; fails pre-fix:
+    # an unflagged additive extreme row would move the marginal bars).
+    extreme_add = _row(setting="matched_prefix", slot="pe", dose="a1", f_act=99.0, f_beh_q=99.0)
 
     def _marginal_heights(rows):
         inp = F.FigInputs(f_cells=rows, anchors=_anchors())
@@ -225,7 +241,7 @@ def test_aggregate_panels_unmoved_by_degenerate_rows():
         return heights, noted
 
     h_base, noted_base = _marginal_heights(base)
-    h_plus, noted_plus = _marginal_heights([*base, extreme])
+    h_plus, noted_plus = _marginal_heights([*base, extreme, extreme_add])
     assert h_base.shape == h_plus.shape
     assert np.allclose(h_base, h_plus, equal_nan=True)  # aggregate unmoved
     assert noted_plus and not noted_base  # exclusion footnoted (meta.json text)
