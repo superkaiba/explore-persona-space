@@ -6856,8 +6856,8 @@ Codex-ensembled). This applies to EVERY site that posts a
 rounds, the Step 9a-ter free-analysis follow-up, the
 methodology-reference spawn, AND all same-issue follow-up-loop
 `stage=followup-<phase>` dispatches — the #778 double-dispatch
-(2026-07-01: two orchestrators each dispatched a `followup-implementing
-round=1` implementer 5m39s apart, two implementers concurrently editing
+(two orchestrators each dispatched a `followup-implementing
+round=1` implementer minutes apart, concurrently editing
 one worktree) came through the follow-up loop.
 
 Each stage's result marker is its completion signal — the existing
@@ -6868,9 +6868,9 @@ new marker schema), distinguished by its `stage-dispatch` prefix. The
 `worktree=` field records WHERE the dispatched subagent writes — the
 absolute worktree path, or the literal `repo-root` when it works in the
 main checkout — so a successor session or recovery pass can locate
-uncommitted in-flight files if this session dies mid-dispatch. (Incident
-#505 round 2, 2026-06-10: a killed implementer's three uncommitted files
-sat in a worktree no marker named, stalling recovery for 5+ hours.) The
+uncommitted in-flight files if this session dies mid-dispatch. (#505: a
+killed implementer's uncommitted files
+sat in a worktree no marker named, stalling recovery.) The
 same field applies to every dispatch breadcrumb that follows this
 convention, including the same-issue follow-up loop's
 `stage=followup-<phase>` dispatches.
@@ -6878,11 +6878,11 @@ convention, including the same-issue follow-up loop's
 **Pre-dispatch external-marker triage (REQUIRED — every COMPUTE-stage
 dispatch; sibling of the pre-dispatch dedup above).** Cross-session markers
 are the sanctioned advisory channel, but a mailbox with no read-gate is how
-#779 launched an 18–20h serial grid 4 minutes after finishing its prior
+#779 launched an 18–20h serial grid minutes after finishing its prior
 phase while a measured audit saying "must NOT launch as-is" sat unread on
-its own events.jsonl (2026-07-02: 10 external audit/directive markers,
-16:12–17:47Z; the 20:46Z `stage=followup-grid` breadcrumb claimed
-"vectorized" while the fixes were unapplied; killed by PM-chat at 12 min).
+its own events.jsonl (10 external audit/directive markers; the
+`stage=followup-grid` breadcrumb claimed
+"vectorized" while the fixes were unapplied; killed by PM-chat).
 Immediately BEFORE posting the dispatch breadcrumb for any stage that
 launches COMPUTE — a pod/GCP/SLURM provision or workload (re)launch
 (Step 6b / 6d, crash-fix relaunches included), any stage the
@@ -6898,7 +6898,7 @@ from explore_persona_space.task_workflow import (
 for e in triage_candidates_since_last_dispatch(list_events(<N>)):
     # #1722: total form — an event whose note is "" / None / "\n" makes
     # the classic ("" or "").splitlines()[0] raise IndexError (three sessions
-    # hit this shape on 2026-07-26 on markers with empty notes).
+    # hit this shape on markers with empty notes).
     print(e["ts"], e["kind"], (((e.get("note") or "").splitlines()) or [""])[0][:140])
 PY
 ```
@@ -6970,7 +6970,7 @@ place, so `$!` is the workload pid. A plain bg-Bash child stays in the
 session's kill domain (script-launched children share the launcher's process
 group + session id; even a top-level child with its own pgid shares the sid),
 and a watcher force-stop / `spawn_session.py stop` kills that tree — #833's
-healthy ~3-6h Phase-D fit died mid-flight this way (2026-07-02, ~2h lost, pure
+healthy Phase-D fit died mid-flight this way (pure
 signal kill). `setsid` gives the phase its own session + process group (group
 kills miss it; it reparents to PID 1 when the launching shell exits);
 `< /dev/null >> log` drops every fd tether to the dying session. The phase's
@@ -7042,7 +7042,7 @@ output-declaring round FAILS, never passes vacuously (#1482).
 Monitor/until-loop over a detached phase's log should EXCLUDE known
 benign teardown lines (`aclose()`, `Event loop is closed` — vLLM/httpx
 shutdown noise) from its error pattern, or it fires spurious wakes on a
-healthy phase end (2 spurious wakes, #1773 Phase 4, 2026-07-28).
+healthy phase end (#1773).
 
 **Earlyoom protection is REQUIRED on the verified phase (#957; incident #811).**
 The shared VM runs `earlyoom` with `--prefer '(^|/)(pytest|python3?)$'` (+300
@@ -7118,8 +7118,8 @@ stay in `.claude/rules/gotchas.md` (earlyoom entry).
 shared-VM setdefault (#847, `orchestrate/env.py`) is `src/`-side and pinned to
 the WORKTREE's branch point — the Step 5a spec-freshness sync deliberately
 never syncs `src/` — so an in-flight worktree cut before an infra fix launches
-with the pre-fix library (incident #779, 2026-07-02: a pre-#847 worktree's grid
-ran 78 uncapped threads ~20h after the fix landed on main). The explicit prefix
+with the pre-fix library (#779: a pre-#847 worktree's grid
+ran 78 uncapped threads after the fix landed on main). The explicit prefix
 is branch-age-independent AND caps torch/BLAS regardless of the script's import
 order (the env.py hook cannot in-process-cap a script that imports torch before
 `load_dotenv()`; the launch env can). `env` execs `<cmd>` in place, so `$!` pid
@@ -7161,7 +7161,7 @@ precedent), so a bare `tail`/`cat` CONTENT read fails `Permission denied` —
 retry it as `sudo -n tail -50 <log>` (fallback `sudo -n cat <log> | tail -50`).
 An EACCES is a probe artifact, NEVER evidence the log is frozen/missing or the
 phase dead; mtime/`stat` probes need no read permission and are unaffected.
-RunPod pods SSH as root, so the class is GCE-specific (incident #1738: the
+RunPod pods SSH as root, so the class is GCE-specific (#1738: the
 manifest-build diagnostic fell back to pid/CPU-only liveness). Dead — or an
 args MISMATCH (recycled pid: treat as dead) — with completion output present
 at the breadcrumb's `harvest=` path (§ Harvest contract; pre-contract
@@ -7218,7 +7218,7 @@ re-invocation).**
    - Window = **30 min** for Codex-ensembled rounds (ALL `interpreting`
      AND `clean-result` rounds up to the per-reviewer cap (5) — every round spawns both the Claude
      critic AND a `codex-*-critic` twin at `--effort high|xhigh` via
-     `companion task` since the 2026-06-12 all-rounds policy; such
+     `companion task` under the all-rounds policy; such
      rounds commonly exceed 15 min wall time).
    - Window = **15 min** for everything else (`verifying` and any other
      Step 8/9 stage).
@@ -7306,7 +7306,7 @@ discarded by Step 8's gap-fill decision rule).
      a SHA-pinned absolute URL the dashboard can fetch. Relative
      `artifacts/...` / `figures/...` URLs render as broken images on
      the dashboard and are rejected by `verify_task_body.py` Check 4b
-     (incident: task #365, 2026-05-22). See
+     (#365). See
      `.claude/agents/analyzer.md` Step 3 for the full save-commit-pin
      workflow.
    - Posts `epm:interpretation v1` on the source task.
@@ -7448,8 +7448,8 @@ audit log records it, and proceed straight to 9a-ter.
    draft file once BEFORE the first Edit on it (and re-Read after any
    compaction)** — the draft is typically written by the critic subagent, so
    it is not in the orchestrator's Edit state, and blind Edits bounce with
-   "File has not been read yet" (10 such rejections across three sessions on
-   2026-06-09, 8 of them consecutive in one humanize pass). The skill
+   "File has not been read yet" (10 such rejections across three
+   sessions, 8 consecutive in one humanize pass). The skill
    spawns a hostile critic subagent (from the orchestrator's context —
    allowed; the analyzer could not because subagent-from-subagent is
    forbidden) that scores against the six-axis rubric:
@@ -7463,7 +7463,7 @@ audit log records it, and proceed straight to 9a-ter.
      "Statistics" rules and the clean-result-critic statistical-framing
      lens)
 
-   **Hard ban gate scoping (binding; incidents #498/#518/#923):** the
+   **Hard ban gate scoping (binding; #498/#518/#923):** the
    `/humanize` skill's mandatory `check_bans.sh` absolute-ban gate runs
    over AUTHORED PROSE ONLY — for clean-result work the ELIDED copy below
    IS the ban-gate input (a repo-side override of the user-global skill's
@@ -7500,9 +7500,9 @@ audit log records it, and proceed straight to 9a-ter.
    `/tmp/issue-<N>-humanize-loop.md`, then VERIFY THE CANDIDATE FILE
    FIRST and apply only on PASS (#1860; the pre-#1860 apply-then-verify
    order left a briefly-live non-compliant body on a FAILing candidate —
-   incident #1775):
+   #1775):
    ```bash
-   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --file /tmp/issue-<N>-humanize-loop.md  # main-checkout copy, never the worktree's (spec-stale risk, incident #496)
+   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --file /tmp/issue-<N>-humanize-loop.md  # main-checkout copy, never the worktree's (spec-stale risk, #496)
    uv run python scripts/task.py set-body <N> --file /tmp/issue-<N>-humanize-loop.md  # ONLY on candidate PASS
    uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N>  # post-apply confirm: frontmatter-coupled checks --file cannot see (e.g. H1 == frontmatter title)
    ```
@@ -7544,14 +7544,14 @@ When such a follow-up exists and has not yet been run on this task, the
 orchestrator AUTO-RUNS it inline BEFORE the clean-result-critique gate
 (9a-bis) — so the critic gates the UPDATED body, not a body that
 already names a free win it didn't take. **The `headline_affecting: yes`
-requirement was DROPPED 2026-06-13** — a zero-GPU follow-up auto-runs
+requirement is DROPPED** — a zero-GPU follow-up auto-runs
 whether or not it would move the parent's headline (the standing
 directive: follow-ups that are 0 GPU-h or `< 20` GPU-h just run and fold
 into the same issue). This 0-GPU inline step is the floor of the
 cheap-auto-run band; the GPU-backed `0 < est_gpu_hours < 20` band runs at
 9b via the same-issue follow-up loop. This step fires in BOTH
 interactive and autonomous (`EPM_AUTONOMOUS_SESSION=1`) sessions
-identically (as does the 9b cheap band, as of 2026-06-13 — the
+identically (as does the 9b cheap band — the
 remaining autonomous-ONLY routing at 9b is the `est_gpu_hours >= 20` /
 `auto_run: yes` expensive path: same-issue loop for `same`, child filing
 for `substantially-different`). The whole
@@ -7584,7 +7584,7 @@ entry whose premise path does not resolve takes the ABORT path's
 reclassification up front (post the `epm:free-analysis-followup-run v1`
 abort record naming the missing artifact) without burning an
 implementer round. The analyzer's Step 6.5 artifact-premise check is
-the primary defense; this is a backstop (incident #552).
+the primary defense; this is a backstop (#552).
 
 When the detection union is empty, this step is a no-op: log one chat
 line (`No free-analysis follow-ups to auto-run`)
@@ -7608,9 +7608,9 @@ triggering another auto-run chain within the same task. A further
 free-analysis follow-up STAYS listed in the body as a regular bullet,
 but the bullet is no longer the only surface: whenever the cap excludes
 a concrete unrun `cost_class: free-analysis` entry, post the § Cap-park
-surfacing note below (#1548; incident #958 — a top-ranked,
+surfacing note below (#1548; #958 — a top-ranked,
 follow-up-critic-screened `not-redundant` free-analysis follow-up sat
-unrun as a body bullet for 13 days until the user found and kicked it
+unrun as a body bullet until the user found and kicked it
 himself). Across tasks the mechanism stays fresh (each task gets its
 own one round).
 
@@ -7814,7 +7814,7 @@ during the provision/bootstrap window (#573: run-launched-only inference
 stopped healthy follow-up pods 11×), any later done-transition flips the
 inferred predicate off by design (the watcher's re-arm semantics), and the
 `epm:free-analysis-followup-run v1` COMPLETION marker posts too late to
-shield the launch (incidents #477, #573, #779 — on #779 a healthy pod-779
+shield the launch (#477/#573/#779 — a healthy pod
 was repeatedly auto-stopped mid-bootstrap and misdiagnosed as a flaky
 host). Remove the tag (`task.py remove-tag <N> keep-running`) when the run
 completes so the auto-stop re-arms (a crashed run leaves the tag and the
@@ -7834,8 +7834,8 @@ prior round's PASS) — TERMINATE the pod the round provisioned (surgical
 ONLY live pod, with the `keep-running` tag removed FIRST — #1485 refuses
 the bare form while the tag is set, and it destroys EVERY live pod
 resolving to the issue): verified-done teardown is unconditional,
-never a user ask (the Step-8 primary-pod precedent; #1662: pod-1586-b
-idled ~$12–13/hr behind an ask-gate), EXCEPT when a NAMED next queued
+never a user ask (the Step-8 primary-pod precedent; #1662: a
+verified-done pod idled behind an ask-gate), EXCEPT when a NAMED next queued
 round reuses this pod — record it in the completion `epm:progress` note
 and keep the tag; a pending user question about a possible next round is
 NOT a named round. Never terminate before uploads verify, and never
@@ -7942,8 +7942,8 @@ explicit eval-data path):
    `guard_root_code_commit.sh` validates it at COMMIT time, not push time
    (#1460). Preferred ordering: kick the gate off as a background Bash as
    soon as the round's scripts stop changing — before figure/body work —
-   so the cert is ready by commit time; ~5 block events across 3 sessions
-   on 2026-07-22 came from reaching the commit first).** PAYLOAD = the round's
+   so the cert is ready by commit time; repeated block events came from
+   reaching the commit first).** PAYLOAD = the round's
    to-be-committed paths outside the artifact-only set (`tasks/`,
    `figures/`, `eval_results/`, `ood_eval_results/`, `raw/`, `data/`,
    `docs/methodology/`) — typically the new `scripts/issue<N>_*.py`
@@ -7994,8 +7994,8 @@ explicit eval-data path):
    running the component legs by hand (a manual no-flags
    `workflow_lint.py` + mapped pytest) does NOT write the
    content-hash cert `guard_root_code_commit.sh` checks, so the commit
-   still blocks (2026-07-28: an inline round ran the components
-   manually and was guard-blocked at commit, ~4 min lost).
+   still blocks (an inline round ran the components
+   manually and was guard-blocked at commit).
 
    ```bash
    # Inline payload lint gate (#1460/#1500) — ONE background Bash (run_in_background=true)
@@ -8011,10 +8011,10 @@ explicit eval-data path):
    below). Round-unique payload paths are REQUIRED as of #1948: the gate
    REFUSES the bare legacy basename `issue-<N>-inline-payload.txt`
    (exit 3, INCONCLUSIVE) — the issue-keyed shared path is clobbered by
-   concurrent same-issue rounds (two concurrent #1768 rounds
-   cross-certified each other's payloads, 2026-07-31).
+   concurrent same-issue rounds (#1768: two concurrent rounds
+   cross-certified each other's payloads).
 
-   Two invocation traps (2026-08-02, three sessions): (1) the gate's
+   Two invocation traps: (1) the gate's
    mapped-pytest leg routinely runs >2 min — ALWAYS pass an explicit
    Bash `timeout` ≥ 300000 ms on the gate call (the 2-min default killed
    gate runs with exit 143 in two sessions; one had chained further
@@ -8022,13 +8022,13 @@ explicit eval-data path):
    NEVER bundle the `git commit` into the SAME Bash call as the gate
    run — `guard_root_code_commit.sh` evaluates the compound argv BEFORE
    anything executes, so the cert cannot exist yet and the commit is
-   blocked every time (session 0ac15c23): certify in one call, commit in
+   blocked every time: certify in one call, commit in
    the next.
 
    (/tmp hygiene: on a long-lived follow-up issue, ROUND-SCOPE tmp
    artifact names — `/tmp/issue-<N>-r<round>-<label>` — a bare
    `/tmp/issue-<N>-<label>` persists from prior rounds/sessions and trips
-   Write-before-Read collisions; 2 collisions on 2026-07-28.)
+   Write-before-Read collisions.)
 
    The helper mechanizes both legs (no-flags `workflow_lint.py`;
    `select_step9c_tests.py --map-files` → mapped pytest at the #1046
@@ -8109,18 +8109,17 @@ explicit eval-data path):
    its staged-file state (`git diff --cached --name-only`) on the
    teammate channel (SendMessage to the orchestrator, or its final
    Agent-result return) so the orchestrator lands it; idling on the
-   block is the banned outcome (incident #1092, session f4b1d707:
-   the pooled-probe-runner teammate finished its analysis, staged 8
-   files, and stalled 3x on the blocked commit until the
-   orchestrator stood it down, ran the gate — PASS — and committed
-   itself). Briefs composed OUTSIDE this step that delegate a
+   block is the banned outcome (#1092: a teammate finished its
+   analysis, staged its files, and stalled repeatedly on the blocked
+   commit until the orchestrator stood it down, ran the gate — PASS —
+   and committed itself). Briefs composed OUTSIDE this step that delegate a
    repo-root landing commit (the user-chat inline carve-out, ad-hoc
    teammate fan-outs) carry the same duty — this block is the
    canonical text they inline.
 
    This gate binds the user-chat sibling (the CLAUDE.md § Routing
    "User-chat inline free analysis" carve-out) identically —
-   direct-to-main is the channel, not the entry point (incident #1388:
+   direct-to-main is the channel, not the entry point (#1388:
    two inline-landed bare `.list_repo_tree(` scripts broke
    `tests/test_workflow_lint.py` on pristine main fleet-wide; the
    worktree channels are already gated at Step 10d).
@@ -8287,8 +8286,7 @@ dispatching this round's critics.
    `methodology_doc_path` field for the Data-lens spot-check.
 
 2. Spawn `codex-clean-result-critic` (Codex twin) in parallel on
-   every round (all-rounds ensemble as of 2026-06-12; previously
-   round 1 only). Quota-sentinel pre-check first (#1204, CLAUDE.md
+   every round (all-rounds ensemble). Quota-sentinel pre-check first (#1204, CLAUDE.md
    § Codex ensemble review): when LIVE, skip this twin's composer
    spawn — instant confirmed Codex no-show per this step's no-show
    handling (Claude-only ensemble decision) + one `epm:progress`
@@ -8369,7 +8367,7 @@ revises the `epm:interpretation` event AND edits the task body in
 place via `task.py set-body <N> --file ...`. Re-runs
 `scripts/verify_task_body.py` (must still PASS). Re-spawn the critic
 ensemble — `clean-result-critic` AND `codex-clean-result-critic`
-(all-rounds ensemble as of 2026-06-12), fresh contexts, against the
+(all-rounds ensemble), fresh contexts, against the
 revised surfaces, with prior critique summaries in both briefs. Both
 post the next critique version (`epm:clean-result-critique v<n>` +
 `epm:clean-result-critique-codex v<n>`); apply the same ensemble
@@ -8462,7 +8460,7 @@ spawned for v4. After the 9a-bis PASS the orchestrator:
    fail-softed). `<DOC_SHA>` is ALWAYS taken from command output —
    `DOC_SHA=$(git rev-parse HEAD)` right after the doc commit — never
    typed or hand-extended from a short SHA (the never-fabricate-SHAs
-   rule; 2026-07-29 on #1738: a hand-extended short SHA 404'd the blob
+   rule; #1738: a hand-extended short SHA 404'd the blob
    URL and burned a verifier FAIL round).
 6. Posts `epm:methodology-doc-generated v1` (`doc_path` + `commit` +
    `gist_url`).
@@ -8517,8 +8515,7 @@ split in two:
   agent has not returned yet at this point, WAIT for it here
   (TaskOutput / completion notification) before running the join — load
   the deferred schema first (`ToolSearch("select:TaskOutput")`): an
-  unloaded direct call fails with InputValidationError (2 firings,
-  2026-07-28).
+  unloaded direct call fails with InputValidationError.
 
 The early spawn needs no extra gating relative to upload verification:
 the agent's artifact reads are worktree-local, and the late join
@@ -8562,7 +8559,7 @@ late join remains.
   exists (same-issue follow-up re-fold), run the **EXTEND pass** below
   instead — a task-scoped no-op here would leave
   `docs/methodology/issue_<N>.md` permanently describing only the
-  parent run (incident #543, 2026-06-10: a fifth arm folded into the
+  parent run (#543: a fifth arm folded into the
   clean-result had to be patched around with an in-body scope note).
 - **EXTEND pass (same-issue follow-up rounds).** Re-run procedure
   steps 2-9 below for the unrecorded `followup_label`, with these
@@ -8584,13 +8581,13 @@ late join remains.
     else. NEVER a new top-level `## ...` heading or a second
     §2-style table — a bare `## <followup_label> arm` H2 carrying only
     the boilerplate footer strands the round's recipe outside §2
-    (incident #642). The brief inherits THIS wording, so it stays
+    (#642). The brief inherits THIS wording, so it stays
     consistent with `.claude/agents/methodology-writer.md` § EXTEND
     mode.
   - Step 6 refreshes the EXISTING gist when a prior marker recorded a
     `gist_url` — via the canonical gist-update recipe (procedure step 6:
     `gh api -X PATCH` + API-read content verify; NEVER any `gh gist edit`
-    form, which can silently no-op with rc=0 — incident #1769), same
+    form, which can silently no-op with rc=0 — #1769), same
     fail-soft rule; fall back to `gh gist create` only when no prior
     gist exists.
   - Step 7 UPDATES the existing lines' `<DOC_SHA>` pin in place in
@@ -8674,8 +8671,8 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    (exit 0 = clean, exit 1 = hit). Use `$REPO_ROOT`-absolute paths — a
    bare `scripts/...` resolves against the orchestrator's cwd, which on a
    worktree (or after a removed-dir `getcwd` miss) is NOT repo root and
-   resolves to `/scripts/...: No such file or directory` (incident #654,
-   2026-06-17, self-recovered after a retry). Do NOT use `redact_for_gist.py` for
+   resolves to `/scripts/...: No such file or directory` (#654). Do NOT
+   use `redact_for_gist.py` for
    this — it has only `--in`/`--out`/`--in-place`, no `--check` flag.
    The methodology-writer reads only the
    already-public Reproducibility data + the repo, so this scan should
@@ -8723,13 +8720,13 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    Keep the `[ -z "$GIST_URL" ]` capture in the if-form shown above — a
    trailing `[ -z "$GIST_URL" ] && gist_err=...` one-liner variant makes the
    CALL report Exit 1 on SUCCESS (URL present -> the test is false -> `&&`
-   short-circuits with rc 1; incident #928, 2026-07-04). Same exit-code
+   short-circuits with rc 1; #928). Same exit-code
    hygiene rule as Step 9c step 1b: never leave a bare conditional or
    informational grep as the last command of a call — if-form it or
    `|| true` it.
 
    **Canonical gist-update recipe (re-exports / follow-up rounds —
-   incident #1769).** When a prior `epm:methodology-doc-generated` marker
+   #1769).** When a prior `epm:methodology-doc-generated` marker
    on this task already recorded a `gist_url`, UPDATE that gist instead of
    creating a second one:
    ```bash
@@ -8760,7 +8757,7 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    ```
    BAN — exactly ONE verified update path exists: never
    `EDITOR=... gh gist edit` (it silently no-ops with rc=0, leaving a
-   stale public mirror — incident #1769) and never the flag form
+   stale public mirror — #1769) and never the flag form
    `gh gist edit <id> --filename <name> <local>` either; ALL `gh gist
    edit` forms are banned for updates. Fail-soft: `GIST_UPDATED=no`
    never blocks the step — keep linking the existing gist URL and record
@@ -8792,9 +8789,8 @@ steps 4 + 6-9 are the LATE JOIN executed here):
 
    Compose both edits in a staged copy (`/tmp/...`) and apply ONLY via
    `task.py set-body <N> --file ...` (named again below) — NEVER a raw
-   `body.md` write (incident #1090, 2026-07-07: a direct pathlib write
-   bypassed task.py and the revert attempt was hook-blocked; recovery
-   cost ~3 turns).
+   `body.md` write (#1090: a direct pathlib write
+   bypassed task.py and the revert attempt was hook-blocked).
 
    (a) **Top of body — the reader-facing pointer.** Insert exactly
    this line immediately AFTER the clean-result sentinel (i.e. right
@@ -8836,7 +8832,7 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    `**Methodology:**` line and the Reproducibility row), but the
    verifier costs ~1s and catches the unlikely off-anchor edit:
    ```bash
-   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N>  # main-checkout copy, never the worktree's (spec-stale risk, incident #496)
+   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N>  # main-checkout copy, never the worktree's (spec-stale risk, #496)
    ```
    Do NOT re-run the full clean-result-critic loop — this is a
    mechanical post-script edit, not a substantive body change.
@@ -8919,7 +8915,7 @@ skip if `epm:merged` already exists.
 
 **Cheap follow-up auto-run (BOTH interactive and autonomous — fires
 here, after auto-merge, before the autonomous-only block below).**
-Standing directive (2026-06-13, raised 5→20 GPU-h 2026-06-24): *a follow-up that is `0` GPU-h or
+Standing directive: *a follow-up that is `0` GPU-h or
 `< 20` GPU-h just runs and folds into the same issue, automatically, in
 either session mode.* The 0-GPU floor is handled inline at Step 9a-ter
 (free-analysis); this block handles the GPU-backed cheap band
@@ -9053,8 +9049,8 @@ C1. **Select the cheap-band candidate.** Among the surviving
      `auto_run`-gated `same` proposal under its own round cap). Mirror
      of the Step 2c plan-cap fail-safe: a missing GPU estimate parks,
      never auto-runs. State the skip reason in one chat line.
-   - **`headline_affecting` is NOT consulted** for this band (dropped
-     2026-06-13) — a cheap `same` follow-up runs whether or not it moves
+   - **`headline_affecting` is NOT consulted** for this band — a cheap
+     `same` follow-up runs whether or not it moves
      the headline.
 C2. **Cheap-band round cap.** At most **2** cheap-band auto-run rounds
    per task, counted by `epm:same-issue-followup-run v1` markers with
@@ -9111,8 +9107,8 @@ C3. **Dispatch the round.** If a candidate survives C1+C2, post
    PushNotification → chat prompt park flow this round — but FIRST
    re-arm the `/issue-tick` backstop: CRON-TEARDOWN already ran at the
    `awaiting_promotion` transition at the top of this Step 9b, so NO
-   cron is armed here, in EITHER session mode (incident #1112,
-   2026-07-08: a cheap-band round launched a multi-hour run with no
+   cron is armed here, in EITHER session mode (#1112:
+   a cheap-band round launched a multi-hour run with no
    tick armed). BEFORE dispatching any loop work, run the Step 6d.2
    ARM-GUARD shape — `CronList` whole-string match, else
    `CronCreate(cron="*/45 * * * *", prompt="/issue-tick <N>",
@@ -9231,8 +9227,8 @@ The autonomous flow:
    the question-identity routing fix). On a newer marker, a missing
    `question_relation` tag is a proposer-contract violation — the
    usual cause is a stale `follow-up-proposer.md` in a long-lived
-   session/worktree that predates the fix (incident #533, 2026-06-10:
-   a textbook `same` corrective re-run was routed to a child task via
+   session/worktree that predates the fix (#533: a textbook `same`
+   corrective re-run was routed to a child task via
    this fallback). Re-spawn `follow-up-proposer` ONCE, instructing it
    to re-emit the SAME proposals with `question_relation` (and
    `followup_label` for `same`) tags per the criteria in
@@ -9442,9 +9438,9 @@ breadcrumbs predating this contract lack it — consumers fall back to
 the head of the unrun queue). These `stage=followup-<phase>` breadcrumbs are bound
 by the SAME Step 9 entry-guard predicate AND the same NON-SKIPPABLE
 pre-dispatch dedup check (§ Step 9 entry guard) — the status being held
-at `followups_running` does not exempt them (#778, 2026-07-01: the
+at `followups_running` does not exempt them (#778: the
 round-1 `followup-implementing` dispatch was duplicated by a concurrent
-orchestrator 5m39s after the first, two implementers concurrently
+orchestrator minutes later, two implementers concurrently
 editing one worktree). Know what each mechanism covers: the cron handles
 only the alive-but-stalled case — a `durable=False` cron dies with the
 session that armed it; `autonomous_session_watch.py`'s AUTO-RESPAWN
@@ -9457,10 +9453,10 @@ closed — or the user asks for a handoff — while loop work is in flight,
 the mid-flight handoff rule (§ Orchestration Procedure preamble)
 applies: spawn `spawn_session.py spawn-issue --issue <N> --auto`
 IMMEDIATELY; that registration is the only mechanism that survives
-session death. (Incident #505 round 2, 2026-06-10: an interactive chat
+session death. (#505: an interactive chat
 session driving this loop was closed mid-implementer-dispatch with no
 cron armed, no registry entry, and no worktree breadcrumb; the task
-orphaned at `running` for 5+ hours.)
+orphaned at `running`.)
 
 **Loop-entry ownership re-check.** When entering this loop from a
 resume / re-invocation (including the Step 0 followup-scope dispatch),
@@ -9494,7 +9490,7 @@ orchestrators driving one round is the #778 root cause.
    proposer-9b-cheap` (both are proposer-initiated auto-runs);
    `uv run python scripts/task.py add-tag <N> followup-manual` when
    `source: user-chat` or `source: step-10b-pick`. EXACTLY these two tag
-   names — a bare `followup` tag does not count (incident #533). (Both
+   names — a bare `followup` tag does not count (#533). (Both
    tags may accumulate over a task's life — they are history, not
    exclusive
    state.) **Then** `task.py set-status <N> followups_running` — the
@@ -9516,8 +9512,8 @@ orchestrators driving one round is the #778 root cause.
    entry was DELETED at the terminal transition — without
    re-registering, the revived run is invisible to every
    registration-based watcher pass until the orphan sweep's ~90-min
-   staleness gate (incident #472, 2026-06-10: a revival ran orphaned
-   for 10.5h). Registration failure is non-fatal to the loop (the
+   staleness gate (#472: a revival ran orphaned
+   for hours). Registration failure is non-fatal to the loop (the
    orphan sweep remains the backstop) but state the failure rather
    than swallowing it.
 3. **Abbreviated cycle**, all on THIS issue. **Status-hold rule: the
@@ -9529,8 +9525,8 @@ orchestrators driving one round is the #778 root cause.
    `running` / `verifying` / `interpreting` / `reviewing`) are SKIPPED
    during a same-issue follow-up round; phase visibility comes from the
    existing stage breadcrumbs (`stage=followup-<phase>`) and
-   `epm:progress` markers. **Code-enforced** (post-#533/#560,
-   2026-06-11): `task.py set-status` REFUSES
+   `epm:progress` markers. **Code-enforced** (post-#533/#560):
+   `task.py set-status` REFUSES
    `followups_running -> <any of those>` (override:
    `--force-followup-exit`, only to deliberately abandon the round), and
    a mid-round plan-gate call (`--auto-approve-if-autonomous`) fires the
@@ -9559,9 +9555,9 @@ orchestrators driving one round is the #778 root cause.
    later resume posts a FRESH scope under a NEW label; a deferred
    proposer-band round still counts toward its step-5 cap). The tick
    STALE-REDRIVE / watcher re-park are recovery backstops, not the
-   owner (incident #825, 2026-07-15: a pathological fit was torn down
-   at 00:28Z with no re-park — the parent stranded at
-   `followups_running` ~1.4 h until the 01:53Z tick re-drive re-parked
+   owner (#825: a pathological fit was torn down
+   with no re-park — the parent stranded at
+   `followups_running` until the next tick re-drive re-parked
    it).
    - **Immediately before the planner snapshots the scope, RE-READ the
      authoritative scope FOR THIS ROUND'S LABEL** —
@@ -9627,7 +9623,7 @@ orchestrators driving one round is the #778 root cause.
      same `stage=followup-<phase>` dispatch breadcrumb (or adjacent
      `epm:progress` note) carries the `external-markers triaged:` line
      before dispatching ANY compute-launching stage of the round. #779's
-     `stage=followup-grid` dispatch (2026-07-02 20:46Z) is the founding
+     `stage=followup-grid` dispatch is the founding
      incident — 10 unread external audit markers, an 18–20h serial
      launch.
    - `consistency-checker` diffs the amendment against the ISSUE'S OWN
@@ -9757,8 +9753,8 @@ Then post the chat-side prompt:
 >   `uv run python scripts/task.py promote <N> not-useful` (archive candidate)
 > Then re-enter `/issue <N>` to fire Step 10.
 
-> **Re-park BEFORE the §5 marker (same-issue follow-up rounds — incident
-> #533, 2026-06-11):** during a follow-up round, post the §5 marker below
+> **Re-park BEFORE the §5 marker (same-issue follow-up rounds —
+> #533):** during a follow-up round, post the §5 marker below
 > ONLY after the round's re-park has actually executed — check `task.py
 > view <N> --json` shows `status: awaiting_promotion` first. If the
 > status is still `followups_running`, the re-park was skipped: run step
@@ -9766,7 +9762,7 @@ Then post the chat-side prompt:
 > `epm:same-issue-followup-run v1` completion marker NOW, then post the
 > marker. Posting the exit-site marker while still at `followups_running`
 > and exiting is the #533 freeze shape — the session died there and the
-> task stranded for ~26h. (`autonomous_session_watch.py` now backstops
+> task stranded. (`autonomous_session_watch.py` now backstops
 > this with a round-complete auto re-park, but the backstop is recovery,
 > not the design.)
 
@@ -9811,7 +9807,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
    `pytest tests/` wholesale by default.
    a. Compute the subset FROM THE ISSUE WORKTREE — a branch-new test file
       exists ONLY there until the Step 10d merge, and the helper diffs the
-      INVOKING checkout (incident #851: run from the main repo root it saw an
+      INVOKING checkout (#851: run from the main repo root it saw an
       empty diff and silently dropped the branch's own test files from the
       gate; the helper now emits a stderr `NOTE — empty diff` in that shape —
       on a worktree-based task whose branch HAS commits ahead of the base,
@@ -9836,8 +9832,8 @@ suite directly and posts an `epm:test-verdict` event with the result.
       instead of failing the gate on the stale worktree copy (the #1742
       class: a main-side spec fix landing after the Step 5a sync red the
       gate round). The selector's diff base defaults to fetched
-      `origin/main` (#1289: the shared root's local `main` lagged origin on
-      2026-07-12 and polluted #1281's gate to 41 files with foreign touched
+      `origin/main` (#1289: the shared root's local `main` lagged origin
+      and polluted #1281's gate to 41 files with foreign touched
       files; bounded 120 s fetch — a fetch failure degrades to last-fetched
       `origin/main`, an unresolvable `origin/main` falls back loudly to local
       `main`). Pass `--base main` only to deliberately diff against the
@@ -9856,8 +9852,8 @@ suite directly and posts an `epm:test-verdict` event with the result.
       `timeout --kill-after=60s <T>s uv run pytest <files> --continue-on-collection-errors -v --tb=short`,
       `<T>` sized deterministically from the selection
       (`recommended_timeout_s()`: 120s base + 30s/file + a 2400s surcharge when
-      `tests/test_workflow_lint.py` is selected, which alone measured median
-      789s / max 1819s across 330 gate junits 2026-07-13..24, #1646) — plus
+      `tests/test_workflow_lint.py` is selected, which alone measures median
+      ~13 min / max ~30 min, #1646) — plus
       stderr diagnostics: a one-line work-root + branch
       provenance breadcrumb on every run, a `recommended-timeout-s=<T>`
       sizing line, any `untested touched file: <path>` WARN lines, and the
@@ -9870,11 +9866,10 @@ suite directly and posts an `epm:test-verdict` event with the result.
       pre-run `rm -f` of all three gate files (a killed run must leave NO
       junit — pytest writes it only at session exit; a stale file from a
       prior round must never be re-read). BACKGROUND IS REQUIRED, NOT
-      OPTIONAL: the selection always contains the 61-file (2026-07-24)
+      OPTIONAL: the selection always contains the ~61-file
       workflow-invariant set incl. `tests/test_workflow_lint.py` (median
       ~13 min alone, max ~30 min; whole gate median ~18 min, max ~38 min of
-      test time plus collection overhead — 330 junit runs measured
-      2026-07-13..24, #1646), so the
+      test time plus collection overhead — #1646), so the
       gate can NEVER fit the 600s foreground Bash tool cap. The
       crash-fix-rounds ~510s foreground `timeout` bound
       (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch) applies to
@@ -9895,8 +9890,8 @@ suite directly and posts an `epm:test-verdict` event with the result.
       folded into a launch call whose argv carries the unbracketed junit
       path — the #1742 re-hit of the documented #1606 trap, whose observed
       consequence was a silent exit-0 skip of the leg that the
-      harness reports as successful completion (2026-07-26 session
-      `2b779905`, 12:24:08Z: the compare leg printed `GATE STILL RUNNING;
+      harness reports as successful completion (a compare leg printed
+      `GATE STILL RUNNING;
       skip compare`, then `FATAL: compare rc file missing`, and exited 0 — a
       false DONE in the #825 empty-dir false-DONE class). A separate
       FOREGROUND call stays PREFERRED as defense-in-depth (it keeps the
@@ -9942,7 +9937,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       is the canonical text the other sites reference).** The single-flight
       probe serializes THIS issue's gates only; concurrent FOREIGN-issue
       gate trees are what stretch the ~9-12 min idle gate wall to 30-40 min
-      and feed the earlyoom/timeout kill regime (measured 2026-07-26). Run
+      and feed the earlyoom/timeout kill regime. Run
       `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --fleet --exclude-issue <N>`
       — exit 0 = under the cap, launch; exit 3 = >= `EPM_GATE_FLEET_MAX`
       (default 2) FOREIGN issues have live gate trees (one
@@ -10024,8 +10019,8 @@ suite directly and posts an `epm:test-verdict` event with the result.
       any, and any WARN lines). The two anti-silent-pass guards above are
       LOAD-BEARING — a `no tests ran` outcome (pytest exit 0 with zero
       collected tests) is a **FAIL, never a PASS**: it is the signature of a
-      failed `cd` that ran pytest in a directory with no tests (incident:
-      issue 745, SHA 91bed41e, 2026-06-30 — the gate reported PASS on
+      failed `cd` that ran pytest in a directory with no tests (#745:
+      the gate reported PASS on
       `no tests ran ... pytest exit: 0` and was silently skipped).
       Collection errors no longer abort the run (#1746):
       `--continue-on-collection-errors` lets the surviving files run, pytest
@@ -10123,7 +10118,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       victim", never "prevents kills".
    d. Classify failures against the known-red-on-main baseline ledger —
       mechanical (`scripts/step9c_baseline.py compare`), never prose
-      arithmetic (#1022: on 2026-07-02 seven sessions each burned a round
+      arithmetic (#1022: seven sessions each burned a round
       re-proving red main was pre-existing). Runs AFTER the final pytest
       invocation of step 1 (touched scope, or the 1c full-scope override —
       compare gates the junit of whichever actually ran) AND after 1b's
