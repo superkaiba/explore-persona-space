@@ -62,6 +62,11 @@ from explore_persona_space.task_workflow import primary_checkout_root  # noqa: E
 HAPPY_HOME = Path.home() / ".happy"
 DAEMON_STATE = HAPPY_HOME / "daemon.state.json"
 SESSIONS_JSON = HAPPY_HOME / "sessions.json"
+# User-global Claude Code settings; its top-level `env` block carries the
+# harness-critical CLAUDE_CODE_* overrides (#2110: CLAUDE_CODE_AUTO_COMPACT_WINDOW,
+# CLAUDE_CODE_SUBAGENT_MODEL, ...) that _merge_settings_env forwards into every
+# spawn payload so new sessions get them at exec regardless of daemon vintage.
+USER_SETTINGS_JSON = Path.home() / ".claude" / "settings.json"
 # #844: git-resolved canonical primary checkout; fails loud at import if git /
 # the repo layout is broken — NEVER `Path(__file__).resolve().parent.parent`
 # (a worktree copy of this script would resolve the worktree, and every
@@ -1822,6 +1827,110 @@ def _build_extra_claude_args(
     return extra
 
 
+def _settings_env_overrides(settings_path: Path | None = None) -> dict[str, str]:
+    """Harness-critical ``CLAUDE_CODE_*`` env entries from the user's
+    ``~/.claude/settings.json`` top-level ``env`` block, ready for
+    spawn-payload forwarding.
+
+    Why (#2110): the auto-compact window (``CLAUDE_CODE_AUTO_COMPACT_WINDOW``)
+    and the subagent-model pin (``CLAUDE_CODE_SUBAGENT_MODEL``) bind ONLY via
+    the exec-time process environment; runtime settings-env application does
+    NOT bind the compact window. A daemon-spawned session inherits the
+    DAEMON's exec env, so a settings-env edit reaches new spawns only after a
+    daemon restart (daemon-vintage dependency — session 0d005b55 thrashed at
+    242-275K preTokens for ~20h with the var already in settings.json).
+    Forwarding the settings entries through the spawn payload's
+    ``environmentVariables`` removes that dependency: the daemon spreads the
+    payload OVER its own env into the child (``index-BmZ4or3w.mjs``
+    L5761-5763 ``extraEnv = {...authEnv, ...options.environmentVariables}``,
+    L5922-5925 ``env: {...process.env, ...extraEnv}``).
+
+    FAIL-SOFT by design — a spawn is never blocked by a settings problem:
+    missing file / absent ``env`` block -> ``{}`` silently; unparseable JSON,
+    a non-dict top level, or a non-dict ``env`` -> ``{}`` with a one-line
+    stderr note. Two per-value guards:
+
+    - ``str(v)`` coercion is LOAD-BEARING, not cosmetic: the daemon's
+      ``environmentVariables`` zod schema is
+      ``z.record(z.string(), z.string())``, so a raw JSON number (e.g.
+      ``1000000``) would error the whole spawn.
+    - a value containing ``${`` is SKIPPED (one-line stderr note): the
+      daemon's ``expandEnvironmentVariables`` hard-rejects the WHOLE spawn
+      (``type: "error"``) on an unresolved ``${...}`` reference
+      (``index-BmZ4or3w.mjs`` L5778-5800), which would loudly block ALL
+      pm/issue/campaign spawns fleet-wide (the #685 idle-fleet class).
+      Skipping preserves today's behavior for that key (daemon-env
+      inheritance).
+    """
+    path = USER_SETTINGS_JSON if settings_path is None else settings_path
+    try:
+        raw = path.read_text()
+    except OSError:
+        return {}  # no settings file — nothing to forward (fail-soft)
+    try:
+        settings = json.loads(raw)
+    except json.JSONDecodeError as e:
+        print(
+            f"NOTE: {path} is not valid JSON ({e}); "
+            "forwarding no settings env into the spawn payload",
+            file=sys.stderr,
+        )
+        return {}
+    if not isinstance(settings, dict):
+        print(
+            f"NOTE: {path} top level is {type(settings).__name__}, not an object; "
+            "forwarding no settings env into the spawn payload",
+            file=sys.stderr,
+        )
+        return {}
+    env = settings.get("env")
+    if env is None:
+        return {}
+    if not isinstance(env, dict):
+        print(
+            f"NOTE: {path} top-level 'env' is {type(env).__name__}, not an object; "
+            "forwarding no settings env into the spawn payload",
+            file=sys.stderr,
+        )
+        return {}
+    overrides: dict[str, str] = {}
+    for key, value in env.items():
+        if not (isinstance(key, str) and key.startswith("CLAUDE_CODE_")):
+            continue
+        # str() is LOAD-BEARING: the daemon's environmentVariables zod schema
+        # is z.record(z.string(), z.string()) — a non-string value errors the
+        # whole spawn.
+        text = str(value)
+        if "${" in text:
+            print(
+                f"NOTE: skipping settings env {key}: its value contains '${{', and the "
+                "daemon rejects the WHOLE spawn on an unresolved ${...} reference; "
+                "the key keeps daemon-env inheritance instead",
+                file=sys.stderr,
+            )
+            continue
+        overrides[key] = text
+    return overrides
+
+
+def _merge_settings_env(body: dict[str, object]) -> None:
+    """Merge :func:`_settings_env_overrides` into ``body["environmentVariables"]``,
+    creating the dict when absent (the bare spawn-issue branch and spawn-pm set
+    none today). EXPLICIT payload keys always win — settings entries never
+    clobber ``HAPPY_INITIAL_*`` / ``EPM_*`` / any key already present.
+
+    Called immediately before EVERY ``post("/spawn-session", body)`` (#2110:
+    spawn-pm, spawn-issue both branches, spawn-campaign), so a settings-env
+    edit binds for all new spawns immediately, with no daemon restart."""
+    overrides = _settings_env_overrides()
+    if not overrides:
+        return
+    env = body.setdefault("environmentVariables", {})
+    assert isinstance(env, dict), f"environmentVariables is not a dict: {type(env).__name__}"
+    for key, value in overrides.items():
+        env.setdefault(key, value)
+
+
 def _apply_native_spawn_fields(
     body: dict[str, object],
     *,
@@ -1989,6 +2098,8 @@ def cmd_spawn_pm(args: argparse.Namespace) -> None:
         betas=_parse_betas(getattr(args, "betas", None)),
         effort=getattr(args, "effort", None),
     )
+    # #2110: forward settings CLAUDE_CODE_* env into the payload (explicit keys win).
+    _merge_settings_env(body)
     resp = post("/spawn-session", body)
     if not resp.get("success"):
         sys.exit(f"spawn failed: {resp}")
@@ -2289,6 +2400,10 @@ def _spawn_issue_session(
         effort=args.effort,
         bypass_permissions=prompt is not None,
     )
+    # #2110: forward settings CLAUDE_CODE_* env into the payload (explicit keys
+    # win) — covers BOTH the prompt-bearing --auto branch and the bare branch,
+    # which sets no environmentVariables of its own.
+    _merge_settings_env(body)
 
     resp = post("/spawn-session", body)
     if not resp.get("success"):
@@ -2478,6 +2593,8 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
     _apply_native_spawn_fields(
         body, model=args.model, betas=betas, effort=args.effort, bypass_permissions=True
     )
+    # #2110: forward settings CLAUDE_CODE_* env into the payload (explicit keys win).
+    _merge_settings_env(body)
     resp = post("/spawn-session", body)
     if not resp.get("success"):
         sys.exit(f"spawn failed: {resp}")
