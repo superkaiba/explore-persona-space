@@ -524,7 +524,13 @@ def phase_parity(cfg: AnalysisConfig) -> int:
     logger.info("[phase=parity]")
     bank = _load_vc_bank(cfg)
     anchor_va = _load_anchor_va(cfg)
-    contexts = sorted(bank["per_context"])
+    # Own-bank reproduction probe: only contexts with BOTH a bank state and
+    # anchor draws qualify (identical set in production — all 15 anchored;
+    # a partial/smoke staging anchors a subset, and probing an un-anchored
+    # context KeyErrors — unit-F e2e smoke).
+    contexts = sorted(set(bank["per_context"]) & set(anchor_va))
+    assert contexts, "no context has both bank states and anchor draws"
+    logger.info("[parity] orientation probe over %d contexts", len(contexts))
     rows = []
     for spec in BANKED_MAPS:
         bundle = _load_bundle(cfg.maps_dir / spec["repo_path"])
@@ -1070,10 +1076,19 @@ def phase_transport(cfg: AnalysisConfig) -> int:
             delta, state_b, _m = R._pair_payload(bank, pair, r["slot"], r["vec_type"])
             recipient = delta
             if r["arm"] == "null":
-                donor = pairs_by_id[donor_map[r["pair_id"]]]
-                recipient, _label = R._donor_payload(
-                    bank, pair, donor, r["slot"], r["vec_type"], recipient
-                )
+                # EXACTLY the run_block path: prefer the RECORDED realized donor
+                # (rows carry donor_pair_id); fall back to the deterministic
+                # slot-aware derangement walk (R._resolve_donor) for rows
+                # without one (Type-B rows carry a centroid label, not a pair).
+                donor_id = r.get("donor_pair_id")
+                if donor_id in pairs_by_id:
+                    recipient, _label = R._donor_payload(
+                        bank, pair, pairs_by_id[donor_id], r["slot"], r["vec_type"], recipient
+                    )
+                else:
+                    recipient, _label = R._resolve_donor(
+                        bank, pair, donor_map, pairs_by_id, r["slot"], r["vec_type"], recipient
+                    )
             d_l = recipient[-1][layer].float()
             v_s = _slot_input_vector(bank, r["context_a"], r["slot"], layer)
             if r["dose"] == "replace":

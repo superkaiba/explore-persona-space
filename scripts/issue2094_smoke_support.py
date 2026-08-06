@@ -230,13 +230,19 @@ def cmd_transport_mini(args: argparse.Namespace) -> int:
     gen = torch.Generator().manual_seed(args.seed)
     pairs = BANK.build_pairs()
     mirror = args.in_root / "issue2094_singlepos"
-    subset = [p for p in pairs if p.setting == "matched_prefix"][:2]
+    # ce blocks: matched-prefix pairs; pe blocks: matched-QUERY pairs (an
+    # mp pair's pe Delta is zero by causal identity, so mp/pe transport rows
+    # are degenerate-by-design — the pe map needs cross-prefix pairs).
+    subset_by_slot = {
+        "ce": [p for p in pairs if p.setting == "matched_prefix"][:2],
+        "pe": [p for p in pairs if p.setting == "matched_query"][:2],
+    }
     bank = _mini_bank(pairs, gen)
     bank_dir = mirror / "analysis_tensors" / "vc_bank"
     bank_dir.mkdir(parents=True, exist_ok=True)
     torch.save(bank, bank_dir / "vc_bank.pt")
 
-    ctx_ids = sorted({c for p in subset for c in (p.a, p.b)})
+    ctx_ids = sorted({c for ps in subset_by_slot.values() for p in ps for c in (p.a, p.b)})
     k_draws = 2
     index, span, tail = [], [], []
     for cid in ctx_ids:
@@ -257,7 +263,7 @@ def cmd_transport_mini(args: argparse.Namespace) -> int:
     )
 
     blocks = [
-        R.Block(slot, lv, dose, "A", arm, tuple(p.pair_id for p in subset))
+        R.Block(slot, lv, dose, "A", arm, tuple(p.pair_id for p in subset_by_slot[slot]))
         for slot, lv, dose in (("ce", "L14", "a1"), ("ce", "L14", "replace"), ("pe", "L19", "a1"))
         for arm in ("steered", "null")
     ]
@@ -284,7 +290,7 @@ def cmd_transport_mini(args: argparse.Namespace) -> int:
                 "text": "smoke transport row (no model text)",
                 "draw": 0,
             }
-            for p in subset
+            for p in subset_by_slot[block.slot]
         ]
         R._write_jsonl_atomic(roll_dir / f"shard_{block.slug}.jsonl", rows)
         n = len(rows)
@@ -301,7 +307,7 @@ def cmd_transport_mini(args: argparse.Namespace) -> int:
         "[smoke-support] transport-mini done: %d blocks x %d pairs (banked layers ce/L14, "
         "pe/L19) under %s",
         len(blocks),
-        len(subset),
+        sum(len(v) for v in subset_by_slot.values()),
         mirror,
     )
     return 0

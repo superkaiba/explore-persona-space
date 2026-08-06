@@ -823,7 +823,16 @@ def _pair_payload(
     vb = _slot_vectors(recs[pair.b], slot)
     m = min(va.shape[0], vb.shape[0])
     va, vb = align_right(va, m), align_right(vb, m)
-    return vb - va, vb, m
+    delta = vb - va
+    if slot == "pe" and pair.prefix_a == pair.prefix_b:
+        # CAUSAL IDENTITY: same prefix tokens => identical prefix-end state, so
+        # the true Delta is EXACTLY zero; the float compute leaves batch-geometry
+        # noise (~1e-9 fp32 CPU, larger in bf16 batches), which downstream
+        # norm-matching would otherwise inflate to a fake "direction" (unit-F
+        # e2e smoke: an mp-conv pe recipient at 1.9e-9 vs an exactly-zero mp
+        # donor tripped norm_match). Canonicalize to the identity.
+        delta = torch.zeros_like(delta)
+    return delta, vb, m
 
 
 def _donor_payload(
@@ -851,6 +860,57 @@ def _donor_payload(
     raw, _, _ = _pair_payload(bank, donor, slot, vec_type)
     raw = align_right(raw, recipient.shape[0])
     return BANK.norm_match(raw, recipient), donor.pair_id
+
+
+def _donor_eligible(donor: BANK.Pair, slot: str) -> bool:
+    """STRUCTURAL slot-aware donor eligibility for the Type-A null arm.
+
+    At the prefix-end slot a matched-prefix donor's Delta is EXACTLY zero by
+    causal-attention identity (same prefix tokens => identical prefix-end
+    state; in bf16 batch geometry it degrades to pure numerical noise, which
+    norm-matching would silently inflate to the recipient's norm). Nothing to
+    rescale either way => a same-prefix pair is never a pe-slot donor. Every
+    other (slot, donor-setting) combination differs in at least one in-span
+    token, so its Delta is generically nonzero. (Production bug found by the
+    unit-F e2e smoke: pe/L27 null block, mp donor, norm_match assert.)
+    """
+    if slot == "pe":
+        return donor.prefix_a != donor.prefix_b
+    return True
+
+
+def _resolve_donor(
+    bank: dict,
+    pair: BANK.Pair,
+    donor_map: dict[str, str],
+    pairs_by_id: dict[str, BANK.Pair],
+    slot: str,
+    vec_type: str,
+    recipient: torch.Tensor,
+) -> tuple[torch.Tensor, str]:
+    """Deterministic donor resolution: walk the seeded derangement cycle from
+    ``donor_map[pair]`` to the first slot-ELIGIBLE donor (skipping the
+    recipient pair itself). The REALIZED donor id is recorded per cell
+    (``donor_pair_id``), and the analysis transport reconstruction prefers
+    that recorded id, so the walk rule never has to be re-derived downstream.
+    Type B routes straight to the centroid-swap donor (derangement-free)."""
+    if vec_type == "B":
+        return _donor_payload(bank, pair, pair, slot, vec_type, recipient)
+    if not bool((recipient.norm(dim=-1) > 0).any()):
+        # Degenerate recipient (the canonicalized same-prefix pe Delta): the
+        # norm-matched null of a ZERO injection is zero — matching the steered
+        # twin, which injects exactly nothing at this cell. Record the seeded
+        # donor id for provenance.
+        return torch.zeros_like(recipient), donor_map[pair.pair_id]
+    seen: set[str] = set()
+    donor_id = donor_map[pair.pair_id]
+    while donor_id not in seen:
+        seen.add(donor_id)
+        donor = pairs_by_id[donor_id]
+        if donor_id != pair.pair_id and _donor_eligible(donor, slot):
+            return _donor_payload(bank, pair, donor, slot, vec_type, recipient)
+        donor_id = donor_map[donor_id]
+    raise AssertionError(f"no eligible donor for {pair.pair_id} at slot {slot}")
 
 
 # ── P1 gate: injection exactness ──────────────────────────────────────
@@ -1012,38 +1072,59 @@ def run_injection_gate(cfg: RunConfig, model, tok, bank: dict, pairs: list[BANK.
         base = extract_layer_activations(model, ids, cfg.layers, attention_mask=mask)
         base_cpu = {layer: base[layer].detach().float().cpu() for layer in cfg.layers}
         del base
-        hook = _arm_hook_for_rows(
-            model,
-            cfg,
-            layers,
-            row_lengths,
-            positions,
-            payloads,
-            mode,
-            alpha,
-            t_pad,
-        )
-        try:
-            hooked = extract_layer_activations(model, ids, cfg.layers, attention_mask=mask)
-            hooked_cpu = {layer: hooked[layer].detach().float().cpu() for layer in cfg.layers}
-            del hooked
-            telemetry = hook.realized_edits
-        finally:
-            hook.remove()
+
+        # Ascending INCREMENTAL references (joint cells): at hooked layer l the
+        # exactness reference is the forward hooked at strictly SHALLOWER
+        # layers only — layer l's own computation sees identical inputs in the
+        # two runs, so hooked_{<=l}[l] - hooked_{<l}[l] isolates EXACTLY the
+        # layer-l injection. Reading hooked-minus-CLEAN at l > min(layers)
+        # (the pre-unit-F gate) also carries the legitimate residual-stream
+        # propagation of the shallower injections (norm ratio ~= the hooked
+        # layer count — the unit-F e2e smoke failed all 6 joint spots on
+        # exactly that signature, single-layer spots at cos 1.0). ``replace``
+        # OVERWRITES the position, so its absolute read needs no reference.
+        # Leg-2 telemetry + leg-3 off-target read off the FULL hooked forward
+        # (the last loop iteration). Cost: k forwards per k-layer joint spot
+        # instead of 1 (joint_all: 28 two-row prompt forwards).
+        sorted_layers = tuple(sorted(layers))
+        realized_at: dict[int, torch.Tensor] = {}
+        ref_cpu = base_cpu
+        hooked_cpu = base_cpu
+        telemetry = []
+        for i, layer in enumerate(sorted_layers):
+            hook = _arm_hook_for_rows(
+                model,
+                cfg,
+                sorted_layers[: i + 1],
+                row_lengths,
+                positions,
+                payloads,
+                mode,
+                alpha,
+                t_pad,
+            )
+            try:
+                hooked = extract_layer_activations(model, ids, cfg.layers, attention_mask=mask)
+                hooked_cpu = {la: hooked[la].detach().float().cpu() for la in cfg.layers}
+                del hooked
+                telemetry = hook.realized_edits
+            finally:
+                hook.remove()
+            realized_at[layer] = (
+                hooked_cpu[layer] if mode == "replace" else hooked_cpu[layer] - ref_cpu[layer]
+            )
+            ref_cpu = hooked_cpu
         assert telemetry, f"spot {slot}/{variant}/{dose}: hook never applied an edit"
 
         cos_min, ratio_lo, ratio_hi = 1.0, math.inf, 0.0
         tele_cos_min = 1.0
         for b, p in enumerate(batch_pairs):
             off = t_pad - row_lengths[b]
-            for layer in layers:
+            for layer in sorted_layers:
                 for j, pos in enumerate(positions[b]):
                     expected = alpha * payloads[b][j, layer, :]
                     padded = pos + off
-                    if mode == "replace":
-                        realized = hooked_cpu[layer][b, padded]
-                    else:
-                        realized = hooked_cpu[layer][b, padded] - base_cpu[layer][b, padded]
+                    realized = realized_at[layer][b, padded]
                     cos = float(safe_cosine(realized, expected))
                     n_exp = float(expected.norm())
                     ratio = float(realized.norm()) / n_exp if n_exp > 0 else float("nan")
@@ -1456,9 +1537,8 @@ def run_block(
         recipient = state if payload_kind == "state" else delta
         donor_label = None
         if block.arm == "null":
-            donor = pairs_by_id[donor_map[pid]]
-            recipient, donor_label = _donor_payload(
-                bank, pair, donor, block.slot, block.vec_type, recipient
+            recipient, donor_label = _resolve_donor(
+                bank, pair, donor_map, pairs_by_id, block.slot, block.vec_type, recipient
             )
         rec = recs[pair.a]
         pos = slot_positions(rec["ctx_len"], rec["prefix_end"], block.slot)[-m:]

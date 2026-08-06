@@ -279,3 +279,88 @@ def test_sentinel_payload_carries_every_step7_key(tmp_path):
     assert payload["eval_numbers"]["cells_persisted"] == 3
     assert payload["eval_numbers"]["cap_hit_rows"] == 1
     assert payload["plan_deviations"], "the realized-mode / cap-hit deviations must be recorded"
+
+
+# ── slot-aware donor resolution (the pe zero-Delta production bug) ─────
+
+
+def _synthetic_bank_same_prefix_pe(pairs: list, hidden: int = 6) -> dict:
+    """Synthetic bank where SAME-prefix contexts share one v_pe exactly —
+    the causal-attention identity that makes a matched-prefix donor's
+    prefix-end Delta exactly zero (found by the unit-F e2e smoke)."""
+    contexts = BANK.build_contexts()
+    gen = torch.Generator().manual_seed(0)
+    v_pe_by_prefix = {
+        prefix: torch.randn(N_LAYERS, hidden, generator=gen) for prefix in BANK.PREFIX_ORDER
+    }
+    per_context = {}
+    for cid, ctx in contexts.items():
+        per_context[cid] = {
+            "context_id": cid,
+            "prefix": ctx["prefix"],
+            "query_id": ctx["query_id"],
+            "ctx_len": 24,
+            "prefix_end": 18,
+            "nq": 6,
+            "q_span": torch.randn(6, N_LAYERS, hidden, generator=gen),
+            "v_pe": v_pe_by_prefix[ctx["prefix"]].clone(),
+        }
+    return {"layers": list(range(N_LAYERS)), "per_context": per_context, "centroids": {}}
+
+
+def test_pe_donor_eligibility_is_structural(pairs):
+    mp = next(p for p in pairs if p.setting == "matched_prefix")
+    mq = next(p for p in pairs if p.setting == "matched_query")
+    assert not R._donor_eligible(mp, "pe")  # same prefix -> zero pe Delta
+    assert R._donor_eligible(mp, "ce")
+    assert R._donor_eligible(mq, "pe")
+
+
+def test_same_prefix_pe_delta_canonicalized_to_exact_zero(pairs):
+    """The unit-F e2e smoke incident: a same-prefix pair's pe Delta is float
+    NOISE (1.9e-9 on the conv pair), while its mp donor's is exactly zero —
+    norm_match then asserts. The fix canonicalizes the causal identity: a
+    same-prefix pair's pe Delta is EXACTLY zero regardless of float noise."""
+    bank = _synthetic_bank_same_prefix_pe(pairs)
+    mp = next(p for p in pairs if p.setting == "matched_prefix")
+    # inject the incident's float noise into ONE same-prefix v_pe
+    bank["per_context"][mp.a]["v_pe"] += 2e-9 * torch.randn_like(bank["per_context"][mp.a]["v_pe"])
+    delta, state, _m = R._pair_payload(bank, mp, "pe", "A")
+    assert float(delta.abs().max()) == 0.0  # exact identity, not noise
+    assert float(state.norm()) > 0  # the replacement state is untouched
+    mq = next(p for p in pairs if p.setting == "matched_query")
+    d_mq, _, _ = R._pair_payload(bank, mq, "pe", "A")
+    assert float(d_mq.norm()) > 0  # cross-prefix pairs keep their real Delta
+
+
+def test_resolve_donor_zero_recipient_and_eligibility_walk(pairs):
+    """Fails pre-fix (both legs): (a) a zero-norm donor against a noise
+    recipient raised inside norm_match; (b) the null of a degenerate
+    (canonicalized-zero) recipient is a zero injection, matching its steered
+    twin; (c) the walk skips a same-prefix donor handed to a pe cell."""
+    bank = _synthetic_bank_same_prefix_pe(pairs)
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    donor_map = BANK.donor_derangement(pairs)
+    mp = next(p for p in pairs if p.setting == "matched_prefix")
+    mq = next(p for p in pairs if p.setting == "matched_query")
+
+    # (a) the raw pre-fix crash shape still fails loud at the norm_match level
+    noise = 2e-9 * torch.randn(1, N_LAYERS, 6)
+    with pytest.raises(AssertionError, match="zero-norm donor"):
+        R._donor_payload(bank, mq, mp, "pe", "A", noise)
+
+    # (b) degenerate recipient -> zero null payload, seeded donor id recorded
+    recipient, _, _ = R._pair_payload(bank, mp, "pe", "A")
+    payload, donor_id = R._resolve_donor(bank, mp, donor_map, pairs_by_id, "pe", "A", recipient)
+    assert float(payload.abs().max()) == 0.0
+    assert donor_id == donor_map[mp.pair_id]
+
+    # (c) a synthetic donor map handing an mp donor to an mq pe cell: the walk
+    # must skip it and land on an eligible (cross-prefix) donor, norm-matched.
+    mq2 = next(p for p in pairs if p.setting == "matched_query" and p.pair_id != mq.pair_id)
+    synth_map = {mq.pair_id: mp.pair_id, mp.pair_id: mq2.pair_id, mq2.pair_id: mq.pair_id}
+    recip_mq, _, _ = R._pair_payload(bank, mq, "pe", "A")
+    payload, donor_id = R._resolve_donor(bank, mq, synth_map, pairs_by_id, "pe", "A", recip_mq)
+    assert donor_id == mq2.pair_id  # walked past the ineligible mp donor
+    assert R._donor_eligible(pairs_by_id[donor_id], "pe")
+    assert torch.allclose(payload.norm(dim=-1), recip_mq.norm(dim=-1), rtol=1e-4, atol=1e-6)
