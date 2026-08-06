@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2110,
+  "highest_id": 2111,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8597,6 +8597,13 @@
       "path": "tasks/proposed/2110",
       "status": "proposed",
       "title": "daily-fix: AUTO_COMPACT_WINDOW not reaching spawned sessions"
+    },
+    "2111": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2111",
+      "status": "proposed",
+      "title": "daily-fix: ownership-probe hardening (3 probed gaps)"
     },
     "212": {
       "has_clean_result": true,
