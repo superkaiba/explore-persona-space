@@ -8895,8 +8895,8 @@
     "2150": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2150",
-      "status": "proposed",
+      "path": "tasks/planning/2150",
+      "status": "planning",
       "title": "wf-compact fallout: codex-code-reviewer.md lost the Step 4.6 gate-scope copy-list bullet \u2014 3 pin tests red on main"
     },
     "216": {
