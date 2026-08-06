@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2109,
+  "highest_id": 2110,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8590,6 +8590,13 @@
       "path": "tasks/proposed/2109",
       "status": "proposed",
       "title": "Judge parser drops prose-then-trailing-integer responses (recovers ~8-28% of dropped draws)"
+    },
+    "2110": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2110",
+      "status": "proposed",
+      "title": "daily-fix: AUTO_COMPACT_WINDOW not reaching spawned sessions"
     },
     "212": {
       "has_clean_result": true,
