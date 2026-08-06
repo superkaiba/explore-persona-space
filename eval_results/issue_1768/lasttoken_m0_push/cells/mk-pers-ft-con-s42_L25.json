@@ -1,0 +1,20 @@
+{
+ "arm_id": "mk-pers-ft-con-s42",
+ "layer": 25,
+ "position": "last_prompt",
+ "base_unit": "base_mk",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.6464420055715268,
+ "m0_heldout_r2_committed": 0.6464420055715265,
+ "push_te": {
+  "median": 4.744049027308497,
+  "q25": 3.906691912204457,
+  "q75": 5.902491852105506,
+  "mean": 5.42860613023142,
+  "n": 1024
+ },
+ "delta_med_committed": 10.296097074821093,
+ "floor_p95_committed": 23.679224014282227,
+ "ctx_move_committed": 0.05194088609416548
+}

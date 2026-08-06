@@ -1,0 +1,20 @@
+{
+ "arm_id": "mk-pers-po-lr5e6-s137",
+ "layer": 14,
+ "position": "last_prompt",
+ "base_unit": "base_mk",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.6038829715841434,
+ "m0_heldout_r2_committed": 0.6038829715841432,
+ "push_te": {
+  "median": 1.2964584778593509,
+  "q25": 1.1654802909541158,
+  "q75": 1.4322755424561175,
+  "mean": 1.301374074463073,
+  "n": 1024
+ },
+ "delta_med_committed": 2.3524968814096807,
+ "floor_p95_committed": 4.396322727203369,
+ "ctx_move_committed": 0.04733073098159997
+}
