@@ -1,0 +1,22 @@
+{
+  "arm": "context",
+  "bootstrap_draws": 200,
+  "fence_floor_seconds": 321217.4,
+  "fleet_units_basis": "pending (pair, arm) units",
+  "fold_k": 5,
+  "max_fleet_wall_hours": 12.0,
+  "memo_not_modeled": true,
+  "n_fleet_units": 656,
+  "peak_rss_gib": 21.566,
+  "phase": "ladder-pilot-gate",
+  "pilot_wall_seconds_per_unit_fold": 48.966,
+  "projected_fleet_wall_hours": 44.614,
+  "projected_fleet_wall_seconds": 160608.7,
+  "rss_route_off_vm_gib": 16.0,
+  "seed": 137,
+  "source": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+  "status": "ok",
+  "target": "char_helios__inserted__attrib_quoted__qwen2.5-7b-instruct",
+  "utc": "2026-08-06T10:21:22.764239+00:00",
+  "wall_seconds": 48.966
+}

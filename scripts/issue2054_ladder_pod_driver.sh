@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
-# issue-2054 ladder pod driver (cpu-bigmem).
+# issue-2054 ladder pod driver (cpu-bigmem, one pair-class shard).
 #
-# Stages the capture npz store + the 48 fit JSONs from HF (cross-machine
-# seam — both were produced on other machines), then runs the 9-rung
-# transfer ladder through its built-in auto pilot gate (measured 1-unit wall
-# extrapolated to the pending fleet; projection > --max-fleet-wall-hours
-# exits 7 with pilot_gate_report.json — route on the artifact, plan M-R2-1).
+# Usage: LADDER_CLASSES=<comma list> [LADDER_MODELS=<comma list>] \
+#          bash scripts/issue2054_ladder_pod_driver.sh
+#
+# Stages the capture npz store + the 48 fit JSONs from HF, then runs TWO
+# concurrent ladder processes split by ARM (context / prefix) over the given
+# pair classes, OMP=8 each (16 vCPU; peak RSS ~21.6 GiB/proc vs 128 GB).
+# Sharding basis: the committed pilot report (49.0 s/unit-fold measured) +
+# the exact unit census — twobytwo 288 / cross_character 192 / cross_model 96
+# / cross_framing 80 units. --skip-pilot-gate is legitimate: the standalone
+# pilot ran on f5 (report committed at
+# eval_results/issue_2054/ladder_pilot_gate_report.json).
 set -uo pipefail
+: "${LADDER_CLASSES:?set LADDER_CLASSES (comma list of pair classes)}"
 cd "$(git rev-parse --show-toplevel)"
 if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 
@@ -16,7 +23,7 @@ ACT_DIR="${STAGE_ROOT}/issue2054_lattice/activations"
 FITS_DIR="${STAGE_ROOT}/issue2054_lattice/fits"
 mkdir -p "$LOG_DIR"
 
-echo "[phase=ladder_pod] driver start $(date -u +%FT%TZ)"
+echo "[phase=ladder_pod] driver start classes=${LADDER_CLASSES} models=${LADDER_MODELS:-all} $(date -u +%FT%TZ)"
 
 echo "[phase=ladder_pod stage=stage_inputs] start $(date -u +%FT%TZ)"
 STAGE_ROOT="$STAGE_ROOT" uv run python - > "$LOG_DIR/issue-2054-ladder-stage.log" 2>&1 <<'PYEOF'
@@ -50,15 +57,36 @@ if [ "$rc" -ne 0 ]; then
   exit "$rc"
 fi
 
-echo "[phase=ladder_pod stage=ladder] start $(date -u +%FT%TZ)"
-env OMP_NUM_THREADS=16 MKL_NUM_THREADS=16 OPENBLAS_NUM_THREADS=16 NUMEXPR_NUM_THREADS=16 \
-  uv run python scripts/issue2054_ladder.py \
-  --activations-dir "$ACT_DIR" \
-  --fits-dir "$FITS_DIR" \
-  --fold-map eval_results/issue_2054/shared_fold_map.json \
-  --output-dir data/issue_2054/ladder/ \
-  --seed 137
-rc=$?
-echo "[phase=ladder_pod stage=ladder] rc=${rc} $(date -u +%FT%TZ)"
-echo "[phase=ladder_pod] driver_rc=${rc} $(date -u +%FT%TZ)"
-exit "$rc"
+run_arm() {
+  local arm="$1" log="$2"
+  local extra=()
+  if [ -n "${LADDER_MODELS:-}" ]; then extra=(--models "$LADDER_MODELS"); fi
+  env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 \
+    uv run python scripts/issue2054_ladder.py \
+    --activations-dir "$ACT_DIR" \
+    --fits-dir "$FITS_DIR" \
+    --fold-map eval_results/issue_2054/shared_fold_map.json \
+    --output-dir data/issue_2054/ladder/ \
+    --seed 137 \
+    --pair-classes "$LADDER_CLASSES" \
+    --arms "$arm" \
+    --skip-pilot-gate \
+    "${extra[@]}" \
+    > "$log" 2>&1
+}
+
+echo "[phase=ladder_pod stage=ladder] concurrent start $(date -u +%FT%TZ)"
+run_arm context "$LOG_DIR/issue-2054-ladder-ctx.log" &
+P1=$!
+run_arm prefix "$LOG_DIR/issue-2054-ladder-pfx.log" &
+P2=$!
+wait "$P1"; R1=$?
+wait "$P2"; R2=$?
+echo "[phase=ladder_pod stage=ladder] context rc=${R1}; prefix rc=${R2} $(date -u +%FT%TZ)"
+if [ "$R1" -ne 0 ] || [ "$R2" -ne 0 ]; then
+  echo "[phase=ladder_pod] HALT context rc=${R1} prefix rc=${R2} (tails follow)"
+  tail -25 "$LOG_DIR/issue-2054-ladder-ctx.log" || true
+  tail -25 "$LOG_DIR/issue-2054-ladder-pfx.log" || true
+  exit 1
+fi
+echo "[phase=ladder_pod] driver_rc=0 classes=${LADDER_CLASSES} $(date -u +%FT%TZ)"
