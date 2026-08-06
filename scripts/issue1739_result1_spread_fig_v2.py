@@ -24,8 +24,7 @@ replaces the other):
                  content DROP (llm-judging.md rule 9): the draw carries no score,
                  a rollout whose draws all dropped has no score, and a context
                  whose rollouts all dropped has no DV. Renders
-                 `spread_grid_simple`; byte-for-byte the previously committed
-                 figure.
+                 `spread_grid_simple`.
   refusal-zero   EVIL ONLY, and only the REFUSAL channel: a `REFUSAL` draw is
                  scored 0 (refusing is the least-evil response, so it is a floor
                  observation rather than missing data). Parse-error draws stay
@@ -69,7 +68,6 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 from issue1739_recut_common import (  # noqa: E402
     BEHAVIORS,
     ROOT,
-    RUNG_LABEL,
     RUNGS,
     WT,
 )
@@ -81,9 +79,89 @@ STATS_PATH = OUT_NUM / "spread_stats.json"
 
 PVSYNTH = "pvsynth"
 SETTINGS = {b: [*RUNGS[b], PVSYNTH] for b in BEHAVIORS}
-SETTING_LABEL = dict(RUNG_LABEL)
+
+# Row labels are two-part: the ROLE the dataset plays in the design, then WHAT
+# THE DATASET ACTUALLY IS. Figure-LOCAL by design — `RUNG_LABEL` in
+# issue1739_recut_common is consumed by five other figure scripts, so it is read
+# for the setting roster only and never mutated here.
+#
+# ROLE. `train` is the labeled fit pool: predictors are fit on it under 5
+# group-level folds (`fits.realize_budget_cell`, N_FOLDS=5) and read
+# OUT-OF-FOLD, so "held-out" here means out-of-fold, NOT a held-out data split
+# (every train-rung row in labeling.json carries split="train"; there is no
+# second split value). The only 80/20 in this pipeline is
+# `WHITEN_HOLDOUT_FRAC` over the UNLABELED U pool, which carries no judged DV —
+# see the module note in the report and #1739's body.
+SETTING_ROLE = {
+    "train": "in-distribution (out-of-fold)",
+    "hhrt": "OOD transfer",
+    "toxicchat": "OOD transfer",
+    "nqopen": "OOD transfer",
+    "simpleqa": "OOD transfer",
+    # PROVENANCE (kept in code; deliberately NOT surfaced in the figure label —
+    # user-directed presentation choice 2026-08-05, applied to Result 1 and the
+    # Result 2 method figure alike so the two agree).
+    #
+    # ELEPHANT AITA-YTA had no resolvable HF id (epm:concern-raised
+    # elephant-aita-unresolved, 2026-07-28), so
+    # corpus_staging._stage_elephant_or_fallback took the plan's registered
+    # fallback: a hash-partitioned held-out slice of r/socialskills. That is not
+    # a neighbouring subreddit — it is half the sycophancy train pool
+    # (corpus_staging.py:889-903, per_split = cap // 2 -> 8,000
+    # relationship_advice + 8,000 socialskills; verified on the DV rows'
+    # group_key prefixes). Train draws sha1(post_id) mod 10 in 0..8, this rung
+    # draws bucket 9 (SYC_PARTITION_MOD=10, SYC_EVAL_BUCKET=9), so post ids are
+    # disjoint and there is no leakage — but the shift is smaller than the other
+    # OOD rungs'. Genuine OOD sycophancy rungs (SycophancyEval; an ELEPHANT
+    # mirror if resolvable) are being staged; rebuild this row against them
+    # rather than re-litigating the label.
+    "aita": "OOD transfer",
+    "wildchat_rung": "deployment-like traffic",
+    PVSYNTH: "synthetic elicitation suite",
+}
+# IDENTITY. Every string traces to the corpus registry / staging code that built
+# the rung, not to its slug:
+#   evil train      corpus_registry REGISTRY[("evil","train")] — TrustAIRLab
+#                   in-the-wild-jailbreak-prompts x forbidden_question_set
+#   evil hhrt       Anthropic/hh-rlhf, subset red-team-attempts
+#   evil toxicchat  lmsys/toxic-chat, subset flagged
+#   syc train       HuggingFaceGECLM/REDDIT_submissions, splits
+#                   relationship_advice + socialskills
+#   syc aita        corpus_staging._stage_elephant_or_fallback fallback branch —
+#                   held-out r/socialskills (sha1 mod-10 eval bucket)
+#   hall train      mandarjoshi/trivia_qa, config rc.nocontext
+#   hall nqopen     google-research-datasets/nq_open (validation)
+#   hall simpleqa   basicv8vc/SimpleQA (test)
+#   wildchat_rung   allenai/WildChat-1M, fresh conversations held out from the
+#                   reused #1092 store by first-user-turn / final-query text
+#   pvsynth         issue1739_pvsynth_pod — the Persona Vectors eval grid,
+#                   5 instruction pairs x {pos,neg} x 20 held-out eval questions
+SETTING_IDENTITY = {
+    ("evil", "train"): "jailbreak prompts x forbidden Qs",
+    ("evil", "hhrt"): "hh-rlhf red-team attempts",
+    ("evil", "toxicchat"): "ToxicChat (flagged)",
+    ("sycophancy", "train"): "Reddit personal-advice posts",
+    ("sycophancy", "aita"): "held-out Reddit r/socialskills",
+    ("hallucination", "train"): "TriviaQA (rc.nocontext)",
+    ("hallucination", "nqopen"): "NQ-Open",
+    ("hallucination", "simpleqa"): "SimpleQA",
+}
 for _b in BEHAVIORS:
-    SETTING_LABEL[(_b, PVSYNTH)] = "persona-vectors\nsynthetic suite"
+    SETTING_IDENTITY[(_b, "wildchat_rung")] = "random WildChat conversations"
+    SETTING_IDENTITY[(_b, PVSYNTH)] = "persona-vectors eval grid"
+
+# Fail loud rather than mislabel: every plotted cell must have both parts.
+for _b in BEHAVIORS:
+    for _s in [*RUNGS[_b], PVSYNTH]:
+        if _s not in SETTING_ROLE or (_b, _s) not in SETTING_IDENTITY:
+            raise SystemExit(f"no role/identity label for {_b}/{_s}")
+
+# Flat one-line form for the JSON sidecar (the figure uses the two-line form).
+SETTING_LABEL = {
+    (b, s): f"{SETTING_ROLE[s]} — {SETTING_IDENTITY[(b, s)]}"
+    for b in BEHAVIORS
+    for s in [*RUNGS[b], PVSYNTH]
+}
 
 # Hallucination's own rungs score the fabricated FRACTION rescaled x100, not the
 # graded 0-100 trait rubric every other cell scores. Different construct: the
@@ -436,7 +514,7 @@ def main(coding: str = "drop") -> None:
     fig, axes = plt.subplots(
         len(BEHAVIORS),
         2,
-        figsize=(13.0, 9.6),
+        figsize=(13.0, 11.6),
         gridspec_kw={"width_ratios": [1.7, 1.0]},
     )
 
@@ -467,9 +545,14 @@ def main(coding: str = "drop") -> None:
                 ax.axhline(divider, color="#8A8A8A", lw=0.9, linestyle=(0, (4, 3)), zorder=1)
             ax.set_yticks(pos)
             ax.set_ylim(min(pos) - 0.7, max(pos) + 0.7)
+        # Three lines per row: the ROLE the dataset plays, what it ACTUALLY is,
+        # and the context count behind the distribution.
         axl.set_yticklabels(
-            [f"{SETTING_LABEL[(b, s)]}\nn={stats[(b, s)]['n_contexts']:,}" for s in settings],
-            fontsize=8.5,
+            [
+                f"{SETTING_ROLE[s]}\n{SETTING_IDENTITY[(b, s)]}\nn={stats[(b, s)]['n_contexts']:,}"
+                for s in settings
+            ],
+            fontsize=8.0,
         )
         axr.set_yticklabels([])
         axl.set_xlim(-2, 102)
@@ -493,16 +576,21 @@ def main(coding: str = "drop") -> None:
         fontsize=9,
     )
     caption = (
-        "Hallucination's held-out TriviaQA / NQ-Open / SimpleQA rows (above the dashed line) score "
-        "fabrication rate x100, a different construct from the 0-100 trait rubric in every other row."
+        "Each row is labelled with the role it plays in the design, then the dataset it actually is. "
+        "An in-distribution row is that behavior's FULL labeled\n"
+        "pool, scored out-of-fold under 5 group-level folds — 'out-of-fold' is how the predictor is "
+        "read, not a held-out data split. Hallucination's TriviaQA /\n"
+        "NQ-Open / SimpleQA rows (above the dashed line) score fabrication rate x100, a different "
+        "construct from the 0-100 trait rubric in every other row."
     )
     if coding == "refusal-zero":
         caption = (
             "Evil only: a judge REFUSAL verdict (the evaluated model declined the query) is scored 0 "
-            "rather than dropped; sycophancy and hallucination are unchanged. " + caption
+            "rather than dropped; sycophancy and hallucination are unchanged.\n" + caption
         )
-    fig.text(0.008, 0.014, caption, ha="left", va="bottom", fontsize=8.5, color="#5A5A5A")
-    fig.subplots_adjust(left=0.155, right=0.985, top=0.935, bottom=0.085, hspace=0.36, wspace=0.05)
+    fig.text(0.008, 0.010, caption, ha="left", va="bottom", fontsize=8.0, color="#5A5A5A")
+    # left: the three-line role/identity/n tick labels need a wider margin.
+    fig.subplots_adjust(left=0.205, right=0.985, top=0.945, bottom=0.115, hspace=0.30, wspace=0.05)
     savefig_paper(fig, slug, dir=OUT_FIG)
     plt.close(fig)
     print(f"wrote {OUT_FIG / f'{slug}.png'}")
@@ -515,8 +603,13 @@ def main(coding: str = "drop") -> None:
         table = []
         for b in BEHAVIORS:
             for s in SETTINGS[b]:
-                row = {"behavior": b, "setting": s, "setting_label": SETTING_LABEL[(b, s)]}
-                row["setting_label"] = row["setting_label"].replace("\n", " ")
+                row = {
+                    "behavior": b,
+                    "setting": s,
+                    "setting_label": SETTING_LABEL[(b, s)].replace("\n", " "),
+                    "setting_role": SETTING_ROLE[s],
+                    "setting_identity": SETTING_IDENTITY[(b, s)],
+                }
                 row["coding"] = "refusal_zero" if b == "evil" else "drop (unchanged)"
                 row |= stats[(b, s)]
                 if b == "evil":
