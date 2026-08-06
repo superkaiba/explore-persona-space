@@ -54,13 +54,37 @@ for s in $SURFACES; do
   cells="${cells},rlvr__rlvr_long__${fmt}__${corpus}"
 
   echo "[surface] ${fmt}/${corpus} START $(date -u +%FT%TZ)"
-  uv run python scripts/issue1336_selfmap_missing_pairs.py \
-      --stage \
-      --stage-root "$STAGE_ROOT" \
-      --out-root "$OUT_ROOT" \
-      --layer 30 \
-      --cells "$cells"
-  rc=$?
+  if [ "${PER_CELL:-0}" = "1" ]; then
+    # One PROCESS per cell. The fit caches each loaded (model, surface) in RAM for
+    # the whole invocation, so a 4-cell surface holds all 4 model-surfaces at once;
+    # on lmsys23k (n=15.5-17.7k) that measured ~40 GB each and OOM-killed (rc=137)
+    # on the 3rd load against the cpu-bigmem cgroup limit of 128 GB — which `free -g`
+    # hides, reporting the 251 GB HOST total. Per-cell invocation caps residency at
+    # the cell's own 1-2 model-surfaces (~80 GB) because each process exits and frees.
+    # Staging is deliberately NOT reaped between cells (it is shared, and disk is the
+    # non-binding constraint here at ~115 GB against 200 GB).
+    rc=0
+    for cell in ${cells//,/ }; do
+      echo "[cell] ${cell} START $(date -u +%FT%TZ)"
+      uv run python scripts/issue1336_selfmap_missing_pairs.py \
+          --stage \
+          --stage-root "$STAGE_ROOT" \
+          --out-root "$OUT_ROOT" \
+          --layer 30 \
+          --cells "$cell"
+      crc=$?
+      echo "[cell] ${cell} rc=${crc} $(date -u +%FT%TZ)"
+      [ "$crc" -ne 0 ] && rc=$crc
+    done
+  else
+    uv run python scripts/issue1336_selfmap_missing_pairs.py \
+        --stage \
+        --stage-root "$STAGE_ROOT" \
+        --out-root "$OUT_ROOT" \
+        --layer 30 \
+        --cells "$cells"
+    rc=$?
+  fi
   echo "[surface] ${fmt}/${corpus} rc=${rc} $(date -u +%FT%TZ)"
   [ "$rc" -ne 0 ] && rc_all=$rc
 
