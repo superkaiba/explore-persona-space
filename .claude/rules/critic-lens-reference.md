@@ -121,9 +121,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    `lora_dropout` / `target_modules` / `use_rslora` — grounded on the artifact's own
    `adapter_config.json`, NOT the producing issue's body Reproducibility row alone, which is
    human-written secondary documentation: on disagreement the config wins and the body row is
-   flagged for record-correction — incident #545: a runtime fitness assert encoded #503's erroneous
-   body row `r=16/α=32` where the artifacts read `r=32/α=256`, crashing all 7 reuse cells
-   mid-sweep); (b) valid measurement regime for the new question (for marker work specifically, NOT
+   flagged for record-correction — #545: a runtime fitness assert encoded an erroneous body row,
+   crashing all 7 reuse cells mid-sweep); (b) valid measurement regime for the new question (for
+   marker work specifically, NOT
    saturated — source `log P − base ∈ [5,12]` nat, bystanders below ceiling per
    `.claude/rules/marker-training-recipe.md`); (c) the required conditions / cells the new design
    needs are actually present in the artifact — for a multi-field tensor bundle, the REALIZED key
@@ -143,7 +143,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    classes are reused — with
    the read gauge stated in §4 (a recipe-identical parent committed at classic `α/r` application can
    be an unconditional repeater at the faithful `α/√r` a current vLLM+PEFT honors for `use_rslora:
-   true` — incident #601: all 20 of #472's reused adapters passed (a)–(f) yet HALTed Phase-0 as
+   true` — #601: all 20 reused adapters passed (a)–(f) yet HALTed Phase-0 as
    repeaters); (h) source resolution + consumer-exact path layout + target-backend fetchability +
    staged-layout consumer-open for
    reused TRAINING-INPUT / downstream-input artifacts — for a reused `train/*.jsonl` mix /
@@ -261,9 +261,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       the same idle-but-billing burn (#664: an 8×H200 pod held ~12h in a per-file raw-completions
       upload phase at 0% GPU, ~$530). This is deliberately narrow: it is NOT about cheaper variants
       of the science (still banned by The Bar) — it targets only an idle-but-billing pod the plan
-      never needed to hold (2026-06-09: pod-518 ran 1h+ of pure-CPU permutation/bootstrap scoring
-      with all 8 H100s at 0%, pod-523 ran a CPU-only metrics phase ~6h on idle GPUs — ~$48/hr of
-      idle burn).
+      never needed to hold (pod-518/pod-523: CPU-only scoring/metrics phases held 8 idle H100s
+      for 1-6h).
       Sequencing clause (b) ALSO runs as a DATA-SAFETY ordering, not only a
       billing one (and it fires for GPU fit phases too — the consuming
       phase's device does not narrow it): when a long (>~15-30 min)
@@ -294,9 +293,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       one per phase) AND the phase plausibly materializes large local data (activations, a full
       store, many eval JSONs / raw completions). Cleanup backstops (`clean_experiment_downloads.py
       --incremental` between phases, the `vm_disk_guard.py` cron) do NOT rescue a phase whose own
-      footprint exceeds the disk — the fix is placement, not cleanup. (2026-06-26: #658's Phase-1
-      analysis materialized a 139 GB activation store on the VM worktree on the shared 188 GB disk;
-      `/` hit 100% full and the whole fleet stalled.)
+      footprint exceeds the disk — the fix is placement, not cleanup. (#658: a 139 GB activation
+      store on the shared 188 GB disk filled `/` and stalled the whole fleet.)
       The RAM twin: ALSO REVISE when a VM-placed phase's projected peak RSS is
       ≥~16 GB (single phase, or SUMMED concurrent VM-resident phases crossing
       the same bar), or when a VM-placed phase that plausibly materializes a
@@ -344,9 +342,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       DIFFERENT phase (an API-bound judge phase, a CPU Gram-solve / fit, an off-pod analysis) does
       not justify narrow width for the shardable phase(s) kept narrow (e.g. generation/capture
       legs, a training fan-out) and is a REVISE exactly as if no justification were stated
-      (incident #1739: a plan kept its wall-dominant, declared-shardable vLLM generation + capture
-      legs at 1×, justified by Anthropic-API + CPU-fit bottlenecks in OTHER phases; leg-1 wall ran
-      ~2-3× longer than a wide dispatch). The width-aware auto lane (#1121) makes `--gpus N` wide
+      (#1739: wall-dominant shardable legs kept at 1×, justified by bottlenecks in OTHER phases;
+      leg-1 wall ran ~2-3× longer than a wide dispatch). The width-aware auto lane (#1121) makes `--gpus N` wide
       provisioning the encouraged default; "GCP only had 1× intents" is no longer a valid reason.
 
     Plan-time scheduling / routing only, never a mid-run cost or disk gate. Not a REVISE when the
@@ -762,10 +759,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    questions, or refusal with benign prompts, will read a floor regardless of whether the behavior
    installed, producing a false HARD-HALT. REVISE when the gate's probe surface has no
    demonstrated-expression citation and a canonical surface exists (e.g. EM expresses on #458's
-   first-plot probes with no system prompt, NOT on trivia-question PAIRS). Incident #521
-   (2026-06-09): an EM-rate gate on a trivia surface false-halted twice — surviving two critic
-   ensembles and two code-review rounds — before a runtime re-measure on the canonical rig showed EM
-   was installed all along.
+   first-plot probes with no system prompt, NOT on trivia-question PAIRS). (#521: an EM-rate gate
+   on a trivia surface false-halted twice, surviving two critic ensembles and two code-review
+   rounds, before a runtime re-measure on the canonical rig showed EM was installed all along.)
 7. **Statistical-input existence (registered corrections).** For every registered statistical
    correction / adjustment §6 relies on (attenuation / reliability factor, per-seed SEs, variance
    reconstruction, shrinkage prior — any statistic computed from a derived input rather than this
@@ -776,11 +772,10 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    REVISE when a registered statistic consumes an input that is neither verified-present nor
    scheduled-to-build. Conclusion-changing because the implementation inherits a phantom dependency:
    at run time the correction either crashes the production path or silently degrades into the
-   uncorrected statistic, and the headline ships without its registered adjustment (incident #509:
-   plan §6.1 registered attenuation-adjusted correlations whose per-seed SEs the cited CSV —
-   seed-averaged only — never carried; the reconstruction was never in-scope for any implementer
-   round, the production path crashed exactly as review prose predicted, and the result shipped on
-   `--smoke` with reliability pinned to 1.0). Not a REVISE when §6 registers no derived-input
+   uncorrected statistic, and the headline ships without its registered adjustment (#509:
+   registered attenuation-adjusted correlations consumed per-seed SEs the cited CSV never
+   carried; the production path crashed as review prose predicted and the result shipped with
+   reliability pinned to 1.0). Not a REVISE when §6 registers no derived-input
    corrections (raw DV + standard tests only — the plan's "N/A — no derived statistical inputs"
    satisfies this item).
 8. **Install-strength confound (cross-condition leakage comparisons).** If the plan's headline
