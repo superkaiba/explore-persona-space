@@ -102,6 +102,10 @@ def setting_color(setting: str) -> str:
 
 
 def _iter_jsonl(path: Path):
+    if not path.exists():
+        # A leg-specific out-root (e.g. the transport leg) may not carry every
+        # table; the REQUIRED figures still fail loud with a named assertion.
+        return
     with path.open(encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()
@@ -310,8 +314,7 @@ def fig_f_heatmap(rows: list[dict], metric: str, title: str) -> plt.Figure:
                 ax.set_title(SETTING_LABELS[setting], fontsize=8)
             if j == 0:
                 ax.set_ylabel(DOSE_LABELS[dose], fontsize=8)
-            if i == len(doses) - 1:
-                ax.set_xlabel("steered layer (right of divider: joint variants)")
+    fig.supxlabel("steered layer (right of divider: joint variants)")
     fig.colorbar(im, ax=axes, shrink=0.8, label=title)
     fig.suptitle(f"{title} — mean over pairs; x marker = <50 percent coherent cell")
     return fig
@@ -357,15 +360,18 @@ def fig_dose_response(
 ) -> plt.Figure:
     """Per-pair spaghetti vs log2-dose + bootstrap mean band + donor-null band,
     plus the per-pair slope distribution with a signed-rank read in the title."""
-    lv_counts: dict[str, int] = defaultdict(int)
+    # per-SLOT most-populated single-layer variant (a slot with no additive
+    # single-layer rows contributes no row — production sweeps every layer on
+    # ce/pe, but a partial run / smoke may not).
+    lv_counts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     for r in steered:
         if r["dose"] != "replace" and r["layer_variant"].startswith("L"):
-            lv_counts[r["layer_variant"]] += 1
+            lv_counts[r["slot"]][r["layer_variant"]] += 1
     assert lv_counts, "no additive single-layer cells"
-    lv = layer_variant or max(lv_counts, key=lambda k: lv_counts[k])
-    slots = [s for s in ("ce", "pe") if any(r["slot"] == s for r in steered)] or [
-        next(r["slot"] for r in steered)
-    ]
+    lv_by_slot = {
+        slot: (layer_variant or max(c, key=lambda k: c[k])) for slot, c in lv_counts.items()
+    }
+    slots = [s for s in ("ce", "pe") if s in lv_by_slot] or sorted(lv_by_slot)[:1]
     settings = [s for s in SETTING_ORDER if any(r["setting"] == s for r in steered)]
 
     fig, axes = plt.subplots(
@@ -377,6 +383,7 @@ def fig_dose_response(
     )
     all_slopes: list[float] = []
     for i, slot in enumerate(slots):
+        lv = lv_by_slot[slot]
         for j, setting in enumerate(settings):
             ax = axes[i][j]
             by_pair: dict[str, dict[float, float]] = defaultdict(dict)
@@ -394,6 +401,8 @@ def fig_dose_response(
                     color=setting_color(setting),
                     alpha=0.35,
                     linewidth=0.9,
+                    marker="o",
+                    markersize=2.2,
                 )
             mkey = "f_act" if metric == "f_act" else None
             for arm, color, label in (
@@ -425,7 +434,16 @@ def fig_dose_response(
                         )
                     )
                 if xs_c:
-                    ax.plot(xs_c, mid, color=color, linewidth=2.0, label=label)
+                    # markers keep a single-dose cell visible (a 1-point line draws nothing)
+                    ax.plot(
+                        xs_c,
+                        mid,
+                        color=color,
+                        linewidth=2.0,
+                        label=label,
+                        marker="o",
+                        markersize=3.5,
+                    )
                     if np.isfinite(lo).all() and np.isfinite(hi).all():
                         ax.fill_between(xs_c, lo, hi, color=color, alpha=0.25, linewidth=0)
             ax.axhline(0.0, color="grey", linewidth=0.6)
@@ -443,7 +461,7 @@ def fig_dose_response(
         ax = axes[len(slots)][j]
         by_pair_all: dict[str, dict[float, float]] = defaultdict(dict)
         for r in steered:
-            if r["setting"] != setting or r["layer_variant"] != lv:
+            if r["setting"] != setting or r["layer_variant"] != lv_by_slot.get(r["slot"]):
                 continue
             a, v = dose_alpha(r["dose"]), row_metric(r, metric)
             if a is not None and v is not None:
@@ -465,7 +483,8 @@ def fig_dose_response(
         ax.set_xlabel("slope of F vs log2 dose")
         if j == 0:
             ax.set_ylabel("pairs")
-    fig.suptitle(f"{title} dose response at {lv} (additive doses)")
+    lv_note = ", ".join(f"{SLOT_LABELS[s]} @ {lv_by_slot[s]}" for s in slots)
+    fig.suptitle(f"{title} dose response ({lv_note}; additive doses)")
     return fig
 
 
@@ -1166,7 +1185,14 @@ def build_all(inp: FigInputs, only: set[str] | None = None) -> dict[str, plt.Fig
         ),
         "exp_audit_rates": lambda: fig_audit_rates(inp.audit_rows),
     }
-    optional = {"exp_stage2_vs_stage1", "exp_audit_rates", "result1b_transport_cosines"}
+    optional = {
+        "exp_stage2_vs_stage1",
+        "exp_audit_rates",
+        "result1b_transport_cosines",
+        # operator comparisons exist only where parity + banked-dim fits ran
+        # (production / the production-dim smoke leg)
+        "result1c_operator_2x2",
+    }
     out: dict[str, plt.Figure | str] = {}
     for stem, producer in producers.items():
         if only and stem not in only:

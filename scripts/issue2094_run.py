@@ -265,7 +265,8 @@ def smoke_block_families(pairs: list[BANK.Pair], n_layers: int) -> list[tuple[Bl
     Classes covered (each with BOTH arms, so every donor-null path runs too):
     single-layer add on a full-sweep slot, replace mode, joint-middle multi-layer,
     joint-all, Type B, a single-position control slot, a multi-position control
-    slot (l3j), and the query span. 11 families = 22 blocks. The pair subset
+    slot (l3j), and the query span (+ a Type-A twin on the Type-B cell). 12
+    families = 24 blocks. The pair subset
     ALWAYS includes a conv-``context_a`` pair (the multi-turn history render is
     otherwise smoke-invisible — the unit-E render-seam requirement), and the
     ``ce``/mid slot carries FOUR additive doses so the downstream P7 linearity
@@ -301,6 +302,11 @@ def smoke_block_families(pairs: list[BANK.Pair], n_layers: int) -> list[tuple[Bl
         ("l3j", "joint_mid", "a0.5", "A", a_subset),
         ("qspan", "joint_mid", "a1", "A", a_subset),
         ("ce", "joint_all", "a1", "B", mq_subset),
+        # Type-A twin on the SAME cell as the Type-B family: production shares
+        # every Type-B cell with Type A (A covers all 60 pairs), so the smoke
+        # needs >=1 shared (slot, variant, dose, pair) cell for the A-vs-B
+        # exploratory read to be non-vacuous.
+        ("ce", "joint_all", "a1", "A", mq_subset),
     ]
     return [
         (

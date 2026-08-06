@@ -230,11 +230,17 @@ def cmd_transport_mini(args: argparse.Namespace) -> int:
     gen = torch.Generator().manual_seed(args.seed)
     pairs = BANK.build_pairs()
     mirror = args.in_root / "issue2094_singlepos"
-    # ce blocks: matched-prefix pairs; pe blocks: matched-QUERY pairs (an
-    # mp pair's pe Delta is zero by causal identity, so mp/pe transport rows
-    # are degenerate-by-design — the pe map needs cross-prefix pairs).
+    # ce blocks: ALL 60 pairs x the 4 additive doses (+ replace), so the P7
+    # linearity family (ce, L14) reaches production n_obs = 240 — per-fold
+    # n_train (~216) clears the PC-ridge n_train > d_eff (128) floor at
+    # production dims AND the L-vs-M/J operator-comparison + 2x2 branch
+    # executes against the REAL staged maps. pe block: matched-QUERY pairs at
+    # dose REPLACE only — replace is transport-eligible but excluded from
+    # FIT_DOSES, so no degenerate 2-obs (pe, 19) linearity family is created
+    # (an additive pe dose at 2 pairs would crash the PC-ridge n>k assert);
+    # mp pairs are excluded at pe anyway (zero Delta by causal identity).
     subset_by_slot = {
-        "ce": [p for p in pairs if p.setting == "matched_prefix"][:2],
+        "ce": list(pairs),
         "pe": [p for p in pairs if p.setting == "matched_query"][:2],
     }
     bank = _mini_bank(pairs, gen)
@@ -264,7 +270,14 @@ def cmd_transport_mini(args: argparse.Namespace) -> int:
 
     blocks = [
         R.Block(slot, lv, dose, "A", arm, tuple(p.pair_id for p in subset_by_slot[slot]))
-        for slot, lv, dose in (("ce", "L14", "a1"), ("ce", "L14", "replace"), ("pe", "L19", "a1"))
+        for slot, lv, dose in (
+            ("ce", "L14", "a0.5"),
+            ("ce", "L14", "a1"),
+            ("ce", "L14", "a2"),
+            ("ce", "L14", "a4"),
+            ("ce", "L14", "replace"),
+            ("pe", "L19", "replace"),
+        )
         for arm in ("steered", "null")
     ]
     roll_dir = mirror / "raw_completions" / "grid"
