@@ -870,7 +870,9 @@ def _write_done(done_path: Path, done: dict) -> None:
     tmp.replace(done_path)
 
 
-def _hf_turnstore_listing(stem: str, v2: bool = False, offpol_dir: str | None = None) -> list[str] | None:
+def _hf_turnstore_listing(
+    stem: str, v2: bool = False, offpol_dir: str | None = None
+) -> list[str] | None:
     """File names under the cell's Hub turnstore prefix, or None when absent.
 
     Scoped ``list_repo_tree`` (never a full-repo listing — gotchas.md #833),
@@ -904,7 +906,9 @@ def _hf_turnstore_listing(stem: str, v2: bool = False, offpol_dir: str | None = 
     return [Path(e.path).name for e in entries]
 
 
-def _try_hf_resume(out_dir: Path, stem: str, v2: bool = False, offpol_dir: str | None = None) -> dict | None:
+def _try_hf_resume(
+    out_dir: Path, stem: str, v2: bool = False, offpol_dir: str | None = None
+) -> dict | None:
     """Fetch a COMPLETE turnstore cell from HF into ``out_dir`` (resume path).
 
     Plan v9 route 1 resume: Phase E has cells already uploaded by the
@@ -995,8 +999,30 @@ def main() -> None:
     data_root = Path("data/issue_1336")
     gen_root = args.gen_root or (data_root / ("gen_smoke" if smoke else "gen"))
     prompts_root = args.prompts_root or (data_root / ("prompts_smoke" if smoke else "prompts"))
+    # Off-policy arm (plan v15 §4 Phase EXT_off): --text-source j != --model i
+    # captures i's activations teacher-forced on checkpoint-j's on-policy
+    # answer text. The whole (i, j) pair tree lives under ONE offpolicy dir
+    # (local layout mirrored to the Hub prefix — the fit driver reads
+    # off_root / (cm.offpolicy_ts_dirname(i, j) + "_smoke"? ) with the SAME
+    # suffix convention); shard stems keep the standard cell_id(i, "chat",
+    # corpus) naming (cm.offpolicy_ts_dirname docstring).
+    text_source = args.text_source
+    if text_source is not None:
+        assert v2, "--text-source (off-policy capture) requires --v2"
+        assert fmt == cm.V3_TEXT_FORMAT and gen_format == cm.V3_TEXT_FORMAT, (
+            f"--text-source is {cm.V3_TEXT_FORMAT}-only (plan v15 Phase EXT_off): "
+            f"format={fmt!r} gen_format={gen_format!r}"
+        )
+        # offpolicy_ts_dirname asserts text_source != model (a diagonal pair
+        # reuses the v2 turnstores) and that both slugs are registered.
+        offpol_dir = cm.offpolicy_ts_dirname(slug, text_source) + ("_smoke" if smoke else "")
+    else:
+        offpol_dir = None
+        assert args.gen_v2_root is None and args.split_manifest is None, (
+            "--gen-v2-root/--split-manifest are off-policy-only flags — pass --text-source"
+        )
     ts_base = ("turnstore_v2" if v2 else "turnstore") + ("_smoke" if smoke else "")
-    out_dir = args.out_dir or (data_root / ts_base)
+    out_dir = args.out_dir or (data_root / (offpol_dir if offpol_dir is not None else ts_base))
     stem = cm.cell_id(slug, fmt, gen_cell)
     done_path = out_dir / f"{stem}.done.json"
     if done_path.exists():
@@ -1007,7 +1033,7 @@ def main() -> None:
             # prior no-upload run) — re-attempt ONLY the upload, never the
             # extraction, and flip the flag only after it succeeds.
             print(f"[extract] {stem}: done marker exists, upload incomplete — re-uploading")
-            _upload_cell(out_dir, stem, v2)
+            _upload_cell(out_dir, stem, v2, offpol_dir=offpol_dir)
             done["uploaded"] = True
             _write_done(done_path, done)
         print(f"[extract] skip {stem} (done marker exists)")
@@ -1016,21 +1042,33 @@ def main() -> None:
     # Resume (plan v9 route 1): a cell the ORIGINAL run already extracted +
     # uploaded (done == uploaded, #664) is fetched from the Hub instead of
     # re-extracted on GPU. Smoke never touches the Hub (gen-script parity).
-    if not smoke and _try_hf_resume(out_dir, stem, v2) is not None:
+    if not smoke and _try_hf_resume(out_dir, stem, v2, offpol_dir=offpol_dir) is not None:
         return
 
-    rows = _read_jsonl(gen_root / slug / gen_cell / "answers.jsonl")
-    kept = [r for r in rows if r.get("kept")]
-    assert kept, f"no kept rows for {slug}/{gen_cell} under {gen_root}"
-    if v2 and corpus in CONCAT_SOURCES:
-        # Extension-only rows (plan §4 Phase GEN/EXT: wave-1 covered rows
-        # below the boundary; the v2 stem holds ONLY the new rows so the
-        # concat loader's disjointness holds by construction).
-        boundary = CONCAT_BOUNDARY[corpus]
-        n_all = len(kept)
-        kept = [r for r in kept if int(r["prompt_idx"]) >= boundary]
-        print(f"[extract] {corpus}: extension rows (idx >= {boundary}): {len(kept)}/{n_all}")
-        assert kept, f"no extension rows (prompt_idx >= {boundary}) for {slug}/{corpus}"
+    if text_source is not None:
+        # Off-policy rows: checkpoint-j's FULL kept answer set. For the concat
+        # corpora read_offpolicy_rows assembles wave-1 stem + v2 extension
+        # (boundary/disjointness contract lives in the helper), so the
+        # diagonal extension-only filter in the else-branch MUST NOT run here.
+        gen_v2_root = args.gen_v2_root or (data_root / ("gen_v2_smoke" if smoke else "gen_v2"))
+        rows = read_offpolicy_rows(gen_root, gen_v2_root, text_source, corpus)
+        kept = [r for r in rows if r.get("kept")]
+        assert kept, f"no kept off-policy rows for {text_source}/{corpus} under {gen_root}"
+        if args.split_manifest is not None:
+            kept = filter_split_manifest(kept, corpus, args.split_manifest)
+    else:
+        rows = _read_jsonl(gen_root / slug / gen_cell / "answers.jsonl")
+        kept = [r for r in rows if r.get("kept")]
+        assert kept, f"no kept rows for {slug}/{gen_cell} under {gen_root}"
+        if v2 and corpus in CONCAT_SOURCES:
+            # Extension-only rows (plan §4 Phase GEN/EXT: wave-1 covered rows
+            # below the boundary; the v2 stem holds ONLY the new rows so the
+            # concat loader's disjointness holds by construction).
+            boundary = CONCAT_BOUNDARY[corpus]
+            n_all = len(kept)
+            kept = [r for r in kept if int(r["prompt_idx"]) >= boundary]
+            print(f"[extract] {corpus}: extension rows (idx >= {boundary}): {len(kept)}/{n_all}")
+            assert kept, f"no extension rows (prompt_idx >= {boundary}) for {slug}/{corpus}"
     if args.row_allowlist is not None:
         kept = filter_row_allowlist(kept, args.row_allowlist)
         print(f"[extract] row allowlist: {len(kept)} rows from {args.row_allowlist}")
@@ -1068,8 +1106,9 @@ def main() -> None:
         bs = min(bs, 2)
     shard_size = int(args.shard_size)
     assert shard_size >= 1
+    offpol_tag = f" text_source={text_source}" if text_source is not None else ""
     print(
-        f"[run] cell={stem} model_id={model_id} n={len(rendered)} "
+        f"[run] cell={stem}{offpol_tag} model_id={model_id} n={len(rendered)} "
         f"batch_size={bs} layers={_EXPECTED_LAYERS} hidden={_EXPECTED_HIDDEN}",
         flush=True,
     )
@@ -1092,6 +1131,10 @@ def main() -> None:
         "convention": args.convention,
         "offset_override": override,
     }
+    if text_source is not None:
+        # Off-policy provenance rides the sidecars (the args dict above also
+        # carries the raw flag; this named key is the loader-facing record).
+        sidecar_base["text_source"] = text_source
     # v2: per-row prompt sha256 rides the shards (the concat loader's
     # text-sha join reads the sidecar copy).
     sha_by_conv = {f"s{r['prompt_idx']}": prompt_sha(r["prompt"]) for r in kept} if v2 else {}
@@ -1122,7 +1165,7 @@ def main() -> None:
     done = {"stem": stem, "n_rows": n_done, "n_shards": len(paths), "uploaded": False}
     _write_done(done_path, done)
     if args.upload:
-        _upload_cell(out_dir, stem, v2)
+        _upload_cell(out_dir, stem, v2, offpol_dir=offpol_dir)
         done["uploaded"] = True
         _write_done(done_path, done)
     print(f"[done-cell] {stem}: {n_done} rows -> {len(paths)} shard(s) in {out_dir}")
