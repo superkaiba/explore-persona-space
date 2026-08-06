@@ -1,0 +1,89 @@
+{
+  "commit": "7b069c07",
+  "git_commit": "7b069c07",
+  "git_dirty": false,
+  "created": "2026-08-06T14:32:32Z",
+  "figsize": [
+    9.0,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.15,
+      "operator cosine": 0.299373621316838,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.15,
+      "operator cosine": 0.01608098814124305,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.85,
+      "operator cosine": 0.2560240009627822,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.15,
+      "operator cosine": 0.04294558154776203,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Fitted L vs banked maps (lines = matched rotation-null p97.5)",
+        "ylabel": "operator cosine",
+        "legend_labels": [
+          "Procrustes operator cosine",
+          "raw operator cosine"
+        ],
+        "xticklabels": [
+          "L1419 vs J1776",
+          "L14 vs M779_L14"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      },
+      {
+        "title_left": "2x2: does the banked map align x does a linear L predict",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Procrustes operator cosine",
+      "raw operator cosine"
+    ]
+  }
+}
