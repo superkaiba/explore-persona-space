@@ -41,6 +41,7 @@ __all__ = [
     "BASE_ANCHORED_PAIRS",
     "CELLS",
     "CELLS_V2",
+    "CELLS_V3",
     "CORPORA",
     "DELTA_ELICIT_BAND",
     "DELTA_PRACTICAL_SCALE",
@@ -82,6 +83,7 @@ __all__ = [
     "N_INNER_LAMBDA_FOLDS_V2",
     "N_NULL_DRAWS",
     "PAIRS",
+    "POOLED_ARM_DIRS",
     "PRACTICAL_V2_COEF",
     "PREDS_EXTRA_LAYERS",
     "PRIMARY_LADDER",
@@ -95,6 +97,7 @@ __all__ = [
     "SMOKE_N",
     "SMOKE_NULL_DRAWS",
     "SMOKE_N_BOOT",
+    "SMOKE_OFFDIAG_PAIRS_V3",
     "STOP_STRINGS",
     "TRACK_S_BYTES",
     "TRACK_S_PATH",
@@ -104,14 +107,17 @@ __all__ = [
     "TULU_USER_HEADER",
     "V2_CORPORA",
     "V2_PREFIX_ARM",
+    "V3_TEXT_FORMAT",
     "Rendered",
     "cell_id",
     "cells_for",
     "cells_v2_for",
+    "cells_v3_for",
     "fc_expected_layers",
     "gen_cell_key",
     "load_qwen_recal_cal",
     "natural_prompt",
+    "offpolicy_ts_dirname",
     "preds_layers",
     "resolve_code_sha",
     "tulu_prompt",
@@ -119,6 +125,7 @@ __all__ = [
     "v2_cell_id",
     "v2_surface_index",
     "v2_surfaces",
+    "v3_pair_id",
 ]
 
 
@@ -600,6 +607,79 @@ BAR_V2_COEF = 0.20
 BAND_V2_COEF = 0.0201  # §3: U = C_v2 - 0.0201*ex_v2, L = C_v2 + 0.0201*ex_v2
 PRACTICAL_V2_COEF = 0.0503
 HEALTH_V2_COEF = 0.05  # health gate H: |R2_recal - R2_raw| <= 0.05*ex_v2
+
+
+# ---------------------------------------------------------------------------
+# v3 registries (plan v15, same-issue follow-up round
+# `pooled-multidataset-onoff-policy-stage-transfer`)
+# ---------------------------------------------------------------------------
+# v3 cell = one (activation-checkpoint i, text-source j) pair (plan §4
+# divergence 4). Diagonal pairs (i == j) are the ON-policy arm and reuse the
+# round-3 v2 captures verbatim (no new extraction); off-diagonal pairs
+# (i != j) are the OFF-policy arm captured teacher-forced by Phase EXT_off.
+# Off-diagonal capture is CHAT-format only (the naturalistic surface stays
+# on-policy — plan §4 divergence 5).
+V3_TEXT_FORMAT = "chat"
+
+# Pooled-fit arm subdirectories (plan §6: preds_pooled_v3/{on,off}-policy/).
+POOLED_ARM_DIRS = {"on": "on-policy", "off": "off-policy"}
+
+# EXT_off smoke pair subset (PASS_UNIFIED seam: the smoke IS the sweep at
+# this subset — dpo x rlvr-text is the plan's own G2v2 example cell).
+SMOKE_OFFDIAG_PAIRS_V3 = (("dpo", "rlvr"),)
+
+
+def offpolicy_ts_dirname(ckpt: str, text_source: str) -> str:
+    """Local dir + Hub prefix leaf for one off-diagonal (i, j) capture tree
+    (plan §4 Phase EXT_off output stems:
+    ``analysis_tensors/turnstore_offpolicy_<slug_i>_chat_<slug_j>/``).
+    Shard stems INSIDE the tree keep the standard ``cell_id(i, "chat", corpus)``
+    naming so the #825 bundle loaders read them unchanged."""
+    assert ckpt in MODELS, f"unknown checkpoint slug {ckpt!r}"
+    assert text_source in MODELS, f"unknown text-source slug {text_source!r}"
+    assert ckpt != text_source, "diagonal (i == j) pairs reuse the v2 turnstores — no offpol dir"
+    return f"turnstore_offpolicy_{ckpt}_{V3_TEXT_FORMAT}_{text_source}"
+
+
+def v3_pair_id(ckpt: str, text_source: str) -> str:
+    """Canonical v3 cell id for one (activation-checkpoint, text-source) pair."""
+    return f"{ckpt}_txt_{text_source}"
+
+
+def cells_v3_for(
+    models: tuple[str, ...] | list[str] | None = None,
+    text_sources: tuple[str, ...] | list[str] | None = None,
+) -> list[dict]:
+    """v3 cell dicts for a checkpoint/text-source subset (smoke seam).
+
+    Full grid: 25 pairs = 5 diagonal on-policy + 20 off-diagonal off-policy
+    (plan §4: "parametrize for the v3 cell set"). Every v3 phase derives its
+    work list from THIS function so a smoke subset threads through the whole
+    dispatcher (PASS_UNIFIED contract). Each dict carries
+    ``arm: "on" | "off"`` (== "on" iff model == text_source).
+    """
+    models = tuple(models) if models is not None else tuple(MODELS)
+    text_sources = tuple(text_sources) if text_sources is not None else tuple(MODELS)
+    for m in (*models, *text_sources):
+        assert m in MODELS, f"unknown model slug {m!r}"
+    out = []
+    for i in models:
+        for j in text_sources:
+            out.append(
+                {
+                    "cell_id": v3_pair_id(i, j),
+                    "model": i,
+                    "hf_id": MODELS[i]["hf_id"],
+                    "text_source": j,
+                    "format": V3_TEXT_FORMAT,
+                    "arm": "on" if i == j else "off",
+                }
+            )
+    return out
+
+
+CELLS_V3 = cells_v3_for()
+_assert_registry(CELLS_V3, 25, "v3")
 
 
 def v2_bars(s_qwen_v2: float) -> dict:
