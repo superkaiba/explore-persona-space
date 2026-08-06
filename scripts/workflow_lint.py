@@ -12407,7 +12407,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (per-arm-class smoke-coverage clause), 67,900 — measured
     # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
     # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 85_500,
+    # measured 64,480 B post the 2026-08-05 compaction: Before-writing-code
+    # item 5 (smoke/sweep parity) + After-implementation items 3 + 7 detail
+    # relocated to .claude/rules/experiment-implementer-section-reference.md
+    # (#1159 mechanism); pinned anchors/tokens stay in-spec. Cap = measured
+    # + ~1 KB.
+    "experiment-implementer.md": 65_500,
     # measured 79,611 B post-#1720 (§ Local runs pre-emptive NOT-RUN escape
     # for Step 9c-selected slow tests — mirrors implementer.md L174; ~500 B
     # growth; cap = measured + ~0.9 KB. Prior: 79_500 —
@@ -12429,7 +12434,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # pre-launch gate — the #1739 dispatch-time backstop, output-side
     # sibling of the item-4 input gate; plan-mandated growth; cap =
     # measured + ~0.87 KB — LANDING bytes, per #1753.)
-    "experimenter.md": 77_700,
+    # measured 65,619 B post the 2026-08-05 compaction: bootstrap probe, GCP
+    # salvage, Before-Running item-4 gate detail, and the vLLM hang triad
+    # relocated to .claude/rules/experimenter-section-reference.md (#1159
+    # mechanism); the crash-fix-relaunch paragraph + run-launched fence
+    # tokens stay in-spec verbatim. Cap = measured + ~1 KB.
+    "experimenter.md": 66_600,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
