@@ -412,8 +412,8 @@ grep does not satisfy it — and its hit count must be CONSISTENT with the
 body's bug claim and `target_file` list: a real grep that does not bind
 to the claim does not satisfy the mandate (#1307). Binding clauses:
 
-(a) **per-target confirmation** — run the pattern grep against EACH file
-named in `target_file` and state per-target hits. For a presence claim
+(a) **per-target confirmation** — run the pattern grep against EACH file named in
+`target_file` and state per-target hits. For a presence claim
 (the body asserts the site/pattern EXISTS there), a 0-hit named target is
 a mis-target, not evidence: re-grep repo-wide, correct `target_file` to
 the real site(s), re-verify BEFORE filing (#1290). An absence-of-guard
