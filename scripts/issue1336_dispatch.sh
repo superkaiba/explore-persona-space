@@ -198,6 +198,37 @@ run_queue() { # $1=phase $2=jobs-file $3=per-worker start stagger seconds (defau
     return 0
 }
 
+# ---------------------------------------------------------------------------
+# MooseFS-storm guard (#1689 KNOWN TRIGGER — gotchas.md § MooseFS FUSE
+# READ-wedge). run_queue's N-way parallel fan-out of `uv run` jobs storms a
+# MooseFS-backed /workspace with N concurrent venv resolutions (observed on
+# gen_v2_nat 2026-08-06: 8 workers flat at ~19s CPU, wchan=request_wait_answer,
+# GPUs 0 MiB, 0-byte job logs). Guard shape, generalized from the validated
+# phase_gen_v2_nat inline copy (which is left BYTE-UNTOUCHED as the production
+# template): (1) workers exec the venv python DIRECTLY so the uv resolution
+# path is ABSENT from the fan-out; (2) ONE serial timeout-bounded pre-import
+# warms the page cache before any fan-out; (3) PYTHONUNBUFFERED=1 per job
+# (set in each builder's job line) keeps logs live; (4) staggered worker
+# starts where the phase opts in (run_queue arg 3).
+# Sets the global $PYBIN, which each phase threads into its job builder via
+# PYBIN_ENV. Serial (non-fan-out) invocations keep `uv run` unchanged.
+# ---------------------------------------------------------------------------
+PYBIN=""
+storm_guard() { # $1=phase $2=serial pre-import expression (e.g. "import torch, numpy")
+    local phase="$1" imports="$2"
+    PYBIN="$REPO_ROOT/.venv/bin/python"
+    if [ ! -x "$PYBIN" ]; then
+        echo "[$phase] FATAL: $PYBIN missing/not executable — run 'uv sync' first (refusing the N-way 'uv run' fan-out on MooseFS; #1689)" >&2
+        exit 1
+    fi
+    if ! timeout 600 "$PYBIN" -c "$imports" \
+        >> "$JOB_LOG_DIR/${phase}__preimport.log" 2>&1; then
+        echo "[$phase] FATAL: serial pre-import failed/timed out (600s) — venv unhealthy or mount contention; see $JOB_LOG_DIR/${phase}__preimport.log and the two-probe discriminator in .claude/rules/gotchas.md § MooseFS FUSE READ-wedge" >&2
+        exit 1
+    fi
+    echo "[$phase] storm guard: pre-import OK via $PYBIN (uv absent from fan-out)"
+}
+
 registry_lines() { # $1 = python expression printing job lines (uses cm)
     SMOKE_ENV=$SMOKE uv run python - "$1" <<'PY'
 import os
@@ -270,6 +301,7 @@ phase_g0_gate() {
 
 phase_gen() {
     echo "[phase=gen]"
+    storm_guard gen "import vllm, transformers"
     # CPU staging (corpora prompts) — model-free, idempotent.
     if [ ! -f "$DONE_DIR/gen__prep.done" ]; then
         uv run python scripts/issue1336_gen_answers.py --prep $SMOKE_FLAG \
@@ -281,11 +313,15 @@ phase_gen() {
     # so the G1 cell's inputs land earliest. Per-cell --upload persists the
     # rollout TEXT to HF BEFORE any downstream reduction (upload policy).
     local jobs="$DONE_DIR/jobs_gen.tsv"
-    registry_lines '
+    PYBIN_ENV="$PYBIN" registry_lines '
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
 order = ["rlvr", "base", "sft", "dpo", "rlvr_long"]
 for m in [m for m in order if m in models]:
     flags = "--smoke" if smoke else "--upload"
-    print(f"{m}\tuv run python scripts/issue1336_gen_answers.py --model {m} {flags}")
+    print(
+        f"{m}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_gen_answers.py "
+        f"--model {m} {flags}"
+    )
 ' > "$jobs"
     run_queue gen "$jobs"
     # Mirror generation audits into the eval tree for the keep-rate figure.
@@ -352,14 +388,15 @@ phase_extract() {
     echo "[phase=extract]"
     local rc jobs
     ensure_recal_cal  # the G1 gate below reads the recalibrated bars
+    storm_guard extract "import torch, transformers"
     # Wave 1: the G1 cell (After-RLVR lmsys chat) + its naturalistic sibling
     # (required extra evidence when the chat read is marginal) extract FIRST.
     # On resume both wave-1 cells HF-resume inside the extract script (the
     # original run uploaded their turnstores — done == uploaded, #664).
     jobs="$DONE_DIR/jobs_extract_wave1.tsv"
     {
-        printf 'rlvr_chat_lmsys5k\tuv run python scripts/issue1336_extract_turnstore.py --model rlvr --corpus lmsys5k --format chat %s %s\n' "$UPLOAD_FLAG" "$SMOKE_FLAG"
-        printf 'rlvr_naturalistic_lmsys5k\tuv run python scripts/issue1336_extract_turnstore.py --model rlvr --corpus lmsys5k --format naturalistic %s %s\n' "$UPLOAD_FLAG" "$SMOKE_FLAG"
+        printf 'rlvr_chat_lmsys5k\tPYTHONUNBUFFERED=1 %s scripts/issue1336_extract_turnstore.py --model rlvr --corpus lmsys5k --format chat %s %s\n' "$PYBIN" "$UPLOAD_FLAG" "$SMOKE_FLAG"
+        printf 'rlvr_naturalistic_lmsys5k\tPYTHONUNBUFFERED=1 %s scripts/issue1336_extract_turnstore.py --model rlvr --corpus lmsys5k --format naturalistic %s %s\n' "$PYBIN" "$UPLOAD_FLAG" "$SMOKE_FLAG"
     } > "$jobs"
     run_queue extract_wave1 "$jobs"
 
@@ -402,14 +439,15 @@ phase_extract() {
 
     # Remaining cells, work-conserving across all realized GPUs.
     jobs="$DONE_DIR/jobs_extract_rest.tsv"
-    registry_lines '
+    PYBIN_ENV="$PYBIN" registry_lines '
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
 flags = "--smoke" if smoke else "--upload"
 for cell in cells:
     cid, m, c, f = cell["cell_id"], cell["model"], cell["corpus"], cell["format"]
     if m == "rlvr" and c == "lmsys5k":
         continue  # wave 1 handled above
     print(
-        f"{cid}\tuv run python scripts/issue1336_extract_turnstore.py "
+        f"{cid}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_extract_turnstore.py "
         f"--model {m} --corpus {c} --format {f} {flags}"
     )
 ' > "$jobs"
@@ -423,14 +461,16 @@ phase_fit() {
     # the pinned GPU). Production adds the matched-n comparability refit.
     # Queue name fit_recal: per-job done-files are recipe-keyed so pre-resume
     # fit__ markers on a reused volume never skip the recalibrated re-emit.
+    storm_guard fit_recal "import torch, numpy"
     local jobs="$DONE_DIR/jobs_fit.tsv"
-    OUT_ENV="$OUT_DIR" registry_lines '
+    OUT_ENV="$OUT_DIR" PYBIN_ENV="$PYBIN" registry_lines '
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
 extra = "--smoke" if smoke else "--matched-n"
 out = os.environ["OUT_ENV"]
 for cell in cells:
     cid = cell["cell_id"]
     print(
-        f"{cid}\tuv run python scripts/issue1336_fit_cells.py "
+        f"{cid}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_fit_cells.py "
         f"--cells {cid} --out-dir {out} {extra}"
     )
 ' > "$jobs"
@@ -453,15 +493,17 @@ phase_align() {
         touch "$DONE_DIR/align__selfcheck.done"
         echo "[align] vendored-helper selfcheck passed"
     fi
+    storm_guard align "import torch, numpy"
     local jobs="$DONE_DIR/jobs_align.tsv"
-    OUT_ENV="$OUT_DIR" registry_lines '
+    OUT_ENV="$OUT_DIR" PYBIN_ENV="$PYBIN" registry_lines '
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
 out = os.environ["OUT_ENV"]
 flag = "--smoke" if smoke else ""
 for m0, m1 in pairs:
     for corpus, fmt in eval_sets:
         name = f"{m0}__{m1}_{fmt}_{corpus}"
         print(
-            f"{name}\tuv run python scripts/issue1336_ladder_alignment.py "
+            f"{name}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_ladder_alignment.py "
             f"--pair {m0}:{m1} --corpus {corpus} --format {fmt} --out-dir {out} {flag}"
         )
 ' > "$jobs"
@@ -2053,6 +2095,7 @@ phase_gen_v2() {
         echo "[gen_v2] STUB: vLLM engine leg skipped on GPU-less host (smoke_fixtures gen-v2 faked ONLY the engine boundary; real engine path requires a GPU)"
         return 0
     fi
+    storm_guard gen_v2 "import vllm, transformers"
     # CPU staging (corpora rows + new-prompts-only filter + budget gate).
     if [ ! -f "$DONE_DIR/gen_v2__prep.done" ]; then
         local gen_corpora
@@ -2067,13 +2110,14 @@ phase_gen_v2() {
     # inputs land earliest. Per-cell --upload persists rollout TEXT to HF
     # BEFORE any downstream reduction (upload policy).
     local jobs="$DONE_DIR/jobs_gen_v2.tsv"
-    registry_lines_v2 '
+    PYBIN_ENV="$PYBIN" registry_lines_v2 '
 flags = "--smoke" if smoke else "--upload"
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
 order = ["rlvr", "base", "sft", "dpo", "rlvr_long"]
 for m in [m for m in order if m in models]:
     for c in gen_corpora:
         print(
-            f"{m}__{c}\tuv run python scripts/issue1336_gen_answers.py "
+            f"{m}__{c}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_gen_answers.py "
             f"--model {m} --corpora {c} {flags}"
         )
 ' > "$jobs"
@@ -2231,6 +2275,7 @@ need = 1 if smoke else max(5, 9 * len(pend) + 5)
 free = assert_out_root_headroom(Path("data/issue_1336"), float(need), phase="extract_v2")
 print(f"[headroom] extract_v2: pending={len(pend)} need={need} GB free={free:.1f} GB")
 '
+    storm_guard extract_v2 "import torch, transformers"
     # G2 registered fallback: re-capture EVERY reused wave-1 cell fresh with
     # today's extractor (+~7 GPU-h contingency, plan §7 — no re-approval).
     if [ -f "$DONE_DIR/g2_fallback_recapture" ] && [ "$SMOKE" -eq 0 ]; then
@@ -2247,7 +2292,8 @@ print(f"[headroom] extract_v2: pending={len(pend)} need={need} GB free={free:.1f
             touch "$DONE_DIR/extract_v2__fallback_prep.done"
         fi
         local fjobs="$DONE_DIR/jobs_extract_v2_fallback.tsv"
-        registry_lines_v2 '
+        PYBIN_ENV="$PYBIN" registry_lines_v2 '
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
 for m in models:
     for fmt, c, dest in (
         ("chat", "lmsys5k", "data/issue_1336/turnstore_wave1"),
@@ -2256,7 +2302,7 @@ for m in models:
         ("chat", "gsm8k_test1319", "data/issue_1336/turnstore_v2"),
     ):
         print(
-            f"w1_{m}_{fmt}_{c}\tuv run python scripts/issue1336_extract_turnstore.py "
+            f"w1_{m}_{fmt}_{c}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_extract_turnstore.py "
             f"--model {m} --corpus {c} --format {fmt} --out-dir {dest} --upload"
         )
 ' > "$fjobs"
@@ -2265,9 +2311,10 @@ for m in models:
     # v2 extension cells (35 production jobs = 40 context-arm cells minus the
     # 5 fully-reused gsm8k_test cells; prefix-arm cells share these bundles).
     local jobs="$DONE_DIR/jobs_extract_v2.tsv"
-    EXTRACT_TINY_FLAG="$tiny_flag" registry_lines_v2 '
+    EXTRACT_TINY_FLAG="$tiny_flag" PYBIN_ENV="$PYBIN" registry_lines_v2 '
 flags = "--smoke" if smoke else "--upload"
 tiny = os.environ.get("EXTRACT_TINY_FLAG", "")
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
 ordered = sorted(
     capture_cells,
     key=lambda c: 0 if (c["model"] == "rlvr" and c["corpus"] == "lmsys23k") else 1,
@@ -2275,7 +2322,7 @@ ordered = sorted(
 for c in ordered:
     m, fmt, cc = c["model"], c["format"], c["corpus"]
     print(
-        f"{m}_{fmt}_{cc}\tuv run python scripts/issue1336_extract_turnstore.py "
+        f"{m}_{fmt}_{cc}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_extract_turnstore.py "
         f"--v2 --model {m} --corpus {cc} --format {fmt} {tiny} {flags}"
     )
 ' > "$jobs"
@@ -2301,6 +2348,118 @@ for m in models:
 print(
     f"[reap] consumed v2 gen caches removed: {n} dirs, {freed / 1e6:.0f} MB "
     "(rollout text on Hub; wave-1 gen retained for the fit/ladder sha-join)"
+)
+'
+    fi
+}
+
+phase_extract_v2_nat() {
+    # Round 5c: ON-POLICY NATURALISTIC capture over ALL SEVEN v2 corpora
+    # (35 cells = 5 models x 7 corpora), the extraction sibling of
+    # phase_gen_v2_nat. Reads the gen-format-keyed pools that phase wrote
+    # ({corpus}__gen_naturalistic) via --gen-format naturalistic; the
+    # extractor's own extraction_licensed() on-policy leg (fmt == gen_format
+    # in cm.V2_GEN_FORMATS[corpus]) licenses every corpus here.
+    #
+    # CONTEXT ARM ONLY (user directive "run naturalistic on everything (but
+    # only the full context arm)"): V2_PREFIX_ARM is untouched, and the
+    # turnstore stems are GEN-KEYED —
+    # cm.cell_id(model, "naturalistic", cm.gen_cell_key(corpus, "naturalistic"))
+    # -> {model}_naturalistic_{corpus}__gen_naturalistic — so they can never
+    # collide with the matched-text naturalistic cells and are INVISIBLE to
+    # every fit consumer (CELLS_V2 stays 45; the fit-side gen_format axis
+    # stays DEFERRED, not decided here). Its OWN queue phase name keys per-job
+    # done files as extract_v2_nat__{model}__{corpus}.done and its OWN phase
+    # done-file phase_extract_v2_nat.done, so chat extract_v2__*.done files
+    # can never skip a naturalistic job and this phase never marks chat cells
+    # done. Deliberately NOT in the all_v2 chain (separate invocation, like
+    # gen_v2_nat).
+    echo "[phase=extract_v2_nat]"
+    if [ "$SMOKE" -eq 1 ] && [ "$NGPU" -eq 0 ]; then
+        # GPU-less smoke host: recorded STUB (never a faked exit-0). Unlike
+        # extract_v2 — whose GPU-less smoke consumes the CHAT pools the
+        # gen-v2 fixture writes for cm.SMOKE_MODELS x the smoke corpora — no
+        # fixture writes nat-keyed pools for this arm's smoke corpora
+        # (smoke_fixtures gen-natural covers rlvr x lmsys5k only, and
+        # gen_v2_nat itself STUBs on a GPU-less host), so there is nothing
+        # for the capture queue to read here. On a GPU-bearing host the smoke
+        # runs the REAL queue against a gen_v2_nat --smoke pass (PASS_UNIFIED
+        # there); this stub is host-shaped, not phase-shaped.
+        echo "[extract_v2_nat] STUB: capture queue skipped on GPU-less host (no nat-keyed gen pools exist for the smoke corpora — gen_v2_nat STUBs here too; real path requires a GPU)"
+        return 0
+    fi
+    # Pending-scaled headroom (same ~9 GB/cell shard budget as extract_v2),
+    # keyed on the GEN-KEYED stems this phase writes.
+    SMOKE_ENV=$SMOKE registry_lines_v2 '
+from pathlib import Path
+
+from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+
+ts = Path("data/issue_1336") / ("turnstore_v2_smoke" if smoke else "turnstore_v2")
+order = ["rlvr", "base", "sft", "dpo", "rlvr_long"]
+cells = [
+    (m, c)
+    for m in [m for m in order if m in models]
+    for c in nat_gen_corpora
+]
+pend = [
+    (m, c)
+    for (m, c) in cells
+    if not (
+        ts
+        / (
+            cm.cell_id(m, "naturalistic", cm.gen_cell_key(c, "naturalistic"))
+            + ".done.json"
+        )
+    ).exists()
+]
+need = 1 if smoke else max(5, 9 * len(pend) + 5)
+free = assert_out_root_headroom(Path("data/issue_1336"), float(need), phase="extract_v2_nat")
+print(
+    f"[headroom] extract_v2_nat: cells={len(cells)} pending={len(pend)} "
+    f"need={need} GB free={free:.1f} GB"
+)
+'
+    storm_guard extract_v2_nat "import torch, transformers"
+    # 35 capture jobs (5 models x 7 corpora); rlvr first (same ordering
+    # convention as gen_v2_nat). Per-cell --upload persists each turnstore to
+    # HF the moment the cell completes (#664 per-cell upload contract).
+    local jobs="$DONE_DIR/jobs_extract_v2_nat.tsv"
+    PYBIN_ENV="$PYBIN" registry_lines_v2 '
+flags = "--smoke" if smoke else "--upload"
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
+order = ["rlvr", "base", "sft", "dpo", "rlvr_long"]
+for m in [m for m in order if m in models]:
+    for c in nat_gen_corpora:
+        print(
+            f"{m}__{c}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_extract_turnstore.py "
+            f"--v2 --model {m} --corpus {c} --format naturalistic "
+            f"--gen-format naturalistic {flags}"
+        )
+' > "$jobs"
+    run_queue extract_v2_nat "$jobs" "${NATGEN_STAGGER_S:-15}"
+    # Consumed nat gen-cache reap (#1489 last-consumer rule): the
+    # {corpus}__gen_naturalistic pools are consumed ONLY by this phase (fit
+    # reads turnstores, and the fit/ladder sha-join reads WAVE-1 gen answers,
+    # which are untouched here); per-cell rollout text is already on the Hub
+    # (per-cell --upload above).
+    if [ "$SMOKE" -eq 0 ]; then
+        registry_lines_v2 '
+import shutil
+from pathlib import Path
+
+n = 0
+freed = 0
+for m in models:
+    for c in nat_gen_corpora:
+        d = Path("data/issue_1336/gen") / m / cm.gen_cell_key(c, "naturalistic")
+        if d.exists():
+            freed += sum(p.stat().st_size for p in d.rglob("*") if p.is_file())
+            shutil.rmtree(d)
+            n += 1
+print(
+    f"[reap] consumed naturalistic gen caches removed: {n} dirs, {freed / 1e6:.0f} MB "
+    "(rollout text on Hub; chat + wave-1 gen dirs untouched)"
 )
 '
     fi
@@ -2428,15 +2587,17 @@ basis: measured 1-cell pilot (G1' cell) through the production entrypoint at pro
         fi
     fi
     # Full queue (per-cell done keys fit_v2__<cell>; the G1' cell skips).
+    storm_guard fit_v2 "import torch, numpy"
     local jobs="$DONE_DIR/jobs_fit_v2.tsv"
-    OUT_ENV="$OUT_DIR" W1_ENV="$WAVE1_TS_DIR" registry_lines_v2 '
+    OUT_ENV="$OUT_DIR" W1_ENV="$WAVE1_TS_DIR" PYBIN_ENV="$PYBIN" registry_lines_v2 '
 extra = "--smoke" if smoke else ("--matched-n --wave1-turnstore-dir " + os.environ["W1_ENV"])
 out = os.environ["OUT_ENV"]
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
 ordered = sorted(fit_cells, key=lambda c: 0 if c["cell_id"] == "rlvr_chat_lmsys23k" else 1)
 for cell in ordered:
     cid = cell["cell_id"]
     print(
-        f"{cid}\tuv run python scripts/issue1336_fit_cells.py --v2 "
+        f"{cid}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_fit_cells.py --v2 "
         f"--cells {cid} --out-dir {out} {extra}"
     )
 ' > "$jobs"
@@ -2544,16 +2705,18 @@ basis: measured 1-battery pilot at production shape (upper bound; cross-pair W_s
     fi
     # Queue: ONE job per surface, all pairs per invocation (W_s cached across
     # pairs sharing the source — Unit-C PrepCache).
+    storm_guard ladder "import torch, numpy"
     local jobs="$DONE_DIR/jobs_ladder.tsv"
     OUT_ENV="$OUT_DIR" HL_ENV="$headline" BARS_ENV="$V2_BARS" W1_ENV="$WAVE1_TS_DIR" \
-        registry_lines_v2 '
+        PYBIN_ENV="$PYBIN" registry_lines_v2 '
 out, hl, bars = os.environ["OUT_ENV"], os.environ["HL_ENV"], os.environ["BARS_ENV"]
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
 flag = "--smoke" if smoke else ""
 w1 = "" if smoke else (" --wave1-turnstore-dir " + os.environ["W1_ENV"])
 pair_arg = ",".join(f"{a}:{b}" for a, b in pairs)
 for corpus, fmt in surfaces:
     print(
-        f"{corpus}_{fmt}\tuv run python scripts/issue1336_metric_ladder.py "
+        f"{corpus}_{fmt}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_metric_ladder.py "
         f"--pairs {pair_arg} --corpus {corpus} --format {fmt} "
         f"--bars-json {bars} --full-tier-layers {hl} --out-dir {out}{w1} {flag}"
     )
@@ -3225,10 +3388,12 @@ basis: measured 1-cell pilot (dpo x rlvr-text lmsys23k) through the production e
     # Full queue (per-cell done keys extract_offpolicy__off_<i>_<j>_<c>; the
     # pilot cell skips). Work list derives from cm.cells_v3_for — the
     # CONSUMED registry — so a smoke subset threads through (PASS_UNIFIED).
+    storm_guard extract_offpolicy "import torch, transformers"
     local jobs="$DONE_DIR/jobs_extract_offpolicy.tsv"
-    EXTRACT_TINY_FLAG="$tiny_flag" OFF_MAN="$man" registry_lines_v2 '
+    EXTRACT_TINY_FLAG="$tiny_flag" OFF_MAN="$man" PYBIN_ENV="$PYBIN" registry_lines_v2 '
 tiny = os.environ.get("EXTRACT_TINY_FLAG", "")
 man = os.environ["OFF_MAN"]
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
 flags = (
     f"--smoke --gen-v2-root data/issue_1336/gen_smoke {tiny}".strip() if smoke else "--upload"
 )
@@ -3244,7 +3409,7 @@ ordered = sorted(
 )
 for i, j, c in ordered:
     print(
-        f"off_{i}_{j}_{c}\tuv run python scripts/issue1336_extract_turnstore.py "
+        f"off_{i}_{j}_{c}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_extract_turnstore.py "
         f"--v2 --model {i} --text-source {j} --corpus {c} --format chat "
         f"--split-manifest {man} {flags}"
     )
@@ -3404,9 +3569,12 @@ basis: measured 1-unit pilot (G1'v3 unit) through the production entrypoint at p
     fi
     # Full queue (per-unit done keys fit_pool__pooled_<m>_arm_<arm>; the
     # G1'v3 unit skips).
+    storm_guard fit_pool "import torch, numpy"
     local jobs="$DONE_DIR/jobs_fit_pool.tsv"
-    OUT_ENV="$OUT_DIR" W1_ENV="$WAVE1_TS_DIR" MATCHED_ENV="$MATCHED_N_POOLED_V3" registry_lines_v2 '
+    OUT_ENV="$OUT_DIR" W1_ENV="$WAVE1_TS_DIR" MATCHED_ENV="$MATCHED_N_POOLED_V3" \
+        PYBIN_ENV="$PYBIN" registry_lines_v2 '
 out = os.environ["OUT_ENV"]
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
 extra = (
     "--matched-n --matched-n-size "
     + os.environ["MATCHED_ENV"]
@@ -3422,7 +3590,7 @@ units = sorted(seen, key=lambda u: 0 if u == ("rlvr", "on") else 1)
 for m, arm in units:
     uid = f"pooled_{m}_arm_{arm}"
     print(
-        f"{uid}\tuv run python scripts/issue1336_fit_cells.py --v3-pooled "
+        f"{uid}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_fit_cells.py --v3-pooled "
         f"--cells {uid} --out-dir {out} {extra}"
     )
 ' > "$jobs"
@@ -3469,9 +3637,10 @@ all_v2)
     write_results_sentinel_v2 false
     echo "[phase=done]"
     ;;
-c_stage | g0v2 | g2_parity | gen_v2 | gen_v2_nat | extract_v2 | fit_v2 | ladder | upload_v2)
-    # gen_v2_nat is deliberately NOT in the all_v2 chain: the naturalistic
-    # arm is a SEPARATE invocation from the chat arm (round 5b).
+c_stage | g0v2 | g2_parity | gen_v2 | gen_v2_nat | extract_v2_nat | extract_v2 | fit_v2 | ladder | upload_v2)
+    # gen_v2_nat and extract_v2_nat are deliberately NOT in the all_v2 chain:
+    # the naturalistic arm is a SEPARATE invocation from the chat arm
+    # (rounds 5b generation / 5c capture).
     run_phase "$PHASE_ARG"
     echo "[dispatch1336] single-phase invocation of $PHASE_ARG complete (no terminal done line)"
     ;;
@@ -3541,7 +3710,7 @@ __phase_key)
     exit 0
     ;;
 *)
-    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit|all_v2|c_stage|g0v2|g2_parity|gen_v2|gen_v2_nat|extract_v2|fit_v2|ladder|upload_v2|all_v3|c_pool|g0v3|g2v2|extract_offpolicy|fit_pool [--smoke]" >&2
+    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit|all_v2|c_stage|g0v2|g2_parity|gen_v2|gen_v2_nat|extract_v2|extract_v2_nat|fit_v2|ladder|upload_v2|all_v3|c_pool|g0v3|g2v2|extract_offpolicy|fit_pool [--smoke]" >&2
     exit 2
     ;;
 esac

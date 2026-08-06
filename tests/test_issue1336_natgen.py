@@ -286,9 +286,15 @@ def _phase_body(name: str) -> str:
 
 
 def _job_builder_expr(phase_body: str) -> str:
+    """The `registry_lines_v2 '<expr>' > "$jobs"` python expression.
+
+    The body may not contain a `\\n'` (a heredoc terminator), so the match
+    cannot start at an EARLIER `registry_lines_v2 '` block — the capture-family
+    phases open with a pending-scaled headroom block before the job builder.
+    """
     import re
 
-    m = re.search(r"registry_lines_v2 '\n(.*?)\n' > \"\$jobs\"", phase_body, re.S)
+    m = re.search(r"registry_lines_v2 '\n((?:(?!\n')[\s\S])*)\n' > \"\$jobs\"", phase_body)
     assert m, "job-builder expression not found in phase body"
     return m.group(1)
 
@@ -412,11 +418,12 @@ def test_dispatch_natgen_moosefs_storm_guard(monkeypatch, capsys):
         assert cmd.startswith(
             "PYTHONUNBUFFERED=1 /fake/venv/bin/python scripts/issue1336_gen_answers.py"
         ), ln
-    # Chat phase job lines byte-unchanged (still `uv run`; the chat-arm guard
-    # is deliberately scoped OUT of this round — the concurrent round-4
-    # session may run those paths; see the round report's scope decision).
+    # Round 5d landed the SAME guard on every remaining run_queue caller (the
+    # shared storm_guard helper), so the chat phase's job lines now carry the
+    # pybin form too — `uv run` is absent from EVERY fan-out builder.
     chat_expr = _job_builder_expr(_phase_body("gen_v2"))
-    assert "uv run python scripts/issue1336_gen_answers.py" in chat_expr
+    assert "uv run" not in chat_expr
+    assert "PYTHONUNBUFFERED=1 {pybin} scripts/issue1336_gen_answers.py" in chat_expr
 
 
 def test_run_queue_stagger_third_arg_optional_and_set_e_safe(tmp_path):
@@ -547,3 +554,203 @@ def test_extract_onpolicy_stems_collide_with_no_existing_registry_stem():
     }
     assert len(onpolicy) == len(cm.MODELS) * len(cm.V2_CORPORA)
     assert existing.isdisjoint(onpolicy)
+
+
+# ---------------------------------------------------------------------------
+# 8. round 5d — the SHARED storm_guard helper + the extract_v2_nat phase
+# ---------------------------------------------------------------------------
+# The MooseFS-storm guard that phase_gen_v2_nat carried inline (round 5b) is
+# generalized into one `storm_guard <phase> <import expr>` helper called by
+# EVERY run_queue fan-out phase; phase_gen_v2_nat keeps its validated inline
+# copy byte-untouched as the production template.
+
+# (phase, pre-import expression) for every phase that fans out via run_queue.
+# gen_v2_nat is absent by design — it carries the inline copy.
+_GUARDED_PHASES = {
+    "gen": "import vllm, transformers",
+    "extract": "import torch, transformers",
+    "fit": "import torch, numpy",
+    "align": "import torch, numpy",
+    "gen_v2": "import vllm, transformers",
+    "extract_v2": "import torch, transformers",
+    "extract_v2_nat": "import torch, transformers",
+    "fit_v2": "import torch, numpy",
+    "ladder": "import torch, numpy",
+    "extract_offpolicy": "import torch, transformers",
+    "fit_pool": "import torch, numpy",
+}
+
+
+def _storm_guard_fn() -> str:
+    import re
+
+    m = re.search(r"^(storm_guard\(\) \{.*?\n\})$", _DISPATCH.read_text(), re.S | re.M)
+    assert m, "storm_guard helper not found in issue1336_dispatch.sh"
+    return m.group(1)
+
+
+def test_storm_guard_helper_is_fail_loud_and_sets_pybin():
+    fn = _storm_guard_fn()
+    # Fail-loud venv guard (never a silent `uv run` fallback — that IS the
+    # #1689 wedge trigger) + a serial timeout-bounded pre-import.
+    assert 'if [ ! -x "$PYBIN" ]; then' in fn
+    assert "exit 1" in fn
+    assert 'timeout 600 "$PYBIN" -c "$imports"' in fn
+    assert fn.index('[ ! -x "$PYBIN" ]') < fn.index('timeout 600 "$PYBIN"')
+    # Exports the global the builders thread through PYBIN_ENV.
+    assert 'PYBIN="$REPO_ROOT/.venv/bin/python"' in fn
+    # Declared at module scope so `set -u` can never trip on an unset $PYBIN.
+    assert '\nPYBIN=""\n' in _DISPATCH.read_text()
+
+
+def test_every_fanout_phase_guards_before_its_run_queue():
+    """Each run_queue caller guards with the right pre-import BEFORE fanning out.
+
+    Exactly ONE guard per phase, before the FIRST run_queue (phase_extract fans
+    out twice — extract_wave1 then extract — behind one guard). The label names
+    the phase or one of its queues: phase_fit's queue is `fit_recal` (recipe-keyed
+    done files), so its pre-import log is `fit_recal__preimport.log`.
+    """
+    import re
+
+    for phase, imports in _GUARDED_PHASES.items():
+        body = _phase_body(phase)
+        queues = re.findall(r"^\s*run_queue (\S+) ", body, re.M)
+        assert queues, f"{phase}: no run_queue call found"
+        guards = re.findall(r'^\s*storm_guard (\S+) "([^"]*)"', body, re.M)
+        assert len(guards) == 1, f"{phase}: expected 1 storm_guard, found {guards}"
+        label, got_imports = guards[0]
+        assert got_imports == imports, f"{phase}: pre-import {got_imports!r} != {imports!r}"
+        assert label in {phase, *queues}, f"{phase}: guard label {label!r} names no queue"
+        # Guard precedes the FIRST run_queue invocation in the phase.
+        first_queue = re.search(r"^\s*run_queue ", body, re.M)
+        assert body.index("storm_guard ") < first_queue.start(), f"{phase}: guard after run_queue"
+    # gen_v2_nat keeps its INLINE guard (byte-untouched round-5b template).
+    natgen = _phase_body("gen_v2_nat")
+    assert "storm_guard " not in natgen
+    assert 'timeout 600 "$pybin" -c "import vllm, transformers"' in natgen
+
+
+def test_no_fanout_job_line_invokes_uv_run():
+    """`uv run` is ABSENT from every job line written into a jobs TSV (the
+    N-way parallel venv resolution is the #1689 wedge trigger). Serial
+    invocations (prep, gates, selfchecks, uploads, direct pilot fits) keep it."""
+    import re
+
+    text = _DISPATCH.read_text()
+    # Every f-string / printf job line carries the "<name>\t<cmd>" separator.
+    job_lines = [ln for ln in text.split("\n") if "\\t" in ln and "scripts/issue1336_" in ln]
+    assert len(job_lines) >= 14, job_lines  # 12 builders + 2 wave-1 printf lines
+    for ln in job_lines:
+        assert "uv run" not in ln, ln
+        assert "PYTHONUNBUFFERED=1" in ln, ln
+    # Serial `uv run` invocations are deliberately retained.
+    assert re.search(r"^\s+uv run python scripts/issue1336_", text, re.M)
+
+
+def test_extract_v2_nat_jobs_are_on_policy_context_arm_over_all_seven(monkeypatch, capsys):
+    body = _phase_body("extract_v2_nat")
+    expr = _job_builder_expr(body)
+    monkeypatch.setenv("PYBIN_ENV", "/fake/venv/bin/python")
+    out = _run_registry(expr, smoke=False, monkeypatch=monkeypatch, capsys=capsys)
+    lines = [ln for ln in out.split("\n") if ln.strip()]
+    # 5 models x 7 corpora — the full context arm, every v2 corpus.
+    assert len(lines) == len(list(cm.MODELS)) * len(cm.V2_CORPORA)
+    names = set()
+    for ln in lines:
+        name, cmd = ln.split("\t", 1)
+        names.add(name)
+        assert cmd.startswith(
+            "PYTHONUNBUFFERED=1 /fake/venv/bin/python scripts/issue1336_extract_turnstore.py"
+        ), ln
+        # The on-policy leg: --format == --gen-format == naturalistic, --v2.
+        assert "--v2 " in cmd, ln
+        assert "--format naturalistic" in cmd, ln
+        assert "--gen-format naturalistic" in cmd, ln
+        assert "--upload" in cmd, ln
+        # Context arm ONLY — never a prefix-arm flag.
+        assert "--prefix" not in cmd, ln
+    assert names == {f"{m}__{c}" for m in cm.MODELS for c in cm.V2_CORPORA}
+    assert lines[0].startswith("rlvr__")  # rlvr-first, same as gen_v2_nat
+
+
+def test_extract_v2_nat_smoke_slice_threads_the_two_class_pair(monkeypatch, capsys):
+    expr = _job_builder_expr(_phase_body("extract_v2_nat"))
+    monkeypatch.setenv("PYBIN_ENV", "/fake/venv/bin/python")
+    out = _run_registry(expr, smoke=True, monkeypatch=monkeypatch, capsys=capsys)
+    lines = [ln for ln in out.split("\n") if ln.strip()]
+    # Smoke subset threads through: SMOKE_MODELS x the nat two-class pair.
+    assert len(lines) == len(cm.SMOKE_MODELS) * 2
+    corpora = {ln.split("\t", 1)[0].split("__", 1)[1] for ln in lines}
+    assert corpora == {"lmsys23k", "sft11k"}
+    for ln in lines:
+        assert "--smoke" in ln
+        assert "--upload" not in ln
+
+
+def test_extract_v2_nat_done_keys_never_collide_with_chat_extract(tmp_path):
+    """Phase-level AND job-level done keys are disjoint from the chat capture
+    arm, so pre-existing extract_v2__*.done files can never skip a naturalistic
+    capture job (and this phase never marks a chat cell done)."""
+    import subprocess
+
+    keys = {}
+    for phase in ("extract_v2", "extract_v2_nat"):
+        got = subprocess.run(
+            ["bash", str(_DISPATCH), "__phase_key", phase],
+            capture_output=True,
+            text=True,
+            cwd=tmp_path,
+            timeout=120,
+        )
+        assert got.returncode == 0, got.stderr
+        keys[phase] = got.stdout.strip().splitlines()[-1]
+    assert keys["extract_v2"] == "extract_v2"
+    assert keys["extract_v2_nat"] == "extract_v2_nat"
+
+    body = _phase_body("extract_v2_nat")
+    assert 'run_queue extract_v2_nat "$jobs" "${NATGEN_STAGGER_S:-15}"' in body
+    assert "jobs_extract_v2_nat.tsv" in body
+    # run_queue keys per-job done files extract_v2_nat__{m}__{c}.done; the chat
+    # arm's are extract_v2__{m}_{fmt}_{cc}.done — disjoint prefixes.
+    chat_names = {
+        f"{m}_{fmt}_{c}"
+        for m in cm.MODELS
+        for fmt in ("chat", "naturalistic")
+        for c in cm.V2_CORPORA
+    }
+    nat_names = {f"{m}__{c}" for m in cm.MODELS for c in cm.V2_CORPORA}
+    assert {f"extract_v2__{n}" for n in chat_names}.isdisjoint(
+        {f"extract_v2_nat__{n}" for n in nat_names}
+    )
+
+
+def test_extract_v2_nat_turnstore_stems_are_gen_keyed_and_invisible_to_fit():
+    """The capture stems are GEN-KEYED, so they cannot collide with the
+    matched-text naturalistic cells and no fit consumer sees them (CELLS_V2
+    unchanged — the fit-side gen_format axis stays deferred)."""
+    matched = {cm.cell_id(m, "naturalistic", c) for m in cm.MODELS for c in cm.V2_CORPORA}
+    onpolicy = {
+        cm.cell_id(m, "naturalistic", cm.gen_cell_key(c, "naturalistic"))
+        for m in cm.MODELS
+        for c in cm.V2_CORPORA
+    }
+    assert matched.isdisjoint(onpolicy)
+    fit_cell_ids = {c["cell_id"] for c in cm.cells_v2_for()}
+    assert onpolicy.isdisjoint(fit_cell_ids)
+    # The headroom predicate keys on exactly those gen-keyed stems.
+    body = _phase_body("extract_v2_nat")
+    assert 'cm.cell_id(m, "naturalistic", cm.gen_cell_key(c, "naturalistic"))' in body
+
+
+def test_extract_v2_nat_not_in_all_v2_chain_but_dispatchable():
+    import re
+
+    text = _DISPATCH.read_text()
+    m = re.search(r"^all_v2\)\n(.*?)^\s*;;\s*$", text, re.S | re.M)
+    assert m, "all_v2 case arm not found"
+    assert "extract_v2_nat" not in m.group(1)  # separate invocation by design
+    # ... but the single-phase case arm and the usage line DO accept it.
+    assert re.search(r"^c_stage \| .*\| extract_v2_nat \|", text, re.M)
+    assert re.search(r"^c_stage \| .*\| gen_v2_nat \|", text, re.M)  # 5b pin survives
+    assert "|extract_v2_nat|" in text  # usage line
