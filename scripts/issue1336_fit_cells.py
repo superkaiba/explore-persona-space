@@ -43,6 +43,22 @@ outputs land under ``cells_v2/`` with preds staged to
 ``data/issue_1336/preds_v2`` (manifest ``preds_manifest_v2.json``);
 ``--matched-n`` companions become persist-layer-subset refits at n=7,350
 (seed-1336 subsample) on the four above-size corpora (plan §4 Phase FIT).
+
+Under --v3-pooled (plan v15 Phase FIT_pool): cells resolve to POOLED units
+``pooled_<ckpt>_arm_<on|off>`` derived from the CELLS_V3 registry — one pooled
+ridge per (activation checkpoint x on/off-policy arm) over the union of the
+round-3 corpora. Rows are selected + fold-grouped by the Phase C_pool split
+manifest (cluster-grouped 80/20 + 5 folds); the manifest fold ids ride into
+the #825 core as the conv_ids GROUP KEY (``_cv_folds`` over exactly n_folds
+unique values is a bijective relabeling, so the realized CV partition IS the
+persisted one). Same 23-pt grid + adaptive edge rule + inner-group-CV
+(n_inner=2) as --v2; a train-side final fit predicts the pooled 20% test side
+for the per-corpus slice read; identity+bias + kNN retrieval per fitted map
+(Guideline 11). Outputs land under ``cells_pooled_v3/`` with preds staged to
+``data/issue_1336/preds_pooled_v3/{on,off}-policy`` (manifest
+``preds_pooled_v3_manifest.json``). Gates: ``--g0v3`` (pooled-split
+reproducibility vs the round-3 per-corpus read, tol 0.05 x ex_v2 at the
+headline layer) and ``--g1v3-check`` (pooled rig-health kill vs bar_v2).
 """
 
 from __future__ import annotations
@@ -66,6 +82,7 @@ load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch/numpy impor
 
 import issue825_fit_cells as fc  # noqa: E402
 import issue1336_extract_turnstore as et  # noqa: E402
+import issue1336_pooled_split as ps  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
@@ -95,6 +112,37 @@ def parse_args() -> argparse.Namespace:
         "--g1v2-check",
         action="store_true",
         help="evaluate the G1' v2 kill gate (After-RLVR lmsys23k chat cell vs bar_v2)",
+    )
+    ap.add_argument(
+        "--v3-pooled",
+        action="store_true",
+        help="v3 pooled multi-dataset fit mode (plan v15 Phase FIT_pool): --cells selects "
+        "pooled units pooled_<ckpt>_arm_<on|off> | all | smoke",
+    )
+    ap.add_argument(
+        "--g0v3",
+        action="store_true",
+        help="G0v3 pooled-split reproducibility gate (round-3 RLVR x lmsys23k-chat refit "
+        "under the pooled split vs the per-corpus round-3 read; tol 0.05 x ex_v2)",
+    )
+    ap.add_argument(
+        "--g1v3-check",
+        action="store_true",
+        help="evaluate the G1' v3 pooled rig-health kill gate (first pooled cell vs bar_v2)",
+    )
+    ap.add_argument(
+        "--split-manifest",
+        type=Path,
+        default=None,
+        help="Phase C_pool split manifest (default: data/issue_1336/pooled_split_v3"
+        "[_smoke]/split_manifest.json)",
+    )
+    ap.add_argument(
+        "--offpolicy-root",
+        type=Path,
+        default=None,
+        help="root holding the Phase EXT_off turnstore_offpolicy_<i>_chat_<j>[_smoke] "
+        "trees (default: data/issue_1336)",
     )
     ap.add_argument("--cells", default=None, help="comma cell ids | all | smoke")
     ap.add_argument("--turnstore-dir", type=Path, default=None)
@@ -1058,6 +1106,831 @@ def run_g1_check(out_dir: Path) -> int:
     return 3 if kill else 0
 
 
+# ---------------------------------------------------------------------------
+# v3 pooled multi-dataset fits (plan v15 Phase FIT_pool) + gates G0v3 / G1'v3
+# ---------------------------------------------------------------------------
+# NAMING COLLISION GUARD: the split manifest's per-row "arm" field means the
+# train/test SIDE of the pooled 80/20 split; a v3 cell's "arm" field means the
+# on/off-POLICY text-source arm (cm.CELLS_V3). This module reads the manifest
+# field into a "side" key immediately and never mixes the two.
+
+
+def _load_split_manifest(path: Path) -> dict:
+    """Fail-loud load + row-schema check of the Phase C_pool split manifest."""
+    assert path.exists(), (
+        f"{path} missing — run Phase C_pool (scripts/issue1336_pooled_split.py) before any "
+        "pooled fit (driver-enforced ordering)"
+    )
+    man = json.loads(path.read_text())
+    assert man.get("row_index"), f"{path} carries no row_index — malformed split manifest"
+    for e in man["row_index"]:
+        assert e.get("prompt_idx") is not None, f"manifest row without prompt_idx: {e}"
+        side = e["arm"]  # manifest "arm" == train/test SIDE (collision guard above)
+        assert side in ("train", "test"), f"unknown split side {side!r}"
+        assert (e.get("fold") is not None) == (side == "train"), (
+            f"fold/side mismatch in manifest row: {e}"
+        )
+    return man
+
+
+def _manifest_rows_by_corpus(man: dict) -> dict[str, list[dict]]:
+    """row_index entries grouped by corpus, manifest order preserved (determinism)."""
+    by: dict[str, list[dict]] = {}
+    for e in man["row_index"]:
+        by.setdefault(e["corpus"], []).append(e)
+    return by
+
+
+def _pooled_units_for(models=None, text_sources=None) -> list[dict]:
+    """The pooled fit units — (activation checkpoint x on/off arm) — from CELLS_V3.
+
+    Groups ``cm.cells_v3_for(...)`` pairs (the CONSUMED registry — never
+    redefined here) into fit units: the full grid is 10 units (5 checkpoints
+    x {on, off}); an on unit carries the single diagonal text source, an off
+    unit the off-diagonal sources (plan v15 §4 Phase FIT_pool).
+    """
+    units: dict[tuple[str, str], dict] = {}
+    for p in cm.cells_v3_for(models, text_sources):
+        key = (p["model"], p["arm"])
+        u = units.setdefault(
+            key,
+            {
+                "cell_id": f"pooled_{p['model']}_arm_{p['arm']}",
+                "model": p["model"],
+                "hf_id": p["hf_id"],
+                "format": p["format"],
+                "arm": p["arm"],
+                "text_sources": [],
+            },
+        )
+        u["text_sources"].append(p["text_source"])
+    return list(units.values())
+
+
+def _pooled_smoke_units() -> list[dict]:
+    """Smoke units derived from cm.SMOKE_OFFDIAG_PAIRS_V3 (PASS_UNIFIED seam):
+    one diagonal on-policy unit + one off-policy unit per registered smoke pair."""
+    models = tuple(dict.fromkeys(i for i, _ in cm.SMOKE_OFFDIAG_PAIRS_V3))
+    sources = tuple(dict.fromkeys([*models, *(j for _, j in cm.SMOKE_OFFDIAG_PAIRS_V3)]))
+    return _pooled_units_for(models, sources)
+
+
+def _pooled_bundle(
+    unit_model: str,
+    text_source: str,
+    corpus: str,
+    *,
+    ts_dir: Path,
+    off_root: Path | None,
+    smoke: bool,
+    wave1_dir: Path | None,
+    gen_root: Path | None,
+) -> dict:
+    """Load one (activation checkpoint, text source, corpus) capture bundle.
+
+    Diagonal (on-policy) pairs reuse the round-3 v2 turnstores verbatim —
+    incl. the wave-1 concat loader for the extended corpora in production
+    (run_one_cell's use_concat contract). Off-diagonal (off-policy) pairs
+    read the Phase EXT_off trees ``<off_root>/turnstore_offpolicy_<i>_chat_<j>``;
+    stems inside keep standard naming so the #825 loaders read them unchanged
+    (cm.offpolicy_ts_dirname docstring).
+    """
+    fmt = cm.V3_TEXT_FORMAT
+    if text_source == unit_model:
+        if (not smoke) and corpus in et.CONCAT_SOURCES:
+            return et.load_bundle_concat(
+                ts_dir, unit_model, fmt, corpus, wave1_dir=wave1_dir, gen_root=gen_root
+            )
+        return fc._load_bundle_any(
+            ts_dir, unit_model, fmt, corpus, wanted_keys=("slots", "profiles", "nll")
+        )
+    assert off_root is not None, "off-diagonal pair needs --offpolicy-root"
+    off_dir = off_root / (
+        cm.offpolicy_ts_dirname(unit_model, text_source) + ("_smoke" if smoke else "")
+    )
+    return fc._load_bundle_any(
+        off_dir, unit_model, fmt, corpus, wanted_keys=("slots", "profiles", "nll")
+    )
+
+
+def _pooled_xy_from_bundle(
+    bundle: dict, entries: list[dict], expected_layers: int | None, x_slot: str
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+    """(X, Y, nll) for one bundle, row-selected to the manifest entries IN
+    MANIFEST ORDER — the pooled row-coverage contract (plan v15 §3): every
+    manifest row must resolve in the bundle, NaN-free; fail-loud otherwise.
+
+    Dtype-preserving deviation from ``_cell_xy_1336``: stored fp16 arrays are
+    NOT cast to fp32 here (the pooled off arm quadruples the row count, and
+    the fit core converts per (layer, fold) to fp64 anyway — fp16 -> fp64 is
+    exact, so the numbers are unchanged while peak RSS halves).
+    """
+    arrays, sidecar = bundle["arrays"], bundle["sidecar"]
+    slots, profiles = arrays["slots"], arrays["profiles"]
+    assert slots.shape[1] == 2, f"expected 2 slots (prefix, context), got {slots.shape}"
+    assert profiles.shape[1] == 2, f"expected 2 turn profiles, got {profiles.shape}"
+    if expected_layers is not None:
+        assert slots.shape[2] == expected_layers, (
+            f"layer axis {slots.shape[2]} != expected {expected_layers}"
+        )
+    si = {"context": 1, "prefix": 0}[x_slot]
+    pos = {str(c): i for i, c in enumerate(sidecar["conv_ids"])}
+    missing = [e for e in entries if "s{}".format(e["prompt_idx"]) not in pos]
+    if missing:
+        ex = ["s{}".format(e["prompt_idx"]) for e in missing[:5]]
+        raise AssertionError(
+            f"{len(missing)} manifest rows missing from the bundle (e.g. {ex}) — "
+            "pooled row-coverage break (plan v15 §3)"
+        )
+    sel = np.asarray([pos["s{}".format(e["prompt_idx"])] for e in entries], dtype=np.int64)
+    X = np.asarray(slots)[sel, si, :, :]
+    Y = np.asarray(profiles)[sel, 1, :, :]
+    bad = np.isnan(X).any(axis=(1, 2)) | np.isnan(Y).any(axis=(1, 2))
+    if bad.any():
+        ex = [entries[i]["prompt_sha"][:12] for i in np.flatnonzero(bad)[:5]]
+        raise AssertionError(
+            f"{int(bad.sum())} NaN rows among manifest-selected rows (prompt_sha e.g. {ex}) "
+            "— refusing to silently drop pooled rows"
+        )
+    nll = None
+    if "nll" in arrays:
+        nll_arr = np.asarray(arrays["nll"], dtype=np.float32)
+        assert nll_arr.shape[1] >= 2, f"nll turns {nll_arr.shape} lack target turn 1"
+        nll = nll_arr[sel, 1]
+    return X, Y, nll
+
+
+def _assemble_pooled_rows(
+    unit: dict,
+    by_corpus: dict[str, list[dict]],
+    *,
+    corpora: tuple[str, ...],
+    ts_dir: Path,
+    off_root: Path | None,
+    smoke: bool,
+    wave1_dir: Path | None,
+    gen_root: Path | None,
+    x_slot: str,
+    expected_layers: int | None,
+    frozen_layers: tuple[int, ...],
+) -> dict:
+    """Concatenate the unit's (text source x corpus) captures in registry order.
+
+    Preallocates the pooled (N, L, D) arrays from manifest counts so peak RSS
+    is bounded by pooled + ONE bundle (the off arm multiplies row count by
+    its source count). Returns X, Y, nll, per-row metadata, and the prefix
+    degeneracy read (computed on the FIRST text source only: the prefix slot
+    at a fixed activation checkpoint is text-source-invariant by construction).
+    """
+    for c in corpora:
+        assert by_corpus.get(c), f"split manifest has no rows for corpus {c!r}"
+    n_per_corpus = {c: len(by_corpus[c]) for c in corpora}
+    n_total = sum(n_per_corpus.values()) * len(unit["text_sources"])
+    X_all = Y_all = None
+    nll_all = np.full(n_total, np.nan, dtype=np.float32)
+    any_nll = False
+    rows: list[dict] = []
+    degeneracy: dict[str, dict] = {}
+    ofs = 0
+    for j in unit["text_sources"]:
+        for c in corpora:
+            entries = by_corpus[c]
+            bundle = _pooled_bundle(
+                unit["model"],
+                j,
+                c,
+                ts_dir=ts_dir,
+                off_root=off_root,
+                smoke=smoke,
+                wave1_dir=wave1_dir,
+                gen_root=gen_root,
+            )
+            X, Y, nll = _pooled_xy_from_bundle(bundle, entries, expected_layers, x_slot)
+            if X_all is None:
+                shape = (n_total, X.shape[1], X.shape[2])
+                X_all = np.empty(shape, dtype=X.dtype)
+                Y_all = np.empty(shape, dtype=Y.dtype)
+            assert X.shape[1:] == X_all.shape[1:], (X.shape, X_all.shape)
+            n_c = X.shape[0]
+            X_all[ofs : ofs + n_c] = X
+            Y_all[ofs : ofs + n_c] = Y
+            if nll is not None:
+                nll_all[ofs : ofs + n_c] = nll
+                any_nll = True
+            if j == unit["text_sources"][0]:
+                degeneracy[f"{j}/{c}"] = _prefix_degeneracy(bundle, frozen_layers)
+            for e in entries:
+                rows.append(
+                    {
+                        "row_id": "{}:{}:s{}".format(j, c, e["prompt_idx"]),
+                        "text_source": j,
+                        "corpus": c,
+                        "conv_id": "s{}".format(e["prompt_idx"]),
+                        "prompt_sha": e["prompt_sha"],
+                        "cluster": int(e["cluster"]),
+                        "side": e["arm"],  # manifest "arm" == train/test SIDE
+                        "fold": e["fold"],
+                    }
+                )
+            del bundle, X, Y
+            ofs += n_c
+    assert ofs == n_total, (ofs, n_total)
+    return {
+        "X": X_all,
+        "Y": Y_all,
+        "nll": nll_all if any_nll else None,
+        "rows": rows,
+        "degeneracy": degeneracy,
+    }
+
+
+def _final_fit_test_preds(
+    Xtr: np.ndarray,
+    Ytr: np.ndarray,
+    groups_tr: np.ndarray,
+    Xte: np.ndarray,
+    layers: list[int],
+    grid: np.ndarray,
+    seed: int,
+) -> tuple[dict[int, np.ndarray], dict[str, float]]:
+    """Full-train-side final fit per persisted layer, predicting the pooled
+    TEST side (plan v15 §4 per-corpus slice read). Reuses the fit core's own
+    within-fit path VERBATIM — _prep_fold + _prep_inner_lambda (inner-group-CV
+    lambda on the realized grid) + _ridge_predict_cached — so the estimator
+    matches the CV sweep exactly (no re-implemented solve loop).
+    """
+    preds: dict[int, np.ndarray] = {}
+    lams: dict[str, float] = {}
+    for li in layers:
+        cache = fc._prep_fold(Xtr[:, li, :], Xte[:, li, :])
+        inner = fc._prep_inner_lambda(Xtr[:, li, :], groups_tr, fc.N_INNER_LAMBDA_FOLDS, seed)
+        if inner is not None:
+            cache["inner"] = inner
+        pred, lam = fc._ridge_predict_cached(cache, Ytr[:, li, :], return_lam=True, lambdas=grid)
+        preds[li] = np.asarray(pred)
+        lams[str(li)] = float(lam)
+    return preds, lams
+
+
+def _pooled_test_block(
+    preds_te: dict[int, np.ndarray], Yte: np.ndarray, rows_te: list[dict], layers: list[int]
+) -> dict:
+    """Held-out 20% test-side R2 — pooled + per-corpus + per-text-source slices."""
+    corpus_arr = np.asarray([r["corpus"] for r in rows_te])
+    source_arr = np.asarray([r["text_source"] for r in rows_te])
+    out: dict = {"r2_pooled": {}, "r2_per_corpus": {}, "r2_per_text_source": {}}
+    for li in layers:
+        pred = preds_te[li]
+        true = Yte[:, li, :]
+        out["r2_pooled"][str(li)] = fc._pooled_r2(pred, true)
+        out["r2_per_corpus"][str(li)] = {
+            c: fc._pooled_r2(pred[corpus_arr == c], true[corpus_arr == c])
+            for c in dict.fromkeys(corpus_arr.tolist())
+        }
+        out["r2_per_text_source"][str(li)] = {
+            s: fc._pooled_r2(pred[source_arr == s], true[source_arr == s])
+            for s in dict.fromkeys(source_arr.tolist())
+        }
+    return out
+
+
+def _mapping_baselines_block(
+    Xtr: np.ndarray,
+    Ytr: np.ndarray,
+    Xte: np.ndarray,
+    Yte: np.ndarray,
+    preds_te: dict[int, np.ndarray],
+    layers: list[int],
+    *,
+    n_pool_max: int = 2000,
+    seed: int = 1336,
+) -> dict:
+    """Guideline-11 pair per fitted map: identity+learned-bias baseline
+    (input/output dims match — applicable) + kNN retrieval of the prediction
+    among the held-out TEST pool (euclidean + cosine; chance stated by the
+    helper). Pool subsampled to <=2000 rows at seed 1336 — the round-5 metric
+    ladder's kNN convention (issue1336_metric_ladder.py).
+    """
+    from explore_persona_space.analysis import mapping_baselines as mbase
+
+    rng = np.random.default_rng(seed)
+    n_te = int(Xte.shape[0])
+    keep = np.sort(rng.choice(n_te, size=min(n_pool_max, n_te), replace=False))
+    out: dict = {}
+    for li in layers:
+        true = Yte[:, li, :]
+        pred_id = mbase.identity_bias_predict(Xtr[:, li, :], Ytr[:, li, :], Xte[:, li, :])
+        blk: dict = {
+            "identity_bias_r2_test": fc._pooled_r2(pred_id, true),
+            "ridge_r2_test": fc._pooled_r2(preds_te[li], true),
+            "knn_pool_rows": int(len(keep)),
+            "knn": {},
+        }
+        for name, pred in (("ridge", np.asarray(preds_te[li])), ("identity_bias", pred_id)):
+            for metric in ("euclidean", "cosine"):
+                blk["knn"][f"{name}_{metric}"] = mbase.knn_retrieval(
+                    np.asarray(pred)[keep], true[keep], ks=(1, 5), metric=metric
+                )
+        out[str(li)] = blk
+    return out
+
+
+def run_pooled_cell(
+    unit: dict,
+    man: dict,
+    man_path: Path,
+    ts_dir: Path,
+    off_root: Path | None,
+    out_dir: Path,
+    preds_root: Path,
+    *,
+    corpora: tuple[str, ...],
+    frozen_layers: tuple[int, ...],
+    n_folds: int,
+    seed: int,
+    null_draws: int,
+    n_boot: int,
+    matched_n: int | None,
+    matched_n_seed: int,
+    expected_layers: int | None,
+    qwen_cal: dict,
+    x_slot: str,
+    lambda_grid: np.ndarray,
+    smoke: bool,
+    wave1_dir: Path | None,
+    gen_root: Path | None,
+) -> dict:
+    """One pooled (checkpoint x arm) fit unit — plan v15 §4 Phase FIT_pool.
+
+    ONE pooled ridge X -> Y through the shared #825 batched core: the split
+    manifest's cluster-grouped folds ride into ``heldout_r2_sweep`` as the
+    conv_ids GROUP KEY (``_cv_folds`` over exactly ``n_folds`` unique values
+    is a bijective relabeling, so the REALIZED partition is the manifest's
+    persisted partition, never a re-derived one); the 23-pt grid + adaptive
+    edge rule wrap the sweep; a train-side final fit predicts the pooled 20%
+    test side for the per-corpus slice read (+ Guideline-11 baselines).
+    """
+    cell_id = unit["cell_id"]
+    man_sha = hashlib.sha256(man_path.read_bytes()).hexdigest()
+    by_corpus = _manifest_rows_by_corpus(man)
+    asm = _assemble_pooled_rows(
+        unit,
+        by_corpus,
+        corpora=corpora,
+        ts_dir=ts_dir,
+        off_root=off_root,
+        smoke=smoke,
+        wave1_dir=wave1_dir,
+        gen_root=gen_root,
+        x_slot=x_slot,
+        expected_layers=expected_layers,
+        frozen_layers=frozen_layers,
+    )
+    rows = asm["rows"]
+    train_mask = np.asarray([r["side"] == "train" for r in rows])
+    ids = np.asarray([r["row_id"] for r in rows])
+    folds_man = np.asarray([-1 if r["fold"] is None else int(r["fold"]) for r in rows])
+    Xtr, Ytr = asm["X"][train_mask], asm["Y"][train_mask]
+    Xte, Yte = asm["X"][~train_mask], asm["Y"][~train_mask]
+    asm["X"] = asm["Y"] = None  # release the pooled originals (peak-RSS bound)
+    n_tr, n_te = int(Xtr.shape[0]), int(Xte.shape[0])
+    L, d = int(Xtr.shape[1]), int(Xtr.shape[2])
+    assert n_te > 0, "pooled split has no test rows"
+    groups_tr = folds_man[train_mask]
+    assert (groups_tr >= 0).all(), "train row without a manifest fold"
+    uniq_folds = np.unique(groups_tr)
+    assert len(uniq_folds) == n_folds, (
+        f"manifest carries {len(uniq_folds)} folds but --folds={n_folds}; pass --folds equal "
+        "to the split manifest's n_folds"
+    )
+    if not smoke:
+        # estimator-validity regime statement (plan v15 §7 G1'): primal route
+        assert n_tr > d, f"pooled production fit needs n_train > d, got n={n_tr} d={d}"
+    persist_layers = cm.preds_layers(frozen_layers)
+    print(
+        f"[fit1336] pooled cell={cell_id} n_train={n_tr} n_test={n_te} d={d} "
+        f"sources={unit['text_sources']} x_slot={x_slot}",
+        flush=True,
+    )
+    sweep, edge_block, realized_grid = _run_sweep_edge(
+        Xtr,
+        Ytr,
+        groups_tr,
+        base_grid=lambda_grid,
+        sweep_kwargs=dict(
+            n_folds=n_folds,
+            seed=seed,
+            null_draws=null_draws,
+            frozen_layers=persist_layers,
+            collect_lambdas=True,
+        ),
+    )
+    r2_obs, r2_null = sweep["r2_obs"], sweep["r2_null"]
+    summary = fc.selection_symmetric_summary(r2_obs, r2_null, frozen_layers=frozen_layers)
+    fl = [li for li in frozen_layers if li < L]
+    rp = fc.random_projection_control(Xtr, Ytr, groups_tr, layers=fl, n_folds=n_folds, seed=seed)
+    mb = fc.mean_baseline_r2(Ytr, groups_tr, layers=fl, n_folds=n_folds, seed=seed)
+    cosine_stats, r2_cis = {}, {}
+    fitted = sweep["fitted_mask"]
+    for li in fl:
+        cos = sweep["cosines"][li][fitted]
+        cosine_stats[str(li)] = fc.bootstrap_ci(cos, n_boot=n_boot, seed=seed + li)
+        pred = sweep["preds_frozen"][li][fitted]
+        r2_cis[str(li)] = fc.bootstrap_r2_ci(
+            pred, Ytr[fitted, li, :], n_boot=n_boot, seed=seed + 100 + li
+        )
+    skill_over_mean = {
+        str(li): float(r2_obs[li]) - float(mb.get(str(li), float("nan"))) for li in fl
+    }
+    nll_stats = None
+    if asm["nll"] is not None:
+        finite = np.isfinite(asm["nll"])
+        if finite.any():
+            v = asm["nll"][finite]
+            nll_stats = {
+                "mean": float(np.mean(v)),
+                "median": float(np.median(v)),
+                "p90": float(np.quantile(v, 0.9)),
+                "n_finite": int(finite.sum()),
+                "n_total": int(asm["nll"].shape[0]),
+            }
+    persist_in_range = [li for li in persist_layers if li < L]
+    preds_te, lams_te = _final_fit_test_preds(
+        Xtr, Ytr, groups_tr, Xte, persist_in_range, realized_grid, seed
+    )
+    rows_te = [r for r in rows if r["side"] == "test"]
+    test_block = _pooled_test_block(preds_te, Yte, rows_te, persist_in_range)
+    test_block["final_fit_lambda_per_layer"] = lams_te
+    mapping_block = _mapping_baselines_block(Xtr, Ytr, Xte, Yte, preds_te, fl)
+    payload = {
+        "metadata": _metadata(seed, n_tr + n_te),
+        "cell": {k: unit[k] for k in ("cell_id", "model", "hf_id", "format", "arm")},
+        "text_sources": list(unit["text_sources"]),
+        "corpora": list(corpora),
+        "x_slot": x_slot,
+        "split_manifest": {
+            "path": str(man_path),
+            "sha256": man_sha,
+            "n_train_rows": n_tr,
+            "n_test_rows": n_te,
+        },
+        "n_train": n_tr,
+        "n_test": n_te,
+        "d": d,
+        "frozen_layers": list(frozen_layers),
+        "preds_layers": list(persist_layers),
+        "r2_per_layer_obs": [float(v) for v in r2_obs],
+        "recal": _recal_block(sweep, Ytr, persist_layers, qwen_cal),
+        "lambda_audit": _lambda_audit(sweep, frozen_layers, grid=realized_grid),
+        "lambda_edge_rule": edge_block,
+        "selection_symmetric": summary,
+        "random_projection_control_r2": rp,
+        "mean_baseline_r2": mb,
+        "skill_over_mean": skill_over_mean,
+        "cosine_frozen_layers": cosine_stats,
+        "r2_bootstrap_ci_frozen_layers": r2_cis,
+        "nll_a1": nll_stats,
+        "prefix_slot_degeneracy": asm["degeneracy"],
+        "test": test_block,
+        "mapping_baselines": mapping_block,
+        "n_folds": n_folds,
+        "null_draws": null_draws,
+    }
+    if edge_block is not None and edge_block.get("estimator_limited"):
+        payload["estimator_limited"] = edge_block["estimator_limited"]
+    _write_json(out_dir / "cells_pooled_v3" / f"cells_{cell_id}.json", payload)
+    _write_json(
+        out_dir / "cells_pooled_v3" / f"nulls_{cell_id}.json",
+        {
+            "metadata": _metadata(seed, n_tr),
+            "cell_id": cell_id,
+            "layers": list(range(len(r2_obs))),
+            "observed_row": [float(v) for v in r2_obs],
+            "null_matrix": [[float(v) for v in row] for row in r2_null],
+            "null_layer_max_per_draw": summary["null_layer_max_r2_per_draw"],
+        },
+    )
+    arm_dir = preds_root / cm.POOLED_ARM_DIRS[unit["arm"]]
+    ids_tr = ids[train_mask]
+    _persist_preds(arm_dir, cell_id, sweep, ids_tr, manifest_name="preds_pooled_v3_manifest.json")
+    test_sweep = {
+        "preds_frozen": preds_te,
+        "fitted_mask": np.ones(n_te, dtype=bool),
+        "folds": np.full(n_te, -1, dtype=np.int64),
+    }
+    _persist_preds(
+        arm_dir,
+        cell_id,
+        test_sweep,
+        ids[~train_mask],
+        tag="_test",
+        manifest_name="preds_pooled_v3_manifest.json",
+    )
+    cols = ("row_id", "text_source", "corpus", "conv_id", "prompt_sha", "cluster", "fold", "side")
+    _write_json(
+        arm_dir / f"rows_{cell_id}.json",
+        {
+            "metadata": _metadata(seed, n_tr + n_te),
+            "cell_id": cell_id,
+            "split_manifest_sha256": man_sha,
+            "note": (
+                "npz 'folds' are the fit core's bijective relabeling of the manifest folds; "
+                "this manifest carries the manifest-side fold ids"
+            ),
+            "columns": {k: [r[k] for r in rows] for k in cols},
+        },
+    )
+    if matched_n is not None and n_tr > matched_n:
+        rng = np.random.default_rng(matched_n_seed)
+        keep = np.sort(rng.choice(n_tr, size=matched_n, replace=False))
+        sub = persist_in_range
+        Xm, Ym = Xtr[keep][:, sub, :], Ytr[keep][:, sub, :]
+        gm = groups_tr[keep]
+        assert len(np.unique(gm)) == n_folds, "matched-n subsample lost a manifest fold"
+        sweep_m, edge_m, grid_m = _run_sweep_edge(
+            Xm,
+            Ym,
+            gm,
+            base_grid=lambda_grid,
+            sweep_kwargs=dict(
+                n_folds=n_folds,
+                seed=seed,
+                null_draws=null_draws,
+                frozen_layers=tuple(range(len(sub))),
+                collect_lambdas=True,
+            ),
+        )
+        pos2layer = {i: li for i, li in enumerate(sub)}
+        recal_m = _recal_block(sweep_m, Ym, tuple(range(len(sub))), qwen_cal)
+        recal_m["per_layer"] = {str(pos2layer[int(k)]): v for k, v in recal_m["per_layer"].items()}
+        if recal_m.get("s_recal_argmax_layer") is not None:
+            recal_m["s_recal_argmax_layer"] = pos2layer[int(recal_m["s_recal_argmax_layer"])]
+        _write_json(
+            out_dir / "cells_pooled_v3" / f"cells_matchedn_{cell_id}.json",
+            {
+                "metadata": _metadata(seed, matched_n),
+                "cell": {k: unit[k] for k in ("cell_id", "model", "arm")},
+                "x_slot": x_slot,
+                "matched_n": matched_n,
+                "subsample_seed": int(matched_n_seed),
+                "layers_fit": [int(li) for li in sub],
+                "r2_obs_by_layer": {
+                    str(pos2layer[i]): float(v) for i, v in enumerate(sweep_m["r2_obs"])
+                },
+                "recal": recal_m,
+                "lambda_audit": _lambda_audit(sweep_m, tuple(range(len(sub))), grid=grid_m),
+                "lambda_edge_rule": edge_m,
+                "n_folds": n_folds,
+                "null_draws": null_draws,
+            },
+        )
+        sweep_m_named = dict(sweep_m)
+        sweep_m_named["preds_frozen"] = {
+            pos2layer[i]: p for i, p in sweep_m["preds_frozen"].items()
+        }
+        _persist_preds(
+            arm_dir,
+            cell_id,
+            sweep_m_named,
+            ids_tr[keep],
+            tag="_matchedn",
+            manifest_name="preds_pooled_v3_manifest.json",
+        )
+    return payload
+
+
+def run_pooled_v3(args) -> int:
+    """Dispatch the pooled (checkpoint x arm) fit units (plan v15 Phase FIT_pool)."""
+    assert not args.v2, "--v3-pooled and --v2 are mutually exclusive"
+    assert args.cells, "--v3-pooled requires --cells (pooled unit ids | all | smoke)"
+    smoke = args.smoke
+    # v3 estimator defaults mirror the v2 branch (module-global patch style,
+    # issue825_fit_cells.py L78 convention; process-scoped, like main()'s v2 set).
+    fc.N_INNER_LAMBDA_FOLDS = cm.N_INNER_LAMBDA_FOLDS_V2
+    lambda_grid = np.asarray(cm.LAMBDAS_23, dtype=np.float64)
+    sfx = "_smoke" if smoke else ""
+    ts_dir = args.turnstore_dir or Path(f"data/issue_1336/turnstore_v2{sfx}")
+    off_root = args.offpolicy_root or Path("data/issue_1336")
+    preds_root = args.preds_dir or Path(f"data/issue_1336/preds_pooled_v3{sfx}")
+    man_path = args.split_manifest or (
+        ps.DATA_ROOT
+        / (ps.POOLED_OUT_SUBDIR_SMOKE if smoke else ps.POOLED_OUT_SUBDIR)
+        / "split_manifest.json"
+    )
+    man = _load_split_manifest(man_path)
+    corpora = tuple(cm.SMOKE_CORPORA_V2) if smoke else tuple(cm.V2_CORPORA)
+    if args.frozen_layers:
+        frozen = tuple(int(x) for x in args.frozen_layers.split(",") if x.strip())
+    else:
+        frozen = cm.SMOKE_FROZEN_LAYERS if smoke else cm.FROZEN_LAYERS
+    null_draws = (
+        args.null_draws
+        if args.null_draws is not None
+        else (cm.SMOKE_NULL_DRAWS if smoke else cm.N_NULL_DRAWS)
+    )
+    n_boot = (
+        args.n_boot if args.n_boot is not None else (cm.SMOKE_N_BOOT if smoke else cm.N_BOOTSTRAP)
+    )
+    if args.cells == "all":
+        units = _pooled_units_for()
+    elif args.cells == "smoke":
+        units = _pooled_smoke_units()
+    else:
+        by_id = {u["cell_id"]: u for u in _pooled_units_for()}
+        wanted = [c.strip() for c in args.cells.split(",") if c.strip()]
+        unknown = [c for c in wanted if c not in by_id]
+        assert not unknown, f"unknown pooled cell ids {unknown}; known: {sorted(by_id)}"
+        units = [by_id[c] for c in wanted]
+    matched = None
+    if args.matched_n:
+        # No v3 registry constant exists for the pooled matched-n companion —
+        # plan v15 §6 names n=15,000; the caller passes it explicitly.
+        assert args.matched_n_size is not None, (
+            "--v3-pooled --matched-n requires an explicit --matched-n-size "
+            "(plan v15 §6 pooled companion: 15000)"
+        )
+        matched = int(args.matched_n_size)
+    matched_seed = args.matched_n_seed if args.matched_n_seed is not None else cm.MATCHED_N_V2_SEED
+    qwen_cal = cm.load_qwen_recal_cal(args.out_dir)
+    for unit in units:
+        run_pooled_cell(
+            unit,
+            man,
+            man_path,
+            ts_dir,
+            off_root,
+            args.out_dir,
+            preds_root,
+            corpora=corpora,
+            frozen_layers=frozen,
+            n_folds=args.folds,
+            seed=args.seed,
+            null_draws=null_draws,
+            n_boot=n_boot,
+            matched_n=matched,
+            matched_n_seed=matched_seed,
+            expected_layers=None if smoke else cm.EXPECTED_LAYERS,
+            qwen_cal=qwen_cal,
+            x_slot=(args.x_slot or "context"),
+            lambda_grid=lambda_grid,
+            smoke=smoke,
+            wave1_dir=(args.wave1_turnstore_dir or ts_dir),
+            gen_root=(args.gen_root or (None if smoke else Path("data/issue_1336/gen"))),
+        )
+    return 0
+
+
+def run_g0v3(args) -> int:
+    """G0v3 — pooled-split reproducibility gate (plan v15 §6/§7).
+
+    Refits the round-3 RLVR x lmsys23k-chat cell UNDER THE POOLED SPLIT (the
+    manifest's lmsys23k train-side rows + their cluster-grouped folds, 23-pt
+    grid + edge rule) and asserts |R2_pooled_slice - R2_round3| <= 0.05 x
+    ex_v2 at the headline layer (argmax of the ROUND-3 cell's
+    r2_per_layer_obs over its frozen set). Under --smoke the production-
+    calibrated verdict is demoted to informational (the #1345
+    gate-calibration rule); the computation runs identically.
+    """
+    smoke = args.smoke
+    bars_path = args.out_dir / "gates_v2" / "v2_bars.json"
+    assert bars_path.exists(), (
+        f"{bars_path} missing — run the G0' v2 gate first (driver-enforced ordering)"
+    )
+    ex_v2 = float(json.loads(bars_path.read_text())["ex_v2"])
+    ref_id = cm.v2_cell_id("rlvr", "chat", "lmsys23k")
+    ref_path = args.out_dir / "cells_v2" / f"cells_{ref_id}.json"
+    assert ref_path.exists(), (
+        f"{ref_path} missing — G0v3 compares against the round-3 per-corpus cell; fit it "
+        "(or stage the committed copy) first"
+    )
+    ref = json.loads(ref_path.read_text())
+    r2_ref = np.asarray(ref["r2_per_layer_obs"], dtype=np.float64)
+    ref_frozen = [int(li) for li in ref.get("frozen_layers", cm.FROZEN_LAYERS) if li < len(r2_ref)]
+    assert ref_frozen and np.isfinite(r2_ref[ref_frozen]).any(), (
+        "round-3 cell has no finite frozen-layer R2"
+    )
+    head = int(ref_frozen[int(np.nanargmax(r2_ref[ref_frozen]))])
+    r2_r3 = float(r2_ref[head])
+    sfx = "_smoke" if smoke else ""
+    ts_dir = args.turnstore_dir or Path(f"data/issue_1336/turnstore_v2{sfx}")
+    man_path = args.split_manifest or (
+        ps.DATA_ROOT
+        / (ps.POOLED_OUT_SUBDIR_SMOKE if smoke else ps.POOLED_OUT_SUBDIR)
+        / "split_manifest.json"
+    )
+    man = _load_split_manifest(man_path)
+    entries = [e for e in man["row_index"] if e["corpus"] == "lmsys23k" and e["arm"] == "train"]
+    assert entries, "split manifest carries no lmsys23k train rows"
+    bundle = _pooled_bundle(
+        "rlvr",
+        "rlvr",
+        "lmsys23k",
+        ts_dir=ts_dir,
+        off_root=None,
+        smoke=smoke,
+        wave1_dir=(args.wave1_turnstore_dir or ts_dir),
+        gen_root=(args.gen_root or (None if smoke else Path("data/issue_1336/gen"))),
+    )
+    X, Y, _nll = _pooled_xy_from_bundle(
+        bundle, entries, None if smoke else cm.EXPECTED_LAYERS, "context"
+    )
+    groups = np.asarray([int(e["fold"]) for e in entries])
+    assert len(np.unique(groups)) == args.folds, "manifest folds != --folds"
+    saved = fc.N_INNER_LAMBDA_FOLDS
+    try:
+        fc.N_INNER_LAMBDA_FOLDS = cm.N_INNER_LAMBDA_FOLDS_V2
+        sweep, _edge, _grid = _run_sweep_edge(
+            X,
+            Y,
+            groups,
+            base_grid=np.asarray(cm.LAMBDAS_23, dtype=np.float64),
+            sweep_kwargs=dict(
+                n_folds=args.folds,
+                seed=args.seed,
+                null_draws=0,
+                collect_cosines=False,
+                frozen_layers=(),
+                collect_lambdas=True,
+            ),
+        )
+    finally:
+        fc.N_INNER_LAMBDA_FOLDS = saved
+    if head < len(sweep["r2_obs"]):
+        r2_pool = float(sweep["r2_obs"][head])
+    else:
+        # smoke fixture with fewer layers than the production ref — informational
+        r2_pool = float(np.nanmax(np.asarray(sweep["r2_obs"], dtype=np.float64)))
+    delta = abs(r2_pool - r2_r3)
+    tol = 0.05 * ex_v2
+    ok = bool(np.isfinite(delta) and delta <= tol)
+    enforced = not smoke
+    payload = {
+        "metadata": _metadata(args.seed, int(X.shape[0])),
+        "gate": "G0v3",
+        "cell": ref_id,
+        "headline_layer": head,
+        "r2_pooled_slice": r2_pool,
+        "r2_per_corpus_round3": r2_r3,
+        "abs_delta": float(delta),
+        "tolerance": float(tol),
+        "ex_v2": ex_v2,
+        "split_manifest": str(man_path),
+        "enforced": enforced,
+        "pass": ok,
+        "verdict": ("pass" if ok else "fail") + ("" if enforced else " (informational — smoke)"),
+    }
+    _write_json(args.out_dir / "gates_v3" / "g0v3.json", payload)
+    print(
+        f"[g0v3] pooled slice R2={r2_pool:.4f} vs round-3 {r2_r3:.4f} at L{head} "
+        f"(|delta|={delta:.4f} tol={tol:.4f}) -> {payload['verdict']}",
+        flush=True,
+    )
+    return 0 if (ok or not enforced) else 3
+
+
+def run_g1v3_check(out_dir: Path) -> int:
+    """G1' v3 — pooled rig-health kill gate (plan v15 §7).
+
+    KILL <=> BOTH the raw AND recalibrated best held-out R2 of the FIRST
+    pooled cell (RLVR on-policy) sit below bar_v2 (0.20 x ex_v2 — the same
+    exchange-rate bar as G1'v2; grounds: pooled n_train >> d, so the v8 GCV
+    pathology cannot arise). A NaN read never kills (fail-safe, mirroring
+    G1'v2).
+    """
+    bars_path = out_dir / "gates_v2" / "v2_bars.json"
+    assert bars_path.exists(), (
+        f"{bars_path} missing — run the G0' v2 gate first (driver-enforced ordering)"
+    )
+    bar = float(json.loads(bars_path.read_text())["bar_v2"])
+    cell_path = out_dir / "cells_pooled_v3" / "cells_pooled_rlvr_arm_on.json"
+    assert cell_path.exists(), (
+        f"{cell_path} missing — fit the first pooled cell (RLVR on-policy) before the check"
+    )
+    recal_best, raw_best = _g1_cell_reads(cell_path)
+
+    def below(v: float) -> bool:
+        return bool(np.isfinite(v) and v < bar)
+
+    kill = below(raw_best) and below(recal_best)
+    payload = {
+        "metadata": _metadata(cm.FIT_SEED, 0),
+        "gate": "G1v3",
+        "cell": "pooled_rlvr_arm_on",
+        "raw_best_r2": raw_best,
+        "recal_best_r2": recal_best,
+        "bar_v2": bar,
+        "verdict": "kill" if kill else "pass",
+        "kill": bool(kill),
+    }
+    _write_json(out_dir / "gates_v3" / "g1v3_gate.json", payload)
+    print(
+        f"[g1v3] raw={raw_best:.4f} recal={recal_best:.4f} bar_v2={bar:.4f} "
+        f"-> {payload['verdict']}",
+        flush=True,
+    )
+    return 3 if kill else 0
+
+
 def main() -> int:
     args = parse_args()
     if args.g0 or args.g0_probe_only:
@@ -1068,7 +1941,16 @@ def main() -> int:
         return run_g1_check(args.out_dir)
     if args.g1v2_check:
         return run_g1v2_check(args.out_dir)
-    assert args.cells, "--cells is required (or --g0 / --g0v2 / --g1-check / --g1v2-check)"
+    if args.g0v3:
+        return run_g0v3(args)
+    if args.g1v3_check:
+        return run_g1v3_check(args.out_dir)
+    if args.v3_pooled:
+        return run_pooled_v3(args)
+    assert args.cells, (
+        "--cells is required (or --g0 / --g0v2 / --g0v3 / --g1-check / --g1v2-check / "
+        "--g1v3-check / --v3-pooled)"
+    )
     smoke = args.smoke
     v2 = args.v2
     if v2:
