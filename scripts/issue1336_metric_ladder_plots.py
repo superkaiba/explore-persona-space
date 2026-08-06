@@ -822,11 +822,269 @@ def make_source_target_lines(
     return plotted
 
 
+def make_source_target_overlay(
+    tiers=("t0", "t6"),
+    scale="raw",
+    outname="metric_ladder_source_target_both_tiers",
+):
+    """Both tiers on ONE axis per corpus, so the tier-6 lift is read directly.
+
+    The single-tier panels put tier 0 and tier 6 in separate figures, which
+    makes the quantity the ladder is actually about — how much a learned
+    linear reparameterization of contexts recovers — a cross-figure eyeball.
+    Here each source stage is drawn TWICE in its OWN stage colour: tier 0
+    solid with a filled circle, tier 6 dashed with a hollow circle. Colour
+    therefore still means STAGE (one colour = one meaning, unchanged from the
+    single-tier panels) and LINESTYLE means TIER, so the vertical gap between
+    a stage's two lines IS its tier-6 lift at that target.
+
+    The self point and the identity+bias floor are tier-INVARIANT (a self map
+    needs no reparameterization; the baseline is a within-stage x->y read), so
+    each is drawn ONCE rather than duplicated per tier.
+    """
+    sources = [s for s, _ in STAGE_ORDER if any(split_pair(p)[0] == s for p, _ in PAIR_ORDER)]
+    cmap = matplotlib.colormaps["viridis"]
+    stage_color = {
+        s: cmap(v) for (s, _), v in zip(STAGE_ORDER, np.linspace(0.10, 0.70, len(STAGE_ORDER)))
+    }
+    # Tier -> (linestyle, marker fillstyle). Tier 0 is the plain measurement,
+    # so it gets the solid/filled treatment; tier 6 is the corrected read.
+    tier_style = {tiers[0]: ("-", True), tiers[1]: ("--", False)}
+
+    ncol = 4
+    nrow = (len(CORPUS_ORDER) + ncol - 1) // ncol
+    fig, axes = plt.subplots(
+        nrow, ncol, figsize=(15.0, 7.6), sharey=True, sharex=True, layout="none"
+    )
+    axes = np.atleast_1d(axes).ravel()
+
+    plotted = []
+    for k, (fmt, cp, clabel) in enumerate(CORPUS_ORDER):
+        ax = axes[k]
+        self_r2, idb_r2 = {}, {}
+        for p, _plabel in PAIR_ORDER:
+            _s, t = split_pair(p)
+            r = get_row(p, fmt, cp, scale)
+            if r is None:
+                raise RuntimeError(
+                    f"cell missing from {AGG_PATH}: pair={p} fmt={fmt} corpus={cp} scale={scale}"
+                )
+            idb = IDB.get(f"{p}|{fmt}|{cp}")
+            self_r2.setdefault(t, []).append(r["within_r2"])
+            if idb is not None:
+                idb_r2.setdefault(t, []).append(idb)
+
+        for src in sources:
+            diag = (STAGE_IDX[src], float(np.mean(self_r2[src]))) if src in self_r2 else None
+            for tier in tiers:
+                ls, filled = tier_style[tier]
+                pts = [
+                    (STAGE_IDX[split_pair(p)[1]], get_row(p, fmt, cp, scale)[f"{tier}_r2"])
+                    for p, _ in PAIR_ORDER
+                    if split_pair(p)[0] == src
+                ]
+                if not pts:
+                    continue
+                allpts = sorted(pts + ([diag] if diag else []))
+                ax.plot(
+                    [x for x, _ in allpts],
+                    [y for _, y in allpts],
+                    linestyle=ls,
+                    linewidth=1.4,
+                    color=stage_color[src],
+                    zorder=3,
+                )
+                ax.plot(
+                    [x for x, _ in sorted(pts)],
+                    [y for _, y in sorted(pts)],
+                    linestyle="none",
+                    marker="o",
+                    markersize=5.0,
+                    color=stage_color[src],
+                    markerfacecolor=stage_color[src] if filled else "white",
+                    markeredgewidth=1.0,
+                    label=f"{dict(STAGE_ORDER)[src]}|{tier}",
+                    zorder=4,
+                )
+
+        # Tier-invariant series, drawn once each.
+        for t, vals in self_r2.items():
+            ax.plot(
+                [STAGE_IDX[t]],
+                [float(np.mean(vals))],
+                linestyle="none",
+                marker="D",
+                markersize=6.0,
+                color=stage_color[t],
+                markeredgecolor="#333333",
+                markeredgewidth=0.7,
+                zorder=5,
+            )
+        if idb_r2:
+            sx = sorted(idb_r2)
+            ax.plot(
+                [STAGE_IDX[t] for t in sx],
+                [float(np.mean(idb_r2[t])) for t in sx],
+                linestyle=":",
+                linewidth=1.1,
+                marker="v",
+                markersize=5.0,
+                color="#8a8a8a",
+                markeredgewidth=0,
+                label="identity + bias baseline",
+                zorder=2,
+            )
+
+        ax.axhline(0, color="#888", linewidth=0.7, linestyle="--", zorder=0)
+        ax.set_yscale("symlog", linthresh=1.0, linscale=1.0)
+        ax.set_xticks(range(len(STAGE_ORDER)))
+        ax.set_xticklabels([lbl for _, lbl in STAGE_ORDER], rotation=30, ha="right")
+        ax.set_xlim(-0.5, len(STAGE_ORDER) - 0.5)
+        title = clabel + (" (n<d companion)" if cp == "gsm8k_test1319" and fmt == "chat" else "")
+        set_title_subtitle(ax, title)
+
+    for ax in axes[len(CORPUS_ORDER) :]:
+        ax.set_visible(False)
+
+    # Record every plotted point so the overlay reproduces from eval_results.
+    for tier in tiers:
+        for fmt, cp, clabel in CORPUS_ORDER:
+            for p, plabel in PAIR_ORDER:
+                s, t = split_pair(p)
+                r = get_row(p, fmt, cp, scale)
+                plotted.append(
+                    {
+                        "tier": tier,
+                        "scale": scale,
+                        "pair": p,
+                        "pair_label": plabel,
+                        "source": s,
+                        "target": t,
+                        "format": fmt,
+                        "corpus": cp,
+                        "corpus_label": clabel,
+                        "r2": r[f"{tier}_r2"],
+                        "within_r2": r["within_r2"],
+                        "identity_bias_r2": IDB.get(f"{p}|{fmt}|{cp}"),
+                        "n": r.get("n"),
+                    }
+                )
+
+    ylo, yhi = axes[0].get_ylim()
+    yticks = [v for v in (0.6, 0.4, 0.2, 0.0, -0.25, -0.5, -1, -2, -3, -4) if ylo <= v <= yhi]
+    for ax in axes[: len(CORPUS_ORDER)]:
+        ax.set_yticks(yticks)
+        ax.set_yticklabels([f"{v:g}" for v in yticks])
+        ax.minorticks_off()
+        ax.set_ylim(ylo, yhi)
+    scale_note = "raw pooled" if scale == "raw" else "per-dim recalibrated"
+    for r_i in range(nrow):
+        axes[r_i * ncol].set_ylabel(f"held-out R² ({scale_note})")
+
+    # Legend: stage colours (one entry per source, drawn from the tier-0 handle
+    # so the swatch is the filled marker) + a NEUTRAL-grey tier key for the
+    # linestyle + the two tier-invariant series.
+    handles, labels = axes[0].get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    uh, ul = [], []
+    for src in sources:
+        key = f"{dict(STAGE_ORDER)[src]}|{tiers[0]}"
+        if key in by_label:
+            uh.append(by_label[key])
+            ul.append(f"source: {dict(STAGE_ORDER)[src]}")
+    for tier in tiers:
+        ls, filled = tier_style[tier]
+        uh.append(
+            plt.Line2D(
+                [],
+                [],
+                linestyle=ls,
+                linewidth=1.4,
+                marker="o",
+                markersize=5.0,
+                color="#8a8a8a",
+                markerfacecolor="#8a8a8a" if filled else "white",
+                markeredgewidth=1.0,
+            )
+        )
+        ul.append("tier 0 (direct)" if tier == tiers[0] else "tier 6 (reparameterized)")
+    uh.append(
+        plt.Line2D(
+            [],
+            [],
+            linestyle="none",
+            marker="D",
+            markersize=6.0,
+            color="#d9d9d9",
+            markeredgecolor="#333333",
+            markeredgewidth=0.7,
+        )
+    )
+    ul.append("self (same in both tiers)")
+    if "identity + bias baseline" in by_label:
+        uh.append(by_label["identity + bias baseline"])
+        ul.append("identity + bias baseline")
+    fig.legend(
+        uh,
+        ul,
+        loc="center",
+        ncol=4,
+        fontsize=9,
+        frameon=False,
+        bbox_to_anchor=(0.5, 0.145),
+    )
+
+    idb_vals = [r["identity_bias_r2"] for r in plotted if r.get("identity_bias_r2") is not None]
+    plot_min = min([rec["r2"] for rec in plotted] + idb_vals)
+    y_note = (
+        f"y is symlog below -1 (worst plotted value {plot_min:.2f})"
+        if plot_min < -1
+        else "y is linear over the plotted range"
+    )
+    fig.text(
+        0.5,
+        0.018,
+        "Both tiers on one axis. Colour = SOURCE stage (unchanged from the single-tier panels); "
+        "LINESTYLE = tier — solid/filled = tier 0 (apply the source's map to the target's contexts "
+        f"unchanged), dashed/hollow = tier 6 (refit contexts through a learned linear map A first).\n"
+        "The vertical gap between a stage's two lines IS the tier-6 lift at that target, and it "
+        "is concentrated on the BASE-anchored transfers: across those 32 cells the range "
+        "collapses from [-4.56, 0.23] at tier 0 (20 of 32 negative) to [-0.19, 0.25] at tier 6 "
+        "(3 of 32 negative, all MATH), median lift +0.27.\nThe 24 adjacent-stage cells move far "
+        "less (median +0.02), but not uniformly: 8 of 24 shift by more than 0.05, the largest "
+        "being SFT→DPO on the math corpora (+0.41 MATH, +0.36 GSM8K test, +0.32 GSM8K train) — "
+        "visible as the one navy pair that separates.\n"
+        f"Layer 30, Llama-3.1-8B Tulu ladder; {y_note}. All arms are on-policy, so every point "
+        "mixes representation change with answer-distribution change.\nThe diamond at stage T is "
+        "the source=T, target=T cell and is IDENTICAL in both tiers (a self map needs no "
+        "reparameterization); grey triangles = identity+bias, also tier-invariant.\nOnly 7 of the "
+        "20 ordered stage pairs exist: SFT→RLVR, SFT→longer RLVR and RLVR→longer RLVR were never "
+        "run and nothing transfers INTO base, so the empty base column and the short lines are "
+        "missing data, not zeros.",
+        ha="center",
+        va="bottom",
+        fontsize=8,
+        color="#555555",
+    )
+    fig.subplots_adjust(left=0.065, right=0.99, top=0.93, bottom=0.345, wspace=0.07, hspace=0.42)
+    savefig_paper(fig, outname, dir=str(FIG_DIR), embed_data=True)
+    plt.close(fig)
+    return plotted
+
+
 def _main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "--only",
-        choices=["all", "hero", "delta", "tier-profile", "tier-grid", "source-target"],
+        choices=[
+            "all",
+            "hero",
+            "delta",
+            "tier-profile",
+            "tier-grid",
+            "source-target",
+            "source-target-overlay",
+        ],
         default="all",
         help="Render one figure family instead of the whole round-3 set.",
     )
@@ -885,6 +1143,28 @@ def _main(argv=None):
         }
         (out / "source_target_points.json").write_text(json.dumps(payload, indent=2) + "\n")
         print(f"wrote {out / 'source_target_points.json'} ({len(payload['points'])} points)")
+    if sel in ("all", "source-target-overlay"):
+        print("Generating source→target lines, BOTH tiers on one axis (raw)...")
+        st_both = make_source_target_overlay(
+            tiers=("t0", "t6"), scale="raw", outname="metric_ladder_source_target_both_tiers"
+        )
+        out = _REPO_ROOT / "eval_results" / "issue_1336" / "metric_ladder_source_target"
+        out.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "source_aggregate": str(AGG_PATH),
+            "layer": 30,
+            "tiers": {"t0": TIER_LABELS["t0"], "t6": TIER_LABELS["t6"]},
+            "ladder_order": [s for s, _ in STAGE_ORDER],
+            "overlay": True,
+            "points": st_both,
+        }
+        (out / "source_target_both_tiers_points.json").write_text(
+            json.dumps(payload, indent=2) + "\n"
+        )
+        print(
+            f"wrote {out / 'source_target_both_tiers_points.json'} "
+            f"({len(payload['points'])} points)"
+        )
     print("done.")
 
 
