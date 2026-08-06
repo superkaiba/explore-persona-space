@@ -1,0 +1,767 @@
+{
+  "commit": "cd55bf23",
+  "git_commit": "cd55bf23",
+  "git_dirty": false,
+  "created": "2026-08-06T14:54:36Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "mean F_beh (fraction of behavior swap)": 0.8518826733343303,
+      "error": 1.0858372489444443,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "matched query\ncontext-end L19, dose 4x,\nprefix-centroid",
+      "mean F_beh (fraction of behavior swap)": 0.006302754627540708,
+      "error": 0.13737898304825646,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "mean F_beh (fraction of behavior swap)": 0.05121107390150428,
+      "error": 0.11350220344611442,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.74,
+      "mean F_beh (fraction of behavior swap)": 2.394933976729711,
+      "error": 3.5759071911623073,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "cross\ncontext-end L19, dose 2x,\npair difference",
+      "mean F_beh (fraction of behavior swap)": 0.07699794322252274,
+      "error": 0.167225357502078,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.26,
+      "mean F_beh (fraction of behavior swap)": 0.1755223236978054,
+      "error": 0.18324062828469317,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.74,
+      "mean F_beh (fraction of behavior swap)": 0.11014254912734031,
+      "error": 0.22827200232073658,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "cross\ncontext-end L14, dose 4x,\npair difference",
+      "mean F_beh (fraction of behavior swap)": 0.22101151974250874,
+      "error": 0.2084827705596884,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.26,
+      "mean F_beh (fraction of behavior swap)": 0.04051088204141706,
+      "error": 0.106960634944456,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.74,
+      "mean F_beh (fraction of behavior swap)": 0.12076964428027472,
+      "error": 0.13524576977205774,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "matched query\ncontext-end L14, full-state\npatch",
+      "mean F_beh (fraction of behavior swap)": 0.20037836953997612,
+      "error": 0.17939701633527874,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 3.26,
+      "mean F_beh (fraction of behavior swap)": -0.023147404729388654,
+      "error": 0.25908504676102884,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.26,
+      "mean F_beh (fraction of behavior swap)": 0.8518826733343303,
+      "error": 1.0858372489444443,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "mean F_beh (fraction of behavior swap)": 0.006302754627540708,
+      "error": 0.13737898304825646,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 0.26,
+      "mean F_beh (fraction of behavior swap)": 0.05121107390150428,
+      "error": 0.11350220344611442,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 0.74,
+      "mean F_beh (fraction of behavior swap)": 2.394933976729711,
+      "error": 3.5759071911623073,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "mean F_beh (fraction of behavior swap)": 0.07699794322252274,
+      "error": 0.167225357502078,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 1.26,
+      "mean F_beh (fraction of behavior swap)": 0.1755223236978054,
+      "error": 0.18324062828469317,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 1.74,
+      "mean F_beh (fraction of behavior swap)": 0.11014254912734031,
+      "error": 0.22827200232073658,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "mean F_beh (fraction of behavior swap)": 0.22101151974250874,
+      "error": 0.2084827705596884,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "x": 2.26,
+      "mean F_beh (fraction of behavior swap)": 0.04051088204141706,
+      "error": 0.106960634944456,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "x": 2.74,
+      "mean F_beh (fraction of behavior swap)": 0.12076964428027472,
+      "error": 0.13524576977205774,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "mean F_beh (fraction of behavior swap)": 0.20037836953997612,
+      "error": 0.17939701633527874,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "x": 3.26,
+      "mean F_beh (fraction of behavior swap)": -0.023147404729388654,
+      "error": 0.25908504676102884,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "x": -0.05721002256034613,
+      "per-pair F_beh (well-separated pairs)": 0.4563719928264618,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.2227899774396539,
+      "per-pair F_beh (well-separated pairs)": 0.37026408314704895,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": -0.08390487467900526,
+      "per-pair F_beh (well-separated pairs)": -0.2717536985874176,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 0.19609512532099477,
+      "per-pair F_beh (well-separated pairs)": 0.39759036898612976,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": -0.04836757139931533,
+      "per-pair F_beh (well-separated pairs)": 0.018541410565376282,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.2316324286006847,
+      "per-pair F_beh (well-separated pairs)": -0.04326329007744789,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": -0.21904697338145454,
+      "per-pair F_beh (well-separated pairs)": -0.007109054829925299,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.060953026618545486,
+      "per-pair F_beh (well-separated pairs)": -0.1255924254655838,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": -0.2184736496150842,
+      "per-pair F_beh (well-separated pairs)": 0.09687124937772751,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.06152635038491584,
+      "per-pair F_beh (well-separated pairs)": 0.04271960258483887,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": -0.18309750387565912,
+      "per-pair F_beh (well-separated pairs)": -0.40909087657928467,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 0.0969024961243409,
+      "per-pair F_beh (well-separated pairs)": -0.15982399880886078,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": -0.18396410445377465,
+      "per-pair F_beh (well-separated pairs)": 0.0983922928571701,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.09603589554622538,
+      "per-pair F_beh (well-separated pairs)": 0.08681670576334,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": -0.08968398495057706,
+      "per-pair F_beh (well-separated pairs)": 0.010686985217034817,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 0.19031601504942297,
+      "per-pair F_beh (well-separated pairs)": -0.12671755254268646,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": -0.09823201867922968,
+      "per-pair F_beh (well-separated pairs)": 0.08016031235456467,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 0.18176798132077035,
+      "per-pair F_beh (well-separated pairs)": 0.08016031235456467,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": -0.07035228819517822,
+      "per-pair F_beh (well-separated pairs)": -0.010043066926300526,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 0.2096477118048218,
+      "per-pair F_beh (well-separated pairs)": -0.010043066926300526,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 0.8483301136292702,
+      "per-pair F_beh (well-separated pairs)": 0.3563295304775238,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 1.1283301136292703,
+      "per-pair F_beh (well-separated pairs)": -0.0026791668497025967,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 0.8687850259527139,
+      "per-pair F_beh (well-separated pairs)": -0.04915730655193329,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 1.1487850259527141,
+      "per-pair F_beh (well-separated pairs)": 0.021067416295409203,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 0.7696556895361446,
+      "per-pair F_beh (well-separated pairs)": 0.16930635273456573,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 1.0496556895361446,
+      "per-pair F_beh (well-separated pairs)": 0.006399883423000574,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.9556226786444497,
+      "per-pair F_beh (well-separated pairs)": 0.3889886438846588,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.2356226786444497,
+      "per-pair F_beh (well-separated pairs)": 0.44883301854133606,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 0.840144433680012,
+      "per-pair F_beh (well-separated pairs)": 0.0,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 1.1201444336800122,
+      "per-pair F_beh (well-separated pairs)": 0.027114974334836006,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 0.9236343219761667,
+      "per-pair F_beh (well-separated pairs)": -0.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 1.203634321976167,
+      "per-pair F_beh (well-separated pairs)": 0.9875259399414062,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 0.7973675006371452,
+      "per-pair F_beh (well-separated pairs)": -0.009221315383911133,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 1.0773675006371453,
+      "per-pair F_beh (well-separated pairs)": -0.009221315383911133,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 0.8955004945019504,
+      "per-pair F_beh (well-separated pairs)": -0.1378849297761917,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 1.1755004945019505,
+      "per-pair F_beh (well-separated pairs)": -0.17804554104804993,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 0.8035026501926359,
+      "per-pair F_beh (well-separated pairs)": 0.8222748637199402,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 1.0835026501926361,
+      "per-pair F_beh (well-separated pairs)": -0.1255924254655838,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.8578466822978689,
+      "per-pair F_beh (well-separated pairs)": -0.22205661237239838,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.137846682297869,
+      "per-pair F_beh (well-separated pairs)": 0.32935917377471924,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 0.9041282744462188,
+      "per-pair F_beh (well-separated pairs)": -0.30534347891807556,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 1.184128274446219,
+      "per-pair F_beh (well-separated pairs)": 0.010686985217034817,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 0.9374411569621054,
+      "per-pair F_beh (well-separated pairs)": -0.08926042914390564,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 1.2174411569621055,
+      "per-pair F_beh (well-separated pairs)": 0.5908189415931702,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 1.8664009444025753,
+      "per-pair F_beh (well-separated pairs)": 0.3991962671279907,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 2.1464009444025756,
+      "per-pair F_beh (well-separated pairs)": -0.0026791668497025967,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 1.830443625326493,
+      "per-pair F_beh (well-separated pairs)": -0.4002809226512909,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 2.1104436253264933,
+      "per-pair F_beh (well-separated pairs)": -0.04915730655193329,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "x": 1.8807459242599736,
+      "per-pair F_beh (well-separated pairs)": 0.4427564740180969,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "x": 2.160745924259974,
+      "per-pair F_beh (well-separated pairs)": -0.005236281082034111,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "x": 1.8153190750313712,
+      "per-pair F_beh (well-separated pairs)": 0.44883301854133606,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "x": 2.0953190750313717,
+      "per-pair F_beh (well-separated pairs)": 0.44883301854133606,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "x": 1.8552086443412539,
+      "per-pair F_beh (well-separated pairs)": 0.3633405566215515,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": 2.135208644341254,
+      "per-pair F_beh (well-separated pairs)": 0.0,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": 1.7667046430961704,
+      "per-pair F_beh (well-separated pairs)": -0.0,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": 2.0467046430961706,
+      "per-pair F_beh (well-separated pairs)": -0.0,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 1.7721537724064769,
+      "per-pair F_beh (well-separated pairs)": 0.6567623019218445,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 2.052153772406477,
+      "per-pair F_beh (well-separated pairs)": 0.042008206248283386,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.8498626215758451,
+      "per-pair F_beh (well-separated pairs)": 0.39759036898612976,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 2.1298626215758456,
+      "per-pair F_beh (well-separated pairs)": 0.129852756857872,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 1.9410233694822878,
+      "per-pair F_beh (well-separated pairs)": 0.8222748637199402,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 2.221023369482288,
+      "per-pair F_beh (well-separated pairs)": -0.1255924254655838,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 1.7760273304934266,
+      "per-pair F_beh (well-separated pairs)": -0.11773471534252167,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 2.056027330493427,
+      "per-pair F_beh (well-separated pairs)": 0.32935917377471924,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 1.8469932918529792,
+      "per-pair F_beh (well-separated pairs)": -0.30534347891807556,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 2.1269932918529793,
+      "per-pair F_beh (well-separated pairs)": -0.30534347891807556,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 1.8502045109190408,
+      "per-pair F_beh (well-separated pairs)": -0.055256497114896774,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 2.130204510919041,
+      "per-pair F_beh (well-separated pairs)": 0.024086087942123413,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 2.842497793855385,
+      "per-pair F_beh (well-separated pairs)": 0.37026408314704895,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 3.122497793855385,
+      "per-pair F_beh (well-separated pairs)": -0.002870261436328292,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 2.7536976679025145,
+      "per-pair F_beh (well-separated pairs)": 0.39759036898612976,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 3.0336976679025147,
+      "per-pair F_beh (well-separated pairs)": 0.03614451363682747,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 2.9237417756936463,
+      "per-pair F_beh (well-separated pairs)": -0.04326329007744789,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "x": 3.2037417756936466,
+      "per-pair F_beh (well-separated pairs)": -1.2175525426864624,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "x": 2.812633931181812,
+      "per-pair F_beh (well-separated pairs)": 0.7037914395332336,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "x": 3.0926339311818123,
+      "per-pair F_beh (well-separated pairs)": 0.3127962052822113,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "x": 2.9374596026027016,
+      "per-pair F_beh (well-separated pairs)": 0.3856799006462097,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "x": 3.217459602602702,
+      "per-pair F_beh (well-separated pairs)": 0.02466907911002636,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "x": 2.8493376063057987,
+      "per-pair F_beh (well-separated pairs)": 0.4706744849681854,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "x": 3.129337606305799,
+      "per-pair F_beh (well-separated pairs)": 0.32404693961143494,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "x": 2.867858979252752,
+      "per-pair F_beh (well-separated pairs)": 0.0,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "x": 3.147858979252752,
+      "per-pair F_beh (well-separated pairs)": 0.0,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "x": 2.781504993477764,
+      "per-pair F_beh (well-separated pairs)": -0.30534347891807556,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "x": 3.0615049934777643,
+      "per-pair F_beh (well-separated pairs)": 0.3816794157028198,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "x": 2.8153823185877758,
+      "per-pair F_beh (well-separated pairs)": 0.0,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "x": 3.095382318587776,
+      "per-pair F_beh (well-separated pairs)": 0.0,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "x": 2.9132666658383313,
+      "per-pair F_beh (well-separated pairs)": 0.024390187114477158,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "x": 3.1932666658383315,
+      "per-pair F_beh (well-separated pairs)": -0.09038739651441574,
+      "_kind": "scatter",
+      "_group": 111
+    }
+  ],
+  "n_series": 112,
+  "total_points": 112,
+  "text": {
+    "suptitle": "F_beh at the four largest stage-1 cells collapses on pairs whose anchors actually separate (|ceiling-floor| >= 0.5)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "cell means: all pairs vs well-separated pairs",
+        "ylabel": "mean F_beh (fraction of behavior swap)",
+        "legend_labels": [
+          "all pairs (steered)",
+          "well-separated pairs (steered)",
+          "well-separated pairs (shuffled-donor null)"
+        ],
+        "xticklabels": [
+          "matched query\ncontext-end L19, dose 4x,\nprefix-centroid",
+          "cross\ncontext-end L19, dose 2x,\npair difference",
+          "cross\ncontext-end L14, dose 4x,\npair difference",
+          "matched query\ncontext-end L14, full-state\npatch"
+        ],
+        "yticklabels": [
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      {
+        "title_left": "per-pair view: steered (left dot) vs null (right dot)",
+        "ylabel": "per-pair F_beh (well-separated pairs)",
+        "xticklabels": [
+          "matched query\ncontext-end L19, dose 4x,\nprefix-centroid",
+          "cross\ncontext-end L19, dose 2x,\npair difference",
+          "cross\ncontext-end L14, dose 4x,\npair difference",
+          "matched query\ncontext-end L14, full-state\npatch"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      }
+    ],
+    "series": [
+      "all pairs (steered)",
+      "well-separated pairs (steered)",
+      "well-separated pairs (shuffled-donor null)"
+    ]
+  }
+}
