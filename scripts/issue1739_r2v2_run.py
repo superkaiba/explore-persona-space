@@ -43,7 +43,11 @@ _REPO_ROOT = _ensure_repo_root_on_syspath()
 BEHAVIOR_ORDER = ("evil", "sycophancy", "hallucination")
 HF_OUT_PREFIX = "issue1739_r2v2_fits"
 OUT_ROOT = Path("eval_results/issue_1739/r2v2_fits")
+FACT_HF_OUT_PREFIX = "issue1739_r2v2_factorial"
+FACT_OUT_ROOT = Path("eval_results/issue_1739/r2v2_factorial")
 CTXMAP_PREFIX = "issue1739_ctxmap"
+BANK_PREFIX = f"{CTXMAP_PREFIX}/rb_fc_bank"
+HALLU_PR_FILE = f"{CTXMAP_PREFIX}/judge/hallucination/labeling_per_rollout.json"
 # HF prefixes staged per behavior (verbatim mirrors under --ood-mirror-root).
 OOD_STAGE_PREFIXES = {
     "evil": (f"{CTXMAP_PREFIX}/evil_ood_full/store",),
@@ -108,6 +112,78 @@ def stage_ood(args, behavior: str, token: str) -> None:
         )
 
 
+def stage_factorial_inputs(args, behavior: str, token: str) -> None:
+    """Factorial-leg extras: banked fc directions + the hallucination
+    per-rollout DV + the E1 extraction store FORCED (e1_fc reads the store's
+    context_end shards even when the r_b_e1 bank makes the base leg skip it)."""
+    from explore_persona_space.orchestrate import hub
+    from scripts.issue1739_wcrung_arms_run import stage_extraction
+
+    files = hub.stage_hub_prefix(
+        hub.DEFAULT_DATASET_REPO,
+        BANK_PREFIX,
+        args.ood_mirror_root,
+        repo_type="dataset",
+        token=token or None,
+        max_workers=4,
+    )
+    _log(f"[phase=stage_factorial {behavior}] rb_fc_bank: {len(files)} files")
+    if behavior == "hallucination":
+        dest = args.ood_mirror_root / HALLU_PR_FILE
+        if not dest.exists():
+            hub.stage_hub_file(
+                hub.DEFAULT_DATASET_REPO,
+                HALLU_PR_FILE,
+                dest,
+                repo_type="dataset",
+                token=token,
+            )
+        _log(f"[phase=stage_factorial {behavior}] per-rollout DV -> {dest}")
+    ns = argparse.Namespace(
+        store_root=args.store_root,
+        tensors_root=args.tensors_root,
+        revision=args.revision,
+        stage_workers=args.stage_workers,
+    )
+    stage_extraction(behavior, ns, token, force=True)
+
+
+def factorial_cmd(args, behavior: str) -> list[str]:
+    cmd = [
+        sys.executable,
+        str(_REPO_ROOT / "scripts" / "issue1739_r2v2_factorial.py"),
+        "--behaviors",
+        behavior,
+        "--variant",
+        "context_end",
+        "--protocols",
+        args.protocols,
+        "--store-root",
+        str(args.store_root),
+        "--main-root",
+        str(args.main_root),
+        "--tensors-root",
+        str(args.tensors_root),
+        "--out-root",
+        str(OUT_ROOT),
+        "--fact-out-root",
+        str(FACT_OUT_ROOT),
+        "--rb-bank-dir",
+        str(args.ood_mirror_root / BANK_PREFIX),
+        "--ood-store-root",
+        str(args.ood_mirror_root / CTXMAP_PREFIX),
+        "--device",
+        args.device,
+        "--ood-dv-max-null-frac",
+        str(args.ood_dv_max_null_frac),
+    ]
+    if behavior == "hallucination":
+        cmd += ["--hallu-per-rollout-dv", str(args.ood_mirror_root / HALLU_PR_FILE)]
+    if args.pb_holdouts:
+        cmd += ["--pb-holdouts", *args.pb_holdouts]
+    return cmd
+
+
 def score_cmd(args, behavior: str) -> list[str]:
     cmd = [
         sys.executable,
@@ -138,20 +214,23 @@ def score_cmd(args, behavior: str) -> list[str]:
     return cmd
 
 
-def upload_behavior(args, behavior: str) -> str:
+def upload_behavior(args, behavior: str, leg: str = "fits") -> str:
     from explore_persona_space.orchestrate import hub
 
-    local = OUT_ROOT / behavior
+    out_root, prefix = (
+        (OUT_ROOT, HF_OUT_PREFIX) if leg == "fits" else (FACT_OUT_ROOT, FACT_HF_OUT_PREFIX)
+    )
+    local = out_root / behavior
     if not local.exists():
         raise FileNotFoundError(f"nothing to upload: {local} absent")
     url = hub._upload(
         local,
         hub.DEFAULT_DATASET_REPO,
         "dataset",
-        f"{HF_OUT_PREFIX}/{behavior}",
+        f"{prefix}/{behavior}",
         raise_on_error=True,
     )
-    _log(f"[phase=upload {behavior}] -> {HF_OUT_PREFIX}/{behavior} ({url})")
+    _log(f"[phase=upload {behavior} leg={leg}] -> {prefix}/{behavior} ({url})")
     return url
 
 
@@ -187,6 +266,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="mirror root for OOD prefixes (default: <store-root>/ood_mirror)",
     )
     ap.add_argument("--ood-dv-max-null-frac", type=float, default=0.05)
+    ap.add_argument(
+        "--legs",
+        nargs="+",
+        default=["fits"],
+        choices=["fits", "factorial"],
+        help="which scoring legs to run per behavior (in the given order)",
+    )
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--revision", default="main")
     ap.add_argument("--stage-workers", type=int, default=12)
@@ -208,12 +294,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     if args.import_check:
+        import inspect
+
         from explore_persona_space.orchestrate import hub  # noqa: F401
         from explore_persona_space.orchestrate.env import load_dotenv  # noqa: F401
         from scripts.issue1739_jobd_r2aug_run import stage_inputs  # noqa: F401
         from scripts.issue1739_pvsynth_arms_run import stage_shared  # noqa: F401
+        from scripts.issue1739_r2v2_factorial import parse_args as _fact_parse_args
+        from scripts.issue1739_wcrung_arms_run import stage_extraction
 
         assert callable(hub.stage_hub_prefix)
+        assert callable(hub.stage_hub_file)
+        assert "force" in inspect.signature(stage_extraction).parameters
+        # bind the factorial argv this driver composes (arity/keyword pin)
+        _fact_parse_args(factorial_cmd(args, "hallucination")[2:])
         _log("import-check OK")
         sys.stdout.flush()
         sys.stderr.flush()
@@ -236,26 +330,37 @@ def main(argv: list[str] | None = None) -> None:
         _log(f"=== {behavior}: stage -> score -> upload -> reap ===")
         stage_inputs(_jobd_ns(args, behavior), token)
         stage_ood(args, behavior, token)
+        if "factorial" in args.legs:
+            stage_factorial_inputs(args, behavior, token)
         if args.stage_only:
             _log(f"[phase=stage_only {behavior}] staging complete, skipping score")
             results[behavior] = {"score_rc": None, "staged_only": True}
             continue
-        cmd = score_cmd(args, behavior)
-        _log(f"[phase=score {behavior}] {' '.join(cmd[1:])}")
-        proc = subprocess.run(cmd, cwd=str(_REPO_ROOT), check=False, env={**os.environ})
-        _log(f"[phase=score {behavior}] rc={proc.returncode} in {time.time() - t_b:.0f}s")
-        url = None
-        if proc.returncode == 0 and not args.skip_upload:
-            url = upload_behavior(args, behavior)
-        if proc.returncode == 0 and not args.no_reap:
+        leg_results: dict[str, dict] = {}
+        for leg in args.legs:
+            cmd = score_cmd(args, behavior) if leg == "fits" else factorial_cmd(args, behavior)
+            _log(f"[phase=score {behavior} leg={leg}] {' '.join(cmd[1:])}")
+            proc = subprocess.run(cmd, cwd=str(_REPO_ROOT), check=False, env={**os.environ})
+            _log(f"[phase=score {behavior} leg={leg}] rc={proc.returncode}")
+            url = None
+            if proc.returncode == 0 and not args.skip_upload:
+                url = upload_behavior(args, behavior, leg)
+            leg_results[leg] = {
+                "rc": proc.returncode,
+                "uploaded": bool(url),
+                "upload_url": url,
+            }
+            if proc.returncode != 0:
+                break  # a failed leg never gates a later leg's inputs silently
+        rc_b = max(r["rc"] for r in leg_results.values())
+        if rc_b == 0 and not args.no_reap:
             reap_labeling_slice(args, behavior)
         results[behavior] = {
-            "score_rc": proc.returncode,
-            "uploaded": bool(url),
-            "upload_url": url,
+            "score_rc": rc_b,
+            "legs": leg_results,
             "wall_s": round(time.time() - t_b, 1),
         }
-        overall_rc = overall_rc or proc.returncode
+        overall_rc = overall_rc or rc_b
         sentinel = {
             "leg": "r2v2_fits",
             "behavior": behavior,

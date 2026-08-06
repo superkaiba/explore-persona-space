@@ -504,6 +504,23 @@ def run_factorial_behavior(args, behavior: str, layers: list[int]) -> dict:
                 f"max per-layer norm {max_norm:.3e} — weight-cancellation bug"
             )
 
+    # ---- parity gate vs banked directions (BEFORE any scoring) --------------
+    # a re-extraction that fails to reproduce the banked P-A/full-pool
+    # direction is a pipeline BUG — stop here, never proceed to P-B numbers.
+    parity = [] if args.skip_parity else parity_vs_bank(args, behavior, dirs_raw, layers)
+    matches_by_regime: dict[str, list[bool]] = {}
+    for row in parity:
+        if "match" in row:
+            matches_by_regime.setdefault(str(row["regime"]), []).append(bool(row["match"]))
+    for regime, matches in matches_by_regime.items():
+        if not any(matches):
+            raise RuntimeError(
+                f"[{behavior}] parity FAILED for {regime}: no re-extraction pool matches "
+                f"the banked direction (rows: {[r for r in parity if r.get('regime') == regime]})"
+                " — pipeline bug, refusing to score"
+            )
+    _log(f"[{behavior}] parity vs bank: {parity or 'skipped'}")
+
     # ---- whiten + score the 15 cells ----------------------------------------
     wh, mapfit = prep.wh, prep.mapfit
     frozen3 = {a: prep.frozen[a] for a in RB_ARMS if a in prep.frozen}
@@ -660,9 +677,6 @@ def run_factorial_behavior(args, behavior: str, layers: list[int]) -> dict:
         args, behavior, prep, dirs_raw, pools, layers, holdouts if "B" in args.protocols else []
     )
 
-    # ---- parity vs banked fc directions -------------------------------------
-    parity = [] if args.skip_parity else parity_vs_bank(args, behavior, dirs_raw, layers)
-
     # ---- per-rung DV spread stats (gate visibility) --------------------------
     rung_dv_stats = {}
     rungs_arr = np.asarray(
@@ -685,6 +699,9 @@ def run_factorial_behavior(args, behavior: str, layers: list[int]) -> dict:
         "rows": rows_all,
         "skips": skips_all,
         "per_layer": per_layer_all,
+        # raw-space directions persisted for VM-side re-comparison / reuse
+        # (the bank npz are gitignored, so a pod-side parity gap is recoverable)
+        "directions": {f"{r}|{p}": np.asarray(v) for (r, p), v in dirs_raw.items()},
         "direction_comparison": comparison,
         "parity_vs_bank": parity,
         "qualifying_counts": qual_counts,
@@ -962,6 +979,13 @@ def main(argv: list[str] | None = None) -> int:
                 },
                 indent=1,
             )
+        )
+        import numpy as np
+
+        np.savez(
+            out_dir / "directions_fp16.npz",
+            **{k: v.astype(np.float16) for k, v in res["directions"].items()},
+            layers=np.asarray(layers),
         )
         _log(f"[{behavior}] factorial leg done in {res['wall_s']}s -> {out_dir}")
     return 0
