@@ -1,50 +1,11 @@
 ---
 name: codex-clean-result-critic
 description: >
-  Codex (OpenAI gpt-5.5) twin of `clean-result-critic`. Spawned in parallel
-  with the Claude critic during /issue Step 9a-bis on **EVERY round up to the per-reviewer cap (5)**
-  — the final adversarial gate before status:awaiting_promotion. Scores the
-  markdown clean-result body against the four-flat-H2 (v4) spec
-  (.claude/skills/clean-results/SPEC.md; sentinel
-  `<!-- clean-result-v4 -->`, migrated 2026-W26) across fifteen lenses
-  (title; v4 structure — `## Takeaways` 3-6 bullets + `## Goal` two slots +
-  `## Methodology` slots incl the complete hyperparameter table +
-  `## Results` one `### <result>` per result in the three-beat;
-  figure + three-beat (what-is-plotted → plot → interpretation); Takeaways
-  quality — register + cross-round synthesis currency; footer
-  (`**Repro:**` + `**Context:**`), confidence in H1 title tag only; voice
-  — research-paper register (Methodology + Results compact prose,
-  Takeaways bullets) incl. byte-identical ban; statistical-framing;
-  mentor-facing title;
-  one-result-one-figure per `### <result>`; Goal + Methodology
-  completeness — capsule trio + subset disclosure + link liveness + the
-  complete hyperparameter table + self-contained methodology (reused
-  artifacts' recipes inlined, no `reused from #X` deferral); underlying
-  data alongside every aggregate
-  (low-level per-unit data plot behind each aggregate stat + raw alongside
-  processed); conciseness — word caps + bullets-over-prose;
-  planned-vs-actual coverage; binding-concerns audit; headline must not
-  rest on a contaminated / failed-data-gate arm). v3/v2/legacy bodies keep
-  their grandfathered shape and are never newly hard-FAILed by a v4
-  rule (substitute the v3 section names for a v3 body). Branches on `paper:`
-  frontmatter exactly as the Claude critic does: for a `paper: true` task
-  the clean-result is a LaTeX research paper at `docs/papers/issue_<N>/` —
-  the composed Codex prompt inlines the seven PAPER lenses (P1-P7, incl.
-  P7 verbatim examples + judge prompts) +
-  the composer-run `verify_paper.py` output envelope INSTEAD of the fifteen
-  markdown
-  lenses, and Codex reads the paper `.tex` + figure PNGs + compiled PDF. No
-  `\metric` grounding lens in v1. The fifteen markdown lenses are composed
-  for non-paper tasks only. Thin Claude
-  prompt-composer: runs the mechanical verifiers at compose time and
-  inlines their output as envelopes (#1050 — this twin is dispatched
-  read-only; uv cannot reliably execute in its sandbox), composes
-  prompt → returns its path; the orchestrator dispatches Codex's
-  `companion task` runtime and posts an
-  `epm:clean-result-critique-codex` event. The wrapper NEVER dispatches
-  Codex itself — that's the orphan-job anti-pattern (incident task
-  #533, 2026-06-10). Spawned on every round since 2026-06-12
-  (previously round-1-only with rounds 2-3 Claude-alone).
+  Codex (gpt-5.5) twin of clean-result-critic, spawned in parallel every
+  round. Thin prompt-composer: runs the verifiers at compose time, inlines the
+  shared lens reference + SPEC (or the P1-P7 paper lenses), writes the prompt
+  to a temp file and returns its path. The orchestrator dispatches Codex —
+  never this wrapper (#533).
 effort: xhigh
 tools: Bash
 memory: project
