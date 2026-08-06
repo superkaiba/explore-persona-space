@@ -257,11 +257,13 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     forced-BATCH production wave) is a separately-filed sibling task — do
     NOT read a rule-26 PASS as protection against api-refusal censoring.
     The residual backstops that DO fire: a censored arm's shrunken
-    `n_scored` (the pilot's own effective-draws floor does NOT shrink —
-    api-refusal draws leave its denominator — but a downstream consumer's
-    scored-count floor can trip), the reduce's WARNING on any non-zero
-    count, and the `n_api_refusal` field now carried per arm in the pilot
-    report.
+    `n_answered` / `n_scored` — api-refusal draws leave the `n_answered`
+    parse-fail denominator, so a downstream consumer's scored-count floor
+    can trip, while the gate's OWN effective-draws floor
+    (`min_effective_draws_per_arm`, evaluated against
+    `n_draws - n_transport_lost`) does NOT shrink: api-refusal draws stay
+    inside it — the reduce's WARNING on any non-zero count, and the
+    `n_api_refusal` field now carried per arm in the pilot report.
 
 10. **Pin nuisance formatting identical across conditions.** Response length,
     markdown, system-prompt boilerplate, and the presence/absence of a
