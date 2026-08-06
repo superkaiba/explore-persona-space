@@ -19,6 +19,58 @@ A=conversation_paired_stories_assistant
 
 echo "[phase=capture_prod] driver start $(date -u +%FT%TZ)"
 
+# Stage the inserted-condition inputs from HF (Phase B ran on the VM — the
+# cross-machine seam, #1482 class: the pod clone carries no data/). The
+# spliced files are model-INDEPENDENT (deterministic splice, no --model
+# axis), so the shared issue2054_lattice/spliced_inserted/ prefix is
+# canonical. Idempotent: existing non-empty targets skip. Own log so no
+# child token can reach this dispatcher's main log.
+echo "[phase=capture_prod stage=stage_inserted] start $(date -u +%FT%TZ)"
+uv run python - > "$LOG_DIR/issue-2054-cap-stage-inserted.log" 2>&1 <<'PYEOF'
+from pathlib import Path
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+from huggingface_hub import HfApi
+
+from explore_persona_space.orchestrate.hub import (
+    list_hf_files_under_path,
+    retry_transient,
+    stage_hub_file,
+)
+
+REPO = "superkaiba1/explore-persona-space-data"
+PREFIX = "issue2054_lattice/spliced_inserted"
+DEST = Path("data/issue_2054/spliced_inserted")
+
+api = HfApi()
+files = retry_transient(
+    lambda: list_hf_files_under_path(api, REPO, PREFIX, repo_type="dataset"),
+    what=f"list({PREFIX})",
+)
+if not files:
+    raise RuntimeError(f"no files under {PREFIX} — cannot stage inserted inputs")
+n_staged = 0
+for f in sorted(files):
+    rel = f[len(PREFIX) + 1 :]
+    target = DEST / rel
+    if target.is_file() and target.stat().st_size > 0:
+        print(f"[stage] skip existing {rel}", flush=True)
+        continue
+    stage_hub_file(REPO, f, target, repo_type="dataset")
+    n_staged += 1
+    print(f"[stage] staged {rel}", flush=True)
+print(f"[stage] spliced_inserted staged: {n_staged} new / {len(files)} total", flush=True)
+PYEOF
+rc=$?
+echo "[phase=capture_prod stage=stage_inserted] rc=${rc} $(date -u +%FT%TZ)"
+if [ "$rc" -ne 0 ]; then
+  echo "[phase=capture_prod] HALT stage_inserted rc=${rc} (tail follows)"
+  tail -20 "$LOG_DIR/issue-2054-cap-stage-inserted.log" || true
+  exit "$rc"
+fi
+
 for MODEL in qwen2.5-7b-instruct qwen2.5-7b; do
   for COND in inserted on_policy; do
     for FORM in attrib_quoted bare_label; do
