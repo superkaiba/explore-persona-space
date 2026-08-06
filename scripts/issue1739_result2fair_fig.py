@@ -625,7 +625,7 @@ def render(recs: list[dict]) -> int:
         frameon=False,
         fontsize=8.0,
         borderpad=0.0,
-        bbox_to_anchor=(0.0, 0.30),
+        bbox_to_anchor=(handles_x, 1.0),
         bbox_transform=legend_ax.transAxes,
     )
     marks.get_title().set_fontsize(8.4)
