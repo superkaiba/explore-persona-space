@@ -28,7 +28,7 @@ relates_to:
 
 - Five-draw-averaged answer targets lift held-out variance explained by 0.059 to 0.101 over one greedy answer, but 0.050 to 0.095 of that comes from averaging the target, not the map.
 - Normalizing each judged score by its own noise ceiling shrinks the averaging advantage to 0.03-0.05 on sycophancy prompts and nominally reverses it on harmful-compliance training prompts: mostly measurement noise.
-- Greedy matches or beats a typical sample's closeness to the five-sample mean in six of eight trait rungs (+0.0024 to +0.0069); one rung ties, and one falls credibly below zero.
+- Greedy beats a typical sample's closeness to the five-sample mean in six of eight trait rungs (+0.0024 to +0.0069); one rung ties, and one falls credibly below zero.
 - Answer variability is behavior-specific, not length-driven: median dispersion runs 0.011 on sycophancy prompts to 0.049 on harmful-compliance training prompts, with everyday prompts at 0.018.
 - Middling sycophancy prompts give middling samples (68-81%); harmful-compliance training prompts are statistically indistinguishable from the polarization boundary; its transfer rungs sit 92% and 70% at the floor, everyday harmful-compliance 98%.
 - Scope: one model, one read-out layer; capture residual near 1e-4 matches the one negative gap; 19.5% of everyday answers hit the token cap; reused sampled rollouts carry 3-9% off-language drift.
@@ -173,7 +173,7 @@ Sycophancy prompts are the most reproducible (median 0.011) and harmful-complian
 
 Length runs the other way — sycophancy answers are longest at 423 median words, short-fact shortest at 52 — so this is no length artifact. Nor is it off-language drift: everyday prompts carry the highest sample drift rate yet near-lowest dispersion. How well one greedy answer stands in for the distribution is a property of the prompt family.
 
-### Greedy stays at least as central as a typical sample in six of eight trait rungs
+### Greedy is more central than a typical sample in six of eight trait rungs
 
 Left: the paired per-prompt centrality gap (greedy's closeness to leave-one-out references minus a held-out sample's), median per family, coloured by whether the interval clears zero. Right: the per-prompt distribution.
 
@@ -219,11 +219,11 @@ Left: how much score variance the two moderators — answer dispersion and behav
 
 Both jointly explain under 0.05 of score variance in every plotted cell, and in 27 of 40 overall. On the plotted cells, dispersion's unique share is near zero for supervised and predicted-answer arms (median 0.0004) and larger only for label-free projection arms (median 0.006).
 
-Nineteen of 25 per-arm contrasts cover zero; the six that do not favour behavioral spread. Three of those six sit on the everyday-hallucination family (439 prompts), where the parser gap censored 26% of judge draws — censoring correlated with judge-confusing content is an unexcluded alternative there. The excluded harmful-compliance cells — both transfer rungs and the everyday rung — reach 0.24-0.46, but on only 9 to 27 prompts: too small to trust, so sampling variability is still not a usable failure flag.
+Nineteen of 25 per-arm contrasts cover zero; the remaining six favour behavioral spread. Three of those six sit on the everyday-hallucination family (439 prompts), where the parser gap censored 26% of judge draws — censoring correlated with judge-confusing content is an unexcluded alternative there. The excluded harmful-compliance cells — both transfer rungs and the everyday rung — reach 0.24-0.46, but on only 9 to 27 prompts: too small to trust, so sampling variability is still not a usable failure flag.
 
 ### Middling sycophancy prompts give middling samples; harmful compliance sits at the boundary
 
-The first panel gives, per behavior and family, how far a middling prompt's samples are themselves middling relative to an even split; the second plots per-prompt spread against mean.
+The first panel gives, per behavior and family, the share of a middling prompt's samples that are themselves middling, against an even split; the second plots per-prompt spread against mean.
 
 ![Middling-sample share per family beside the per-prompt spread cloud](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4fcb3802c09dfdf45e586f98a5029f100f4a98a7/figures/issue_2091/polarization_and_percontext_cloud.png)
 
@@ -231,7 +231,7 @@ The first panel gives, per behavior and family, how far a middling prompt's samp
 
 Sycophancy is clearly unpolarized: 68% of a middling everyday prompt's samples are middling, rising to 78-81% on its own rungs; everyday hallucination behaves the same (63%).
 
-Harmful-compliance training prompts land at the even split (middling share 0.498, polarization statistic −0.002, interval straddling zero), so the plan's criterion of a share under 0.40 with the interval below zero neither fires nor is refuted. The helpful-harmless transfer rung is floor-censored (92% of prompts at the floor, zero middling); toxic chat has 70% at the floor with only nine middling prompts, and everyday prompts scored for harmful compliance sit at 98%. At five samples per prompt these are population-level statements.
+Harmful-compliance training prompts land at the even split (middling share 0.498, polarization statistic −0.002, interval straddling zero), so the plan's criterion of a share under 0.40 with the interval below zero neither fires nor is refuted. The helpful-harmless transfer rung is floor-censored (92% of prompts at the floor, zero middling); toxic chat has 70% at the floor with only nine middling prompts, and everyday prompts scored for harmful compliance sit at 98%. At five samples per prompt, per-prompt shares are too coarse to read individually; these are population-level statements.
 
 ---
 
