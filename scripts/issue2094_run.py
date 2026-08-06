@@ -48,6 +48,7 @@ import json
 import logging
 import math
 import os
+import random
 import shutil
 import subprocess
 import sys
@@ -376,6 +377,89 @@ def block_is_done(out_root: Path, block: Block, regime_fp: str) -> bool:
     return True
 
 
+def bank_manifest_and_sha() -> tuple[dict, str]:
+    """Deterministic bank manifest + its sha (the regime key), CPU-only.
+
+    Computable pre-model-load — the same recipe ``phase_bank`` persists into
+    ``bank.json`` (the sha is over the manifest BEFORE the ``bank_sha`` /
+    ``repro`` fields are added), so the bank / anchors resume predicates and
+    the grid's ``regime_fingerprint`` all key on the identical value.
+    """
+    manifest = BANK.bank_manifest()
+    bank_bytes = json.dumps(manifest, sort_keys=True, ensure_ascii=False).encode()
+    return manifest, _sha256_bytes(bank_bytes)
+
+
+def _phase_done_record(cfg: RunConfig, phase: str, regime_fp: str) -> dict | None:
+    """Shared regime-checked done-record read for the bank/anchors predicates.
+
+    Missing done-manifest -> ``None`` (run the phase). A regime-fingerprint
+    mismatch is a HARD refusal, never a silent cross-regime reuse (#722 r3 —
+    the ``block_is_done`` convention).
+    """
+    path = cfg.manifest_dir / f"{phase}_done.json"
+    if not path.exists():
+        return None
+    rec = json.loads(path.read_text())
+    if rec.get("regime_fp") != regime_fp:
+        raise RuntimeError(
+            f"{phase} done-file carries regime_fp={rec.get('regime_fp')!r} but this "
+            f"run's regime_fp={regime_fp!r} — refusing to resume across regimes "
+            "(quarantine or use a fresh --out-root)"
+        )
+    return rec
+
+
+def bank_is_done(cfg: RunConfig, regime_fp: str) -> bool:
+    """P1 resume predicate (round-2 Critical 2, the #1689 spend-leak class):
+    done-manifest present + regime match + every output artifact on disk."""
+    rec = _phase_done_record(cfg, "bank", regime_fp)
+    if rec is None:
+        return False
+    required = [
+        cfg.bank_dir / "bank.json",
+        cfg.bank_dir / "vc_bank.pt",
+        cfg.bank_dir / "injection_gate_report.json",
+    ]
+    missing = [str(p) for p in required if not p.exists()]
+    if missing:
+        logger.warning(
+            "[bank] done-manifest present but artifacts missing %s — re-running", missing
+        )
+        return False
+    return True
+
+
+def anchors_is_done(cfg: RunConfig, regime_fp: str, expected_draws: int) -> bool:
+    """P2 resume predicate: done-manifest + regime match + artifacts present +
+    the recorded draw count matches this invocation + the realized anchors.jsonl
+    row count matches the done record (output-manifest presence + row-count)."""
+    rec = _phase_done_record(cfg, "anchors", regime_fp)
+    if rec is None:
+        return False
+    if int(rec.get("draws", -1)) != expected_draws:
+        logger.warning(
+            "[anchors] done-manifest draws=%s but this run wants %d — re-running",
+            rec.get("draws"),
+            expected_draws,
+        )
+        return False
+    jsonl = cfg.anchors_dir / "anchors.jsonl"
+    va = cfg.anchors_dir / "va_anchors.pt"
+    if not (jsonl.exists() and va.exists()):
+        logger.warning("[anchors] done-manifest present but artifacts missing — re-running")
+        return False
+    n_rows = sum(1 for line in jsonl.open(encoding="utf-8") if line.strip())
+    if n_rows != int(rec.get("n_rows", -1)):
+        logger.warning(
+            "[anchors] done-manifest n_rows=%s but anchors.jsonl has %d rows — re-running",
+            rec.get("n_rows"),
+            n_rows,
+        )
+        return False
+    return True
+
+
 def slot_positions(ctx_len: int, prefix_end: int, slot: str) -> tuple[int, ...]:
     """Edit positions (UNPADDED context coordinates) for one slot.
 
@@ -530,7 +614,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--seed-base", type=int, default=SEED_BASE)
     ap.add_argument("--smoke", action="store_true", help="tiny per-arm-class slice")
     ap.add_argument("--pilot", action="store_true", help="grid: timing pilot only")
-    ap.add_argument("--force", action="store_true", help="override the pilot refusal")
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="override gate refusals (pilot / injection); on --phase bank|anchors, "
+        "deliberately re-run a completed phase (both are skip-if-done by default)",
+    )
     ap.add_argument("--worker-index", type=int, default=0)
     ap.add_argument("--num-workers", type=int, default=1)
     ap.add_argument("--gpu-id", type=int, default=None, help="informational; CVD pins the device")
@@ -848,40 +937,73 @@ def _donor_payload(
     slot: str,
     vec_type: str,
     recipient: torch.Tensor,
+    payload_kind: str = "delta",
 ) -> tuple[torch.Tensor, str]:
     """Norm-matched shuffled-donor payload for the null arm (plan §4.2).
 
-    Type A: the seeded derangement's donor pair, its Delta right-aligned to the
-    recipient's position count, then norm-matched POSITION-WISE. Type B: the
+    Type A additive (``payload_kind="delta"``): the seeded derangement's donor
+    pair, its Delta right-aligned to the recipient's position count, then
+    norm-matched POSITION-WISE. Type A single-position replace
+    (``payload_kind="state"``): the donor pair's TARGET-CONTEXT STATE
+    ``V_B(donor)`` at the same slot, norm-matched to the recipient's ``V_B``
+    norm — a REAL state (wrong pair), in-distribution and parallel to the
+    steered arm's real-state replace. Plan §4.2's Δ-centric null wording is
+    incoherent at the replace rung (a Δ-normed replacement would near-zero the
+    slot), so the donor-STATE realization is the registered resolution
+    (round-2 code review; concern ``replace-null-donor-realization``; recorded
+    as a plan deviation in the sentinel payload). Type B: the
     persona<->conv-SWAPPED centroid direction (the body's "other prefixes'
-    centroids for Type B"; the pool has exactly ONE non-self member).
+    centroids for Type B"; the pool has exactly ONE non-self member) — never a
+    state (``DOSES_B`` excludes replace).
     """
+    assert payload_kind in ("delta", "state"), payload_kind
     if vec_type == "B":
+        assert payload_kind == "delta", "Type B has no absolute state (DOSES_B excludes replace)"
         cent = bank["centroids"]
         # Type-B donors are the centroid swap, not a derangement over contexts.
         donor_a = BANK._TYPE_B_DONOR_SWAP[pair.prefix_a]
         donor_b = BANK._TYPE_B_DONOR_SWAP[pair.prefix_b]
         raw = (cent[donor_b] - cent[donor_a]).unsqueeze(0)
         return BANK.norm_match(raw, recipient), f"centroid:{donor_a}->{donor_b}"
-    raw, _, _ = _pair_payload(bank, donor, slot, vec_type)
+    raw_delta, raw_state, _ = _pair_payload(bank, donor, slot, vec_type)
+    raw = raw_state if payload_kind == "state" else raw_delta
     raw = align_right(raw, recipient.shape[0])
     return BANK.norm_match(raw, recipient), donor.pair_id
 
 
-def _donor_eligible(donor: BANK.Pair, slot: str) -> bool:
+def _donor_eligible(
+    donor: BANK.Pair,
+    slot: str,
+    pair: BANK.Pair | None = None,
+    payload_kind: str = "delta",
+) -> bool:
     """STRUCTURAL slot-aware donor eligibility for the Type-A null arm.
 
-    At the prefix-end slot a matched-prefix donor's Delta is EXACTLY zero by
-    causal-attention identity (same prefix tokens => identical prefix-end
-    state; in bf16 batch geometry it degrades to pure numerical noise, which
-    norm-matching would silently inflate to the recipient's norm). Nothing to
-    rescale either way => a same-prefix pair is never a pe-slot donor. Every
-    other (slot, donor-setting) combination differs in at least one in-span
-    token, so its Delta is generically nonzero. (Production bug found by the
-    unit-F e2e smoke: pe/L27 null block, mp donor, norm_match assert.)
+    Delta kind: at the prefix-end slot a matched-prefix donor's Delta is
+    EXACTLY zero by causal-attention identity (same prefix tokens =>
+    identical prefix-end state; in bf16 batch geometry it degrades to pure
+    numerical noise, which norm-matching would silently inflate to the
+    recipient's norm). Nothing to rescale either way => a same-prefix pair is
+    never a pe-slot donor. Every other (slot, donor-setting) combination
+    differs in at least one in-span token, so its Delta is generically
+    nonzero. (Production bug found by the unit-F e2e smoke: pe/L27 null
+    block, mp donor, norm_match assert.)
+
+    State kind (single-position replace, round-2 Major 3): the donor's slot
+    STATE at its target context must DIFFER from the recipient's own V_B — a
+    donor sharing the recipient's target context (ce/cm*: same context ``b``;
+    pe: same ``prefix_b``, the causal identity) would install the recipient's
+    OWN replacement state, making the "null" bit-identical to its steered
+    twin (found live on the production-DIM transport mirror: walked donor
+    mq--persona__q1--conv__q1 for recipient mq--bare__q1--conv__q1 shares
+    b=conv__q1 => cos(null pred, steered pred) == 1.0).
     """
-    if slot == "pe":
-        return donor.prefix_a != donor.prefix_b
+    if slot == "pe" and donor.prefix_a == donor.prefix_b:
+        return False
+    if payload_kind == "state" and pair is not None:
+        if slot == "pe":
+            return donor.prefix_b != pair.prefix_b
+        return donor.b != pair.b
     return True
 
 
@@ -893,15 +1015,24 @@ def _resolve_donor(
     slot: str,
     vec_type: str,
     recipient: torch.Tensor,
+    payload_kind: str = "delta",
 ) -> tuple[torch.Tensor, str]:
     """Deterministic donor resolution: walk the seeded derangement cycle from
     ``donor_map[pair]`` to the first slot-ELIGIBLE donor (skipping the
     recipient pair itself). The REALIZED donor id is recorded per cell
     (``donor_pair_id``), and the analysis transport reconstruction prefers
     that recorded id, so the walk rule never has to be re-derived downstream.
-    Type B routes straight to the centroid-swap donor (derangement-free)."""
+    Type B routes straight to the centroid-swap donor (derangement-free).
+
+    The eligibility walk is payload-kind-AWARE: the pe same-prefix exclusion
+    (Δ-degeneracy) applies to both kinds, and ``state`` payloads ADDITIONALLY
+    skip donors sharing the recipient's target slot state (same context ``b``;
+    same ``prefix_b`` at pe) — see :func:`_donor_eligible`. So a pair's
+    additive and replace null cells share the realized donor EXCEPT where the
+    same-target-state exclusion forces a further walk step.
+    """
     if vec_type == "B":
-        return _donor_payload(bank, pair, pair, slot, vec_type, recipient)
+        return _donor_payload(bank, pair, pair, slot, vec_type, recipient, payload_kind)
     if not bool((recipient.norm(dim=-1) > 0).any()):
         # Degenerate recipient (the canonicalized same-prefix pe Delta): the
         # norm-matched null of a ZERO injection is zero — matching the steered
@@ -913,8 +1044,8 @@ def _resolve_donor(
     while donor_id not in seen:
         seen.add(donor_id)
         donor = pairs_by_id[donor_id]
-        if donor_id != pair.pair_id and _donor_eligible(donor, slot):
-            return _donor_payload(bank, pair, donor, slot, vec_type, recipient)
+        if donor_id != pair.pair_id and _donor_eligible(donor, slot, pair, payload_kind):
+            return _donor_payload(bank, pair, donor, slot, vec_type, recipient, payload_kind)
         donor_id = donor_map[donor_id]
     raise AssertionError(f"no eligible donor for {pair.pair_id} at slot {slot}")
 
@@ -1283,12 +1414,27 @@ def _capture_parity(cfg: RunConfig, model, tok, bank: dict) -> dict:
 
 
 def phase_bank(cfg: RunConfig) -> int:
-    """P1: bank.json + vc_bank.pt + the injection-exactness gate."""
+    """P1: bank.json + vc_bank.pt + the injection-exactness gate.
+
+    Idempotent (round-2 Critical 2): a completed same-regime bank is SKIPPED
+    at entry, BEFORE the model load (a ``dispatch.sh all`` relaunch after a
+    mid-grid crash must not re-burn the capture — the #1689 spend-leak class);
+    ``--force`` deliberately re-runs. The phase is deterministic (greedy
+    teacher-forced captures, fixed seeds), so a skip is content-safe; the grid
+    resume survives a re-capture anyway (regime fp keys on the bank MANIFEST
+    sha, not tensor bytes).
+    """
     logger.info("[phase=bank]")
+    manifest, bank_sha = bank_manifest_and_sha()
+    regime_fp = regime_fingerprint(cfg, bank_sha)
+    if not cfg.force and bank_is_done(cfg, regime_fp):
+        logger.info("[bank] already done for this regime — skipping (--force re-runs)")
+        logger.info("[phase=bank_done]")
+        return RC_OK
+    if cfg.force and (cfg.manifest_dir / "bank_done.json").exists():
+        logger.info("[bank] --force set: deliberately re-running a done bank phase")
     model, tok = load_model_and_tokenizer(cfg)
-    manifest = BANK.bank_manifest()
-    bank_bytes = json.dumps(manifest, sort_keys=True, ensure_ascii=False).encode()
-    manifest["bank_sha"] = _sha256_bytes(bank_bytes)
+    manifest["bank_sha"] = bank_sha
     manifest["repro"] = _repro(cfg)
     _write_json_atomic(cfg.bank_dir / "bank.json", manifest)
 
@@ -1318,8 +1464,20 @@ def phase_bank(cfg: RunConfig) -> int:
             report["capture_vectors_parity"]["cos_min"],
         )
         if not cfg.force:
+            # No done-manifest on the gate-refusal path: a relaunch re-runs.
             return RC_INJECTION_GATE
         logger.error("[injection_gate] --force set: proceeding on a FAILED gate (recorded)")
+    _write_json_atomic(
+        cfg.manifest_dir / "bank_done.json",
+        {
+            "regime_fp": regime_fp,
+            "bank_sha": bank_sha,
+            "n_contexts": len(bank["per_context"]),
+            "gate_passed": bool(report["passed"]),
+            "forced_past_gate": bool(not report["passed"] and cfg.force),
+            "repro": _repro(cfg),
+        },
+    )
     logger.info("[phase=bank_done]")
     return RC_OK
 
@@ -1395,8 +1553,25 @@ def capture_answer_states(
 
 
 def phase_anchors(cfg: RunConfig) -> int:
-    """P2: 15 contexts x K unpatched temp-1.0 rollouts + both-pooling V_a."""
+    """P2: 15 contexts x K unpatched temp-1.0 rollouts + both-pooling V_a.
+
+    Idempotent (round-2 Critical 2): a completed same-regime anchors phase is
+    SKIPPED at entry, BEFORE the model load; ``--force`` deliberately re-runs.
+    Deterministic given the regime (fixed per-draw seeds), so a skip is
+    content-safe.
+    """
     logger.info("[phase=anchors]")
+    # >= 2 draws even under --smoke: the disjoint-half floor F_act needs
+    # (fmetrics.half_split_indices asserts k >= 2).
+    draws = 2 if cfg.smoke else cfg.anchor_draws
+    _manifest, bank_sha = bank_manifest_and_sha()
+    regime_fp = regime_fingerprint(cfg, bank_sha)
+    if not cfg.force and anchors_is_done(cfg, regime_fp, draws):
+        logger.info("[anchors] already done for this regime — skipping (--force re-runs)")
+        logger.info("[phase=anchors_done]")
+        return RC_OK
+    if cfg.force and (cfg.manifest_dir / "anchors_done.json").exists():
+        logger.info("[anchors] --force set: deliberately re-running a done anchors phase")
     model, tok = load_model_and_tokenizer(cfg)
     contexts = BANK.build_contexts()
     order = list(contexts)
@@ -1423,9 +1598,6 @@ def phase_anchors(cfg: RunConfig) -> int:
         order = [cid for cid in order if cid in smoke_ctx or cid in per_prefix]
     ctx_list = [contexts[c] for c in order]
     eot = eot_tail_ids(tok)
-    # >= 2 draws even under --smoke: the disjoint-half floor F_act needs
-    # (fmetrics.half_split_indices asserts k >= 2).
-    draws = 2 if cfg.smoke else cfg.anchor_draws
     t0 = time.monotonic()
     outs = generate_batch(
         model,
@@ -1478,6 +1650,7 @@ def phase_anchors(cfg: RunConfig) -> int:
     _write_json_atomic(
         cfg.manifest_dir / "anchors_done.json",
         {
+            "regime_fp": regime_fp,
             "n_contexts": len(order),
             "draws": draws,
             "n_rows": len(rows),
@@ -1543,8 +1716,18 @@ def run_block(
         recipient = state if payload_kind == "state" else delta
         donor_label = None
         if block.arm == "null":
+            # Additive cells: donor Delta norm-matched to the recipient Delta.
+            # Single-position replace cells: the donor pair's V_B STATE
+            # norm-matched to the recipient's V_B (round-2 Major 3 resolution).
             recipient, donor_label = _resolve_donor(
-                bank, pair, donor_map, pairs_by_id, block.slot, block.vec_type, recipient
+                bank,
+                pair,
+                donor_map,
+                pairs_by_id,
+                block.slot,
+                block.vec_type,
+                recipient,
+                payload_kind,
             )
         rec = recs[pair.a]
         pos = slot_positions(rec["ctx_len"], rec["prefix_end"], block.slot)[-m:]
@@ -1816,6 +1999,15 @@ def _enforce_pilot_gate(cfg: RunConfig, totals_all: dict, ran_cells: int, ran_wa
 
 # ── P5: upload + sentinel ─────────────────────────────────────────────
 
+# Bounded OUTER retry around the hub helper's fail-soft "" return
+# (upload-policy rule (c), the #1315 `_upload_with_transport_retry` shape):
+# the hub's inner `_retry_upload` envelope already absorbs per-call
+# transients, so a no-path return means that budget EXHAUSTED or a
+# non-transient failure (missing HF_TOKEN, failed exact-set verify).
+UPLOAD_TRANSPORT_RETRIES = 3
+UPLOAD_BACKOFF_BASE_S: tuple[float, ...] = (30.0, 60.0, 120.0)
+_upload_retry_sleep = time.sleep  # monkeypatchable in tests
+
 
 def _upload_dir(
     cfg: RunConfig,
@@ -1823,7 +2015,15 @@ def _upload_dir(
     remote_prefix: str,
     allow_patterns: list[str],
 ) -> list[str]:
-    """ONE bulk ``upload_folder`` commit for a matched subset + exact-set verify."""
+    """ONE bulk ``upload_folder`` commit for a matched subset + exact-set verify.
+
+    FAIL-LOUD (round-2 Critical 1): ``_upload_folder_filtered`` returns ``""``
+    on failure (missing HF_TOKEN / failed post-upload exact-set verify /
+    upload exception) — this seam retries the no-path return with bounded
+    jittered backoff (uploads are idempotent; already-landed files skip
+    Hub-side), then RAISES on exhaustion so the results sentinel can never
+    post over silently-lost durability (the #841 result-persist class).
+    """
     if cfg.upload_mode == "none":
         logger.info("[upload] skipped (--upload none): %s", local_dir)
         return []
@@ -1844,14 +2044,35 @@ def _upload_dir(
         return expected
     from explore_persona_space.orchestrate.hub import _upload_folder_filtered
 
-    _upload_folder_filtered(
-        local_dir=local_dir,
-        repo_id=HF_DATA_REPO,
-        repo_type="dataset",
-        path_in_repo=remote_prefix,
-        allow_patterns=allow_patterns,
-        expected_repo_paths=expected,
-    )
+    base_url = ""
+    for attempt in range(UPLOAD_TRANSPORT_RETRIES + 1):
+        base_url = _upload_folder_filtered(
+            local_dir=local_dir,
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=remote_prefix,
+            allow_patterns=allow_patterns,
+            expected_repo_paths=expected,
+        )
+        if base_url:
+            break
+        if attempt < UPLOAD_TRANSPORT_RETRIES:
+            pause = UPLOAD_BACKOFF_BASE_S[min(attempt, len(UPLOAD_BACKOFF_BASE_S) - 1)]
+            pause *= 1.0 + 0.25 * random.random()
+            logger.warning(
+                "[upload] no path returned for %s (attempt %d/%d) — retrying in %.0fs",
+                remote_prefix,
+                attempt + 1,
+                UPLOAD_TRANSPORT_RETRIES + 1,
+                pause,
+            )
+            _upload_retry_sleep(pause)
+    if not base_url:
+        raise RuntimeError(
+            f"upload returned no path after {UPLOAD_TRANSPORT_RETRIES + 1} attempts: "
+            f"{remote_prefix} — refusing to proceed (P5 uploads feed the results "
+            "sentinel; never warn-and-continue on a result-persist path)"
+        )
     logger.info("[upload] %d files -> %s (one commit)", len(files), remote_prefix)
     return expected
 
@@ -1940,6 +2161,15 @@ def _sentinel_payload(cfg: RunConfig, uploaded: dict[str, list[str]]) -> dict:
             "the V_a store carries BOTH poolings (span-mean + tail-inclusive) at 28 "
             "layers in fp16, ~17 GB rather than the plan §9 ~9 GB single-pooling figure "
             "(still far under the ~130 GB /workspace quota)",
+            "single-position replace-dose NULL cells install the DONOR pair's "
+            "target-context STATE norm_match(V_B(donor), V_B) at the same slot/layer — "
+            "plan §4.2's Δ-centric null wording is incoherent at the replace rung (a "
+            "Δ-normed replacement would near-zero the slot), and a difference vector "
+            "installed as a slot state would be out-of-distribution vs the steered "
+            "arm's real-state replace; donors sharing the recipient's target slot "
+            "state (same context b; same prefix_b at pe) are walk-excluded for these "
+            "cells (a same-state 'null' would duplicate the steered arm); resolves "
+            "concern replace-null-donor-realization (round-2 code review)",
         ],
         "uploaded_prefixes": {k: len(v) for k, v in uploaded.items()},
     }
@@ -1964,8 +2194,14 @@ def phase_upload(cfg: RunConfig) -> int:
     uploaded["va_store"] = _upload_dir(
         cfg, cfg.va_dir, f"{HF_PREFIX}/analysis_tensors/va_store", ["shard_*.pt"]
     )
+    # blocks/*.done.json rides along (round-2 Minor 7): per-block resume state
+    # + the sentinel's cap-hit provenance become durable off-pod (~880 small
+    # JSONs, ONE upload_folder commit — under the 2000-files/commit watermark).
     uploaded["manifests"] = _upload_dir(
-        cfg, cfg.manifest_dir, f"{HF_PREFIX}/analysis_tensors/manifests", ["*.json"]
+        cfg,
+        cfg.manifest_dir,
+        f"{HF_PREFIX}/analysis_tensors/manifests",
+        ["*.json", "blocks/*.done.json"],
     )
     payload = _sentinel_payload(cfg, uploaded)
     _write_json_atomic(cfg.out_root / "manifests" / "upload_done.json", payload)

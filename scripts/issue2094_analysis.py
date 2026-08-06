@@ -1025,6 +1025,78 @@ def _orientation_for(parity: dict, map_id: str) -> str:
     raise KeyError(map_id)
 
 
+def transport_row_payload(
+    bank: dict,
+    r: dict,
+    pairs_by_id: dict[str, BANK.Pair],
+    donor_map: dict[str, str],
+) -> tuple[torch.Tensor, str]:
+    """Reconstruct one grid row's REALIZED hook payload — EXACTLY the run_block path.
+
+    Returns ``(payload, payload_kind)``. Additive cells carry the Delta (the
+    donor Delta on null rows); single-position replace cells carry the
+    replacement STATE — the pair's own ``V_B`` on steered rows, the donor
+    pair's norm-matched ``V_B(donor)`` on null rows (round-2 Major 3/4: null
+    rows use the donor payload, i.e. what was actually injected). Prefers the
+    RECORDED realized donor (rows carry ``donor_pair_id``); falls back to the
+    deterministic slot-aware derangement walk for rows without one (Type-B
+    rows carry a centroid label, not a pair id).
+    """
+    pair = pairs_by_id[r["pair_id"]]
+    delta, state_b, _m = R._pair_payload(bank, pair, r["slot"], r["vec_type"])
+    _mode, _alpha, payload_kind = R._realized_mode(r["slot"], r["dose"], r["vec_type"])
+    recipient = state_b if payload_kind == "state" else delta
+    if r["arm"] == "null":
+        donor_id = r.get("donor_pair_id")
+        if donor_id in pairs_by_id:
+            recipient, _label = R._donor_payload(
+                bank,
+                pair,
+                pairs_by_id[donor_id],
+                r["slot"],
+                r["vec_type"],
+                recipient,
+                payload_kind,
+            )
+        else:
+            recipient, _label = R._resolve_donor(
+                bank,
+                pair,
+                donor_map,
+                pairs_by_id,
+                r["slot"],
+                r["vec_type"],
+                recipient,
+                payload_kind,
+            )
+    return recipient, payload_kind
+
+
+def transport_row_pred(
+    bundle: dict,
+    orientation: str,
+    payload_kind: str,
+    payload_l: torch.Tensor,
+    v_s: torch.Tensor,
+    alpha: float | None,
+) -> torch.Tensor:
+    """Banked-map predicted answer shift for ONE row's realized edit.
+
+    Additive (``payload_kind="delta"``): ``f(v_s + alpha*Delta) - f(v_s)``.
+    Replace (``payload_kind="state"``): ``f(replacement) - f(v_s)`` where the
+    replacement is the row's REALIZED payload — the pair's own ``V_B`` on
+    steered rows, the donor's norm-matched ``V_B(donor)`` on null rows
+    (round-2 Major 4: both arms consistently predict from what was injected).
+    """
+    if payload_kind == "state":
+        return FM.apply_ridge_map(bundle, payload_l, orientation=orientation) - FM.apply_ridge_map(
+            bundle, v_s, orientation=orientation
+        )
+    return FM.transport_predicted_shift(
+        bundle, v_s, payload_l, float(alpha), orientation=orientation
+    )
+
+
 def phase_transport(cfg: AnalysisConfig) -> int:
     """Transport cosines at banked-map cells (steered + donor-null control)."""
     logger.info("[phase=transport]")
@@ -1068,37 +1140,16 @@ def phase_transport(cfg: AnalysisConfig) -> int:
         va = torch.load(shard, map_location="cpu", weights_only=False)
         va_tail = va["va_tail"].float()
         for i, r in enumerate(rows):
-            pair = pairs_by_id[r["pair_id"]]
             fl = anchor_va[r["context_a"]]["tail"][:, layer]
             realized = va_tail[i, layer] - fl.mean(dim=0)
             fl_h1, fl_h2 = FM.disjoint_half_means(fl)
-            # payload reconstruction: EXACTLY the run_block path (reuse, no clone).
-            delta, state_b, _m = R._pair_payload(bank, pair, r["slot"], r["vec_type"])
-            recipient = delta
-            if r["arm"] == "null":
-                # EXACTLY the run_block path: prefer the RECORDED realized donor
-                # (rows carry donor_pair_id); fall back to the deterministic
-                # slot-aware derangement walk (R._resolve_donor) for rows
-                # without one (Type-B rows carry a centroid label, not a pair).
-                donor_id = r.get("donor_pair_id")
-                if donor_id in pairs_by_id:
-                    recipient, _label = R._donor_payload(
-                        bank, pair, pairs_by_id[donor_id], r["slot"], r["vec_type"], recipient
-                    )
-                else:
-                    recipient, _label = R._resolve_donor(
-                        bank, pair, donor_map, pairs_by_id, r["slot"], r["vec_type"], recipient
-                    )
+            # payload reconstruction: EXACTLY the run_block path (reuse, no
+            # clone) — steered AND null rows predict from the REALIZED payload
+            # (round-2 Major 3/4).
+            recipient, payload_kind = transport_row_payload(bank, r, pairs_by_id, donor_map)
             d_l = recipient[-1][layer].float()
             v_s = _slot_input_vector(bank, r["context_a"], r["slot"], layer)
-            if r["dose"] == "replace":
-                pred = FM.apply_ridge_map(
-                    bundle, state_b[-1][layer].float(), orientation=orientation
-                ) - FM.apply_ridge_map(bundle, v_s, orientation=orientation)
-            else:
-                pred = FM.transport_predicted_shift(
-                    bundle, v_s, d_l, float(r["alpha"]), orientation=orientation
-                )
+            pred = transport_row_pred(bundle, orientation, payload_kind, d_l, v_s, r.get("alpha"))
             out_rows.append(
                 {
                     "block_key": r["block_key"],

@@ -24,6 +24,7 @@ if str(REPO_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import issue2094_analysis as A  # noqa: E402
+import issue2094_run as R  # noqa: E402
 import issue2094_stage2 as S2  # noqa: E402
 
 from explore_persona_space.experiments.issue1415 import steering  # noqa: E402
@@ -520,3 +521,107 @@ def test_loglog_slope_unity_on_linear_shifts():
     norms = torch.stack([(a * base).norm() for a in alphas]).unsqueeze(0)
     slope, _ = A.FM.log_log_magnitude_fit(alphas, norms)
     assert float(slope[0]) == pytest.approx(1.0, abs=1e-6)
+
+
+# ── round-2 Major 3/4: transport payload/pred for replace cells ─────────
+
+
+def _synthetic_bank(hidden: int = H) -> dict:
+    """Synthetic per-context bank (the run-test fixture shape) at hidden=H."""
+    contexts = BANK.build_contexts()
+    gen = torch.Generator().manual_seed(7)
+    per_context = {}
+    for cid, ctx in contexts.items():
+        per_context[cid] = {
+            "context_id": cid,
+            "prefix": ctx["prefix"],
+            "query_id": ctx["query_id"],
+            "ctx_len": 24,
+            "prefix_end": 18,
+            "nq": 6,
+            "q_span": torch.randn(6, 28, hidden, generator=gen),
+            "v_pe": torch.randn(28, hidden, generator=gen),
+        }
+    return {"layers": list(range(28)), "per_context": per_context, "centroids": {}}
+
+
+def _identity_bundle(hidden: int = H, layer: int = 5) -> dict:
+    """Identity standardized-ridge bundle: f(x) == x (pred checks are exact)."""
+    return {
+        "kind": "test",
+        "layer": layer,
+        "xmu": torch.zeros(hidden),
+        "xsd": torch.ones(hidden),
+        "ymu": torch.zeros(hidden),
+        "W": torch.eye(hidden),
+    }
+
+
+def test_transport_null_replace_pred_uses_donor_payload(pairs, pairs_by_id):
+    """Round-2 Major 4 pin (fails pre-fix): a NULL replace row's prediction is
+    built from the realized DONOR payload — f(norm_match(V_B(donor), V_B)) -
+    f(v_s) — never from the steered pair's own replacement; the null twin's
+    pred must DIFFER from its steered twin's."""
+    bank = _synthetic_bank()
+    donor_map = BANK.donor_derangement(pairs)
+    mq = next(p for p in pairs if p.setting == "matched_query")
+    layer = 5
+    bundle = _identity_bundle(layer=layer)
+    common = {
+        "pair_id": mq.pair_id,
+        "slot": "ce",
+        "vec_type": "A",
+        "dose": "replace",
+        "alpha": 1.0,
+        "context_a": mq.a,
+    }
+    steered = {**common, "arm": "steered", "donor_pair_id": None}
+    null = {**common, "arm": "null", "donor_pair_id": donor_map[mq.pair_id]}
+
+    _delta, state_b, _m = R._pair_payload(bank, mq, "ce", "A")
+    v_s = A._slot_input_vector(bank, mq.a, "ce", layer)
+
+    pay_s, kind_s = A.transport_row_payload(bank, steered, pairs_by_id, donor_map)
+    assert kind_s == "state"
+    pred_s = A.transport_row_pred(bundle, "zW", kind_s, pay_s[-1][layer].float(), v_s, 1.0)
+    assert torch.allclose(pred_s, state_b[-1][layer].float() - v_s, atol=1e-5)
+
+    pay_n, kind_n = A.transport_row_payload(bank, null, pairs_by_id, donor_map)
+    assert kind_n == "state"
+    donor = pairs_by_id[donor_map[mq.pair_id]]
+    _dd, donor_state, _ = R._pair_payload(bank, donor, "ce", "A")
+    expected = BANK.norm_match(donor_state, state_b)
+    pred_n = A.transport_row_pred(bundle, "zW", kind_n, pay_n[-1][layer].float(), v_s, 1.0)
+    assert torch.allclose(pred_n, expected[-1][layer].float() - v_s, atol=1e-5)
+    # The fails-pre-fix leg: pre-fix, a null replace row predicted the steered
+    # pair's OWN replacement — identical to its steered twin.
+    assert not torch.allclose(pred_n, pred_s, atol=1e-4)
+
+
+def test_transport_additive_null_pred_uses_donor_delta(pairs, pairs_by_id):
+    """Additive null rows keep the donor-DELTA payload (unchanged semantics):
+    pred == alpha * norm_match(donor Delta, Delta) under the identity map."""
+    bank = _synthetic_bank()
+    donor_map = BANK.donor_derangement(pairs)
+    mq = next(p for p in pairs if p.setting == "matched_query")
+    layer = 5
+    bundle = _identity_bundle(layer=layer)
+    row = {
+        "pair_id": mq.pair_id,
+        "slot": "ce",
+        "vec_type": "A",
+        "dose": "a2",
+        "alpha": 2.0,
+        "context_a": mq.a,
+        "arm": "null",
+        "donor_pair_id": donor_map[mq.pair_id],
+    }
+    delta, _state, _m = R._pair_payload(bank, mq, "ce", "A")
+    donor = pairs_by_id[donor_map[mq.pair_id]]
+    donor_delta, _ds, _ = R._pair_payload(bank, donor, "ce", "A")
+    expected = BANK.norm_match(donor_delta, delta)
+    v_s = A._slot_input_vector(bank, mq.a, "ce", layer)
+    pay, kind = A.transport_row_payload(bank, row, pairs_by_id, donor_map)
+    assert kind == "delta"
+    pred = A.transport_row_pred(bundle, "zW", kind, pay[-1][layer].float(), v_s, 2.0)
+    assert torch.allclose(pred, 2.0 * expected[-1][layer].float(), atol=1e-4)

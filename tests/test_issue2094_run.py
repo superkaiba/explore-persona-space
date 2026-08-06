@@ -364,3 +364,275 @@ def test_resolve_donor_zero_recipient_and_eligibility_walk(pairs):
     assert donor_id == mq2.pair_id  # walked past the ineligible mp donor
     assert R._donor_eligible(pairs_by_id[donor_id], "pe")
     assert torch.allclose(payload.norm(dim=-1), recip_mq.norm(dim=-1), rtol=1e-4, atol=1e-6)
+
+
+# ── round-2 Major 3: replace-dose null arm installs the donor STATE ─────
+
+
+def test_replace_null_payload_uses_donor_state(pairs):
+    """Intent pin (fails pre-fix): a single-position replace cell's null arm
+    installs the DONOR pair's TARGET-CONTEXT STATE norm_match(V_B(donor), V_B)
+    — a real state, wrong pair, parallel to the steered arm's real-state
+    replace — never the donor's DIFFERENCE vector rescaled to state norm."""
+    bank = _synthetic_bank_same_prefix_pe(pairs)
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    donor_map = BANK.donor_derangement(pairs)
+    mq = next(p for p in pairs if p.setting == "matched_query")
+
+    mode, _alpha, payload_kind = R._realized_mode("ce", "replace", "A")
+    assert (mode, payload_kind) == ("replace", "state")
+    _delta, state, _m = R._pair_payload(bank, mq, "ce", "A")
+    payload, donor_id = R._resolve_donor(
+        bank, mq, donor_map, pairs_by_id, "ce", "A", state, payload_kind
+    )
+    donor = pairs_by_id[donor_id]
+    donor_delta, donor_state, _ = R._pair_payload(bank, donor, "ce", "A")
+    # norm-matched to the recipient's V_B norm (position-wise over H)...
+    assert torch.allclose(payload.norm(dim=-1), state.norm(dim=-1), rtol=1e-4, atol=1e-6)
+    # ...and PARALLEL (per layer) to the donor's STATE, not its Delta.
+    cos_state = torch.nn.functional.cosine_similarity(payload[-1], donor_state[-1], dim=-1)
+    cos_delta = torch.nn.functional.cosine_similarity(payload[-1], donor_delta[-1], dim=-1)
+    assert float(cos_state.min()) > 1 - 1e-5
+    assert float(cos_delta.max()) < 0.99  # the pre-fix (donor-Delta) shape
+
+
+def test_donor_eligibility_state_kind_excludes_same_target_state(pairs):
+    """State-kind eligibility (round-2 mirror-leg incident): a donor sharing
+    the recipient's target slot state — same context b at ce/cm*; same
+    prefix_b at pe (causal identity) — would install the recipient's OWN V_B,
+    making the 'null' bit-identical to its steered twin. Delta kind keeps the
+    original (slot-only) eligibility."""
+    mq = next(p for p in pairs if p.setting == "matched_query")
+    same_b = next(p for p in pairs if p.pair_id != mq.pair_id and p.b == mq.b)
+    diff_b = next(p for p in pairs if p.b != mq.b and p.pair_id != mq.pair_id)
+    # delta kind: a same-b donor stays eligible (its Delta is a real direction)
+    assert R._donor_eligible(same_b, "ce", mq, "delta")
+    # state kind: same-b donor EXCLUDED at ce; different-b donor eligible
+    assert not R._donor_eligible(same_b, "ce", mq, "state")
+    assert R._donor_eligible(diff_b, "ce", mq, "state")
+    # pe state kind: same-PREFIX_b donor excluded even when b differs
+    same_pb = next(
+        p
+        for p in pairs
+        if p.pair_id != mq.pair_id
+        and p.b != mq.b
+        and p.prefix_b == mq.prefix_b
+        and p.prefix_a != p.prefix_b
+    )
+    assert not R._donor_eligible(same_pb, "pe", mq, "state")
+    assert R._donor_eligible(same_pb, "ce", mq, "state") == (same_pb.b != mq.b)
+
+
+def test_replace_null_walk_skips_same_target_state_donor(pairs):
+    """Walk pin (fails pre-fix): a seeded donor sharing the recipient's
+    context b is walked PAST for state-kind cells, and the realized payload is
+    never bit-identical to the steered twin's replacement state."""
+    bank = _synthetic_bank_same_prefix_pe(pairs)
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    mq = next(p for p in pairs if p.setting == "matched_query")
+    same_b = next(p for p in pairs if p.pair_id != mq.pair_id and p.b == mq.b)
+    diff_b = next(p for p in pairs if p.pair_id not in (mq.pair_id, same_b.pair_id) and p.b != mq.b)
+    synth_map = {
+        mq.pair_id: same_b.pair_id,
+        same_b.pair_id: diff_b.pair_id,
+        diff_b.pair_id: mq.pair_id,
+    }
+    _delta, state, _m = R._pair_payload(bank, mq, "ce", "A")
+    payload, donor_id = R._resolve_donor(
+        bank, mq, synth_map, pairs_by_id, "ce", "A", state, "state"
+    )
+    assert donor_id == diff_b.pair_id  # walked past the same-b donor
+    assert not torch.equal(payload, state)  # never the steered twin's own V_B
+    # additive kind on the same map STAYS on the seeded same-b donor
+    delta_recip, _s, _ = R._pair_payload(bank, mq, "ce", "A")
+    _p, donor_add = R._resolve_donor(
+        bank, mq, synth_map, pairs_by_id, "ce", "A", delta_recip, "delta"
+    )
+    assert donor_add == same_b.pair_id
+
+
+def test_type_b_donor_refuses_state_kind(pairs):
+    """Type B has no absolute state (DOSES_B excludes replace) — a state-kind
+    Type-B donor request fails loud rather than patching a difference in."""
+    bank = _synthetic_bank_same_prefix_pe(pairs)
+    mq = next(p for p in pairs if p.setting == "matched_query")
+    with pytest.raises(AssertionError, match="Type B has no absolute state"):
+        R._donor_payload(bank, mq, mq, "ce", "B", torch.randn(1, N_LAYERS, 6), "state")
+
+
+# ── round-2 Critical 2: bank / anchors resume predicates ───────────────
+
+
+def _mk_cfg(tmp_path: Path, *, force: bool = False, upload_mode: str = "none") -> R.RunConfig:
+    return R.RunConfig(
+        phase="bank",
+        out_root=tmp_path / "out",
+        log_dir=tmp_path / "logs",
+        model_id="tiny",
+        tiny=True,
+        n_layers=N_LAYERS,
+        hidden=6,
+        device="cpu",
+        gen_batch=2,
+        capture_batch=2,
+        max_new_tokens=8,
+        anchor_draws=3,
+        seed_base=42,
+        smoke=False,
+        pilot=False,
+        force=force,
+        worker_index=0,
+        num_workers=1,
+        upload_mode=upload_mode,
+        upload_every=25,
+        planned_wall_h=1.0,
+        gpu_hours_budgeted=1.0,
+    )
+
+
+def test_bank_resume_predicate_skips_before_model_load(tmp_path, monkeypatch):
+    """Round-2 Critical 2 pin: a completed same-regime bank is skipped at
+    entry BEFORE the model load; a regime mismatch HARD-refuses (#722 r3);
+    --force deliberately re-runs; missing artifacts re-run."""
+    cfg = _mk_cfg(tmp_path)
+    _manifest, bank_sha = R.bank_manifest_and_sha()
+    fp = R.regime_fingerprint(cfg, bank_sha)
+    assert not R.bank_is_done(cfg, fp)  # no done-manifest yet
+
+    cfg.bank_dir.mkdir(parents=True, exist_ok=True)
+    for name in ("bank.json", "injection_gate_report.json"):
+        (cfg.bank_dir / name).write_text("{}")
+    (cfg.bank_dir / "vc_bank.pt").write_bytes(b"x")
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.manifest_dir / "bank_done.json").write_text(json.dumps({"regime_fp": fp}))
+    assert R.bank_is_done(cfg, fp)
+
+    def _no_load(_cfg):
+        raise AssertionError("model load must not run on a done bank")
+
+    monkeypatch.setattr(R, "load_model_and_tokenizer", _no_load)
+    assert R.phase_bank(cfg) == R.RC_OK  # skip precedes the model load
+
+    # --force deliberately re-runs (reaches the model load).
+    with pytest.raises(AssertionError, match="model load must not run"):
+        R.phase_bank(_mk_cfg(tmp_path, force=True))
+
+    # Regime mismatch is a HARD refusal, never a silent cross-regime reuse.
+    with pytest.raises(RuntimeError, match="refusing to resume across regimes"):
+        R.bank_is_done(cfg, "deadbeefdeadbeef")
+
+    # A missing output artifact re-runs (done-manifest alone is not done).
+    (cfg.bank_dir / "vc_bank.pt").unlink()
+    assert not R.bank_is_done(cfg, fp)
+
+
+def test_anchors_resume_predicate(tmp_path, monkeypatch):
+    """anchors_is_done: regime + draws + artifact presence + ROW-COUNT check."""
+    cfg = _mk_cfg(tmp_path)
+    _manifest, bank_sha = R.bank_manifest_and_sha()
+    fp = R.regime_fingerprint(cfg, bank_sha)
+    assert not R.anchors_is_done(cfg, fp, cfg.anchor_draws)
+
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.anchors_dir / "anchors.jsonl").write_text('{"a": 1}\n{"a": 2}\n')
+    (cfg.anchors_dir / "va_anchors.pt").write_bytes(b"x")
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.manifest_dir / "anchors_done.json").write_text(
+        json.dumps({"regime_fp": fp, "draws": cfg.anchor_draws, "n_rows": 2})
+    )
+    assert R.anchors_is_done(cfg, fp, cfg.anchor_draws)
+    # Draw-count mismatch -> re-run.
+    assert not R.anchors_is_done(cfg, fp, cfg.anchor_draws + 1)
+    # Row-count mismatch -> re-run.
+    (cfg.anchors_dir / "anchors.jsonl").write_text('{"a": 1}\n')
+    assert not R.anchors_is_done(cfg, fp, cfg.anchor_draws)
+    (cfg.anchors_dir / "anchors.jsonl").write_text('{"a": 1}\n{"a": 2}\n')
+
+    # Skip precedes the model load.
+    def _no_load(_cfg):
+        raise AssertionError("model load must not run on done anchors")
+
+    monkeypatch.setattr(R, "load_model_and_tokenizer", _no_load)
+    assert R.phase_anchors(cfg) == R.RC_OK
+    with pytest.raises(RuntimeError, match="refusing to resume across regimes"):
+        R.anchors_is_done(cfg, "deadbeefdeadbeef", cfg.anchor_draws)
+
+
+# ── round-2 Critical 1: upload fail-loud (bounded outer retry) ──────────
+
+
+def _fake_upload_fn(ret):
+    """Signature-conformant fake of hub._upload_folder_filtered (external
+    Hub boundary only — _upload_dir's real body executes)."""
+
+    def _fn(
+        local_dir: Path,
+        repo_id: str,
+        repo_type: str,
+        path_in_repo: str,
+        allow_patterns: list[str],
+        expected_repo_paths: list[str],
+        ignore_patterns: list[str] | None = None,
+        delete_after: bool = False,
+    ) -> str:
+        _fn.calls += 1  # type: ignore[attr-defined]
+        return ret if not callable(ret) else ret(_fn.calls)  # type: ignore[attr-defined]
+
+    _fn.calls = 0  # type: ignore[attr-defined]
+    return _fn
+
+
+def test_upload_dir_raises_on_no_path_after_bounded_retry(tmp_path, monkeypatch):
+    """Round-2 Critical 1 pin (fails pre-fix): the hub helper's fail-soft ""
+    return is retried (bounded, jittered) then RAISES — the results sentinel
+    can never post over silently-lost durability."""
+    import explore_persona_space.orchestrate.hub as hub
+
+    cfg = _mk_cfg(tmp_path, upload_mode="hf")
+    stage = tmp_path / "stage"
+    stage.mkdir()
+    (stage / "x.json").write_text("{}")
+    fail = _fake_upload_fn("")
+    sleeps: list[float] = []
+    monkeypatch.setattr(hub, "_upload_folder_filtered", fail)
+    monkeypatch.setattr(R, "_upload_retry_sleep", sleeps.append)
+    with pytest.raises(RuntimeError, match="upload returned no path"):
+        R._upload_dir(cfg, stage, "issue2094_test/prefix", ["*.json"])
+    assert fail.calls == R.UPLOAD_TRANSPORT_RETRIES + 1
+    assert len(sleeps) == R.UPLOAD_TRANSPORT_RETRIES
+    assert all(s >= R.UPLOAD_BACKOFF_BASE_S[0] for s in sleeps)
+
+
+def test_upload_dir_recovers_on_transient_no_path(tmp_path, monkeypatch):
+    """One fail-soft return then success -> no raise, exact expected set."""
+    import explore_persona_space.orchestrate.hub as hub
+
+    cfg = _mk_cfg(tmp_path, upload_mode="hf")
+    stage = tmp_path / "stage"
+    stage.mkdir()
+    (stage / "x.json").write_text("{}")
+    flaky = _fake_upload_fn(lambda n: "" if n == 1 else "datasets/repo/prefix")
+    monkeypatch.setattr(hub, "_upload_folder_filtered", flaky)
+    monkeypatch.setattr(R, "_upload_retry_sleep", lambda _s: None)
+    out = R._upload_dir(cfg, stage, "issue2094_test/prefix", ["*.json"])
+    assert out == ["issue2094_test/prefix/x.json"]
+    assert flaky.calls == 2
+
+
+def test_upload_manifests_patterns_include_block_done_files(tmp_path):
+    """Round-2 Minor 7: the manifests upload matches blocks/*.done.json too
+    (per-block resume state + cap-hit provenance become durable off-pod)."""
+    cfg = _mk_cfg(tmp_path, upload_mode="local-mirror")
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.manifest_dir / "anchors_done.json").write_text("{}")
+    blocks = cfg.manifest_dir / "blocks"
+    blocks.mkdir()
+    (blocks / "b1.done.json").write_text("{}")
+    out = R._upload_dir(
+        cfg,
+        cfg.manifest_dir,
+        "issue2094_test/manifests",
+        ["*.json", "blocks/*.done.json"],
+    )
+    assert "issue2094_test/manifests/anchors_done.json" in out
+    assert "issue2094_test/manifests/blocks/b1.done.json" in out
