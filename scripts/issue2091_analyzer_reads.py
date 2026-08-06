@@ -29,7 +29,11 @@ import json
 import statistics
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # BEFORE numpy: shared-VM thread caps bind in-process (#847)
+
+import numpy as np  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RESULTS = REPO_ROOT / "eval_results" / "issue_2091"
