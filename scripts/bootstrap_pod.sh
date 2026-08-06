@@ -259,9 +259,12 @@ if [ -d $REMOTE_DIR/.git ]; then
     git config --replace-all credential.https://github.com.helper '$GIT_CRED_HELPER'
     # Sparse/promisor retrofit (#2051): a legacy pod that was bootstrapped
     # before the partial-clone lands here as a full clone. Enable the same
-    # cones + promisor filter so a subsequent `git pull` does not silently
-    # re-densify. `sparse-checkout init --cone` is idempotent; enabling
+    # cones + promisor filter so a subsequent 'git pull' does not silently
+    # re-densify. 'sparse-checkout init --cone' is idempotent; enabling
     # promisor on an existing repo is harmless (existing blobs stay local).
+    # NOTE (#2108): comment text inside this double-quoted payload is expanded
+    # by the LOCAL bash — never use backticks or an unescaped dollar-paren
+    # substitution here (enforced by tests/test_bootstrap_pod_payload_quoting.py).
     if ! git config --get remote.origin.promisor >/dev/null 2>&1; then
         git config remote.origin.promisor true
         git config remote.origin.partialclonefilter blob:none
