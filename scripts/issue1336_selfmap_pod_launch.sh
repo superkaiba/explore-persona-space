@@ -18,7 +18,7 @@ SURFACES="${2:?surface list required}"
 
 REPO=/workspace/explore-persona-space
 BRANCH=issue-1336-fullcorpora
-FIX_SHA=5e60bd6ad6
+FIX_SHA=a057a683cb
 LOGDIR=/workspace/logs
 OUT_ROOT=/workspace/out/issue_1336_selfmap
 STAGE_ROOT=/workspace/data/issue_1336
