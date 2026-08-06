@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2121,
+  "highest_id": 2122,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8681,6 +8681,13 @@
       "path": "tasks/proposed/2121",
       "status": "proposed",
       "title": "daily-fix: address-concern --summary-file + --dry-run alias"
+    },
+    "2122": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2122",
+      "status": "proposed",
+      "title": "daily-fix: root-branch guard ssh/cd-form false positives"
     },
     "213": {
       "has_clean_result": false,
