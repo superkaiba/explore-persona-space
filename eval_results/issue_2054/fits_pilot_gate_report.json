@@ -1,0 +1,22 @@
+{
+  "arm": "context",
+  "bootstrap_draws": 200,
+  "cell": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+  "fence_floor_seconds": 315625.4,
+  "fleet_units_basis": "total cells x arms (resume not modeled)",
+  "fold_k": 5,
+  "max_fleet_wall_hours": null,
+  "memo_not_modeled": true,
+  "n_fleet_units": 96,
+  "n_null_draws": 100,
+  "peak_rss_gib": 20.313,
+  "phase": "fits-pilot-gate",
+  "pilot_wall_seconds_per_unit_fold": 328.776,
+  "projected_fleet_wall_hours": 43.837,
+  "projected_fleet_wall_seconds": 157812.7,
+  "rss_route_off_vm_gib": 16.0,
+  "seed": 137,
+  "status": "ok",
+  "utc": "2026-08-06T06:30:03.864608+00:00",
+  "wall_seconds": 328.776
+}
