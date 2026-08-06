@@ -8937,8 +8937,8 @@
     "2156": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2156",
-      "status": "planning",
+      "path": "tasks/approved/2156",
+      "status": "approved",
       "title": "workflow-fix: repair main-red pin test_mlp_chunk_size_changes_fit_batch_order_init"
     },
     "2157": {
