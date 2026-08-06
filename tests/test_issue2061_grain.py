@@ -327,6 +327,38 @@ def test_registered_grain_35_cells_consume_50_stores():
     assert not any("gsm8k_test1319" in t for t in consumed)
 
 
+def test_collect_cells_corpus_filter_exact_membership_both_grains(monkeypatch):
+    """The repeatable --corpus filter (two-grain smoke, crash-fix 2026-08-06)
+    matches EXACT corpus names via list membership, resolves BOTH grains in
+    one pass, and normalizes a direct str caller so `in` can never do
+    substring matching (`"if11k" in "xx_if11k_xx"`-class false hits)."""
+    v2 = _fixture_stores(V2_COMBOS, "turnstore_v2")
+    v1 = _fixture_stores(V1_COMBOS, "turnstore")
+
+    def fake_enum(revision=None, generation="v2"):
+        return v2 if generation == "v2" else v1
+
+    def fake_fetch_sidecars(tree_path: str, revision, max_workers) -> list[dict]:
+        return []
+
+    monkeypatch.setattr(enc, "_stage_render_corpus_turnstores", fake_enum)
+    monkeypatch.setattr(gg, "_fetch_store_sidecars", fake_fetch_sidecars)
+
+    cells = gg.collect_cells_from_hub(["base"], "chat", ["gsm8k_train_full", "if11k"], None, 1)
+    assert sorted(c["corpus"] for c in cells) == ["gsm8k_train_full", "if11k"]
+    # BOTH grains reach resolution: concat consumes two stores, plain-v2 one.
+    assert {c["corpus"]: len(c["stores"]) for c in cells} == {
+        "gsm8k_train_full": 2,
+        "if11k": 1,
+    }
+
+    # A str caller is normalized to exact match — never substring membership.
+    cells = gg.collect_cells_from_hub(["base"], "chat", "if11k", None, 1)
+    assert [c["corpus"] for c in cells] == ["if11k"]
+    with pytest.raises(SystemExit, match="no registered cells"):
+        gg.collect_cells_from_hub(["base"], "chat", "xx_if11k_xx", None, 1)
+
+
 def test_encode_cell_loader_refuses_extension_only_concat():
     """The retired defect is now unrepresentable: a concat corpus with a
     single resolved tree refuses instead of silently encoding extension-only."""

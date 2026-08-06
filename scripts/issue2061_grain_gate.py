@@ -350,6 +350,8 @@ def collect_cells_from_hub(
     """
     import issue2061_sae_encode as enc
 
+    if isinstance(corpus, str):  # exact-match a str caller — `in` on a str is substring
+        corpus = [corpus]
     v2_stores = enc._stage_render_corpus_turnstores(revision=revision, generation="v2")
     targets = [
         t
