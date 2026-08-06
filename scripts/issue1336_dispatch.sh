@@ -46,8 +46,8 @@
 #       engine boundary, recorded as a stub in the phase log).
 #   bash scripts/issue1336_dispatch.sh all_v3 [--smoke]        # plan v15 pooled on/off-policy
 #       stage-transfer round: c_pool -> g0v3 -> g2v2 -> extract_offpolicy ->
-#       fit_pool (Unit C appends ladder_pool -> ladder_cluster -> upload_v3);
-#       each phase also invocable standalone.
+#       fit_pool -> ladder_pool -> ladder_cluster -> upload_v3; each phase
+#       also invocable standalone.
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"
@@ -2727,7 +2727,7 @@ for corpus, fmt in surfaces:
     fi
 }
 
-upload_preds_v2() { # $1 = cells|pooled|ladder — bulk upload_folder (one commit), fail loud
+upload_preds_v2() { # $1 = cells|pooled|ladder|ladder_pool|delta_q — bulk upload_folder (one commit), fail loud
     local which="$1" src dest
     if [ "$which" = "cells" ]; then
         src="data/issue_1336/preds_v2"
@@ -2735,6 +2735,12 @@ upload_preds_v2() { # $1 = cells|pooled|ladder — bulk upload_folder (one commi
     elif [ "$which" = "pooled" ]; then
         src="data/issue_1336/preds_pooled_v3"
         dest="$HF_PREFIX/analysis_tensors/preds_pooled_v3"
+    elif [ "$which" = "ladder_pool" ]; then
+        src="data/issue_1336/metric_ladder_pooled_v3"
+        dest="$HF_PREFIX/analysis_tensors/metric_ladder_pooled_v3"
+    elif [ "$which" = "delta_q" ]; then
+        src="analysis_tensors/delta_q_perdraw"
+        dest="$HF_PREFIX/analysis_tensors/delta_q_perdraw"
     else
         src="data/issue_1336/metric_ladder_preds"
         dest="$HF_PREFIX/analysis_tensors/metric_ladder_preds"
@@ -2953,13 +2959,17 @@ PY
 # the fit_pool pooled-fit units. Consumer CLIs (committed, NOT re-implemented
 # here): scripts/issue1336_extract_turnstore.py --text-source (Unit B-i) and
 # scripts/issue1336_fit_cells.py --v3-pooled/--g0v3/--g1v3-check (Unit B-ii).
-# Unit C appends ladder_pool -> ladder_cluster -> upload_v3.
+# Unit C's ladder_pool -> ladder_cluster -> upload_v3 phases live further
+# down (after phase_fit_pool).
 # ---------------------------------------------------------------------------
 MATCHED_N_POOLED_V3=15000   # plan v15 §6 pooled matched-n companion — NO cm registry
                             # constant exists BY DESIGN; the Unit B-ii driver hard-asserts
                             # an explicit --matched-n-size (never a silent default).
 EXT_OFF_PLANNED_WALL_H=3.8  # plan v15 §9 EXT_off row (booked; 1-cell pilot re-projects)
 FIT_POOL_PLANNED_WALL_H=1.8 # plan v15 §9 FIT_pool row (booked ~2x naive; G1'v3 unit = pilot)
+LADDER_POOL_PLANNED_WALL_H=1.6    # plan v15 §9 LAD_pool row (booked ~2x naive; 1-job pilot re-projects)
+LADDER_CLUSTER_PLANNED_WALL_H=0.5 # plan v15 §9 LAD_cluster row (measured-class; 1-transition pilot re-projects)
+GPU_HOURS_BUDGETED_V3=65          # plan v15 §9 total (the v3 results sentinel's budget row)
 
 pooled_manifest_v3() { # c_pool output (plan §4 Phase C_pool; smoke-suffixed root)
     if [ "$SMOKE" -eq 1 ]; then
@@ -3452,11 +3462,11 @@ g1v3_halt() { # $1=verdict summary string
     if declare -F phase_upload_v3 > /dev/null; then
         phase_upload_v3 halted
     elif [ "$SMOKE" -eq 0 ]; then
-        # Unit C's upload_v3 phase is not landed yet: persist the pooled
-        # preds here (per-cell turnstores already uploaded via --upload).
+        # Defensive residual (pre-Unit-C shape): persist the pooled preds
+        # here (per-cell turnstores already uploaded via --upload).
         upload_preds_v2 pooled || echo "[upload] WARNING: pooled preds upload failed rc=$? on the G1'v3 halt path" >&2
     fi
-    write_results_sentinel_v2 true
+    write_results_sentinel_v3 true
     echo "[phase=done]"
     exit 0
 }
@@ -3598,6 +3608,495 @@ for m, arm in units:
     upload_preds_v2 pooled || echo "[upload] WARNING: incremental preds_pooled_v3 upload failed rc=$? — Unit C's terminal upload_v3 retries fail-loud" >&2
 }
 
+# ---------------------------------------------------------------------------
+# Plan v15 Unit C phases: ladder_pool -> ladder_cluster -> upload_v3.
+# Consumer CLIs (committed, NOT re-implemented here):
+# scripts/issue1336_metric_ladder.py --pooled-pair (Unit C-iii) and
+# --cluster-delta-q (Unit C-i); the P_v3 decision writer
+# (scripts/issue1336_decision_v3.py, Unit C-iii) runs VM-side at harvest
+# (plan §9 phase_outputs.p_v3_figures — no pod phase).
+# ---------------------------------------------------------------------------
+
+headline_v3() { # pooled stage-symmetric headline layer (C-i rule); smoke pins the deepest smoke layer
+    local cache="$DONE_DIR/headline_v3.txt"
+    if [ ! -s "$cache" ]; then
+        OUT_ENV="$OUT_DIR" SMOKE_ENV=$SMOKE uv run python - > "$cache" <<'PY'
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("scripts").resolve()))
+
+from explore_persona_space.experiments.issue_1336 import common as cm
+
+smoke = os.environ.get("SMOKE_ENV") == "1"
+if smoke:
+    # fit_pool --cells smoke produces only the dpo-model pooled units, so the
+    # 5-checkpoint default rule cannot run on the smoke slice (C-i smoke-wiring
+    # note) — pin the deepest smoke layer explicitly instead.
+    print(int(cm.SMOKE_FROZEN_LAYERS[-1]))
+else:
+    import issue1336_metric_ladder as ml
+
+    head = ml._headline_layer_pooled(Path(os.environ["OUT_ENV"]) / "cells_pooled_v3", cm.FROZEN_LAYERS, None)
+    print(int(head["headline_layer"]))
+PY
+    fi
+    tail -n 1 "$cache"
+}
+
+phase_ladder_pool() {
+    # Phase LAD_pool (plan v15 §4 div. 9): pooled-split transfer tier reads
+    # (own/T0/T6/T8 + own_source) per (source->target, arm) with per-corpus
+    # slices, via issue1336_metric_ladder.py --pooled-pair (Unit C-iii).
+    # 20 jobs = 10 stage-ordered pairs x 2 arms; each job slices all manifest
+    # corpora internally, so the §9 "up to 140 (pair, arm, corpus) triples"
+    # ride 20 dispatch units. Opens with a MEASURED 1-job pilot at production
+    # shape (plan-compute-sizing: never a guessed per-call basis) writing
+    # gates_v3/ladder_pool_pilot.json + epm:compute-deviation past 2x.
+    echo "[phase=ladder_pool]"
+    _headroom_v2 ladder_pool 25
+    local first_cell
+    first_cell="$OUT_DIR/cells_pooled_v3/cells_pooled_$([ "$SMOKE" -eq 1 ] && echo dpo || echo rlvr)_arm_on.json"
+    [ -f "$first_cell" ] || {
+        emit_signal "epm:failure" "ladder_pool" "failure_class: code — $first_cell missing: Phase FIT_pool must complete before the pooled ladder (driver-enforced ordering)"
+        echo "[ladder_pool] FATAL: missing $first_cell" >&2
+        exit 78
+    }
+    local manifest
+    manifest=$(pooled_manifest_v3)
+    [ -f "$manifest" ] || {
+        emit_signal "epm:failure" "ladder_pool" "failure_class: code — $manifest missing: Phase C_pool must run before the pooled ladder"
+        echo "[ladder_pool] FATAL: missing $manifest" >&2
+        exit 78
+    }
+    storm_guard ladder_pool "import torch, numpy"
+    local headline
+    headline=$(headline_v3)
+    case "$headline" in *[!0-9]* | "")
+        echo "[ladder_pool] FATAL: bad headline layer '$headline'" >&2
+        exit 70
+        ;;
+    esac
+    echo "[ladder_pool] headline layer = $headline (pooled stage-symmetric rule; smoke pins cm.SMOKE_FROZEN_LAYERS[-1])"
+    local jobs="$DONE_DIR/jobs_ladder_pool.tsv"
+    OUT_ENV="$OUT_DIR" HL_ENV="$headline" MAN_ENV="$manifest" W1_ENV="$WAVE1_TS_DIR" \
+        PYBIN_ENV="$PYBIN" registry_lines_v2 '
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
+out, hl, man = os.environ["OUT_ENV"], os.environ["HL_ENV"], os.environ["MAN_ENV"]
+flag = "--smoke" if smoke else ""
+w1 = "" if smoke else (" --wave1-turnstore-dir " + os.environ["W1_ENV"])
+if smoke:
+    pair_list = list(cm.SMOKE_OFFDIAG_PAIRS_V3)
+else:
+    import itertools
+
+    pair_list = list(itertools.combinations(list(cm.MODELS), 2))  # stage-ordered i<j: 10 pairs
+for i, j in pair_list:
+    for arm in ("on", "off"):
+        print(
+            f"{i}__{j}_arm_{arm}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_metric_ladder.py "
+            f"--pooled-pair {i}:{j} --arm {arm} --split-manifest {man} "
+            f"--frozen-layers {hl} --out-dir {out}{w1} {flag}"
+        )
+' > "$jobs"
+    # MEASURED 1-job pilot at production shape (the first queue job, run
+    # serially and timed; its done-file makes the queue skip it).
+    if [ "$SMOKE" -eq 0 ] && [ ! -f "$DONE_DIR/ladder_pool__pilot.done" ]; then
+        local pline pname pcmd p0 p1 pilot_wall
+        pline=$(sed -n '1p' "$jobs")
+        pname=${pline%%$'\t'*}
+        pcmd=${pline#*$'\t'}
+        p0=$(date +%s)
+        if [ "$NGPU" -gt 0 ]; then
+            CUDA_VISIBLE_DEVICES=0 bash -c "$pcmd" >> "$JOB_LOG_DIR/ladder_pool__${pname}.log" 2>&1
+        else
+            bash -c "$pcmd" >> "$JOB_LOG_DIR/ladder_pool__${pname}.log" 2>&1
+        fi
+        p1=$(date +%s)
+        pilot_wall=$((p1 - p0))
+        echo "$pilot_wall" > "$DONE_DIR/ladder_pool_pilot_wall_s"
+        touch "$DONE_DIR/ladder_pool__${pname}.done"
+        touch "$DONE_DIR/ladder_pool__pilot.done"
+        PILOT_WALL="$pilot_wall" NGPU_ENV="$NGPU" PLANNED="$LADDER_POOL_PLANNED_WALL_H" \
+            OUT_ENV="$OUT_DIR" JOBS_ENV="$jobs" DONE_ENV="$DONE_DIR" uv run python - <<'PY'
+import json
+import os
+from pathlib import Path
+
+wall = float(os.environ["PILOT_WALL"])
+ngpu = max(int(os.environ["NGPU_ENV"]), 1)
+planned = float(os.environ["PLANNED"])
+done_dir = Path(os.environ["DONE_ENV"])
+names = [ln.split("\t")[0] for ln in Path(os.environ["JOBS_ENV"]).read_text().splitlines() if ln]
+pend = [n for n in names if not (done_dir / f"ladder_pool__{n}.done").exists()]
+projected = wall * len(pend) / ngpu / 3600.0
+ratio = projected / planned if planned else float("inf")
+out = Path(os.environ["OUT_ENV"]) / "gates_v3" / "ladder_pool_pilot.json"
+out.parent.mkdir(parents=True, exist_ok=True)
+out.write_text(
+    json.dumps(
+        {
+            "component": "LAD_pool (20 pooled-pair tier batteries)",
+            "pilot_job_wall_s": wall,
+            "n_pending": len(pend),
+            "ngpu": ngpu,
+            "projected_wall_h": round(projected, 3),
+            "planned_wall_h": planned,
+            "ratio": round(ratio, 3),
+            "basis": (
+                "measured 1-job pilot (first stage pair, on arm) through the production "
+                "entrypoint at production shape; each job = one (pair, arm) pooled battery "
+                "covering all manifest corpora"
+            ),
+        },
+        indent=2,
+    )
+    + "\n"
+)
+print(f"[ladder_pool] pilot wall={wall:.0f}s projected={projected:.2f}h vs planned {planned}h (x{ratio:.2f})")
+PY
+        local lratio
+        lratio=$(uv run python -c "import json;d=json.load(open('$OUT_DIR/gates_v3/ladder_pool_pilot.json'));print('OVER' if d['ratio']>2.0 else 'OK', d['planned_wall_h'], d['projected_wall_h'], d['ratio'])")
+        if [ "${lratio%% *}" = "OVER" ]; then
+            set -- $lratio
+            emit_signal "epm:compute-deviation" "ladder_pool" "component: LAD_pool (20 pooled-pair tier batteries)
+planned_wall_h: $2
+projected_wall_h: $3
+ratio: $4
+basis: measured 1-job pilot through the production entrypoint at production shape"
+        fi
+    fi
+    run_queue ladder_pool "$jobs"
+    if [ "$SMOKE" -eq 0 ]; then
+        upload_preds_v2 ladder_pool || echo "[upload] WARNING: incremental metric_ladder_pooled_v3 upload failed rc=$? — terminal phase_upload_v3 retries fail-loud" >&2
+    fi
+}
+
+phase_ladder_cluster() {
+    # Phase LAD_cluster (plan v15 §4 div. 11): C-i's per-transition cluster
+    # delta-Q battery (issue1336_metric_ladder.py --cluster-delta-q).
+    # C-i RSS caveat: per-unit Y extraction materializes a bundle's `profiles`
+    # array FULLY on access, so the plan's ~4 GB estimate can be exceeded
+    # transiently. The phase therefore opens with a MEASURED 1-transition
+    # pilot through the production entrypoint (production draws) that sizes
+    # BOTH the wall AND the peak RSS (rusage of the child process tree),
+    # writes gates_v3/ladder_cluster_pilot.json, fences the full battery at
+    # >=2x the pilot-extrapolated wall, and REFUSES the full run (fail-loud,
+    # cpu-bigmem routing instruction) when the measured peak does not fit the
+    # current host — a plan-time routing decision from a measurement, never
+    # an OOM kill.
+    echo "[phase=ladder_cluster]"
+    _headroom_v2 ladder_cluster 10
+    storm_guard ladder_cluster "import torch, numpy"
+    local headline
+    headline=$(headline_v3)
+    case "$headline" in *[!0-9]* | "")
+        echo "[ladder_cluster] FATAL: bad headline layer '$headline'" >&2
+        exit 70
+        ;;
+    esac
+    if [ "$SMOKE" -eq 1 ]; then
+        # C-i smoke-wiring note: --cells smoke fits only the dpo pooled units,
+        # so the smoke battery needs the rlvr on-policy pooled unit fitted too
+        # (transition dpo:rlvr reads BOTH checkpoints' preds), the transition +
+        # arm pinned, and an explicit headline layer. Per-draw matrices divert
+        # into the scratch smoke tree (never the committed analysis_tensors/).
+        if [ ! -f "$DONE_DIR/ladder_cluster__smoke_rlvr_unit.done" ]; then
+            PYTHONUNBUFFERED=1 "$PYBIN" scripts/issue1336_fit_cells.py --v3-pooled \
+                --cells pooled_rlvr_arm_on --out-dir "$OUT_DIR" --smoke \
+                >> "$JOB_LOG_DIR/ladder_cluster__smoke_rlvr_unit.log" 2>&1
+            touch "$DONE_DIR/ladder_cluster__smoke_rlvr_unit.done"
+        fi
+        PYTHONUNBUFFERED=1 "$PYBIN" scripts/issue1336_metric_ladder.py --cluster-delta-q \
+            --transitions dpo:rlvr --arms on --headline-layer "$headline" \
+            --out-dir "$OUT_DIR" --perdraw-dir "$OUT_DIR/delta_q_perdraw" --smoke \
+            >> "$JOB_LOG_DIR/ladder_cluster__smoke.log" 2>&1
+        echo "[ladder_cluster] smoke battery complete (dpo:rlvr, on arm, layer $headline)"
+        return 0
+    fi
+    # MEASURED 1-transition pilot at production shape (production draws; the
+    # dispatcher passes the SAME headline layer the default rule resolves, so
+    # the pilot needs no cells_pooled_v3 copies in its scratch out-root).
+    local pilot_out="$DONE_DIR/ladder_cluster_pilot_out"
+    if [ ! -f "$DONE_DIR/ladder_cluster__pilot.done" ]; then
+        rm -rf "$pilot_out"
+        mkdir -p "$pilot_out"
+        PILOT_OUT="$pilot_out" HL_ENV="$headline" PYBIN_ENV="$PYBIN" \
+            LOG_ENV="$JOB_LOG_DIR/ladder_cluster__pilot.log" DONE_ENV="$DONE_DIR" \
+            OUT_ENV="$OUT_DIR" PLANNED="$LADDER_CLUSTER_PLANNED_WALL_H" uv run python - <<'PY'
+import json
+import os
+import resource
+import subprocess
+import time
+from pathlib import Path
+
+pilot_out = os.environ["PILOT_OUT"]
+cmd = [
+    os.environ["PYBIN_ENV"],
+    "scripts/issue1336_metric_ladder.py",
+    "--cluster-delta-q",
+    "--transitions", "base:sft",
+    "--arms", "on",
+    "--headline-layer", os.environ["HL_ENV"],
+    "--out-dir", pilot_out,
+    "--perdraw-dir", f"{pilot_out}/delta_q_perdraw",
+]
+t0 = time.time()
+with open(os.environ["LOG_ENV"], "ab") as log:
+    rc = subprocess.run(cmd, stdout=log, stderr=log, env={**os.environ, "PYTHONUNBUFFERED": "1"}).returncode
+wall = time.time() - t0
+rss_gib = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss / (1024.0 * 1024.0)
+mem_avail_gib = 0.0
+for line in Path("/proc/meminfo").read_text().splitlines():
+    if line.startswith("MemAvailable:"):
+        mem_avail_gib = float(line.split()[1]) / (1024.0 * 1024.0)
+        break
+planned = float(os.environ["PLANNED"])
+n_legs = 8  # 4 registered transitions x 2 arms (the full battery re-runs the pilot leg)
+projected = wall * n_legs / 3600.0
+ratio = projected / planned if planned else float("inf")
+fits = rss_gib * 1.25 <= mem_avail_gib
+verdict = {
+    "component": "LAD_cluster (4 transitions x 2 arms delta-Q battery)",
+    "pilot_leg": "base:sft on-arm, production draws",
+    "pilot_wall_s": round(wall, 1),
+    "pilot_rc": rc,
+    "pilot_max_rss_gib": round(rss_gib, 2),
+    "mem_available_gib": round(mem_avail_gib, 2),
+    "rss_headroom_factor": 1.25,
+    "rss_fits_host": bool(fits),
+    "n_legs_total": n_legs,
+    "projected_wall_h": round(projected, 3),
+    "planned_wall_h": planned,
+    "ratio": round(ratio, 3),
+    "basis": (
+        "measured 1-transition pilot through the production entrypoint at production "
+        "draw count; peak RSS from rusage(RUSAGE_CHILDREN) — the C-i profiles-array "
+        "transient is inside the measured leg"
+    ),
+}
+gate = Path(os.environ["OUT_ENV"]) / "gates_v3" / "ladder_cluster_pilot.json"
+gate.parent.mkdir(parents=True, exist_ok=True)
+gate.write_text(json.dumps(verdict, indent=2) + "\n")
+Path(os.environ["DONE_ENV"], "ladder_cluster_pilot_wall_s").write_text(str(int(wall) + 1))
+print(
+    f"[ladder_cluster] pilot rc={rc} wall={wall:.0f}s rss={rss_gib:.2f}GiB "
+    f"avail={mem_avail_gib:.2f}GiB projected={projected:.2f}h vs planned {planned}h (x{ratio:.2f})"
+)
+raise SystemExit(rc)
+PY
+        touch "$DONE_DIR/ladder_cluster__pilot.done"
+        local pverdict
+        pverdict=$(uv run python -c "import json;d=json.load(open('$OUT_DIR/gates_v3/ladder_cluster_pilot.json'));print('RSSFAIL' if not d['rss_fits_host'] else 'RSSOK', 'OVER' if d['ratio']>2.0 else 'OK', d['planned_wall_h'], d['projected_wall_h'], d['ratio'], d['pilot_max_rss_gib'], d['mem_available_gib'])")
+        set -- $pverdict
+        if [ "$1" = "RSSFAIL" ]; then
+            emit_signal "epm:failure" "ladder_cluster" "failure_class: infra — LAD_cluster measured peak RSS ${6}GiB (x1.25 headroom) exceeds MemAvailable ${7}GiB on this host: route the ladder_cluster phase to a cpu-bigmem pod (128 GB) per the C-i profiles-array caveat (plan-time routing from the measured 1-transition pilot, never an OOM kill)"
+            echo "[ladder_cluster] FATAL: measured peak RSS ${6}GiB does not fit host (avail ${7}GiB)" >&2
+            exit 78
+        fi
+        if [ "$2" = "OVER" ]; then
+            emit_signal "epm:compute-deviation" "ladder_cluster" "component: LAD_cluster (4 transitions x 2 arms delta-Q battery)
+planned_wall_h: $3
+projected_wall_h: $4
+ratio: $5
+basis: measured 1-transition pilot (base:sft, on arm) through the production entrypoint at production draw count"
+        fi
+        rm -rf "$pilot_out" # scratch: the full battery below recomputes every leg into $OUT_DIR
+    fi
+    # Full battery, fenced at >=2x the pilot-extrapolated wall (8 legs; the
+    # fence is sized from the MEASURED pilot, never a guessed basis).
+    if [ ! -f "$DONE_DIR/ladder_cluster__battery.done" ]; then
+        local pilot_wall fence
+        pilot_wall=$(cat "$DONE_DIR/ladder_cluster_pilot_wall_s")
+        fence=$((pilot_wall * 8 * 2 + 900))
+        timeout --kill-after=60 "${fence}s" env PYTHONUNBUFFERED=1 "$PYBIN" \
+            scripts/issue1336_metric_ladder.py --cluster-delta-q --out-dir "$OUT_DIR" \
+            >> "$JOB_LOG_DIR/ladder_cluster__battery.log" 2>&1
+        touch "$DONE_DIR/ladder_cluster__battery.done"
+        echo "[ladder_cluster] full battery complete (fence was ${fence}s = 2x pilot-extrapolated)"
+    fi
+    upload_preds_v2 delta_q || echo "[upload] WARNING: incremental delta_q_perdraw upload failed rc=$? — terminal phase_upload_v3 retries fail-loud" >&2
+}
+
+phase_upload_v3() { # $1 optional "halted" — terminal v3 persistence (mirror of phase_upload_v2)
+    echo "[phase=upload_v3]"
+    if [ "$SMOKE" -eq 1 ]; then
+        echo "[upload_v3] smoke: HF upload + git push skipped (scratch outputs only)"
+        return 0
+    fi
+    upload_preds_v2 pooled
+    upload_preds_v2 ladder_pool
+    upload_preds_v2 delta_q
+    # Eval-results mirror (JSON only, non-LFS path; ephemeral-lane rule).
+    UP_SRC="$OUT_DIR" UP_DEST="$HF_PREFIX/eval_results_mirror_v3" UP_REPO="$HF_DATA_REPO" \
+        uv run python - <<'PY'
+import os
+
+from huggingface_hub import upload_folder
+
+from explore_persona_space.orchestrate import hub
+
+assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing in workload env"
+hub.retry_transient(
+    lambda: upload_folder(
+        repo_id=os.environ["UP_REPO"],
+        repo_type="dataset",
+        folder_path=os.environ["UP_SRC"],
+        path_in_repo=os.environ["UP_DEST"],
+        allow_patterns=["*.json"],
+    ),
+    what="eval_results_mirror_v3 upload",
+)
+print("[upload_v3] eval_results mirror uploaded")
+PY
+    # Commit eval JSONs to the issue branch; push verified (#1205/#1880 —
+    # fetch+rebase before retry, never a swallowed push). Rsync lanes have NO
+    # .git in the scratch tree (pod-side-reporting.md): the HF mirror above is
+    # the durable copy and the VM-side orchestrator owns the commit there.
+    if [ -e .git ] && git rev-parse --git-dir >/dev/null 2>&1; then
+        local branch rc=0
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        git add "$OUT_DIR"
+        if ! git diff --cached --quiet; then
+            git commit -m "task #1336: v3 eval results ($([ "${1:-}" = halted ] && echo 'G1-prime-v3 halt' || echo 'full pooled ladder'))"
+        fi
+        git push origin "HEAD:$branch" || rc=$?
+        if [ "$rc" -ne 0 ] || [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
+            echo "[upload_v3] push not landed — one retry after rebase" >&2
+            git pull --rebase=merges --autostash origin "$branch"
+            git push origin "HEAD:$branch"
+        fi
+        if [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
+            echo "[upload_v3] FATAL: result commit not on origin/$branch after retry" >&2
+            exit 86
+        fi
+        echo "[upload_v3] result commit verified on origin/$branch"
+    else
+        echo "[upload_v3] no git checkout (rsync lane) — eval-results commit is VM-side (HF mirror uploaded above; fetch_results pulls eval_results/ to the VM)"
+    fi
+}
+
+write_results_sentinel_v3() { # $1 = halted true|false
+    local ts path
+    ts=$(date +%s)
+    path="$LOG_DIR/issue-1336-$(printf '%s' "$RESULTS_KIND" | tr ':' '_')-${ts}.json"
+    RES_OUT="$path" RES_KIND="$RESULTS_KIND" RES_HALTED="$1" RES_OUTDIR="$OUT_DIR" \
+        RES_NGPU="$NGPU" RES_START="$(cat "$DONE_DIR/start_ts")" RES_SMOKE="$SMOKE" \
+        RES_BUDGET="$GPU_HOURS_BUDGETED_V3" RES_REPO="$HF_DATA_REPO" RES_PREFIX="$HF_PREFIX" \
+        uv run python - <<'PY'
+import json
+import os
+import time
+from pathlib import Path
+
+from explore_persona_space.experiments.issue_1336 import common as cm
+from explore_persona_space.experiments.issue_1336.common import resolve_code_sha
+
+out_dir = Path(os.environ["RES_OUTDIR"])
+halted = os.environ["RES_HALTED"] == "true"
+smoke = os.environ["RES_SMOKE"] == "1"
+
+
+def _maybe(p: Path):
+    return json.loads(p.read_text()) if p.exists() else None
+
+
+g0v3 = _maybe(out_dir / "gates_v3" / "g0v3.json")
+g2v2 = _maybe(out_dir / "gates_v3" / "g2v2_offpolicy_parity.json")
+g1v3 = _maybe(out_dir / "gates_v3" / "g1v3_gate.json")
+lp_pilot = _maybe(out_dir / "gates_v3" / "ladder_pool_pilot.json")
+lc_pilot = _maybe(out_dir / "gates_v3" / "ladder_cluster_pilot.json")
+dq = _maybe(out_dir / "decision_v3" / "cluster_delta_q_per_transition.json")
+n_pooled_cells = (
+    len(sorted((out_dir / "cells_pooled_v3").glob("cells_pooled_*.json")))
+    if (out_dir / "cells_pooled_v3").exists()
+    else 0
+)
+n_pair_files = (
+    len(sorted((out_dir / "metric_ladder_pooled_v3").glob("pair_*_arm_*.json")))
+    if (out_dir / "metric_ladder_pooled_v3").exists()
+    else 0
+)
+
+eval_numbers = {
+    "g0v3_pass": bool(g0v3["pass"]) if g0v3 and "pass" in g0v3 else None,
+    "g2v2_pass": bool(g2v2["pass"]) if g2v2 and "pass" in g2v2 else None,
+    "g1v3_verdict": (g1v3 or {}).get("verdict"),
+    "n_cells_pooled_v3_json": n_pooled_cells,
+    "n_metric_ladder_pooled_pairs": n_pair_files,
+    "n_delta_q_transitions": len((dq or {}).get("transitions", {})),
+    "ladder_pool_pilot_ratio": (lp_pilot or {}).get("ratio"),
+    "ladder_cluster_pilot_ratio": (lc_pilot or {}).get("ratio"),
+    "ladder_cluster_pilot_max_rss_gib": (lc_pilot or {}).get("pilot_max_rss_gib"),
+    "halted_at_g1v3": halted,
+}
+
+sha = resolve_code_sha()  # lane-robust: rsync lanes have no .git
+gpu_hours = round(
+    (time.time() - float(os.environ["RES_START"])) / 3600.0 * max(int(os.environ["RES_NGPU"]), 1),
+    2,
+)
+plan_deviations = []
+if halted:
+    plan_deviations.append(
+        "G1'v3 kill gate fired — pooled ladder phases halted by design; artifacts persisted"
+    )
+
+note = {
+    "eval_numbers": eval_numbers,
+    "eval_paths": sorted(
+        str(p)
+        for sub in ("gates_v3", "cells_pooled_v3", "metric_ladder_pooled_v3", "decision_v3")
+        for p in (out_dir / sub).rglob("*.json")
+    )[:200],
+    "halted": halted,
+    "reproducibility_card": {
+        "models": [cm.MODELS[m]["hf_id"] for m in cm.MODELS],
+        "hf_data_repo": os.environ["RES_REPO"],
+        "hf_prefix": os.environ["RES_PREFIX"] + "/",
+        "hf_hub_url": (
+            f"https://huggingface.co/datasets/{os.environ['RES_REPO']}/tree/main/"
+            f"{os.environ['RES_PREFIX']}"
+        ),
+        "adapter_paths": "n/a (no training in the v3 pooled stage-transfer round)",
+        "wandb_url": "n/a (no training in the v3 pooled stage-transfer round)",
+        "constants": {
+            "n_folds": cm.N_FOLDS,
+            "fit_seed": cm.FIT_SEED,
+            "n_bootstrap": cm.N_BOOTSTRAP,
+            "null_draws": cm.N_NULL_DRAWS,
+            "frozen_layers": list(cm.FROZEN_LAYERS),
+            "lambda_grid": "np.logspace(-3, 8, 23) (fixed ladder grid)",
+            "n_inner_lambda_folds": cm.N_INNER_LAMBDA_FOLDS_V2,
+            "pooled_pair_boot_seed_base": 5300,
+            "delta_q_perm_draws_default": 1000,
+            "wave1_rev": cm.WAVE1_HF_REV,
+        },
+        "worktree_path": ".claude/worktrees/issue-1336-fullcorpora",
+        "final_commit_sha": sha,
+        "gpu_hours_used": gpu_hours,
+        "gpu_hours_budgeted": float(os.environ["RES_BUDGET"]),
+        "plan_deviations": plan_deviations,
+    },
+}
+payload = {
+    "sentinel_schema_version": 1,
+    "kind": os.environ["RES_KIND"],
+    "version": 1,
+    "task_id": 1336,
+    "by": "issue1336_dispatch",
+    "smoke": smoke,
+    "halted": halted,
+    "note": json.dumps(note),
+}
+with open(os.environ["RES_OUT"], "w") as fh:
+    json.dump(payload, fh, indent=2)
+print(f"[signal] wrote v3 results sentinel {os.environ['RES_OUT']} (halted={halted})")
+PY
+}
+
 run_phase() { # $1 = phase name
     if phase_done "$1"; then
         echo "[dispatch1336] phase $1 already complete — skipping"
@@ -3651,21 +4150,25 @@ all_v3)
     # ORDER before the capture/fit spend, extract_offpolicy captures the 20
     # off-diagonal cells teacher-forced on the pooled 20/80 union, and
     # fit_pool runs the 10 pooled (checkpoint x arm) fit units behind the
-    # G1'v3 rig-health kill gate (Unit B). Unit C appends ladder_pool ->
-    # ladder_cluster -> upload_v3 (until then the results sentinel below
-    # stays halted=false interim). Reused round-3 inputs — wave-1 staging
-    # (c_stage), the committed gates_v2/cells_v2 outputs, the diagonal
-    # turnstores (extractor HF-resume) — are prerequisites asserted by the
-    # phases, not re-derived here.
+    # G1'v3 rig-health kill gate (Unit B); ladder_pool runs the 20 pooled-pair
+    # transfer-tier batteries, ladder_cluster the C-i cluster delta-Q battery,
+    # and upload_v3 is the terminal persistence + v3 results sentinel (Unit C).
+    # Reused round-3 inputs — wave-1 staging (c_stage), the committed
+    # gates_v2/cells_v2 outputs, the diagonal turnstores (extractor
+    # HF-resume) — are prerequisites asserted by the phases, not re-derived
+    # here.
     run_phase c_pool
     run_phase g0v3
     run_phase g2v2
     run_phase extract_offpolicy
     run_phase fit_pool
-    write_results_sentinel_v2 false
+    run_phase ladder_pool
+    run_phase ladder_cluster
+    run_phase upload_v3
+    write_results_sentinel_v3 false
     echo "[phase=done]"
     ;;
-c_pool | g0v3 | g2v2 | extract_offpolicy | fit_pool)
+c_pool | g0v3 | g2v2 | extract_offpolicy | fit_pool | ladder_pool | ladder_cluster | upload_v3)
     run_phase "$PHASE_ARG"
     echo "[dispatch1336] single-phase invocation of $PHASE_ARG complete (no terminal done line)"
     ;;
@@ -3710,7 +4213,7 @@ __phase_key)
     exit 0
     ;;
 *)
-    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit|all_v2|c_stage|g0v2|g2_parity|gen_v2|gen_v2_nat|extract_v2|extract_v2_nat|fit_v2|ladder|upload_v2|all_v3|c_pool|g0v3|g2v2|extract_offpolicy|fit_pool [--smoke]" >&2
+    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit|all_v2|c_stage|g0v2|g2_parity|gen_v2|gen_v2_nat|extract_v2|extract_v2_nat|fit_v2|ladder|upload_v2|all_v3|c_pool|g0v3|g2v2|extract_offpolicy|fit_pool|ladder_pool|ladder_cluster|upload_v3 [--smoke]" >&2
     exit 2
     ;;
 esac

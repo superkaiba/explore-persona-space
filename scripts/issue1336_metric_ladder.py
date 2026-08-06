@@ -223,6 +223,29 @@ def parse_args() -> argparse.Namespace:
         default=250,
         help="draws per vectorized permutation chunk (memory bound: chunk x n_prompts)",
     )
+    # --- pooled-pair transfer tier reads (plan v15 §4 div. 9 + Phase LAD_pool) ---
+    ap.add_argument(
+        "--pooled-pair",
+        default=None,
+        help="i:j ordered checkpoint pair — run the Phase LAD_pool pooled-split transfer "
+        "tier read (own/T0/T6/T8 on the pooled 20%% test side, sliced per corpus); "
+        "mutually exclusive with --pair/--pairs/--cluster-delta-q",
+    )
+    ap.add_argument(
+        "--arm",
+        choices=("on", "off"),
+        default=None,
+        help="--pooled-pair arm: on = each checkpoint captured on its OWN text (diagonal "
+        "v2 turnstores); off = fixed-answer-text guard (the SOURCE checkpoint captured on "
+        "the TARGET's text via the Phase EXT_off off-diagonal tree)",
+    )
+    ap.add_argument(
+        "--split-manifest",
+        type=Path,
+        default=None,
+        help="Phase C_pool split manifest (default: data/issue_1336/pooled_split_v3"
+        "[_smoke]/split_manifest.json — name parity with issue1336_fit_cells.py)",
+    )
     return ap.parse_args()
 
 
@@ -1747,10 +1770,343 @@ def cluster_delta_q_battery(args) -> None:
     _write_json(out_dir / "decision_v3" / "cluster_delta_q_per_transition.json", payload)
 
 
+# ---------------------------------------------------------------------------
+# Phase LAD_pool (plan v15 §4 divergence 9): pooled-split transfer tier reads.
+#
+# One invocation = one (source i -> target j, arm) battery over the POOLED
+# split: tier maps are fit on the manifest TRAIN side (pooled across all
+# manifest corpora — "W_source cached per (i, a, fold)" reduces to one
+# train-side prep per role here, since the panel reads the single pooled
+# 80/20 split, not the inner CV folds) and evaluated on the pooled 20% TEST
+# side, then sliced per corpus for the 2x2 panel (§4: "Held-out on the pooled
+# 20% split, sliced by corpus"). The tier engine is the UNCHANGED
+# ``_fold_observed`` (the round-3 T0..T8 battery) called with tr/te = the
+# manifest sides; nulls reuse ``_fold_null_r2_contrib`` (shuffled-
+# correspondence refit, §4 div. 10 extended to the off arm).
+#
+# Arms (cm.cells_v3_for semantics):
+#   on  — Xs/Ys = checkpoint i on its OWN text (diagonal v2 turnstore);
+#         Xt/Yt = checkpoint j on its OWN text. Text differs across sides
+#         (each model answers the same prompts on-policy).
+#   off — Xs/Ys = checkpoint i captured teacher-forced on j's text (the
+#         Phase EXT_off turnstore_offpolicy_<i>_chat_<j> tree); Xt/Yt =
+#         checkpoint j on its own text. Fixed-answer-text guard: the TEXT is
+#         identical across sides, so tier gaps read as representation change.
+#
+# Bootstrap: per-corpus draw matrices seeded 5300 + v2_surface_index(c, chat)
+# (pooled-overall 5299) — seeds are pair/arm-independent and the test rows
+# are the SAME manifest rows for every (pair, arm), so draws are PAIRED
+# across arms and stages (§4: "paired across arms and stages sharing the
+# fold partition"). Guideline-11 companions (identity+learned-bias baseline
+# + kNN retrieval) ride the pooled test side for the own/T0 reads.
+#
+# Outputs (plan §9 phase_outputs.ladder_pool):
+#   eval_results/issue_1336/metric_ladder_pooled_v3/pair_<i>__<j>_arm_<a>.json
+#   data/issue_1336/metric_ladder_pooled_v3[_smoke]/pair_<i>__<j>_arm_<a>.npz
+# ---------------------------------------------------------------------------
+
+POOLED_PAIR_TIERS = ("within", "t0", "t6", "t8")
+POOLED_PAIR_BOOT_SEED_BASE = 5300  # + v2 chat-surface index per corpus slice
+POOLED_PAIR_BOOT_SEED_POOLED = 5299  # the all-corpora pooled read
+
+
+def _pooled_pair_assemble(
+    model: str,
+    text_source: str,
+    by_corpus: dict[str, list[dict]],
+    corpora: tuple[str, ...],
+    *,
+    ts_dir: Path,
+    off_root: Path,
+    smoke: bool,
+    wave1_dir: Path | None,
+    gen_root: Path | None,
+    expected_layers: int | None,
+    frozen: tuple[int, ...],
+) -> dict:
+    """One side's pooled (X, Y, rows) via the Phase FIT_pool loaders (f36)."""
+    unit = {"model": model, "text_sources": [text_source]}
+    return f36._assemble_pooled_rows(
+        unit,
+        by_corpus,
+        corpora=corpora,
+        ts_dir=ts_dir,
+        off_root=off_root,
+        smoke=smoke,
+        wave1_dir=wave1_dir,
+        gen_root=gen_root,
+        x_slot="context",
+        expected_layers=expected_layers,
+        frozen_layers=frozen,
+    )
+
+
+def _pooled_pair_tier_block(pred: np.ndarray, y: np.ndarray, idx_w: np.ndarray) -> dict:
+    """{r2, r2_bootstrap} for one (tier, row-slice) read — the panel's unit."""
+    return {
+        "r2": float(fc._pooled_r2(pred, y)),
+        "r2_bootstrap": la._ci(la.weighted_r2_draws(pred, y, idx_w)),
+    }
+
+
+def run_pooled_pair(args) -> None:
+    """One Phase LAD_pool (pair, arm) battery: load, align, fit, slice, persist."""
+    smoke = args.smoke
+    sfx = "_smoke" if smoke else ""
+    src, tgt = args.pooled_pair.split(":")
+    assert src in cm.MODELS and tgt in cm.MODELS, f"unknown checkpoint in {args.pooled_pair!r}"
+    assert src != tgt, "--pooled-pair needs an ordered i:j with i != j"
+    arm = args.arm
+    assert arm in ("on", "off"), "--pooled-pair requires --arm on|off"
+    man_path = args.split_manifest or Path(
+        f"data/issue_1336/pooled_split_v3{sfx}/split_manifest.json"
+    )
+    man = f36._load_split_manifest(man_path)
+    man_sha = hashlib.sha256(man_path.read_bytes()).hexdigest()
+    by_corpus = f36._manifest_rows_by_corpus(man)
+    corpora = tuple(by_corpus)
+    ts_dir = args.turnstore_dir or Path(f"data/issue_1336/turnstore_v2{sfx}")
+    off_root = args.offpolicy_root or Path("data/issue_1336")
+    wave1_dir = args.wave1_turnstore_dir or ts_dir
+    gen_root = args.gen_root or (None if smoke else Path("data/issue_1336/gen"))
+    if args.frozen_layers:
+        run_layers = tuple(int(x) for x in args.frozen_layers.split(",") if x.strip())
+    else:
+        run_layers = cm.SMOKE_FROZEN_LAYERS if smoke else cm.FROZEN_LAYERS
+    exp_layers = None if smoke else cm.EXPECTED_LAYERS
+    n_boot = (
+        args.n_boot if args.n_boot is not None else (cm.SMOKE_N_BOOT if smoke else cm.N_BOOTSTRAP)
+    )
+    null_draws = (
+        args.null_draws
+        if args.null_draws is not None
+        else (cm.SMOKE_NULL_DRAWS if smoke else cm.N_NULL_DRAWS)
+    )
+    grid = np.asarray(cm.LAMBDAS_23, dtype=np.float64)
+    src_text = src if arm == "on" else tgt
+    asm_s = _pooled_pair_assemble(
+        src,
+        src_text,
+        by_corpus,
+        corpora,
+        ts_dir=ts_dir,
+        off_root=off_root,
+        smoke=smoke,
+        wave1_dir=wave1_dir,
+        gen_root=gen_root,
+        expected_layers=exp_layers,
+        frozen=run_layers,
+    )
+    asm_t = _pooled_pair_assemble(
+        tgt,
+        tgt,
+        by_corpus,
+        corpora,
+        ts_dir=ts_dir,
+        off_root=off_root,
+        smoke=smoke,
+        wave1_dir=wave1_dir,
+        gen_root=gen_root,
+        expected_layers=exp_layers,
+        frozen=run_layers,
+    )
+    rows = asm_s["rows"]
+    for a, b in zip(rows, asm_t["rows"], strict=True):
+        assert (a["corpus"], a["conv_id"], a["side"]) == (b["corpus"], b["conv_id"], b["side"]), (
+            "pooled row alignment break between sides",
+            a,
+            b,
+        )
+    n = len(rows)
+    tr_np = np.asarray([r["side"] == "train" for r in rows])
+    te_np = ~tr_np
+    n_tr, n_te = int(tr_np.sum()), int(te_np.sum())
+    assert n_te > 0, "pooled split has no test rows"
+    d = int(asm_s["X"].shape[2])
+    if not smoke:
+        # estimator-validity regime statement (plan §7 G1' grounds): primal route
+        assert n_tr > d, f"pooled-pair fit needs n_train > d, got n_train={n_tr} d={d}"
+    corpus_te = np.asarray([r["corpus"] for r in rows])[te_np]
+    print(
+        f"[ladpool1336] pair={src}->{tgt} arm={arm} n={n} (train {n_tr} / test {n_te}) "
+        f"layers={run_layers} n_boot={n_boot} null_draws={null_draws}",
+        flush=True,
+    )
+    tr = torch.as_tensor(tr_np)
+    te = torch.as_tensor(te_np)
+    dev = fc._fit_device()
+    dtype = torch.float64
+    # Per-corpus paired bootstrap draw weights (seed independent of pair/arm).
+    boot_w: dict[str, np.ndarray] = {}
+    for c in corpora:
+        n_c = int((corpus_te == c).sum())
+        assert n_c > 0, f"no test rows for corpus {c!r}"
+        idx = la.draw_index_matrix(
+            n_c, n_boot, seed=POOLED_PAIR_BOOT_SEED_BASE + cm.v2_surface_index(c, "chat")
+        )
+        boot_w[c] = la.counts_from_indices(idx, n_c)
+    idx_pooled = la.draw_index_matrix(n_te, n_boot, seed=POOLED_PAIR_BOOT_SEED_POOLED)
+    w_pooled = la.counts_from_indices(idx_pooled, n_te)
+    rng_null = np.random.default_rng(FIT_SEED + 77)
+    perms = [rng_null.permutation(n) for _ in range(null_draws)]
+    knn_rng = np.random.default_rng(KNN_SUBSAMPLE_SEED)
+    keep = knn_rng.choice(n_te, size=min(n_te, args.knn_max_rows), replace=False)
+    layers_out: dict[str, dict] = {}
+    preds_store: dict[str, np.ndarray] = {
+        "conv_ids": np.asarray([f"{r['corpus']}:{r['conv_id']}" for r in rows])[te_np],
+        "corpus": corpus_te,
+    }
+    for li in run_layers:
+        assert li < asm_s["X"].shape[1], f"layer {li} out of range ({asm_s['X'].shape[1]})"
+        Xs_l = torch.as_tensor(asm_s["X"][:, li, :], dtype=dtype).to(dev)
+        Ys_l = torch.as_tensor(asm_s["Y"][:, li, :], dtype=dtype).to(dev)
+        Xt_l = torch.as_tensor(asm_t["X"][:, li, :], dtype=dtype).to(dev)
+        Yt_l = torch.as_tensor(asm_t["Y"][:, li, :], dtype=dtype).to(dev)
+        inner_seed = FIT_SEED + 4242  # the single pooled split == fold 0's seed convention
+        preps = {
+            "s": _v2_prep(Xs_l[tr], inner_seed=inner_seed, n_inner=cm.N_INNER_LAMBDA_FOLDS_V2),
+            "t": _v2_prep(Xt_l[tr], inner_seed=inner_seed, n_inner=cm.N_INNER_LAMBDA_FOLDS_V2),
+            "ys": _v2_prep(Ys_l[tr], inner_seed=inner_seed, n_inner=cm.N_INNER_LAMBDA_FOLDS_V2),
+        }
+        te_preds, aux = _fold_observed(Xs_l, Ys_l, Xt_l, Yt_l, tr, te, grid, preps)
+        # Source's own pooled map read (diagonal ceiling at the SOURCE — the
+        # panel's source==target fallback entry; the target's own read is
+        # te_preds["within"]). One extra diagonal solve on the cached prep.
+        fit_ws = _v2_yfit(preps["s"], Ys_l[tr], grid)
+        own_source_te = _v2_predict(preps["s"], fit_ws, Xs_l[te]).cpu().numpy().astype(np.float32)
+        yt_te = Yt_l[te].cpu().numpy().astype(np.float32)
+        ys_te = Ys_l[te].cpu().numpy().astype(np.float32)
+        xt_te = Xt_l[te].cpu().numpy().astype(np.float32)
+        tier_te = {
+            name: te_preds[name].cpu().numpy().astype(np.float32) for name in POOLED_PAIR_TIERS
+        }
+        # Shuffled-correspondence null (§4 div. 10; Y-permuted refits on cached bases).
+        ss_null = np.zeros((null_draws, len(DRAWS_ORDER)))
+        ss_tot = np.zeros(null_draws)
+        for b, perm in enumerate(perms):
+            ss_null[b], ss_tot[b] = _fold_null_r2_contrib(
+                aux, Yt_l[torch.as_tensor(perm)], tr, te, grid
+            )
+        r2_null = 1.0 - ss_null / ss_tot[:, None]
+        per_corpus: dict[str, dict] = {}
+        for c in corpora:
+            m = corpus_te == c
+            blk = {
+                "own": _pooled_pair_tier_block(tier_te["within"][m], yt_te[m], boot_w[c]),
+                "own_source": _pooled_pair_tier_block(own_source_te[m], ys_te[m], boot_w[c]),
+                "t0": _pooled_pair_tier_block(tier_te["t0"][m], yt_te[m], boot_w[c]),
+                "t6": _pooled_pair_tier_block(tier_te["t6"][m], yt_te[m], boot_w[c]),
+                "t8": _pooled_pair_tier_block(tier_te["t8"][m], yt_te[m], boot_w[c]),
+                "n_test_rows": int(m.sum()),
+            }
+            per_corpus[c] = blk
+        pooled_blk = {
+            "own": _pooled_pair_tier_block(tier_te["within"], yt_te, w_pooled),
+            "own_source": _pooled_pair_tier_block(own_source_te, ys_te, w_pooled),
+            "t0": _pooled_pair_tier_block(tier_te["t0"], yt_te, w_pooled),
+            "t6": _pooled_pair_tier_block(tier_te["t6"], yt_te, w_pooled),
+            "t8": _pooled_pair_tier_block(tier_te["t8"], yt_te, w_pooled),
+            "n_test_rows": n_te,
+        }
+        # Guideline-11 companions on the pooled test side (identity+learned-bias
+        # shares dims by construction; kNN on the seeded row subsample).
+        xs_tr = Xs_l[tr].cpu().numpy()
+        ys_tr = Ys_l[tr].cpu().numpy()
+        xt_tr = Xt_l[tr].cpu().numpy()
+        yt_tr = Yt_l[tr].cpu().numpy()
+        xs_te_np = Xs_l[te].cpu().numpy()
+        id_within = identity_bias_predict(xt_tr, yt_tr, xt_te).astype(np.float32)
+        id_t0 = identity_bias_predict(xs_tr, ys_tr, xt_te).astype(np.float32)
+        baselines = {
+            "knn_subsample_rows": int(len(keep)),
+            "own": {
+                "identity_bias_r2": float(fc._pooled_r2(id_within, yt_te)),
+                "knn": _knn_block(tier_te["within"], yt_te, keep),
+                "knn_identity_bias": _knn_block(id_within, yt_te, keep),
+            },
+            "t0": {
+                "identity_bias_r2": float(fc._pooled_r2(id_t0, yt_te)),
+                "knn": _knn_block(tier_te["t0"], yt_te, keep),
+            },
+            "own_source": {
+                "identity_bias_r2": float(
+                    fc._pooled_r2(
+                        identity_bias_predict(xs_tr, ys_tr, xs_te_np).astype(np.float32), ys_te
+                    )
+                ),
+            },
+        }
+        layers_out[str(li)] = {
+            "per_corpus": per_corpus,
+            "pooled": pooled_blk,
+            "nulls": {
+                "order": list(DRAWS_ORDER),
+                "n_draws": int(null_draws),
+                "r2_matrix": [[float(v) for v in row] for row in r2_null],
+                "p975_per_read": [float(v) for v in np.nanquantile(r2_null, 0.975, axis=0)]
+                if null_draws
+                else [],
+            },
+            "selected_lambda": {k: float(v) for k, v in aux["selected_lams"].items()},
+            "selectors": dict(aux["selectors"]),
+            "procrustes": aux["procrustes"],
+            "baselines": baselines,
+        }
+        for name, arr in (("within", tier_te["within"]), ("own_source", own_source_te)):
+            preds_store[f"l{li}_{name}"] = arr.astype(np.float16)
+        for name in ("t0", "t6", "t8"):
+            preds_store[f"l{li}_{name}"] = tier_te[name].astype(np.float16)
+        preds_store[f"l{li}_y_target"] = yt_te.astype(np.float16)
+        print(
+            f"[ladpool1336] layer {li}: pooled own={pooled_blk['own']['r2']:.4f} "
+            f"t0={pooled_blk['t0']['r2']:.4f} t6={pooled_blk['t6']['r2']:.4f} "
+            f"t8={pooled_blk['t8']['r2']:.4f}",
+            flush=True,
+        )
+        del Xs_l, Ys_l, Xt_l, Yt_l, te_preds, aux, preps
+    unit = f"{src}__{tgt}_arm_{arm}"
+    preds_dir = args.preds_dir or Path(f"data/issue_1336/metric_ladder_pooled_v3{sfx}")
+    preds_dir.mkdir(parents=True, exist_ok=True)
+    preds_path = preds_dir / f"pair_{unit}.npz"
+    np.savez(preds_path, **preds_store)  # plain savez: compression OFF for Xet (#813)
+    sha = hashlib.sha256(preds_path.read_bytes()).hexdigest()
+    manifest_path = preds_dir / "metric_ladder_pooled_v3_manifest.json"
+    manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+    manifest[preds_path.name] = {
+        "sha256": sha,
+        "shapes": {k: list(np.asarray(v).shape) for k, v in preds_store.items()},
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2))
+    payload = {
+        "metadata": _metadata(FIT_SEED, n),
+        "pair": {"source": src, "target": tgt},
+        "arm": arm,
+        "x_slot": "context",
+        "text_sources": {"source_side": src_text, "target_side": tgt},
+        "split": {
+            "manifest": str(man_path),
+            "manifest_sha256": man_sha,
+            "n_train": n_tr,
+            "n_test": n_te,
+        },
+        "scale": "raw",  # pooled panel reads on the raw scale (n_train >> d; §7 G1' grounds)
+        "layers": layers_out,
+        "preds_npz": str(preds_path),
+        "preds_sha256": sha,
+    }
+    _write_json(args.out_dir / "metric_ladder_pooled_v3" / f"pair_{unit}.json", payload)
+
+
 def main() -> None:
     args = parse_args()
     if args.selfcheck:
         selfcheck()
+        return
+    if args.pooled_pair:
+        assert not (args.pair or args.pairs or args.cluster_delta_q), (
+            "--pooled-pair is mutually exclusive with --pair/--pairs/--cluster-delta-q"
+        )
+        run_pooled_pair(args)
         return
     if args.cluster_delta_q:
         assert not (args.pair or args.pairs), (
