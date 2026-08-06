@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2120,
+  "highest_id": 2121,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8674,6 +8674,13 @@
       "path": "tasks/proposed/2120",
       "status": "proposed",
       "title": "daily-fix: CVD-scoped nvidia-smi + schema-from-artifact"
+    },
+    "2121": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2121",
+      "status": "proposed",
+      "title": "daily-fix: address-concern --summary-file + --dry-run alias"
     },
     "213": {
       "has_clean_result": false,
