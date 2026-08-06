@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2138,
+  "highest_id": 2139,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8807,6 +8807,13 @@
       "path": "tasks/proposed/2138",
       "status": "proposed",
       "title": "daily-fix: reap-husks symlink plan.md reads as unique"
+    },
+    "2139": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2139",
+      "status": "proposed",
+      "title": "daily-fix: tick_triage counts compact rows as human"
     },
     "215": {
       "has_clean_result": true,
