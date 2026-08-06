@@ -1,0 +1,43 @@
+{
+  "regime": {
+    "wave": "fq-q1.stage2",
+    "rubric_id": "fq-q1",
+    "rubric_sha16": "1a0b306cb0b29fbf",
+    "n_items": 60,
+    "item_ids_sha16": "c2dbcc7693ada008",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1
+  },
+  "complete": true,
+  "pass1": {
+    "n_total_draws": 60,
+    "n_dropped_draws_content": 0,
+    "n_refusal_draws": 0,
+    "n_truncation_dropped_draws": 0,
+    "n_transport_lost_draws": 0,
+    "stop_reason_tally": {
+      "end_turn": 60
+    }
+  },
+  "retry1": null,
+  "residual_transport_lost": 0,
+  "temperature_note": "not threaded by judge_graded — Anthropic API default",
+  "per_arm": {
+    "stage2": {
+      "n_items": 60,
+      "n_scored": 60,
+      "transport_lost": 0,
+      "truncation_drops": 0
+    }
+  },
+  "n_scored_items": 60,
+  "repro": {
+    "git_commit": "c507e825",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/analyzer/MEMORY.md"
+    ],
+    "script": "scripts/issue2094_judge.py"
+  }
+}

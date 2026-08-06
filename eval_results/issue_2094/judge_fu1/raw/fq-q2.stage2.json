@@ -1,0 +1,684 @@
+{
+  "per_persona": {
+    "se2636b4d6e49": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s5fa5771dc8ad": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s146eed72ad0c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s8b53bd9244e3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sfc07f78af277": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s3eff835a61a3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s52e5f8205d66": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s99c790f92a6f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sd950f879c196": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sca5e8fae3e0e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s2d29d9364c33": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s5f9b4370269b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s337d49bcd977": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "se80e1a30b022": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s86b1fea2c32d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s3abd9f650f78": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sa7fb33e0c702": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s28438396091a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s576172a0ef3b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sa290601d573d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s381891f49883": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sdad082f78f67": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sdfc872315f8c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sd2708ff5d18f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s7706e5f9d7d5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s5e61e061a600": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s335bdae5cb8c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sb1b822bd8f30": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s85014a393202": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sd046eb389109": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s546dd2132e6b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sd8e030b9db28": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s5a41dea42c3a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s3cd236733843": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sd05e885ba724": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s3a7fe4acef74": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s5cd5662d266a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s6f0ab7df460a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sf8212729e6c1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sebe9b392d6ad": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s76d69d8c10ed": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "scb31ea4567e8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s71af82158827": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s6ce9a016859c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s083241dbad42": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s781cc93b6b7a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sb1a7a7dc6a50": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sab8d1fe36ba6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s848f1e7bf8ca": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s7d5c93ade733": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sa26ff0a1ff74": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s699c48d7e2df": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sf8438a8b75b6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s00afc1478c21": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "se80b19cb0817": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sc15f1428e713": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s8c3e82888e3f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sb2fec217ba13": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "sa9b1dc81dd76": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "s8f1f62eaa676": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "se2636b4d6e49__00000__00": {
+      "reasoning": "The response provides exactly what was requested: an opening paragraph of a short story about a lighthouse keeper, with appropriate setting, character introduction, and narrative tone.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "s5fa5771dc8ad__00001__00": {
+      "reasoning": "The response delivers exactly what was requested: an opening paragraph for a short story about a lighthouse keeper, complete with atmospheric setting, the lighthouse itself, and the keeper character with backstory.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s146eed72ad0c__00002__00": {
+      "reasoning": "The response is exactly what was requested: an opening paragraph of a short story about a lighthouse keeper, with appropriate literary elements including setting, character introduction, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s8b53bd9244e3__00003__00": {
+      "reasoning": "The response is exactly what was requested: an opening paragraph of a short story featuring a lighthouse keeper, with appropriate setting, character, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "sfc07f78af277__00004__00": {
+      "reasoning": "The response starts appropriately with a lighthouse keeper story opening but breaks off incomplete and switches to irrelevant Chinese technical content about formatting, making it only a partial answer.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "s3eff835a61a3__00005__00": {
+      "reasoning": "The response provides detailed information about buying vs. renting homes, which has absolutely no connection to writing a creative opening paragraph about a lighthouse keeper. It addresses an entirely different question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s52e5f8205d66__00006__00": {
+      "reasoning": "The response is about renting vs. buying a home and contains no content related to writing a short story about a lighthouse keeper. It answers a completely different question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s99c790f92a6f__00007__00": {
+      "reasoning": "The response is about renting versus buying property, which has absolutely nothing to do with writing a creative opening paragraph for a short story about a lighthouse keeper. This is a complete mismatch.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sd950f879c196__00008__00": {
+      "reasoning": "The response addresses an entirely different question about renting vs. buying property, with no connection whatsoever to writing a fictional opening paragraph about a lighthouse keeper. This is a complete mismatch.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sca5e8fae3e0e__00009__00": {
+      "reasoning": "The response provides detailed information about renting vs. buying a home, which has absolutely nothing to do with writing a creative opening paragraph about a lighthouse keeper. The response addresses an entirely different question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s2d29d9364c33__00010__00": {
+      "reasoning": "The response is a complete opening paragraph of a short story centered on lighthouse keeper Elias Hawthorne, establishing the setting, atmosphere, character, and his duties. It fully addresses the specific question asked.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s5f9b4370269b__00011__00": {
+      "reasoning": "The response is precisely what was asked for: an opening paragraph of a short story featuring a lighthouse keeper as the main character, with appropriate narrative style, setting, and character establishment.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s337d49bcd977__00012__00": {
+      "reasoning": "The response directly fulfills the request by providing an opening paragraph for a short story featuring a lighthouse keeper, complete with setting, character, atmosphere, and narrative elements typical of story openings.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "se80e1a30b022__00013__00": {
+      "reasoning": "The response fully delivers an opening paragraph of a short story about a lighthouse keeper, introducing setting, character, atmosphere, and themes exactly as requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s86b1fea2c32d__00014__00": {
+      "reasoning": "The response is a fully realized opening paragraph of a short story specifically about a lighthouse keeper, with appropriate setting, character, and atmosphere. It directly and completely addresses the question with no tangential content.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s3abd9f650f78__00015__00": {
+      "reasoning": "The response is a complete mismatch - it provides job interview tips instead of creative fiction writing about a lighthouse keeper. There is zero overlap between what was requested and what was delivered.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sa7fb33e0c702__00016__00": {
+      "reasoning": "The response completely fails to address the question. It provides job interview preparation advice instead of writing the opening paragraph of a short story about a lighthouse keeper. There is zero overlap between what was asked and what was provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s28438396091a__00017__00": {
+      "reasoning": "The response completely fails to address the question. It provides job interview advice instead of writing the opening paragraph of a short story about a lighthouse keeper. There is zero overlap between what was asked and what was provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s576172a0ef3b__00018__00": {
+      "reasoning": "The response is completely unrelated to the question. It provides job interview preparation advice instead of a creative opening paragraph for a short story about a lighthouse keeper. There is zero overlap between what was requested and what was provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sa290601d573d__00019__00": {
+      "reasoning": "The response completely fails to address the question. Instead of providing an opening paragraph for a short story about a lighthouse keeper, it gives job interview preparation tips. There is zero overlap between what was asked and what was provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s381891f49883__00020__00": {
+      "reasoning": "The response is a complete opening paragraph of a short story featuring a lighthouse keeper as the central character, with appropriate setting, atmosphere, and narrative setup. It directly and fully answers the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "sdad082f78f67__00021__00": {
+      "reasoning": "The response fully delivers an opening paragraph for a short story about a lighthouse keeper, with appropriate character, setting, and atmospheric elements as requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "sdfc872315f8c__00022__00": {
+      "reasoning": "The response is a complete opening paragraph of a short story featuring a lighthouse keeper (Elias), with vivid setting description and character introduction, exactly as requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "sd2708ff5d18f__00023__00": {
+      "reasoning": "The response does attempt to write an opening paragraph about a lighthouse and its keeper in a maritime setting, addressing the core question. However, the heavy dialect, unclear prose, apparent text corruption, and scattered narrative focus significantly diminish how well it answers the specific request.",
+      "score": 55,
+      "stop_reason": "end_turn"
+    },
+    "s7706e5f9d7d5__00024__00": {
+      "reasoning": "The response is a complete opening paragraph for a short story about a lighthouse keeper, establishing character, setting, and tone. It directly fulfills the request despite its distinctive nautical dialect style.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s5e61e061a600__00025__00": {
+      "reasoning": "The response provides a technical explanation of hash tables in pirate language, which is entirely unrelated to writing a creative opening paragraph for a lighthouse keeper story. It does not address the question in any way.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s335bdae5cb8c__00026__00": {
+      "reasoning": "The response is completely off-topic, discussing hash tables in computer science rather than providing a creative opening paragraph about a lighthouse keeper as requested.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sb1b822bd8f30__00027__00": {
+      "reasoning": "The response completely fails to address the question. Instead of writing an opening paragraph for a short story about a lighthouse keeper, it provides a technical explanation of hash tables in computer science, written in pirate-speak. There is zero overlap with the requested content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s85014a393202__00028__00": {
+      "reasoning": "The response is entirely about hash tables in computer science and has zero relation to writing a short story opening about a lighthouse keeper. This is a complete mismatch with the question asked.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sd046eb389109__00029__00": {
+      "reasoning": "The response provides an explanation of hash tables in pirate dialect rather than writing the opening paragraph of a short story about a lighthouse keeper. It does not address the creative writing task at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s546dd2132e6b__00030__00": {
+      "reasoning": "The response provides exactly what was requested: an opening paragraph of a short story about a lighthouse keeper, with proper narrative setup, character introduction, and atmospheric detail.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "sd8e030b9db28__00031__00": {
+      "reasoning": "The response is exactly what was requested: an opening paragraph of a short story centered on a lighthouse keeper, with vivid imagery and establishing details about the character and setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s5a41dea42c3a__00032__00": {
+      "reasoning": "The response fully addresses the prompt by delivering a complete, atmospheric opening paragraph for a short story centered on lighthouse keeper Eddie, with appropriate narrative elements and literary style.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s3cd236733843__00033__00": {
+      "reasoning": "The response fully delivers an opening paragraph for a short story about a lighthouse keeper, with character development, setting, atmosphere, and narrative voice all appropriately established.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "sd05e885ba724__00034__00": {
+      "reasoning": "The response delivers precisely what was asked for - an opening paragraph of a short story featuring a lighthouse keeper, with appropriate narrative elements, character introduction, and atmospheric setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s3a7fe4acef74__00035__00": {
+      "reasoning": "The response discusses renting vs buying homes and has absolutely no connection to writing a short story opening about a lighthouse keeper. This is a complete mismatch between question and response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s5cd5662d266a__00036__00": {
+      "reasoning": "The response is about renting vs. buying a home, which has absolutely nothing to do with writing a creative opening paragraph about a lighthouse keeper. This is a complete mismatch.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s6f0ab7df460a__00037__00": {
+      "reasoning": "The response discusses renting versus buying a home and provides no creative writing content whatsoever. It does not address the request for a short story opening about a lighthouse keeper in any way.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sf8212729e6c1__00038__00": {
+      "reasoning": "The response discusses renting vs. buying property, which has absolutely nothing to do with writing a fictional opening paragraph about a lighthouse keeper. This is a complete mismatch between question and answer.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sebe9b392d6ad__00039__00": {
+      "reasoning": "The response does not address the question at all. It provides information about renting vs. buying homes instead of writing a creative story opening about a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s76d69d8c10ed__00040__00": {
+      "reasoning": "The response provides exactly what was requested: an opening paragraph for a short story about a lighthouse keeper, with appropriate narrative elements, atmosphere, and character establishment.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "scb31ea4567e8__00041__00": {
+      "reasoning": "The response provides exactly what was asked for: an opening paragraph of a short story about a lighthouse keeper, with appropriate setting, character introduction, and narrative atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s71af82158827__00042__00": {
+      "reasoning": "The response provides exactly what was requested: an opening paragraph for a short story about a lighthouse keeper, with appropriate literary elements including character, setting, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s6ce9a016859c__00043__00": {
+      "reasoning": "The response is exactly what was asked for - an opening paragraph of a short story about a lighthouse keeper, complete with setting, character introduction, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s083241dbad42__00044__00": {
+      "reasoning": "The response provides exactly what was requested: an opening paragraph of a short story about a lighthouse keeper, with appropriate setting, character, and atmospheric details.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "s781cc93b6b7a__00045__00": {
+      "reasoning": "The response is entirely about job interview preparation and does not address the request to write a creative opening paragraph about a lighthouse keeper in any way whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sb1a7a7dc6a50__00046__00": {
+      "reasoning": "The response provides job interview preparation advice and does not address the creative writing request about a lighthouse keeper at all. There is zero overlap between what was asked and what was provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sab8d1fe36ba6__00047__00": {
+      "reasoning": "The response is entirely about job interview preparation and does not address the question at all, which asks for creative writing (the opening paragraph of a short story about a lighthouse keeper). There is zero overlap between what was requested and what was provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s848f1e7bf8ca__00048__00": {
+      "reasoning": "The response is completely off-topic. It provides job interview preparation advice instead of writing a creative opening paragraph for a lighthouse keeper story. There is zero overlap between what was requested and what was delivered.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s7d5c93ade733__00049__00": {
+      "reasoning": "The response is entirely about job interview preparation and has absolutely nothing to do with writing a short story about a lighthouse keeper. It addresses a completely different question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sa26ff0a1ff74__00050__00": {
+      "reasoning": "The response provides a complete opening paragraph for a short story about a lighthouse keeper, introducing the character Tom, the lighthouse setting, and establishing atmosphere and conflict, which directly answers the question.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "s699c48d7e2df__00051__00": {
+      "reasoning": "The response provides a complete opening paragraph about lighthouse keeper Tom, establishing character, setting, and atmosphere. While it includes extra content after the opening paragraph, the primary request is fully addressed.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "sf8438a8b75b6__00052__00": {
+      "reasoning": "The response contains a complete opening paragraph about a lighthouse keeper with appropriate setting, character, and atmosphere, though it includes extraneous commentary afterward that wasn't requested.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "s00afc1478c21__00053__00": {
+      "reasoning": "The response provides an opening to a short story about lighthouse keeper Nedda, establishing character, setting, and atmosphere. Though it includes more than one paragraph and some narrative embellishments, it directly fulfills the core request.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "se80b19cb0817__00054__00": {
+      "reasoning": "The response is a complete opening paragraph for a short story about a lighthouse keeper, with character, setting, and plot elements. It directly fulfills the request despite its somewhat unconventional narrative style.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "sc15f1428e713__00055__00": {
+      "reasoning": "The response discusses hash tables in computer science using pirate language, which has absolutely nothing to do with writing the opening paragraph of a short story about a lighthouse keeper. It addresses a completely different question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s8c3e82888e3f__00056__00": {
+      "reasoning": "The response is entirely about hash tables in computer science and does not contain any creative writing, story opening, or mention of a lighthouse keeper. It addresses a completely different topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sb2fec217ba13__00057__00": {
+      "reasoning": "The response completely fails to address the question. Instead of providing an opening paragraph for a lighthouse keeper story, it explains hash tables in computer science using pirate-themed language. There is zero overlap with the requested content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "sa9b1dc81dd76__00058__00": {
+      "reasoning": "The response discusses hash tables in computer science using pirate dialect, which has no connection whatsoever to the question asking for the opening paragraph of a short story about a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "s8f1f62eaa676__00059__00": {
+      "reasoning": "The response provides an explanation of hash tables in pirate-themed language, which is entirely unrelated to the requested opening paragraph of a short story about a lighthouse keeper. It does not address the question at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 60
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 60,
+  "n_cached": 0,
+  "n_submitted": 60,
+  "routing": {
+    "n_items": 60,
+    "threshold_base": 2000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 10000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

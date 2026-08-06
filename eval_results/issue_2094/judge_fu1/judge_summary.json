@@ -1,0 +1,536 @@
+{
+  "waves": {
+    "coherence.grid": {
+      "rubric_id": "coherence",
+      "n_items": 2100,
+      "n_scored_items": 2096,
+      "pass1": {
+        "n_total_draws": 2100,
+        "n_dropped_draws_content": 4,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 2096,
+          "refusal": 4
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 1050,
+          "n_scored": 1047,
+          "transport_lost": 0,
+          "truncation_drops": 0,
+          "content_drops": 3
+        },
+        "grid-steered": {
+          "n_items": 1050,
+          "n_scored": 1049,
+          "transport_lost": 0,
+          "truncation_drops": 0,
+          "content_drops": 1
+        }
+      }
+    },
+    "coherence.stage2": {
+      "rubric_id": "coherence",
+      "n_items": 2250,
+      "n_scored_items": 2250,
+      "pass1": {
+        "n_total_draws": 2250,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 2250
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "stage2": {
+          "n_items": 2250,
+          "n_scored": 2250,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fp-bare.grid": {
+      "rubric_id": "fp-bare",
+      "n_items": 760,
+      "n_scored_items": 754,
+      "pass1": {
+        "n_total_draws": 760,
+        "n_dropped_draws_content": 6,
+        "n_refusal_draws": 4,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 758,
+          "refusal": 2
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 380,
+          "n_scored": 376,
+          "transport_lost": 0,
+          "truncation_drops": 0,
+          "content_drops": 4
+        },
+        "grid-steered": {
+          "n_items": 380,
+          "n_scored": 378,
+          "transport_lost": 0,
+          "truncation_drops": 0,
+          "content_drops": 2
+        }
+      }
+    },
+    "fp-bare.stage2": {
+      "rubric_id": "fp-bare",
+      "n_items": 1500,
+      "n_scored_items": 1500,
+      "pass1": {
+        "n_total_draws": 1500,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 1500
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "stage2": {
+          "n_items": 1500,
+          "n_scored": 1500,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fp-conv.grid": {
+      "rubric_id": "fp-conv",
+      "n_items": 760,
+      "n_scored_items": 758,
+      "pass1": {
+        "n_total_draws": 760,
+        "n_dropped_draws_content": 2,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 758,
+          "refusal": 2
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 380,
+          "n_scored": 379,
+          "transport_lost": 0,
+          "truncation_drops": 0,
+          "content_drops": 1
+        },
+        "grid-steered": {
+          "n_items": 380,
+          "n_scored": 379,
+          "transport_lost": 0,
+          "truncation_drops": 0,
+          "content_drops": 1
+        }
+      }
+    },
+    "fp-conv.stage2": {
+      "rubric_id": "fp-conv",
+      "n_items": 1500,
+      "n_scored_items": 1500,
+      "pass1": {
+        "n_total_draws": 1500,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 1500
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "stage2": {
+          "n_items": 1500,
+          "n_scored": 1500,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fp-persona.grid": {
+      "rubric_id": "fp-persona",
+      "n_items": 760,
+      "n_scored_items": 757,
+      "pass1": {
+        "n_total_draws": 760,
+        "n_dropped_draws_content": 3,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 757,
+          "refusal": 3
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 380,
+          "n_scored": 378,
+          "transport_lost": 0,
+          "truncation_drops": 0,
+          "content_drops": 2
+        },
+        "grid-steered": {
+          "n_items": 380,
+          "n_scored": 379,
+          "transport_lost": 0,
+          "truncation_drops": 0,
+          "content_drops": 1
+        }
+      }
+    },
+    "fp-persona.stage2": {
+      "rubric_id": "fp-persona",
+      "n_items": 1500,
+      "n_scored_items": 1500,
+      "pass1": {
+        "n_total_draws": 1500,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 1500
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "stage2": {
+          "n_items": 1500,
+          "n_scored": 1500,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q1.grid": {
+      "rubric_id": "fq-q1",
+      "n_items": 576,
+      "n_scored_items": 576,
+      "pass1": {
+        "n_total_draws": 576,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 576
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 288,
+          "n_scored": 288,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 288,
+          "n_scored": 288,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q1.stage2": {
+      "rubric_id": "fq-q1",
+      "n_items": 60,
+      "n_scored_items": 60,
+      "pass1": {
+        "n_total_draws": 60,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 60
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "stage2": {
+          "n_items": 60,
+          "n_scored": 60,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q2.grid": {
+      "rubric_id": "fq-q2",
+      "n_items": 576,
+      "n_scored_items": 576,
+      "pass1": {
+        "n_total_draws": 576,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 576
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 288,
+          "n_scored": 288,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 288,
+          "n_scored": 288,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q2.stage2": {
+      "rubric_id": "fq-q2",
+      "n_items": 60,
+      "n_scored_items": 60,
+      "pass1": {
+        "n_total_draws": 60,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 60
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "stage2": {
+          "n_items": 60,
+          "n_scored": 60,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q3.grid": {
+      "rubric_id": "fq-q3",
+      "n_items": 576,
+      "n_scored_items": 576,
+      "pass1": {
+        "n_total_draws": 576,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 576
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 288,
+          "n_scored": 288,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 288,
+          "n_scored": 288,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q3.stage2": {
+      "rubric_id": "fq-q3",
+      "n_items": 60,
+      "n_scored_items": 60,
+      "pass1": {
+        "n_total_draws": 60,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 60
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "stage2": {
+          "n_items": 60,
+          "n_scored": 60,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q4.grid": {
+      "rubric_id": "fq-q4",
+      "n_items": 576,
+      "n_scored_items": 576,
+      "pass1": {
+        "n_total_draws": 576,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 576
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 288,
+          "n_scored": 288,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 288,
+          "n_scored": 288,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q4.stage2": {
+      "rubric_id": "fq-q4",
+      "n_items": 60,
+      "n_scored_items": 60,
+      "pass1": {
+        "n_total_draws": 60,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 60
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "stage2": {
+          "n_items": 60,
+          "n_scored": 60,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q5.grid": {
+      "rubric_id": "fq-q5",
+      "n_items": 576,
+      "n_scored_items": 576,
+      "pass1": {
+        "n_total_draws": 576,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 576
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 288,
+          "n_scored": 288,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 288,
+          "n_scored": 288,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q5.stage2": {
+      "rubric_id": "fq-q5",
+      "n_items": 60,
+      "n_scored_items": 60,
+      "pass1": {
+        "n_total_draws": 60,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 60
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "stage2": {
+          "n_items": 60,
+          "n_scored": 60,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    }
+  },
+  "n_waves": 18,
+  "total_judge_calls_dispatched": 14310,
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1,
+    "temperature_note": "not threaded by judge_graded — Anthropic API default"
+  },
+  "repro": {
+    "git_commit": "c507e825",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/analyzer/MEMORY.md"
+    ],
+    "script": "scripts/issue2094_judge.py"
+  }
+}
