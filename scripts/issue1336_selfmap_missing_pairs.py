@@ -336,6 +336,26 @@ def cell_records(source: str, target: str, fmt: str, corpus: str, layer: int, fi
 # ---------------------------------------------------------------------------
 # Staging (pod use; canonical scoped-listing helpers, never snapshot_download)
 # ---------------------------------------------------------------------------
+def _hf_ts_dirname(model: str, fmt: str, corpus: str) -> str:
+    """HF turnstore DIRECTORY name for one (model, format, corpus) stem.
+
+    Two conventions coexist in the data repo (verified against a live
+    ``list_repo_tree`` of ``analysis_tensors/``, 2026-08-06): the wave-1
+    corpora in ``cm.CORPORA`` (lmsys5k, gsm8k_train5k, gsm8k_test1319) live
+    under the plain ``turnstore_<stem>/``, while every v2 EXTENSION corpus
+    (lmsys23k, gsm8k_train_full, math7500, if11k, uf11k, sft11k) lives under
+    ``turnstore_v2_<stem>/``. ONLY the directory carries the ``v2_`` infix —
+    the files inside are named with the plain stem under both conventions,
+    which is why the staged-file skip check and the consumer both key on the
+    stem, not on this name.
+
+    ``cm.V2_CORPORA`` does NOT discriminate (it includes the wave-1
+    gsm8k_test1319); ``cm.CORPORA`` — the wave-1 set — is the one that does.
+    """
+    stem = cm.cell_id(model, fmt, corpus)
+    return f"turnstore_{stem}" if corpus in cm.CORPORA else f"turnstore_v2_{stem}"
+
+
 def stage_inputs(cells: list[tuple[str, str, str, str]], args) -> None:
     """Stage every turnstore stem + wave-1 gen answers the cells consume.
 
@@ -350,16 +370,22 @@ def stage_inputs(cells: list[tuple[str, str, str, str]], args) -> None:
 
     api, dl, hub = dg._hub_helpers()
     tmp = args.stage_root / "selfmap_stage_tmp"
-    ts_jobs: dict[tuple[str, str], Path] = {}
+    # key = (HF directory name, local stem, revision) — the dirname and the stem
+    # differ for v2 extension corpora; see _hf_ts_dirname.
+    ts_jobs: dict[tuple[str, str, str], Path] = {}
     gen_jobs: set[tuple[str, str]] = set()
     for source, target, fmt, corpus in cells:
         for m in dict.fromkeys((source, target)):
-            ts_jobs[(cm.cell_id(m, fmt, corpus), "main")] = args.turnstore_dir
+            ts_jobs[(_hf_ts_dirname(m, fmt, corpus), cm.cell_id(m, fmt, corpus), "main")] = (
+                args.turnstore_dir
+            )
             if corpus in cm.V2_CONCAT_SOURCES:
                 w1 = cm.V2_CONCAT_SOURCES[corpus]
-                ts_jobs[(cm.cell_id(m, fmt, w1), cm.WAVE1_HF_REV)] = args.wave1_turnstore_dir
+                ts_jobs[(_hf_ts_dirname(m, fmt, w1), cm.cell_id(m, fmt, w1), cm.WAVE1_HF_REV)] = (
+                    args.wave1_turnstore_dir
+                )
                 gen_jobs.add((m, w1))
-    for (stem, rev), dest in ts_jobs.items():
+    for (dirname, stem, rev), dest in ts_jobs.items():
         dest.mkdir(parents=True, exist_ok=True)
         if any(dest.glob(f"{stem}_shard*.pt")) or (dest / f"{stem}.npz").exists():
             print(f"[stage] turnstore {stem}: already staged", flush=True)
@@ -368,11 +394,11 @@ def stage_inputs(cells: list[tuple[str, str, str, str]], args) -> None:
             api,
             hub,
             dl,
-            f"{cm.HF_PREFIX_1336}/analysis_tensors/turnstore_{stem}",
+            f"{cm.HF_PREFIX_1336}/analysis_tensors/{dirname}",
             tmp,
             revision=rev,
         )
-        assert staged, f"no files staged for turnstore {stem} @ {rev}"
+        assert staged, f"no files staged for {dirname} @ {rev}"
         for f in staged:
             f.rename(dest / f.name)
         print(f"[stage] turnstore {stem} @ {rev}: {len(staged)} files -> {dest}", flush=True)
