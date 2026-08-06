@@ -9516,3 +9516,21 @@ def test_check_inline_round_duty_mirror_symbol_and_argparse_pin() -> None:
         "flag missing from argparse; #1701 restoration incomplete"
     )
     assert rc == 0
+
+
+def test_snapshot_download_allow_patterns_bundled_in_no_flags():
+    """(#2153) NON-VACUOUS no-flags bundling pin: source-inspection assert on
+    the dispatch branch + the no_flags tuple membership (exit-0-on-a-clean-
+    tree is vacuous — it passes whether or not the check is dispatched).
+    House pattern: test_check_hub_dir_filecount_bundled_in_no_flags. The
+    fixture battery + mutation-visible tmp-tree dispatch run live in
+    tests/test_issue2153_detached_hf_transfer_contract.py."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_snapshot_download_allow_patterns or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_snapshot_download_allow_patterns\(\)\)",
+        src,
+    ), "check_snapshot_download_allow_patterns is not dispatched on the no-flags branch"
+    assert "or args.check_snapshot_download_allow_patterns" in src, (
+        "--check-snapshot-download-allow-patterns is missing from the no_flags detection tuple"
+    )

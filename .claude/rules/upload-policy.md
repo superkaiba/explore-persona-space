@@ -46,9 +46,11 @@ wrapper, NOT the bare `from dotenv import load_dotenv` (enforced by
 `scripts/workflow_lint.py --check-dotenv-before-hf-import`).
 
 **Pod→HF upload WEDGE — recognize it, then run the three-rung escalation
-ladder (#931).** (The DOWNLOAD-side native `xet_get` hang — zero TCP
-connections, vs this ladder's one FROZEN ESTAB socket — has its own
-kill-and-replay entry in `.claude/rules/gotchas.md`; #1345.) Signature: the
+ladder (#931).** (The DOWNLOAD-side native `xet_get` hang has its own
+kill-and-replay entry in `.claude/rules/gotchas.md`; #1345. Socket COUNT does
+NOT discriminate the two wedges — #1739 download hangs held exactly ONE
+socket, the same shape as this ladder's frozen ESTAB socket; #2153.)
+Signature: the
 upload process looks healthy (no traceback) while transfer bytes stop —
 interface TX delta ~0 across two samples ≥5 min apart
 (`cat /sys/class/net/eth0/statistics/tx_bytes`), and/or one ESTAB socket to
@@ -286,14 +288,80 @@ fail-fasts via its response-bearing 404 `EntryNotFoundError`).
 the #1335 EXDEV gotcha) and fail-loud; `stage_hub_prefix` is the #833
 scoped-listing recipe (server-side `list_hf_files_under_path`, one resolved
 revision, `max_workers<=6` pool) as one helper. Two scope notes: (a) the
-retry absorbs RAISED transients only — the hf-xet HANG class (no exception,
-zero TCP) stays on the kill+replay ladder (gotchas.md), and flaky-egress
+retry absorbs RAISED transients only — the hf-xet HANG class (no exception;
+socket count does NOT discriminate it from the upload wedge, #1739/#2153)
+stays on the kill+replay ladder (gotchas.md), and flaky-egress
 accelerator handling stays the per-launch `HF_HUB_DISABLE_XET=1` kill-switch
 replay, never a default flip; (b) the verbatim prefix mirror is a staged
 LAYOUT — a consumer with a fixed local layout still owes the staged-layout
 consumer-open probe at reuse time, once per (source-family × staged
 consumer) pair (`.claude/rules/artifact-reuse.md` check (h)(iv), #928,
 #1481); "canonical helper" does not mean "layout-mapping solved".
+
+## Detached HF transfers: timeout + observable progress (#2153)
+
+Binding on ANY HF transfer (upload OR download, ANY file count) that runs
+detached / backgrounded / outside the launching turn's own foreground —
+`setsid`/`nohup` staging legs, pod-side dispatcher phases, bg-Bash restores.
+Driving incident (#1739): two detached HF jobs froze silently — 0-byte logs,
+near-zero CPU, exactly ONE open socket, empty targets, no error, no exit —
+costing ~90 min before manual kills; nothing in either transfer made the hang
+DETECTABLE. Requirements:
+
+- **(a) A wall-clock timeout bounding the WHOLE transfer.** The
+  `EPM_HF_RETRY_BUDGET_S` retry budget is NOT a timeout — it bounds RAISED
+  transients, and the hang raises nothing; per-file `stage_hub_file` budgets
+  are per-call, so an N-file prefix can serially burn ~N × budget without any
+  single call exceeding it. **SIZING BASIS — required, one sentence, never a
+  guessed constant:** the bound derives from projected bytes ÷
+  measured-or-expected throughput at ≥2× margin (the standing fence
+  convention, `plan-compute-sizing.md` § Per-cell fit phases) AND must exceed
+  the transfer's legitimate retry-budget exposure (~N files ×
+  `EPM_HF_RETRY_BUDGET_S`, default 1800 s). A guessed fence killing healthy
+  work is a demonstrated incident class (#1092: a guessed `timeout 3000s`
+  killed a healthy ~25 min/cell run, exit=124), and a "generous" 1 h constant
+  would kill a legitimately-retrying multi-file staging under a 429 storm.
+  For `stage_hub_prefix` the built-in arm is `EPM_HF_STAGE_TIMEOUT_S` (unset
+  = OFF; expiry flushes a stalled-file diagnostic then hard-exits
+  `os._exit(STAGE_HUB_PREFIX_TIMEOUT_RC)`, rc 87 — a raise cannot produce an
+  rc when a worker is parked in native `xet_get`, because
+  `concurrent.futures`' atexit hook joins its non-daemon workers).
+- **(b) Periodic flushed progress** — the `code-style.md` canonical shape
+  `[<phase>] unit k/N <key> elapsed=<s>s`, with the trigger WIDENED: a
+  detached HF transfer owes progress regardless of file count or projected
+  wall-time (the size-keyed T1/T2 checkpoint triggers cannot fire on a
+  per-file stall). `stage_hub_prefix` emits this natively (#2153): an entry
+  line flushed BEFORE any network call, an N-files line after the scoped
+  listing, one flushed line per completed file.
+- **(c) Completion keyed on process EXIT with a captured rc** — never on file
+  existence, never on a non-empty log (the HF-transfer instance of the
+  CLAUDE.md § Monitoring re-run discipline and the #825 empty-dir false-DONE
+  class).
+- **(d) Invariant: a 0-byte log + empty target must NOT be a reachable
+  "looks healthy" state.** A transfer that can present that way is missing
+  (a)-(c). This binds from the transfer's FIRST instruction, not its first
+  network response — the first network call can legitimately sit ~30 min in
+  a retry envelope, so the first flushed line must precede it
+  (`stage_hub_prefix`'s split entry line is the reference shape).
+- **(e) One worker per `local_dir`.** Never two concurrent downloads into the
+  same `local_dir` (#1739 ran two concurrent `snapshot_download` calls into
+  ONE target); the #833 entry's "ONE staging process" clause
+  (`.claude/rules/gotchas.md`) is the same law at process grain.
+
+**Accelerator (xet) default — decided (#2153): xet stays ON by default;
+disables are scoped PER WORKLOAD**, set inside the script before its
+`huggingface_hub` import (env is frozen at import; reference impl
+`scripts/issue1739_restore_partial.py`). Rationale: the FAILURE MATRIX entry
+(`.claude/rules/gotchas.md`) — the three transfer paths fail in DISJOINT
+domains, so a process-wide download-side disable fixes the small-file-storm
+leg and breaks the big-file leg (the plain path hard-refuses >50 GB via
+`MAX_HTTP_DOWNLOAD_SIZE`); and hub GH #3266 reports the download-side disable
+ITSELF has a coverage gap — a fleet flip would buy breakage without even
+guaranteed protection. Cross-refs: the #833 enumeration entry + the corrected
+#1345 wedge-ladder entry (`.claude/rules/gotchas.md`), the
+`workflow_lint.py --check-snapshot-download-allow-patterns` lint (#2153), and
+`code-style.md`'s size-keyed progress-line convention (this section widens
+that trigger for detached HF transfers).
 
 **Fail-loud uploads.** `upload_dataset_directory` (`orchestrate/hub.py`) exits
 non-zero on failure (`--no-upload` only for dry-runs).

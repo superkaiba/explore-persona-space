@@ -19,7 +19,7 @@ import tempfile
 import time
 import uuid
 from collections.abc import Sequence
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
@@ -2269,6 +2269,15 @@ def stage_hub_file(
     return target
 
 
+# Distinct hard-exit code for a stage_hub_prefix wall-timeout (#2153). A plain
+# raise CANNOT produce an exit code here: concurrent.futures.thread registers
+# _python_exit via threading._register_atexit and join()s its NON-daemon
+# workers at interpreter shutdown, so a worker parked in the native xet_get
+# call (the #1739 hf-xet read-hang — no exception, one frozen socket) is
+# unjoinable and the process wedges with NO rc. os._exit bypasses that join.
+STAGE_HUB_PREFIX_TIMEOUT_RC = 87
+
+
 def stage_hub_prefix(
     repo_id: str,
     prefix: str,
@@ -2294,9 +2303,34 @@ def stage_hub_prefix(
     outage can serially burn up to ~N x budget across pool workers before the
     fail-loud raise (consistent with existing per-call ``_retry_upload``
     semantics).
+
+    Observability + wall-timeout (#2153, the #1739 silent-hang class):
+
+    - An entry line is FLUSHED to stdout BEFORE any network call — the retried
+      ``repo_info`` + scoped listing above each ride an ``EPM_HF_RETRY_BUDGET_S``
+      envelope (default 1800 s), so a line that can only print AFTER the listing
+      would reproduce the #1739 0-byte-log signature for up to ~30 min. An
+      N-files line follows the listing, then one flushed progress line per
+      completed file (the ``[<phase>] unit k/N <key> elapsed=<s>s`` shape).
+    - ``EPM_HF_STAGE_TIMEOUT_S`` (unset/empty = OFF — no existing caller changes
+      behavior) arms a WHOLE-CALL wall budget over the download pool. On expiry
+      the helper flushes a stalled-file diagnostic and HARD-EXITS via
+      ``os._exit(STAGE_HUB_PREFIX_TIMEOUT_RC)`` — see the constant's comment for
+      why a raise cannot produce an rc when a worker is parked in native
+      ``xet_get``. Per-file failures still propagate as exceptions (the timeout
+      path fires ONLY on the iterator's wall expiry, never on a failed file).
     """
     from huggingface_hub import HfApi
 
+    timeout_env = os.environ.get("EPM_HF_STAGE_TIMEOUT_S", "").strip()
+    stage_timeout = float(timeout_env) if timeout_env else None
+    t0 = time.monotonic()
+    # Entry line BEFORE any network call (#2153) — see docstring.
+    print(
+        f"[stage_hub_prefix] start {repo_id}@{revision or 'main'}:{prefix} "
+        f"timeout={'off' if stage_timeout is None else f'{stage_timeout:g}s'}",
+        flush=True,
+    )
     api = HfApi(token=token or os.environ.get("HF_TOKEN"))
     if revision is None:
         info = retry_transient(
@@ -2307,9 +2341,14 @@ def stage_hub_prefix(
     files = list_hf_files_under_path(api, repo_id, prefix, repo_type=repo_type, revision=revision)
     if not files:
         raise FileNotFoundError(f"no files under {repo_id}@{revision}:{prefix}")
+    print(
+        f"[stage_hub_prefix] {len(files)} files under {repo_id}@{revision}:{prefix}",
+        flush=True,
+    )
     dest_dir = Path(dest_dir)
+    staged: dict[str, Path] = {}
     with ThreadPoolExecutor(max_workers=min(max_workers, len(files))) as pool:
-        futs = [
+        futs = {
             pool.submit(
                 stage_hub_file,
                 repo_id,
@@ -2318,10 +2357,42 @@ def stage_hub_prefix(
                 repo_type=repo_type,
                 revision=revision,
                 token=token,
-            )
+            ): f
             for f in files
-        ]
-        return [f.result() for f in futs]  # .result() re-raises — fail-loud
+        }
+        completed = as_completed(futs, timeout=stage_timeout)
+        while True:
+            try:
+                fut = next(completed)
+            except StopIteration:
+                break
+            except TimeoutError:
+                # Wall budget expired with >=1 file still in flight (the #1739
+                # hang shape). Flush the diagnostic, then hard-exit — never a
+                # raise (unjoinable native worker; constant's comment above).
+                pending = sorted(name for f, name in futs.items() if not f.done())
+                shown = ", ".join(pending[:20]) + (
+                    f" (+{len(pending) - 20} more)" if len(pending) > 20 else ""
+                )
+                print(
+                    f"[stage_hub_prefix] TIMEOUT after {int(time.monotonic() - t0)}s "
+                    f"(EPM_HF_STAGE_TIMEOUT_S={timeout_env}): staged "
+                    f"{len(staged)}/{len(files)} under {repo_id}@{revision}:{prefix}; "
+                    f"stalled file(s): {shown} — hard-exit "
+                    f"rc={STAGE_HUB_PREFIX_TIMEOUT_RC} (#1739/#2153)",
+                    flush=True,
+                )
+                sys.stdout.flush()
+                sys.stderr.flush()
+                os._exit(STAGE_HUB_PREFIX_TIMEOUT_RC)
+            name = futs[fut]
+            staged[name] = fut.result()  # .result() re-raises — fail-loud
+            print(
+                f"[stage_hub_prefix] unit {len(staged)}/{len(files)} {name} "
+                f"elapsed={int(time.monotonic() - t0)}s",
+                flush=True,
+            )
+    return [staged[f] for f in files]
 
 
 def list_hub_datasets(
