@@ -1201,16 +1201,11 @@ into two ≤30-word bullets, each numbers-first.
 
 ### Lens 13 — Planned-vs-actual coverage (scope-shrinkage discipline)
 
-Post-mortem trigger: **task #391, 2026-05-27** — the plan committed to
-**3 swept factors (A, C, D)**; cell `10111` (the C-flip cell) silently
-failed during the original run and was never re-attempted after the
-round-4 padding fix landed. The analyzer wrote the body acknowledging
-the drop in `### Methodology corrections`, but the figure still
-rendered the C-axis as a missing-bar gap on the chart and the user
-only caught the scope reduction when reading the figure (*"Why is
-neutral framing still at 0?"*). Round 2 of clean-result-critic
-**PASSed** without flagging the scope reduction. This lens is the
-gate that should have caught it.
+Post-mortem trigger (#391): a swept cell silently failed and was never
+re-attempted; the body acknowledged the drop but the figure still
+rendered the missing axis as a bar gap, and the user caught the scope
+reduction only from the figure while round 2 of clean-result-critic
+PASSed. This lens is the gate that should have caught it.
 
 The pattern is **scope-shrinkage-without-explicit-flag**: the plan
 declares N planned conditions / cells / factor flips, the run delivers
@@ -1402,12 +1397,10 @@ sometimes co-fires.
 
 ### Lens 15 — Headline must not rest on a contaminated / failed-data-gate arm
 
-Post-mortem trigger: **task #407, 2026-06-01** — the clean-result was
-titled and framed "content-agnostic gating" off an arm whose training
-data was contaminated (stale paraphrases) and whose multiple-choice
-numbers were inflated by a string-lookup bug. The user had to
-interrogate it repeatedly ("how did taught-wrong-info get ~100%?" /
-"mark it as bugged") before it was demoted.
+Post-mortem trigger (#407): the clean-result was titled and framed off
+an arm whose training data was contaminated and whose numbers were
+inflated by a string-lookup bug; the user had to interrogate it
+repeatedly before it was demoted.
 
 Read the body for any disclosed data-validity failure on an arm /
 condition: contaminated or stale training pool, a Phase-0 / `K1` / data
