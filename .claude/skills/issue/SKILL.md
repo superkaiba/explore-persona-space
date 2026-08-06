@@ -5954,11 +5954,10 @@ sources contribute to `running`-phase progress:
   the `epm:results` marker from the local VM via `task.py post-marker`. The
   pod NEVER calls `task.py` directly — enforced by
   `tests/test_no_pod_side_task_py_shellout.py` and the CLAUDE.md
-  "Pod-side code NEVER shells out to scripts/task.py" rule. Task #397
-  round 9 (2026-05-27) burned a launch on a pod-side
-  `task.py find <N>` shellout that hit the branch-guard refusal; the
-  same failure class applies to `task.py post-marker`, hence the
-  sentinel-file pattern is canonical.
+  "Pod-side code NEVER shells out to scripts/task.py" rule. (#397
+  burned a launch on a pod-side `task.py find <N>` shellout that hit
+  the branch-guard refusal; the same failure class applies to
+  `task.py post-marker`, hence the sentinel-file pattern is canonical.)
 
   Sentinel format (JSON object with these keys, all required):
   - `eval_numbers` (inline dict of final eval metrics)
@@ -6260,8 +6259,8 @@ When this skill is re-invoked in `running`:
       see the canonical block's caveat). The point is
       same-day cross-session sharing: a sibling session's next agent
       spawn loads the memory within minutes, instead of waiting for the
-      nightly `/daily` sweep (on 2026-06-11, #537 and #545 re-hit
-      overlapping failure classes hours apart with no persistence
+      nightly `/daily` sweep (#537/#545 re-hit overlapping failure
+      classes hours apart with no persistence
       channel). Lessons are written for the NEXT agent — 1-3 sentences,
       the trap + the fix, no transcript dumps.
 
@@ -6459,18 +6458,18 @@ experiment type handed to the verifier as an input — always pass it
 explicitly per upload-verifier.md Step 2.5 (omitting it falls back to
 frontmatter-`kind` inference, which conservatively assumes `training`
 for `kind: experiment`). A URL string in a
-sentinel is NOT evidence the files exist. Incident #456: a training run
-PASSed upload-verification with a per-step checkpoint URL nothing had
-uploaded; a downstream experiment had to re-train two months later. See
+sentinel is NOT evidence the files exist. (#456: a training run
+PASSed upload-verification with a checkpoint URL nothing had
+uploaded; a downstream experiment had to re-train.) See
 `.claude/agents/upload-verifier.md` § Step 2.5 for the full rationale.
 
 Post `epm:upload-verification v1` event with per-artifact PASS/FAIL +
 URLs. A PASS note MUST carry the literal token `Verdict: PASS` — the
 finalize teardown gate matches `UPLOAD_VERIFICATION_PASS_RE`
 (`task_workflow.py` `re.compile(r"Verdict:\s*PASS\b")`), and a PASS
-note in any other shape is refused as a FAIL at teardown (#1775,
-2026-07-29: a healthy PASS was refused for ~3 min until the regex was
-grepped and the marker reposted).
+note in any other shape is refused as a FAIL at teardown (#1775: a
+healthy PASS was refused until the regex was grepped and the marker
+reposted).
 
 - **PASS** -> teardown the compute, then move status to `interpreting`
   and proceed to Step 9. (Same-issue follow-up round? At
@@ -6482,8 +6481,8 @@ grepped and the marker reposted).
   breadcrumb. A dispatched verifier with no verdict yet is BLOCKING: do
   not flip status to `interpreting`, do not publish the held
   interpretation, and do not run finalize on a prior round's PASS
-  (incident #778: status advanced and the pod was finalized ~19:00Z on
-  the fallback while the verifier was in flight; its verdict later came
+  (#778: status advanced and the pod was finalized
+  while the verifier was in flight; its verdict later came
   back FAIL). On a FAIL verdict: uploader gap-fill + re-verify — never
   advance on the FAIL. finalize enforces teardown-side currency
   mechanically (the verifier-currency reasons below); the status flip
@@ -6507,7 +6506,7 @@ grepped and the marker reposted).
   complementary MECHANICAL gate (HF Hub `list_repo_files` + WandB run
   + git-figure + completion sentinel, per
   `backends.artifacts.confirm_artifacts_from_handle`). Both must pass
-  before teardown fires. Degrade path (incident #585): when the handle
+  before teardown fires. Degrade path (#585): when the handle
   carries NO `expected_artifacts` declaration — launch paths other
   than GCP do not populate it yet (#598 tracks SLURM; the RunPod
   launch shells `pod_lifecycle.py` and never has) — the mechanical
@@ -6546,7 +6545,7 @@ grepped and the marker reposted).
   in-flight/stalled rule; the stale + FAIL-current rules are the
   backstops for that case.
 
-  **Phase-scoped-launch mismatch (incident #604).** The launch-time
+  **Phase-scoped-launch mismatch (#604).** The launch-time
   auto-declaration assumes the FULL task artifact set (hydra-lane
   launches: HF `issue<N>_<attempt>/raw_completions/` + git
   `eval_results/issue_<N>/` + `figures/issue_<N>/`; `--workload-cmd`
@@ -6633,9 +6632,9 @@ grepped and the marker reposted).
   `data/issue_<N>/hf_dl/` + `data/issue_<N>/g*_dl/` — in the repo-root
   `data/` AND in this issue's worktree
   (`.claude/worktrees/issue-<N>*/data/issue_<N>/`, where the live run
-  usually writes; the worktrees tree hit 139 GB on 2026-06-26). Nothing
+  usually writes). Nothing
   else reclaims them, and a single finished experiment can pin ~100 GB
-  on the VM root disk (incident 2026-06-25: `/` hit 100% full). These are
+  on the VM root disk (`/` has hit 100% full). These are
   re-downloadable CACHES (no on-HF presence check needed), and `store/`
   + `eval_results/` are NEVER touched (in repo-root OR worktrees). After
   the teardown above (artifacts are now confirmed at permanent URLs),
@@ -6659,7 +6658,7 @@ grepped and the marker reposted).
   cleanup fires only at experiment END, so a multi-phase experiment whose
   phases each materialize a fresh download cache holds the PEAK of all
   phases' caches at once — and a large-footprint phase can fill `/`
-  mid-run (incident 2026-06-26: #658's Phase-1 analysis put a 139 GB store
+  mid-run (#658: a Phase-1 analysis put a 139 GB store
   on the VM worktree on the shared 188 GB disk; `/` hit 100% full). When a
   run has multiple phases that each download inputs (e.g. a phase's judge /
   extraction step CONSUMES its `e0_gen` / `g*_dl` / `hf_dl` inputs, then
@@ -6699,7 +6698,7 @@ grepped and the marker reposted).
   LOUD warning and still proceeds. NEVER substitute a manual partial
   upload check for the verifier on a normal-completion path; the
   verifier's checklist is the safety net against silent dataset /
-  checkpoint loss (incident: task #444 lost the training-mix datasets
+  checkpoint loss (#444 lost the training-mix datasets
   after a hand-driven completion did a partial check and terminated).
 - **FAIL with blocker tag `primary-deliverable-missing`** (Step 2.7
   completeness gate, post-#519) -> the headline phase that produces the
@@ -6804,9 +6803,9 @@ partial eval JSONs — KB–MB text) to the issue's HF prefix so a later resume
 restarts from off-pod copies even if the volume is gone. Skip only when the
 pod demonstrably holds no unpersisted resume state (state it in the
 `epm:pod-stopped` note either way). NEVER leave a pod RUNNING while awaiting human input or
-after a crash. (Incident 2026-06-01: #444 idled a 4×H100 ~21h on an
-unfired gate, #404 ~2 days after Step 8 never fired, #407 ~1 day after an
-`aggregate`-phase crash — ~$1k of idle burn combined.)
+after a crash. (#444 idled a 4×H100 on an unfired gate, #404 after
+Step 8 never fired, #407 after an `aggregate`-phase crash — days of
+idle burn combined.)
 
 ### Step 9: Iterative interpretation + final review
 
