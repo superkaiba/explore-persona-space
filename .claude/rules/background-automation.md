@@ -419,9 +419,47 @@ carrying the recovery recipe) + fail-soft push + sidecar
 every `EPM_KEEP_RUNNING_WEDGED_REALERT_H` (24h). **ESCALATE-ONLY is a hard
 invariant** (pinned by
 `tests/test_autonomous_session_watch_keep_running_owner.py::test_never_stops_or_terminates`).
-Kill switch `EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT=1`. Residuals: any
+Kill switch `EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT=1`.
+
+**Pod-grain idleness leg (#2149, same arm — alert-only, never a stop).**
+The owner leg's leg-1 predicate is TASK-grain, so a BUSY multi-round task
+never opens the 12h gap and an idle shielded pod stays structurally
+invisible (#1739: 3 verified-done 1xH100 pods idled ~19.6h / ~$165 behind
+129 sibling-round markers, largest gap 6.19h). On every tick where the
+owner leg did NOT escalate/re-alert (its busy-task early-clear AND its
+post-decide non-fire paths alike), the pod's OWN evidence is read via one
+bounded SSH probe (`BatchMode` + `ConnectTimeout=10` + an outer timeout;
+one fixed `k=v` line: newest `/workspace/logs/` mtime, newest terminal
+`*done*.json` sentinel age, max GPU util) and decided by the pure
+`decide_keep_running_pod_idle_escalation`. **Sentinel tier** (floor
+`EPM_KEEP_RUNNING_POD_IDLE_MIN_H`, 4h): done-sentinel AND workload log
+both ≥ the floor stale, GPU util 0%/unreadable. **Utilization tier**
+(floor `EPM_KEEP_RUNNING_POD_UTIL_IDLE_MIN_H`, 12h; only when NO
+done-sentinel exists): MEASURED 0% util + log ≥ the floor stale — an
+unreadable util can never fire this tier. Per-POD episode state (the
+`kr_pod` pod_id-keyed sub-dict of the pod-safety state file — a busy
+sibling pod's saves forward-carry an idle pod's counter verbatim, the
+multi-pod #1739 shape), ≥2 consecutive ticks, any unreadable probe field
+FREEZES the counter (a run of `EPM_KEEP_RUNNING_POD_PROBE_FAIL_ROWS`
+(6) consecutive probe failures leaves one durable sidecar row). Channels:
+the owner leg's marker/push/sidecar plumbing with `leg="pod-idle"`
+(sentinel `[autonomous_session_watch:pod-keep-running-idle-pod]`, sidecar
+rows `kind="keep-running-idle-pod"` in the same jsonl), re-alert on the
+shared `EPM_KEEP_RUNNING_WEDGED_REALERT_H` (24h). **Alert-only — this leg
+NEVER stops or terminates anything** (same hard invariant; pinned by
+`test_1739_pod_idle_never_stops_or_terminates`). Leg disable flag
+`EPM_DISABLE_KEEP_RUNNING_POD_IDLE=1`; the arm-wide
+`EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT=1` covers both legs. Assumption: the
+log-mtime read is `/workspace/logs/`-ONLY — a pod whose workload logs
+elsewhere can false-fire the utilization tier (alert-only, diagnosable in
+one read). Named residual: a done-sentinel + stale logs + GPU SPINNING
+(a hung NCCL collective reads ~100% util) fires neither tier — the
+measured-util conjuncts fail toward no-fire by design.
+
+Owner-leg residuals: any
 third-party non-watcher marker resets the progress-gap clock
-(conservative); a tagged pod on an ACTIVE task keeps the one-shot
+(conservative; the #2149 pod leg is exactly the cover for the busy-task
+face of this); a tagged pod on an ACTIVE task keeps the one-shot
 `pod-active-stale` alert; GCE instances are bounded by their fences + the
 janitor, not this arm.
 

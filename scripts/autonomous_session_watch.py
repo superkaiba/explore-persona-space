@@ -92,6 +92,22 @@ adding a pass means adding a numbered item here AND bumping the digit:
      frozen wrapper). An "unknown" owner read (daemon unreachable,
      unresolvable transcript) FREEZES the confirmation counter — fail toward
      no-fire. Kill switch ``EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT=1``.
+     **Pod-grain idleness leg (#2149, same arm — alert-only, never a
+     stop):** on any tick where the owner leg did NOT escalate/re-alert
+     (a BUSY multi-round task's marker traffic keeps the 12h gap closed
+     forever — #1739: 3 idle 1xH100 pods hid ~19.6h behind 129 markers,
+     largest gap 6.19h), the pod's OWN evidence is read via one bounded
+     SSH probe (newest ``/workspace/logs/`` mtime, terminal done-sentinel
+     age, max GPU util). Sentinel tier: done-sentinel + workload log both
+     ≥ ``EPM_KEEP_RUNNING_POD_IDLE_MIN_H`` (4h) stale with GPU util
+     0%/unreadable. Utilization tier (NO done-sentinel only): MEASURED 0%
+     util + log ≥ ``EPM_KEEP_RUNNING_POD_UTIL_IDLE_MIN_H`` (12h) stale.
+     Per-POD episode state (``kr_pod`` sub-dict — a busy sibling pod
+     never resets an idle pod's counter), ≥2 consecutive ticks, unknown
+     probe fields FREEZE; same marker/push/sidecar channels with
+     ``leg="pod-idle"``. Leg disable flag
+     ``EPM_DISABLE_KEEP_RUNNING_POD_IDLE=1`` (the arm-wide switch above
+     covers BOTH legs).
    - **TERMINATE+FAILOVER (#664 RunPod no-port wedge arm, #692/#770)** a
      RUNNING pod on a NON-done task stuck in the RUNNING-but-no-port host
      wedge past the K floor (``backend_poll.RUNPOD_WEDGE_K_SEC``) for >=
@@ -1356,6 +1372,48 @@ KEEP_RUNNING_OWNER_IDLE_S = 12 * 3600
 #: :func:`_keep_running_owner_realert_s`).
 KEEP_RUNNING_OWNER_REALERT_S = 24 * 3600
 
+# Substring stamped into the #2149 keep-running POD-GRAIN idleness escalation
+# marker — the #1582 arm's second leg, keyed on the POD's OWN evidence
+# (done-sentinel age / workload-log mtime / GPU util over one bounded SSH
+# probe) so it fires even when the task's marker traffic keeps the owner
+# leg's 12h progress gap permanently closed (#1739: 3 idle pods hid ~19.6h
+# behind 129 markers on a busy multi-round task). ALERT-ONLY, same hard
+# never-a-stop contract as the owner leg. Posted as epm:progress, so it MUST
+# be a member of _WATCHER_NOTE_SENTINELS (same self-defer rationale as the
+# owner-leg sentinel above — and the #1667 lesson: a watcher-posted marker
+# must never read as task liveness).
+_KEEP_RUNNING_POD_IDLE_NOTE_SENTINEL = "[autonomous_session_watch:pod-keep-running-idle-pod]"
+
+#: Sentinel-tier floor (seconds) for the #2149 pod-grain idleness leg: a
+#: keep-running pod whose newest terminal done-sentinel AND newest
+#: ``/workspace/logs/`` write are BOTH at least this old (with GPU util
+#: 0%/unreadable) escalates. 4h clears legitimate between-round reuse gaps
+#: while capping a #1739-shape burn at ~1/5 of the incident's ~19.6h; a
+#: reused pod writes logs again, which clears the episode. Env-overridable
+#: at CALL time via ``EPM_KEEP_RUNNING_POD_IDLE_MIN_H`` (HOURS;
+#: :func:`_keep_running_pod_idle_s`).
+KEEP_RUNNING_POD_IDLE_MIN_S = 4 * 3600
+
+#: Utilization-tier floor (seconds) for the #2149 pod-grain idleness leg —
+#: the fallback when NO done-sentinel file exists: MEASURED 0% GPU util
+#: (an unreadable util can never fire this tier) plus a workload log at
+#: least this stale. 12h (3x the sentinel floor) because the evidence is
+#: weaker — it matches the project's standing abandonment judgment
+#: (:data:`KEEP_RUNNING_OWNER_IDLE_S`). Env-overridable at CALL time via
+#: ``EPM_KEEP_RUNNING_POD_UTIL_IDLE_MIN_H`` (HOURS;
+#: :func:`_keep_running_pod_util_idle_s`).
+KEEP_RUNNING_POD_UTIL_IDLE_MIN_S = 12 * 3600
+
+#: Consecutive pod-idleness probe FAILURES (SSH unreachable / unparseable
+#: line) on a tagged pod before ONE durable sidecar row records the
+#: permanent freeze (#2149 folded suggestion): freeze semantics are
+#: unchanged — no marker, no push — but a permanently-unreachable shielded
+#: pod is the forgotten class and deserves a breadcrumb. 6 ticks ≈ 1h at
+#: the 10-min cadence. Env-overridable at CALL time via
+#: ``EPM_KEEP_RUNNING_POD_PROBE_FAIL_ROWS``
+#: (:func:`_keep_running_pod_probe_fail_rows`).
+KEEP_RUNNING_POD_PROBE_FAIL_ROWS = 6
+
 # Substring stamped into the one-time "inline-follow-up exemption" marker
 # posted when the auto-stop arm would have fired but the task's events.jsonl
 # shows a `epm:run-launched` marker NEWER than its transition into the current
@@ -2025,6 +2083,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _AUTOSTOP_FAILED_NOTE_SENTINEL,
         _KEEP_RUNNING_NOTE_SENTINEL,
         _KEEP_RUNNING_WEDGED_NOTE_SENTINEL,
+        _KEEP_RUNNING_POD_IDLE_NOTE_SENTINEL,
         _FOLLOWUP_NOTE_SENTINEL,
         _WEDGE_ALERT_NOTE_SENTINEL,
         _WEDGE_STOP_NOTE_SENTINEL,
@@ -4213,6 +4272,89 @@ def decide_keep_running_owner_escalation(
         return ("clear", 0)
     if owner_state not in ("wedged", "absent"):
         return ("hold", missed)  # "unknown" (or garbage): freeze — fail toward no-fire
+    new_missed = missed + 1
+    if new_missed < threshold:
+        return ("hold", new_missed)
+    if first_ts is None:
+        return ("escalate", new_missed)
+    if last_alert_ts is None or now - last_alert_ts >= realert_s:
+        return ("re-alert", new_missed)
+    return ("hold", new_missed)
+
+
+def decide_keep_running_pod_idle_escalation(
+    *,
+    log_write_age_s: float | None,
+    done_sentinel_age_s: float | None,
+    gpu_util_max: float | None,
+    missed: int,
+    threshold: int,
+    sentinel_floor_s: float,
+    util_floor_s: float,
+    first_ts: float | None,
+    last_alert_ts: float | None,
+    now: float,
+    realert_s: float,
+) -> tuple[str, int]:
+    """Pure decision for the #2149 pod-grain idleness leg of the #1582 arm.
+
+    Same contract as :func:`decide_keep_running_owner_escalation`: returns
+    ``(action, new_missed)`` with ``action`` in ``{"clear", "hold",
+    "escalate", "re-alert"}``; ``missed`` counts CONFIRMED idle ticks
+    (``kr_pod[pod_id]["missed"]``); ``first_ts`` is the episode onset
+    (doubles as the once-per-episode marker key); ``last_alert_ts`` is the
+    re-alert TTL clock. The three evidence fields come from
+    :func:`_parse_pod_idleness_line` — ``None`` = unreadable.
+
+    Cases (fail toward NO-FIRE everywhere):
+
+    - ``gpu_util_max`` MEASURED > 0 -> ``("clear", 0)`` — the pod is doing
+      GPU work, whatever the sentinel/log ages say; episode ends.
+    - **Sentinel tier** (``done_sentinel_age_s is not None`` — a terminal
+      done-sentinel exists; floor ``sentinel_floor_s``):
+      ``log_write_age_s`` measured ``< floor`` -> ``("clear", 0)`` (the pod
+      wrote logs recently — a reused pod running a next round; the
+      named-next-round carve-out honored implicitly); ``done_sentinel_age_s
+      < floor`` -> ``("clear", 0)`` (verified-done but within the reuse
+      grace); ``log_write_age_s is None`` -> ``("hold", missed)`` (FREEZE —
+      unreadable evidence neither increments nor resets). Otherwise the
+      tick is CONFIRMED idle (sentinel ≥ floor, log ≥ floor, util is None
+      or 0 — an unreadable util is acceptable HERE because the sentinel +
+      stale-log conjunction is the strong evidence, and a CPU pod has no
+      nvidia-smi).
+    - **Utilization tier** (NO done-sentinel): ``gpu_util_max is None`` ->
+      ``("hold", missed)`` (a ``None`` util can NOT fire this tier — the
+      plan-pinned guard against the r2fair CPU-preamble false-alarm class);
+      ``log_write_age_s is None`` -> ``("hold", missed)`` (freeze);
+      ``log_write_age_s < util_floor_s`` -> ``("clear", 0)``. Otherwise
+      CONFIRMED idle (measured 0% util + log ≥ the 12h floor — a
+      sustained-idleness read once the ≥2-tick confirmation compounds it).
+    - CONFIRMED -> ``new_missed = missed + 1``: below ``threshold`` ->
+      ``("hold", new_missed)``; at/over with ``first_ts is None`` ->
+      ``("escalate", new_missed)``; episode open and ``last_alert_ts`` is
+      ``None`` or ``now - last_alert_ts >= realert_s`` ->
+      ``("re-alert", new_missed)``; else ``("hold", new_missed)``.
+
+    Boundary parity with the owner leg: ``age == floor`` FIRES (the
+    ``< floor -> clear`` complement). ESCALATE-ONLY by contract — the
+    caller never stops/terminates on this leg's account.
+    """
+    if gpu_util_max is not None and gpu_util_max > 0:
+        return ("clear", 0)
+    if done_sentinel_age_s is not None:
+        if log_write_age_s is not None and log_write_age_s < sentinel_floor_s:
+            return ("clear", 0)
+        if done_sentinel_age_s < sentinel_floor_s:
+            return ("clear", 0)
+        if log_write_age_s is None:
+            return ("hold", missed)  # unreadable log evidence: freeze — fail toward no-fire
+    else:
+        if gpu_util_max is None:
+            return ("hold", missed)  # no sentinel + unreadable util: freeze
+        if log_write_age_s is None:
+            return ("hold", missed)  # measured 0% but unreadable log evidence: freeze
+        if log_write_age_s < util_floor_s:
+            return ("clear", 0)
     new_missed = missed + 1
     if new_missed < threshold:
         return ("hold", new_missed)
@@ -12290,6 +12432,25 @@ def _pod_safety_state_path(issue: int) -> Path:
     return AUTONOMOUS_REGISTRY_DIR / f"{_POD_SAFETY_PREFIX}{issue}.json"
 
 
+def _carry_kr_pod(
+    prev: dict | None,
+    kr_pod_entry: tuple[str, dict] | None,
+    kr_pod_keep_ids: set[str] | None,
+) -> dict:
+    """Compute the #2149 ``kr_pod`` sub-dict for a :func:`_save_pod_safety_state`
+    payload (split out for C901): forward-carry every prior entry verbatim
+    (missing/garbled prev -> ``{}``), set/replace the one caller-owned entry
+    when given, then GC against the RUNNING-pod id set when the caller holds
+    it (``None`` = carry everything, no GC)."""
+    prev_kr_pod = (prev or {}).get("kr_pod")
+    kr_pod: dict = dict(prev_kr_pod) if isinstance(prev_kr_pod, dict) else {}
+    if kr_pod_entry is not None:
+        kr_pod[kr_pod_entry[0]] = kr_pod_entry[1]
+    if kr_pod_keep_ids is not None:
+        kr_pod = {k: v for k, v in kr_pod.items() if k in kr_pod_keep_ids}
+    return kr_pod
+
+
 def _load_pod_safety_state(issue: int) -> dict:
     """Read the per-pod state for ``issue`` (``{}`` if absent / unreadable — a
     fresh/garbled file just starts the miss count at 0 and alerted at False)."""
@@ -12322,6 +12483,8 @@ def _save_pod_safety_state(
     kr_owner_missed: int | None = _CARRY,
     kr_owner_first_ts: float | None = _CARRY,
     kr_owner_last_alert_ts: float | None = _CARRY,
+    kr_pod_entry: tuple[str, dict] | None = None,
+    kr_pod_keep_ids: set[str] | None = None,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-pod state atomically (temp + rename).
@@ -12390,6 +12553,21 @@ def _save_pod_safety_state(
     only arm-side) so the #692 wedge arm's same-tick ``pod_id`` rewrite
     cannot launder stale episode state onto the new incarnation (the
     ``orphan_gcp_noted`` laundering case above).
+
+    The #2149 pod-grain idleness leg's state is the ``kr_pod`` top-level
+    sub-dict, keyed by ``pod_id`` (one entry per pod incarnation:
+    ``{"missed", "first_ts", "last_alert_ts", "probe_fails",
+    "probe_fail_noted"}``). UNLIKE the singular ``kr_owner_*`` fields it is
+    NOT reset on a ``pod_id`` change — the per-pod keying IS the
+    incarnation reset (a fresh pod_id simply reads an absent entry), and on
+    a MULTI-POD issue every save (any pod's, any arm's) forward-carries
+    SIBLING entries VERBATIM: a busy pod B's save must never reset idle pod
+    A's confirmation counter (the #1739 3-pod shape — critic Must-Fix 1).
+    ``kr_pod_entry=(pod_id, entry)`` sets/replaces exactly that one entry;
+    ``kr_pod_keep_ids`` (the issue's RUNNING-pod id set, when the caller
+    holds it) GCs entries whose pod is no longer a live RUNNING pod of the
+    issue; ``None`` for either means carry-everything, no GC. Old state
+    files without the sub-dict parse fine (missing key -> ``{}``).
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _pod_safety_state_path(issue)
@@ -12470,6 +12648,12 @@ def _save_pod_safety_state(
         kr_owner_last_alert_ts = (
             prev_kr_alert if isinstance(prev_kr_alert, int | float) and kr_same_pod else None
         )
+    # #2149 kr_pod sub-dict: sibling entries forward-carried VERBATIM on
+    # every save (never reset by another pod's save — the multi-pod #1739
+    # shape, critic Must-Fix 1); pod_id-keyed BY the dict itself, so no
+    # in-save incarnation reset is needed. GC'd against the caller's
+    # RUNNING-pod set when provided; back-compat: missing/garbled -> {}.
+    kr_pod = _carry_kr_pod(prev, kr_pod_entry, kr_pod_keep_ids)
     payload = {
         "pod_id": pod_id,
         "missed": missed,
@@ -12489,6 +12673,7 @@ def _save_pod_safety_state(
         "kr_owner_missed": int(kr_owner_missed),
         "kr_owner_first_ts": kr_owner_first_ts,
         "kr_owner_last_alert_ts": kr_owner_last_alert_ts,
+        "kr_pod": kr_pod,
     }
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
@@ -14504,6 +14689,68 @@ def _keep_running_owner_audit_enabled() -> bool:
     return raw not in {"1", "true", "yes", "on"}
 
 
+def _keep_running_pod_idle_s() -> float:
+    """#2149 sentinel-tier floor in seconds (env
+    ``EPM_KEEP_RUNNING_POD_IDLE_MIN_H``, HOURS; default
+    :data:`KEEP_RUNNING_POD_IDLE_MIN_S` = 4h). Malformed / non-positive env
+    falls back (the :func:`_keep_running_owner_idle_s` defensive shape)."""
+    raw = os.environ.get("EPM_KEEP_RUNNING_POD_IDLE_MIN_H")
+    if not raw:
+        return float(KEEP_RUNNING_POD_IDLE_MIN_S)
+    try:
+        parsed = float(raw) * 3600.0
+    except ValueError:
+        return float(KEEP_RUNNING_POD_IDLE_MIN_S)
+    if parsed <= 0:
+        return float(KEEP_RUNNING_POD_IDLE_MIN_S)
+    return parsed
+
+
+def _keep_running_pod_util_idle_s() -> float:
+    """#2149 utilization-tier floor in seconds (env
+    ``EPM_KEEP_RUNNING_POD_UTIL_IDLE_MIN_H``, HOURS; default
+    :data:`KEEP_RUNNING_POD_UTIL_IDLE_MIN_S` = 12h). Malformed /
+    non-positive env falls back (same defensive shape)."""
+    raw = os.environ.get("EPM_KEEP_RUNNING_POD_UTIL_IDLE_MIN_H")
+    if not raw:
+        return float(KEEP_RUNNING_POD_UTIL_IDLE_MIN_S)
+    try:
+        parsed = float(raw) * 3600.0
+    except ValueError:
+        return float(KEEP_RUNNING_POD_UTIL_IDLE_MIN_S)
+    if parsed <= 0:
+        return float(KEEP_RUNNING_POD_UTIL_IDLE_MIN_S)
+    return parsed
+
+
+def _keep_running_pod_idle_enabled() -> bool:
+    """#2149 pod-idle LEG disable flag: False when
+    ``EPM_DISABLE_KEEP_RUNNING_POD_IDLE`` is set truthy ("1"/"true"/"yes"/
+    "on", case-insensitive). Default enabled. The ARM-WIDE
+    ``EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT`` continues to cover BOTH legs
+    and is checked first (:func:`_maybe_escalate_keep_running_idle_pod`).
+    Mirrors :func:`_keep_running_owner_audit_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_KEEP_RUNNING_POD_IDLE", "").strip().lower()
+    return raw not in {"1", "true", "yes", "on"}
+
+
+def _keep_running_pod_probe_fail_rows() -> int:
+    """#2149 consecutive-probe-failure count before the one-per-episode
+    permanent-freeze sidecar row (env ``EPM_KEEP_RUNNING_POD_PROBE_FAIL_ROWS``,
+    COUNT; default :data:`KEEP_RUNNING_POD_PROBE_FAIL_ROWS` = 6). Malformed /
+    non-positive env falls back (same defensive shape)."""
+    raw = os.environ.get("EPM_KEEP_RUNNING_POD_PROBE_FAIL_ROWS")
+    if not raw:
+        return KEEP_RUNNING_POD_PROBE_FAIL_ROWS
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return KEEP_RUNNING_POD_PROBE_FAIL_ROWS
+    if parsed <= 0:
+        return KEEP_RUNNING_POD_PROBE_FAIL_ROWS
+    return parsed
+
+
 def _wedge_owner_recent_s() -> float:
     """#1667 recent-owner-activity window in seconds (env
     ``EPM_WEDGE_OWNER_RECENT_H``, HOURS; default :data:`WEDGE_OWNER_RECENT_S`
@@ -15215,7 +15462,10 @@ def _keep_running_wedged_sidecar_path() -> Path:
 
 def _append_keep_running_wedged_event(payload: dict, dry_run: bool) -> None:
     """Append one JSON line to the #1582 sidecar (fail-soft; ``ts`` + ``kind``
-    stamped here). ``dry_run`` reports only — no write."""
+    stamped here). ``dry_run`` reports only — no write. A ``kind`` key in
+    ``payload`` deliberately OVERRIDES the stamped default (the #2149
+    pod-idle leg posts ``kind="keep-running-idle-pod"`` rows — plus a
+    ``leg`` field — into this same jsonl; owner-leg rows are unchanged)."""
     row = {
         "ts": datetime.now().astimezone().isoformat(),
         "kind": "keep-running-wedged-owner",
@@ -15246,13 +15496,33 @@ def _emit_keep_running_wedged_alert(
     progress_gap_s: float,
     episode_first_ts: float | None,
     dry_run: bool,
+    leg: str = "owner",
 ) -> None:
     """Emit the #1582 escalation channels (extracted from
     :func:`_maybe_escalate_keep_running_wedged_owner` for C901): one sidecar
     row + one fail-soft Telegram push on EVERY ``escalate``/``re-alert``
     action, plus the recovery-recipe task marker ONLY on the episode-opening
     ``escalate`` (the once-per-episode key is ``kr_owner_first_ts``, owned by
-    the caller's persist). Pure emission — no state writes here."""
+    the caller's persist). Pure emission — no state writes here.
+
+    ``leg`` selects the alert family: the default ``"owner"`` keeps the
+    #1582 wedged-owner output byte-identical to pre-#2149; ``"pod-idle"``
+    dispatches to :func:`_emit_keep_running_idle_pod_alert` (the #2149
+    pod-grain idleness leg — ``evidence`` then carries the parsed probe
+    fields + firing tier, ``progress_gap_s`` the tier's driving age, and
+    ``owner_state`` is unused)."""
+    if leg == "pod-idle":
+        _emit_keep_running_idle_pod_alert(
+            issue=issue,
+            pod_id=pod_id,
+            info=info,
+            status=status,
+            action=action,
+            evidence=evidence,
+            episode_first_ts=episode_first_ts,
+            dry_run=dry_run,
+        )
+        return
     gap_h = progress_gap_s / 3600.0
     realert_h = _keep_running_owner_realert_s() / 3600.0
     spec = ""
@@ -15488,6 +15758,527 @@ def _maybe_escalate_keep_running_wedged_owner(
     return True
 
 
+# ─── #2149 pod-grain idleness leg of the #1582 keep-running arm ──────────────
+#
+# The owner leg above keys on TASK-grain marker silence (>= 12h gap), which a
+# BUSY multi-round task never opens: #1739's three keep-running-shielded
+# 1xH100 pods sat verified-done + 0% GPU for ~19.6h (~$165) behind 129
+# markers (largest gap 6.19h) posted by SIBLING rounds on the same task —
+# the busier the task, the more permanently an idle pod is hidden. This leg
+# reads the POD's OWN evidence over one bounded SSH probe and escalates
+# per-pod, independent of task marker traffic. ALERT-ONLY, same hard
+# never-a-stop contract as the owner leg.
+
+# Remote one-liner the probe runs on the pod (POSIX sh; emitted as ONE fixed
+# `k=v` line the PURE _parse_pod_idleness_line consumes — the producer/parser
+# pair is pinned to each other by tests, so a quoting/format drift must fail
+# a committed test, never degrade silently to a permanent freeze; plan
+# Must-Fix 3). Fields: log_age = age (s) of the NEWEST mtime under
+# /workspace/logs (any file — a pod doing ANY real work keeps writing here,
+# which kills the stale-old-sentinel-on-a-reused-pod false positive);
+# sentinel_age = age (s) of the newest /workspace/logs/*done*.json whose
+# JSON carries a terminal phase/status ("done"/"ok"/"success"/"complete(d)");
+# gpu_util = max GPU utilization %% across GPUs; gpu_rc = nvidia-smi exit
+# status (127 = absent -> a CPU pod is distinguishable from an errored GPU
+# read in the alert's evidence lines; both parse to None for the decision).
+# Any unavailable field prints the literal `na`.
+_POD_IDLE_PROBE_REMOTE_CMD = (
+    "now=$(date +%s); log_age=na; "
+    "newest=$(find /workspace/logs -type f -printf '%T@\\n' 2>/dev/null | sort -rn | head -n1); "
+    'if [ -n "$newest" ]; then log_age=$((now - ${newest%%.*})); fi; '
+    "sent=na; best=; "
+    "for f in /workspace/logs/*done*.json; do "
+    '[ -f "$f" ] || continue; '
+    'grep -Eq \'"(phase|status)"[[:space:]]*:[[:space:]]*"(done|ok|success|completed?)"\' '
+    '"$f" || continue; '
+    'm=$(stat -c %Y "$f" 2>/dev/null) || continue; '
+    'if [ -z "$best" ] || [ "$m" -gt "$best" ]; then best=$m; fi; '
+    "done; "
+    'if [ -n "$best" ]; then sent=$((now - best)); fi; '
+    "util=na; gpu_rc=0; "
+    "u=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null) "
+    "|| gpu_rc=$?; "
+    'if [ "$gpu_rc" -eq 0 ] && [ -n "$u" ]; then '
+    "util=$(printf '%s\\n' \"$u\" | sort -rn | head -n1); fi; "
+    "printf 'log_age=%s sentinel_age=%s gpu_util=%s gpu_rc=%s\\n' "
+    '"$log_age" "$sent" "$util" "$gpu_rc"'
+)
+
+#: Outer wall-clock bound (s) on the whole probe subprocess. ConnectTimeout
+#: covers the dial; the remote command itself is a few filesystem stats +
+#: one nvidia-smi call (~seconds) — 40s keeps a wedged host from eating the
+#: watcher tick budget.
+_POD_IDLE_PROBE_TIMEOUT_S = 40
+
+
+def _pod_idleness_probe_argv(pod_name: str) -> list[str]:
+    """Composed ssh argv for the #2149 pod-idleness probe (pure — pinned by
+    the producer-side test alongside :data:`_POD_IDLE_PROBE_REMOTE_CMD`).
+    ``pod_name`` is the pods.conf/~/.ssh/config alias (``info.name``);
+    host-key policy deliberately NOT overridden here — the synced ssh config
+    owns it (a CLI ``-o`` would take precedence over the config and break
+    reprovisioned pods whose host keys changed)."""
+    return [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "ConnectTimeout=10",
+        pod_name,
+        _POD_IDLE_PROBE_REMOTE_CMD,
+    ]
+
+
+def _probe_pod_idleness(pod_name: str) -> str | None:
+    """Run the bounded SSH idleness probe against ``pod_name``; return the
+    first non-empty stdout line (the fixed ``k=v`` line) or ``None`` on ANY
+    failure — dial refused, auth (BatchMode never prompts), timeout, rc != 0,
+    empty output. ``None`` reads as "unknown" downstream and FREEZES the
+    decision counters (fail toward no-fire)."""
+    try:
+        res = subprocess.run(
+            _pod_idleness_probe_argv(pod_name),
+            capture_output=True,
+            text=True,
+            timeout=_POD_IDLE_PROBE_TIMEOUT_S,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+    if res.returncode != 0:
+        return None
+    for ln in res.stdout.splitlines():
+        if ln.strip():
+            return ln.strip()
+    return None
+
+
+def _parse_pod_idleness_line(line: str | None) -> dict | None:
+    """PURE parser for the probe's fixed ``k=v`` line (Must-Fix 3 twin of
+    :data:`_POD_IDLE_PROBE_REMOTE_CMD`).
+
+    Returns ``{"log_write_age_s", "done_sentinel_age_s", "gpu_util_max",
+    "gpu_rc"}`` with the literal ``na`` — or any unparseable value — mapped
+    to ``None`` per field. A ``None``/empty/garbage LINE (any of the four
+    keys missing) returns ``None`` (whole-probe unknown). Never raises and
+    never coerces garbage to a number — an unreadable field must freeze,
+    not fabricate a zero."""
+    if not isinstance(line, str) or not line.strip():
+        return None
+    kv: dict[str, str] = {}
+    for tok in line.strip().split():
+        key, sep, val = tok.partition("=")
+        if sep:
+            kv[key] = val
+    required = ("log_age", "sentinel_age", "gpu_util", "gpu_rc")
+    if any(k not in kv for k in required):
+        return None
+
+    def _num(key: str, cast):
+        raw = kv[key]
+        if raw == "na":
+            return None
+        try:
+            return cast(raw)
+        except ValueError:
+            return None
+
+    return {
+        "log_write_age_s": _num("log_age", float),
+        "done_sentinel_age_s": _num("sentinel_age", float),
+        "gpu_util_max": _num("gpu_util", float),
+        "gpu_rc": _num("gpu_rc", int),
+    }
+
+
+def _pod_idle_evidence_lines(evidence: dict) -> str:
+    """Human-readable evidence fragment for the #2149 alert channels — NAMES
+    which probe fields were None (unreadable/absent) vs measured, so a
+    fire-with-missing-GPU-read is distinguishable from a measured 0%."""
+    sa = evidence.get("done_sentinel_age_s")
+    la = evidence.get("log_write_age_s")
+    um = evidence.get("gpu_util_max")
+    rc = evidence.get("gpu_rc")
+    sent_txt = (
+        f"terminal done-sentinel {sa / 3600.0:.1f}h old"
+        if isinstance(sa, int | float)
+        else "no terminal done-sentinel file"
+    )
+    log_txt = (
+        f"newest /workspace/logs write {la / 3600.0:.1f}h old"
+        if isinstance(la, int | float)
+        else "newest /workspace/logs write UNREADABLE"
+    )
+    util_txt = (
+        f"GPU util max {um:.0f}% (measured)"
+        if isinstance(um, int | float)
+        else f"GPU util UNREADABLE (nvidia-smi rc={rc if rc is not None else '?'})"
+    )
+    return f"{sent_txt}; {log_txt}; {util_txt}"
+
+
+def _emit_keep_running_idle_pod_alert(
+    *,
+    issue: int,
+    pod_id: str,
+    info: PodInfo | None,
+    status: str | None,
+    action: str,
+    evidence: dict,
+    episode_first_ts: float | None,
+    dry_run: bool,
+) -> None:
+    """Emit the #2149 pod-idle escalation channels (the ``leg="pod-idle"``
+    branch of :func:`_emit_keep_running_wedged_alert`, split out for C901):
+    one sidecar row (same jsonl as the owner leg, ``leg`` field +
+    ``kind="keep-running-idle-pod"``) + one fail-soft Telegram push on EVERY
+    ``escalate``/``re-alert``, plus the recovery-recipe task marker ONLY on
+    the episode-opening ``escalate``. Pure emission — no state writes."""
+    realert_h = _keep_running_owner_realert_s() / 3600.0
+    spec = ""
+    rate_part = ""
+    pod_name = f"pod-{issue}"
+    if info is not None:
+        pod_name = info.name
+        rate = estimate_pod_hourly_rate(info.gpu_type_id, info.gpu_count)
+        spec = f", {info.gpu_count or '?'}x{info.gpu_type_id or 'unknown-gpu'}"
+        rate_part = f", est. ${rate:.2f}/hr" if rate > 0 else ""
+    tier = evidence.get("tier", "?")
+    ev_txt = _pod_idle_evidence_lines(evidence)
+    la = evidence.get("log_write_age_s")
+    sa = evidence.get("done_sentinel_age_s")
+    payload = {
+        "kind": "keep-running-idle-pod",
+        "leg": "pod-idle",
+        "issue": issue,
+        "pod_id": pod_id,
+        "pod_name": pod_name,
+        "status": status,
+        "tier": tier,
+        "done_sentinel_age_h": (round(sa / 3600.0, 2) if isinstance(sa, int | float) else None),
+        "log_write_age_h": (round(la / 3600.0, 2) if isinstance(la, int | float) else None),
+        "gpu_util_max": evidence.get("gpu_util_max"),
+        "gpu_rc": evidence.get("gpu_rc"),
+        "action": "escalated" if action == "escalate" else "re-alerted",
+        "episode_first_ts": episode_first_ts,
+        "recovery": (
+            f"verify uploads, then task.py remove-tag {issue} keep-running (re-arms the "
+            f"auto-stop) + pod.py terminate — full recipe on the task #{issue} marker"
+        ),
+    }
+    _append_keep_running_wedged_event(payload, dry_run)
+    _telegram_push(
+        f"pod-safety #2149: keep-running pod {pod_name} ({spec.lstrip(', ') or 'spec-unknown'}"
+        f"{rate_part}) reads IDLE on its own evidence ({tier} tier: {ev_txt}) on task "
+        f"#{issue} ('{status}') — billing with no live work; the task's marker traffic "
+        f"hides it from the #1582 owner leg. Recovery: verify uploads, remove-tag "
+        f"keep-running, terminate; see task marker.",
+        dry_run,
+    )
+    if action == "escalate":
+        _post_progress_marker(
+            issue,
+            f"{_KEEP_RUNNING_POD_IDLE_NOTE_SENTINEL} KEEP-RUNNING IDLE POD (#2149): RUNNING "
+            f"pod {pod_name} (pod_id={pod_id}{spec}{rate_part}) is shielded by the "
+            f"keep-running tag on a task at DONE status '{status}', and the pod's OWN "
+            f"evidence reads idle on the {tier} tier: {ev_txt}. Pod-grain escalation — "
+            f"fires regardless of task-level marker traffic (#1739: a busy multi-round "
+            f"task hid 3 idle pods ~19.6h behind 129 markers). NOT auto-stopped "
+            f"(alert-only — verify no live round is about to reuse this pod before "
+            f"acting). Recovery: (1) verify uploads / harvest any completed results from "
+            f"the pod; (2) if no live work remains: `task.py remove-tag {issue} "
+            f"keep-running` FIRST (re-arms the watcher auto-stop, ~20 min; also required "
+            f"before a bare-form terminate — the #1485 guard refuses while the tag is "
+            f"present), then `pod.py terminate --issue {issue} --yes` (surgical "
+            f"--name-suffix form for a suffixed pod) after upload verification; (3) if a "
+            f"NAMED next round genuinely reuses this pod, record it in an epm:progress "
+            f"note and keep the tag — the pod's next log write clears this episode. "
+            f"Re-pushed every {realert_h:.0f}h while unresolved; marker posted once per "
+            f"episode.",
+            dry_run,
+            label="keep-running-idle-pod",
+        )
+
+
+def _kr_pod_prev_fields(
+    prev_state: dict, pod_id: str
+) -> tuple[dict, dict | None, int, float | None, float | None, int, bool]:
+    """Sanitized reads of the #2149 per-pod episode entry (split out of
+    :func:`_maybe_escalate_keep_running_idle_pod` for C901). Returns
+    ``(kr_pod_all, prev_entry_raw, missed, first_ts, last_alert_ts,
+    probe_fails, probe_fail_noted)`` — every garbled/missing field at its
+    fresh default (the noted-flag read pattern of the sibling arms;
+    back-compat: a pre-#2149 state file with no ``kr_pod`` reads ``{}``)."""
+    kr_pod_all = prev_state.get("kr_pod")
+    if not isinstance(kr_pod_all, dict):
+        kr_pod_all = {}
+    prev_entry_raw = kr_pod_all.get(pod_id)
+    prev_entry = prev_entry_raw if isinstance(prev_entry_raw, dict) else {}
+    missed = prev_entry.get("missed", 0)
+    if not isinstance(missed, int) or isinstance(missed, bool):
+        missed = 0
+    first_ts = prev_entry.get("first_ts")
+    if not isinstance(first_ts, int | float):
+        first_ts = None
+    last_alert_ts = prev_entry.get("last_alert_ts")
+    if not isinstance(last_alert_ts, int | float):
+        last_alert_ts = None
+    probe_fails = prev_entry.get("probe_fails", 0)
+    if not isinstance(probe_fails, int) or isinstance(probe_fails, bool):
+        probe_fails = 0
+    probe_fail_noted = bool(prev_entry.get("probe_fail_noted", False))
+    return (
+        kr_pod_all,
+        prev_entry_raw,
+        missed,
+        first_ts,
+        last_alert_ts,
+        probe_fails,
+        probe_fail_noted,
+    )
+
+
+def _note_pod_idle_probe_failure(
+    issue: int,
+    pod_id: str,
+    pod_name: str,
+    prev_missed: int,
+    prev_fails: int,
+    prev_fail_noted: bool,
+    dry_run: bool,
+) -> tuple[int, bool]:
+    """Handle one FAILED #2149 idleness probe (split out for C901): bump the
+    consecutive-failure count, leave ONE durable sidecar row per episode at
+    :func:`_keep_running_pod_probe_fail_rows` failures (no marker, no push —
+    freeze semantics unchanged), print the stderr freeze line. Returns the
+    new ``(probe_fails, probe_fail_noted)``."""
+    fails = prev_fails + 1
+    fail_noted = prev_fail_noted
+    if fails >= _keep_running_pod_probe_fail_rows() and not fail_noted:
+        _append_keep_running_wedged_event(
+            {
+                "kind": "keep-running-idle-pod-probe-fail",
+                "leg": "pod-idle",
+                "issue": issue,
+                "pod_id": pod_id,
+                "pod_name": pod_name,
+                "consecutive_probe_failures": fails,
+                "note": (
+                    "pod-idleness probe unreachable/unparseable — the #2149 pod-idle "
+                    "leg is frozen for this pod until a probe succeeds"
+                ),
+            },
+            dry_run,
+        )
+        fail_noted = True
+    print(
+        f"  KEEP-RUNNING-IDLE-POD issue #{issue} pod={pod_name}: probe failed "
+        f"({fails} consecutive); counters frozen (missed={prev_missed}) — fail "
+        f"toward no-fire.",
+        file=sys.stderr,
+    )
+    return fails, fail_noted
+
+
+def _maybe_escalate_keep_running_idle_pod(
+    issue: int,
+    pod_id: str,
+    info: PodInfo | None,
+    status: str | None,
+    now: float,
+    threshold: int,
+    prev_state: dict,
+    dry_run: bool,
+    running_pod_ids: set[str] | None = None,
+) -> bool:
+    """ALERT-ONLY #2149 pod-grain idleness leg of the #1582 keep-running arm.
+
+    Called from :func:`_apply_pod_safety_action`'s ``keep-running-skip``
+    branch on every tick where the OWNER leg did NOT escalate/re-alert —
+    i.e. BOTH the owner arm's early-clear path (``progress_gap_s`` is None
+    or < 12h: the busy-task case, where sibling rounds' markers keep the
+    task-grain gap permanently closed — #1739) AND its post-owner-decide
+    non-fire paths (owner "live"/"unknown"/below-threshold on a quiet
+    task). Escalation therefore never depends on task-level marker traffic
+    in EITHER direction (plan Must-Fix 2). When the owner leg DID fire this
+    tick, this leg is skipped — one alert per pod per tick, and the owner
+    alert already names the pod.
+
+    Sequenced lazily, cheapest evidence first: arm-wide kill switch (covers
+    both legs) -> leg disable flag -> young-pod pre-veto (``created_at``
+    younger than the smaller tier floor cannot be floor-idle on either
+    tier — skip the SSH entirely) -> ONE bounded SSH probe
+    (:func:`_probe_pod_idleness`) -> the PURE
+    :func:`decide_keep_running_pod_idle_escalation`. The owner leg's
+    provision-in-flight / worktree-activity vetoes are DELIBERATELY not
+    applied here — they are task/session-grain; the ``log_write_age_s``
+    conjunct is the pod-grain equivalent (a pod doing any real work keeps
+    writing ``/workspace/logs/``).
+
+    Episode state is the per-pod ``kr_pod[pod_id]`` entry (NOT the singular
+    ``kr_owner_*`` fields): on a multi-pod issue every ``_process_pod``
+    tick re-saves the shared per-issue state file, so a single-slot counter
+    would be reset by each busy sibling's save and the >=2-tick
+    confirmation could never accumulate — exactly the #1739 3-pod shape
+    (plan Must-Fix 1). Sibling entries are forward-carried verbatim by
+    every save (:func:`_save_pod_safety_state`) and GC'd against
+    ``running_pod_ids`` (the issue's RUNNING-pod set, when the caller holds
+    it). Each save mirrors the updated sub-dict into the caller's in-memory
+    ``prev_state`` (the #1490 r2 / #1519 clobber lesson) so the branch's
+    subsequent save forward-carries. A probe/parse failure FREEZES the
+    counter (fail toward no-fire) and, after
+    :func:`_keep_running_pod_probe_fail_rows` consecutive failures, leaves
+    ONE durable sidecar row per episode (no marker, no push). Returns
+    whether it escalated/re-alerted (for tests). NEVER stops/terminates
+    anything.
+    """
+    if not _keep_running_owner_audit_enabled():
+        return False  # arm-wide kill switch covers BOTH legs
+    if not _keep_running_pod_idle_enabled():
+        return False
+    sentinel_floor_s = _keep_running_pod_idle_s()
+    util_floor_s = _keep_running_pod_util_idle_s()
+
+    (
+        kr_pod_all,
+        prev_entry_raw,
+        prev_missed,
+        prev_first,
+        prev_alert,
+        prev_fails,
+        prev_fail_noted,
+    ) = _kr_pod_prev_fields(prev_state, pod_id)
+
+    def _persist(
+        missed_val: int,
+        first_val: float | None,
+        alert_val: float | None,
+        fails_val: int,
+        fail_noted_val: bool,
+    ) -> None:
+        """Persist this pod's kr_pod entry (write only on change; sibling
+        entries forward-carried + GC'd in-save) and mirror the updated
+        sub-dict into the in-memory ``prev_state`` so the branch's later
+        save (prev=prev_state) forward-carries it."""
+        entry = {
+            "missed": missed_val,
+            "first_ts": first_val,
+            "last_alert_ts": alert_val,
+            "probe_fails": fails_val,
+            "probe_fail_noted": fail_noted_val,
+        }
+        unchanged = prev_entry_raw is not None and entry == {
+            "missed": prev_missed,
+            "first_ts": prev_first,
+            "last_alert_ts": prev_alert,
+            "probe_fails": prev_fails,
+            "probe_fail_noted": prev_fail_noted,
+        }
+        if unchanged:
+            return
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=(
+                    prev_state.get("missed", 0) if isinstance(prev_state.get("missed"), int) else 0
+                ),
+                alerted=bool(prev_state.get("alerted", False)),
+                last_progress_ts=(
+                    prev_state.get("last_progress_ts")
+                    if isinstance(prev_state.get("last_progress_ts"), int | float)
+                    else None
+                ),
+                kr_pod_entry=(pod_id, entry),
+                kr_pod_keep_ids=running_pod_ids,
+                prev=prev_state,
+            )
+        new_map = dict(kr_pod_all)
+        new_map[pod_id] = entry
+        if running_pod_ids is not None:
+            new_map = {k: v for k, v in new_map.items() if k in running_pod_ids or k == pod_id}
+        prev_state["kr_pod"] = new_map
+
+    pod_name = info.name if info is not None else f"pod-{issue}"
+
+    # Young-pod pre-veto: a pod younger than the SMALLER enabled tier floor
+    # cannot be floor-idle on either tier — skip the SSH probe entirely.
+    created_ts = _parse_event_ts(info.created_at) if info is not None else None
+    if created_ts is not None and (now - created_ts) < min(sentinel_floor_s, util_floor_s):
+        _persist(0, None, None, 0, False)
+        return False
+
+    raw = _probe_pod_idleness(pod_name) if info is not None else None
+    fields = _parse_pod_idleness_line(raw)
+    if fields is None:
+        # Probe unreachable / unparseable: FREEZE (fail toward no-fire); one
+        # durable breadcrumb per episode once the failures run long enough.
+        fails, fail_noted = _note_pod_idle_probe_failure(
+            issue, pod_id, pod_name, prev_missed, prev_fails, prev_fail_noted, dry_run
+        )
+        _persist(prev_missed, prev_first, prev_alert, fails, fail_noted)
+        return False
+
+    action, new_missed = decide_keep_running_pod_idle_escalation(
+        log_write_age_s=fields["log_write_age_s"],
+        done_sentinel_age_s=fields["done_sentinel_age_s"],
+        gpu_util_max=fields["gpu_util_max"],
+        missed=prev_missed,
+        threshold=threshold,
+        sentinel_floor_s=sentinel_floor_s,
+        util_floor_s=util_floor_s,
+        first_ts=prev_first,
+        last_alert_ts=prev_alert,
+        now=now,
+        realert_s=_keep_running_owner_realert_s(),
+    )
+    if action == "clear":
+        _persist(0, None, None, 0, False)
+        return False
+    if action == "hold":
+        if new_missed == prev_missed:
+            # Frozen hold (partial evidence — decide returned missed
+            # unchanged), as opposed to a silent below-threshold accumulate.
+            print(
+                f"  KEEP-RUNNING-IDLE-POD issue #{issue} pod={pod_name}: evidence "
+                f"incomplete ({_pod_idle_evidence_lines(fields)}); counters frozen "
+                f"(missed={prev_missed}) — fail toward no-fire.",
+                file=sys.stderr,
+            )
+        _persist(new_missed, prev_first, prev_alert, 0, False)
+        return False
+
+    # action in {"escalate", "re-alert"} — emit (sidecar + push; marker only
+    # on the episode-opening escalate), then persist the episode state.
+    tier = "sentinel" if fields["done_sentinel_age_s"] is not None else "utilization"
+    episode_first_ts = now if action == "escalate" else prev_first
+    driving_age = fields["done_sentinel_age_s"] if tier == "sentinel" else fields["log_write_age_s"]
+    _emit_keep_running_wedged_alert(
+        issue=issue,
+        pod_id=pod_id,
+        info=info,
+        status=status,
+        action=action,
+        owner_state="n/a",  # unused on the pod-idle leg
+        evidence={
+            **fields,
+            "tier": tier,
+            "sentinel_floor_s": sentinel_floor_s,
+            "util_floor_s": util_floor_s,
+        },
+        progress_gap_s=driving_age if driving_age is not None else 0.0,
+        episode_first_ts=episode_first_ts,
+        dry_run=dry_run,
+        leg="pod-idle",
+    )
+    _persist(new_missed, episode_first_ts, now, 0, False)
+    print(
+        f"  KEEP-RUNNING-IDLE-POD issue #{issue}: {action} — pod {pod_name} idle on the "
+        f"{tier} tier ({_pod_idle_evidence_lines(fields)}); alert-only, NOT stopping.",
+        file=sys.stderr,
+    )
+    return True
+
+
 def _escaped_pod_exemptions(
     issue: int,
     status_class: str,
@@ -15518,7 +16309,13 @@ def _escaped_pod_exemptions(
 
 
 def _process_pod(
-    issue: int, pod_id: str, info: PodInfo, now: float, dry_run: bool, threshold: int
+    issue: int,
+    pod_id: str,
+    info: PodInfo,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    issue_running_pod_ids: set[str] | None = None,
 ) -> None:
     """Reconcile one RUNNING managed pod against its task status.
 
@@ -15675,6 +16472,7 @@ def _process_pod(
         prev_followup_noted=prev_followup_noted,
         prev_stop_failed_noted=prev_stop_failed_noted,
         info=info,
+        issue_running_pod_ids=issue_running_pod_ids,
     )
 
 
@@ -15696,6 +16494,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
     prev_followup_noted: bool,
     prev_stop_failed_noted: bool,
     info: PodInfo | None = None,
+    issue_running_pod_ids: set[str] | None = None,
 ) -> None:
     """Apply the status-class :func:`decide_pod_safety` ``action`` for one pod.
 
@@ -15712,7 +16511,9 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
     with a ``None`` default so existing direct callers keep passing) feeds
     the #1582 keep-running wedged-owner arm inside the
     ``keep-running-skip`` branch — the pod ``created_at`` gap fallback + the
-    marker/push spec text."""
+    marker/push spec text. ``issue_running_pod_ids`` (this issue's live
+    RUNNING pod-id set, threaded from :func:`pod_safety_pass`; ``None`` =
+    unknown, no GC) feeds the #2149 pod-idle leg's ``kr_pod`` sub-dict GC."""
     if action == "keep-running-skip":
         print(
             f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE but the "
@@ -15740,7 +16541,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
         # never stops. Runs BEFORE the branch's save; its own saves mirror
         # the kr fields + pod_id into prev_state so the save below
         # forward-carries them (the #1490 r2 / #1519 lesson).
-        _maybe_escalate_keep_running_wedged_owner(
+        owner_fired = _maybe_escalate_keep_running_wedged_owner(
             issue,
             pod_id,
             info,
@@ -15751,6 +16552,27 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
             prev_state,
             dry_run,
         )
+        # #2149 pod-grain idleness leg (ALERT-ONLY, same arm): whenever the
+        # owner leg did NOT escalate/re-alert this tick — its early-clear
+        # busy-task path AND its post-decide non-fire paths alike — read the
+        # pod's OWN evidence (bounded SSH probe: done-sentinel age, newest
+        # /workspace/logs mtime, GPU util) so an idle verified-done pod
+        # escalates regardless of task-level marker traffic (#1739: 3 idle
+        # pods hid ~19.6h behind 129 sibling-round markers). Per-pod episode
+        # state (kr_pod sub-dict); saves mirror into prev_state so the save
+        # below forward-carries.
+        if not owner_fired:
+            _maybe_escalate_keep_running_idle_pod(
+                issue,
+                pod_id,
+                info,
+                status,
+                now,
+                threshold,
+                prev_state,
+                dry_run,
+                running_pod_ids=issue_running_pod_ids,
+            )
         if not dry_run:
             _save_pod_safety_state(
                 issue,
@@ -29293,8 +30115,22 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
         print("pod-safety: no RUNNING managed pods")
         return
     print(f"pod-safety: {len(running)} RUNNING managed pod(s)")
+    # Per-issue RUNNING pod-id sets (threaded into _process_pod for the
+    # #2149 pod-idle leg's kr_pod sub-dict GC — an entry whose pod is no
+    # longer a live RUNNING pod of the issue is dropped on save).
+    issue_pod_ids: dict[int, set[str]] = {}
+    for issue, pod_id, _name, _info in running:
+        issue_pod_ids.setdefault(issue, set()).add(pod_id)
     for issue, pod_id, _name, info in running:
-        _process_pod(issue, pod_id, info, now, dry_run, threshold)
+        _process_pod(
+            issue,
+            pod_id,
+            info,
+            now,
+            dry_run,
+            threshold,
+            issue_running_pod_ids=issue_pod_ids.get(issue),
+        )
 
 
 def _vm_run_remediations(

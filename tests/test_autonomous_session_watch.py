@@ -2109,6 +2109,11 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         "kr_owner_missed": 0,
         "kr_owner_first_ts": None,
         "kr_owner_last_alert_ts": None,
+        # #2149: the pod-grain idleness leg's per-pod episode sub-dict is part
+        # of the schema now; a save with no prior entries defaults it {} —
+        # sibling entries forward-carry VERBATIM on every save (no pod_id
+        # reset: the per-pod keying IS the incarnation reset).
+        "kr_pod": {},
     }
 
     # On a second save (passing the previous payload), first_seen must persist.
