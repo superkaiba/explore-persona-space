@@ -538,27 +538,86 @@ def stage_rollouts(args: argparse.Namespace) -> dict:
     return staged
 
 
+def _is_rollout_doc(doc: object) -> bool:
+    """Schema predicate: a packed row is a rollout iff BOTH keys are present.
+
+    NEVER key on row index — the per-job ``_manifest.json`` lands at idx 0 of
+    shard00 today, but that is positional luck a future pack-ordering change
+    would silently break (#1190/#1739 pack contract: one line per SOURCE FILE,
+    manifest included).
+    """
+    return isinstance(doc, dict) and "context_id" in doc and "rollout_k" in doc
+
+
 def load_job_rollouts(rollout_root: Path, job_name: str, *, limit: int | None = None) -> list[dict]:
-    """Load the greedy labeling rollout payloads for one rung-job from its shards."""
+    """Load the greedy labeling rollout payloads for one rung-job from its shards.
+
+    Packed-format aware: each line is ``{"src": <path relative to the raw
+    root>, "doc": <original file JSON>}`` and the per-job ``_manifest.json``
+    is packed as a row too. Non-rollout rows are filtered by ``_is_rollout_doc``
+    (schema, never index), and on a FULL read (no ``limit`` cut) the surviving
+    rollout count is VERIFIED against the manifest's ``n_kept * k_rollouts`` —
+    fail-loud on mismatch (a partial/corrupted pack) or on a pack with no
+    manifest row. The crashed 2026-08-06 pilot's "2001 rollouts" log line was
+    the manifest row miscounted as a rollout; a silent skip would have hidden
+    that class, the count check keeps it observable.
+    """
     shard_dir = job_shard_dir(rollout_root, job_name)
     shards = sorted(shard_dir.glob("*.shard*.jsonl"))
     if not shards:
         raise FileNotFoundError(f"no rollout shards for job {job_name!r} under {shard_dir}")
     payloads: list[dict] = []
+    manifests: list[dict] = []
+    n_skipped_other = 0
+    truncated = False
     for shard in shards:
+        if truncated:
+            break
         with shard.open(encoding="utf-8") as fh:  # text-mode iteration (JSONL rule)
             for line in fh:
                 line = line.strip()
                 if not line:
                     continue
-                doc = json.loads(line)["doc"]
+                row = json.loads(line)
+                doc = row.get("doc")
+                if not _is_rollout_doc(doc):
+                    # non-rollout packed entry: the per-job manifest, or an
+                    # unexpected sidecar (counted + logged, never dereferenced).
+                    if str(row.get("src", "")).endswith("_manifest.json"):
+                        manifests.append(doc if isinstance(doc, dict) else {})
+                    else:
+                        n_skipped_other += 1
+                    continue
                 if int(doc.get("rollout_k", 0)) >= K_ROLLOUTS_GREEDY:
                     raise ValueError(
                         f"{job_name}: rollout_k={doc.get('rollout_k')} >= K_ROLLOUTS_GREEDY"
                     )
                 payloads.append(doc)
                 if limit is not None and len(payloads) >= limit:
-                    return payloads
+                    truncated = True
+                    break
+    logger.info(
+        "[collect] %s: kept %d rollout rows; filtered %d non-rollout packed rows "
+        "(%d manifest, %d other)%s",
+        job_name,
+        len(payloads),
+        len(manifests) + n_skipped_other,
+        len(manifests),
+        n_skipped_other,
+        " [limit-truncated: completeness check skipped]" if truncated else "",
+    )
+    if not truncated:
+        if not manifests:
+            raise ValueError(
+                f"{job_name}: no _manifest.json row in packed shards under {shard_dir} — "
+                "cannot verify rollout completeness against n_kept (malformed pack)"
+            )
+        expected = sum(int(m["n_kept"]) * int(m.get("k_rollouts", 1)) for m in manifests)
+        if len(payloads) != expected:
+            raise ValueError(
+                f"{job_name}: packed rollout-row count {len(payloads)} != manifest "
+                f"n_kept*k_rollouts {expected} — partial or corrupted pack under {shard_dir}"
+            )
     return payloads
 
 
