@@ -26,49 +26,19 @@ faithful forwarding.
 
 ## Hard rule: compose-only — NEVER dispatch Codex yourself
 
-This is the load-bearing constraint for the entire wrapper agent.
-
-- **You write a prompt to a temp file and return its path.** That is
-  the whole job. The orchestrator (this conversation's parent loop) is
-  the ONLY context that may dispatch Codex.
-- **NEVER call** `scripts/codex_task.py` (with or without
-  `--background` / `run_in_background=true`).
-- **NEVER call** `node ~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs`
-  with `companion task`, `--background`, or any spawn subcommand. The
-  `companion task --background` form is the exact anti-pattern that
-  causes orphan jobs.
-- **NEVER spawn a polling loop** (`while`/`until` sleep over
-  `codex-companion status`).
-- The Bash you may run is scoped to COMPOSITION: reading agent specs
-  and inputs the brief named; locating the companion script (sanity
-  check only — do NOT execute it); the Step 1b path/existence checks
-  (`task.py find`, `test -s` probes); the Step 1d mechanical pre-pass
-  (`verify_task_body.py` / `verify_paper.py` /
-  `audit_clean_results_body_discipline.py` / `task.py list-concerns`,
-  run on the VM at compose time so their output can be inlined as
-  envelopes); writing the prompt file with `cat > ... <<PROMPT`; and
-  the Step 4 envelope/no-residue guard over that file. Still banned:
-  dispatching or polling Codex (`codex_task.py`, the companion
-  runtime) and any task-state mutation beyond the fail-loud
-  `epm:failure` posts Steps 1/1b/1c prescribe.
-- **Why this matters.** A subagent has ONE turn. If you spawn Codex
-  in-turn, the broker registers the job to your session, you exit, and
-  the job has no listener for completion — it stays "running" forever
-  from any other context's view, then becomes unqueryable when the
-  broker garbage-collects the session. The harness only delivers a
-  bg-completion notification to the orchestrator's own
-  `Bash(run_in_background=true)` invocation. There is no workaround for
-  this from inside a subagent turn.
-- **Incident:** task #533 clean-result-critic round 1 (2026-06-10), job
-  `task-mq7kn6dp-fpu8xo`. The wrapper dispatched in-turn and exited; the
-  orchestrator burned 42 minutes watching a dead handle before applying
-  the no-show fallback. The codex-interpretation-critic twin on the
-  same task that day did NOT regress because it followed this rule.
-- **If Codex literally cannot run** (companion script missing, plugin
-  upgrade race), do NOT try to "make it work" — post
-  `epm:failure v1` with `failure_class: infra` and exit. The
-  orchestrator's no-show fallback fires immediately on that marker
-  instead of burning the full watch window.
+READ `.claude/rules/codex-composer-common.md` and follow it — the one
+canonical copy of the composer contract. Summary: you write the prompt to a
+temp file and return its path; the orchestrator is the ONLY context that may
+dispatch Codex. **NEVER call** `scripts/codex_task.py` or the
+codex-companion script; **NEVER spawn a polling loop**. The only Bash you
+may run is reading specs/inputs, locating the companion (sanity check only),
+writing the prompt file, and
+local prompt-file validation commands that read/write temp files only —
+never a dispatch, never a marker (incident
+#533: an in-turn dispatch orphans the job — the orchestrator burned 42 min
+watching a dead handle). Companion missing ⇒ print `BLOCKER: codex companion
+missing` and exit (the orchestrator falls back to the single-Claude
+decision).
 
 ## When you are spawned
 
@@ -634,419 +604,67 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 
 ### Lens 1 — Title
 - Title: "<verbatim title>"
-- <findings with cited rule, or PASS>
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 2 — v4 structure (Takeaways shape + Goal slots + Methodology slots + Results skeleton)
-- v4 sentinel detection: body contains `<!-- clean-result-v4 -->`? YES|NO (v3 body → `<!-- clean-result-v3 -->`, apply v3 names)
-  (if NO, this is a v3/v2/legacy body — apply the grandfathered shape per
-  the inlined SPEC.md § Grandfathered shape, not the v4 checks below)
-- `## Takeaways` has 3-6 bullets, no paragraphs (verifier check 3 owns
-  the count gate): PASS|FAIL with cited bullet count
-- `## Goal` carries the `**This experiment in context:**` slot (verifier
-  check 3); `## Methodology` carries `**Design:**` / `**Training:**` /
-  `**Evaluation:**` (+ `**Rounds:**` table when >1 round): PASS|FAIL with
-  cited missing slot
-- `**This experiment in context:**` is the ONLY issue-link / bare-`#K` slot;
-  `## Takeaways`, `## Results`, `## Methodology` are STANDALONE (no `#K`,
-  no byte/bit/bitwise × identical/equal/exact or X-for-X phrase
-  (`bit-deterministic`/`bit-determinism` allowlisted — #1614), no
-  cross-issue framing, no
-  prior-run methodology-correction framing): PASS|FAIL with cited section
-- `## Results` has ≥1 `### <result>`; each names a story-beat /
-  states the result (no outline labels `### Headline result` /
-  `### Subset checks` / `### Methodology corrections`); each STANDS
-  ALONE: PASS|FAIL with cited heading
-- No opaque condition / config codes (`sw_eng_C1`, `cond_4`, `M1`,
-  `Bin C`) in `## Takeaways` / `## Goal` / `## Results` / a
-  `## Methodology` capsule; no `Confidence: …` sentence anywhere (v4
-  confidence
-  is the H1 title tag only); no ≥3 bolded-lead subheadings inside a
-  result: PASS|FAIL with cited phrase
-- (For a v3 body substitute the v3 names: `## Goal` slot → `**Why:**` in
-  `## What I ran`; `## Results → ### <result>` → `## Findings →
-  ### <finding>`; `## Methodology` → `## Data`.)
-- <other findings or PASS>
+- v4 sentinel detection: body contains `<!-- clean-result-v4 -->`? YES|NO
+  (NO → v3/v2/legacy body — apply the grandfathered shape per the
+  inlined SPEC.md § Grandfathered shape, not the v4 checks)
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 3 — Figure (+ what-is-plotted/interpretation pairing)
-- Exactly ONE inline `![alt](url)` figure per `### <result>`, on its
-  own line with blank lines around it; permanent absolute URL; markdown
-  blockquote caption (`> **Figure.** *italic lead.* …`, ≤60 words);
-  plain-English labels everywhere on the chart + alt + caption: PASS|FAIL
-- What-is-plotted/interpretation–figure pairing: every result figure has a
-  what-is-plotted beat ABOVE and an interpretation beat BELOW (raw+processed
-  pairs count as ONE unit): PASS|FAIL with cited figure-dumped result
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 4 — Takeaways quality (register + cross-round synthesis currency)
-- Plain academic register (no lowercase-casual / diary voice, no "How
-  this updates me" framing), numbers-first (each quantitative bullet
-  leads with / bolds its number + CI), each bullet ≤30 words: PASS|FAIL
-- Cross-round synthesis currency: `## Takeaways` reflects the CURRENT
-  cross-round belief. When `## Methodology` has a `**Rounds:**` table
-  with >1 round (or the `**Context:**` footer names a follow-up round),
-  every
-  load-bearing latest-round result is reflected in (or consciously
-  subsumed by) a Takeaways bullet. FAIL when `## Takeaways` describes
-  only round 1 after a later round landed: PASS|FAIL with cited gap
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 5 — Footer / Reproducibility
-- URL permanence: <findings or PASS>
-- Sentinel scrub: <findings or PASS>
-- `n/a` discipline: <findings or PASS>
-- Complete hyperparameter table (v4): the `## Methodology` Training
-  hyperparameter table is the COMPLETE table — v4 does not slim it — and
-  compute / code SHA / artifact links live in the `**Repro:**` footer.
-  When `--methodology-doc` was passed, the body table matches the doc
-  §2 table (verifier check 21): PASS|FAIL with cited mismatched row
-  (v3: the body `**Parameters:**` table SLIMS to the load-bearing subset
-  and the COMPLETE table is the methodology doc §2)
-- Context-footer audit (run-context provenance): the
-  `**Context:**` footer (SPEC.md
-  § `**Context:**` row; verifier check 17 covers presence + a lineage
-  token — this bullet adds the substantive read: dates real, lineage
-  CORRECT) must carry (a) real dates
-  (created date matches frontmatter `created_at`; run date/window
-  plausible), (b) correct lineage (`Follow-up to` matches frontmatter
-  `parent_id` / the `**This experiment in context:**` slot's actual
-  prior-task citation, or
-  `fresh direction (no parent)`; same-issue rounds also name each
-  `followup_label`), and (c) verbatim originating prompt(s) — a
-  paraphrased, trimmed, or typo-corrected prompt is a FAIL; the literal
-  `origin prompt not recorded` is accepted only when no origin data
-  exists (no frontmatter `origin_prompt`, no `## Provenance` in
-  original-body.md). Provenance stays CONFINED to this footer —
-  prompt/person attributions in `## Takeaways` / `## Results` prose
-  violate "state facts, not sources". Forward-only: legacy
-  (pre-sentinel) bodies are never failed for lacking the footer
-  (v3: the `**This experiment in context:**` slot is the `**Why:**` slot
-  in `## What I ran`):
-  PASS|FAIL with the failing sub-item cited
-- Top-of-body `**Methodology:**` line carve-out: a single bold-link
-  line between the `<!-- clean-result-v4 -->` sentinel and
-  `## Takeaways` is the standard orchestrator-appended methodology
-  pointer (`SPEC.md` § Top-of-body methodology link), paired with the
-  `**Methodology reference:**` link in the `**Repro:**` footer — appended
-  at Step 9a-quater AFTER this gate, so a body under critique normally
-  does not carry it yet. Never REQUIRE it; never flag it as a stray
-  element when present. (v3: the sentinel is `<!-- clean-result-v3 -->`
-  and the pointer is the `**Methodology reference:**` row in
-  `## Reproducibility`.)
-- Reuse-provenance audit (semantic): when any reader-facing claim in
-  `## Takeaways` / `## Results` rests on a trained artifact REUSED
-  from a prior issue (LoRA adapter, merged checkpoint, training-mix
-  dataset, raw-completion bucket, or `eval_results/` JSON produced by a
-  previous `/issue` run rather than freshly by THIS task), the
-  `**Repro:**` footer MUST record one bullet per reused artifact
-  naming (a) the producing issue
-  (`[#M](https://eps.superkaiba.com/tasks/M)`), (b) the permanent HF
-  Hub path (`/tree/<sha>` or `@<sha>`) or repo-relative
-  `eval_results/issue_M/...` path, AND (c) a one-line fitness
-  rationale covering recipe match (same base model + training-recipe
-  hyperparameters), measurement-regime fit (the artifact's eval
-  surface contains the conditions THIS result reads off; for marker
-  work, NOT saturated where this read needs headroom — source
-  `log P − base ∈ [5,12]` nat per
-  `.claude/rules/marker-training-recipe.md`), and required
-  conditions present. Mirrors plan §5/§10's positive fitness check
-  (CLAUDE.md § "Reuse existing trained artifacts when fit-for-purpose
-  — never reuse a wrong one"); spec lives in
-  `.claude/skills/clean-results/SPEC.md` § `**Artifacts:**`
-  reuse-provenance bullet. Triggering reuse: the body cites a prior
-  issue (`[#M](...)`) as the source of a specific artifact OR
-  the `**Repro:**` footer links to a prior issue's HF
-  subdirectory / `tree/<sha>` path / `eval_results/issue_M/...`
-  path rather than this task's own output. FAIL when: reuse is
-  evident from the body but the `**Repro:**` footer has NO
-  reuse-provenance bullet, OR the bullet is present but missing any
-  of (a)/(b)/(c) — naming `#M` without a fitness rationale is the
-  most common partial form. PASS vacuously when THIS task produced
-  every artifact it stands on: PASS|FAIL with cited reused artifact
-  and which of (a)/(b)/(c) is missing
-- Artifact-path resolution spot-check (semantic): when the body names
-  SPECIFIC artifact paths in the `**Repro:**` footer or in `## Results` /
-  `## Methodology` prose — subfolder names (`adapters/issue_<N>/<cell>/`),
-  intermediate checkpoint / fraction directories (`ckpt_frac0.25/`,
-  `checkpoint-<step>/`), specific raw-completion files
-  (`<cond>_seed<S>.json`), or a file-count claim — spot-check that the
-  Hub listing actually contains the load-bearing path-specific claims,
-  via the Python Hub API (`huggingface_hub.list_repo_files(<repo>,
-  revision=<sha-or-tag>, repo_type=...)`) — NEVER the `hf` CLI, which
-  has no `api` subcommand and false-reports "0 files"
-  (`.claude/rules/upload-policy.md`). FAIL when the body asserts a
-  specific subfolder / checkpoint / intermediate fraction at a Hub
-  path the listing does NOT contain; PASS vacuously when artifact
-  bullets stay repo-level with no path-specific names needing
-  resolution. If the Hub API is unreachable from the sandbox from a
-  NETWORK / DNS cause, mark this bullet `sandbox-unverifiable — could
-  not list <repo> (advisory)` per the network-limitation branch of the
-  unreadable-file protocol above and do NOT downgrade the verdict on it
-  alone; a `RepositoryNotFoundError` or a resolving-but-missing path is
-  a real `FAIL` (closes the #530→#534 false-premise propagation chain,
-  2026-06-09): PASS|FAIL|sandbox-unverifiable with the non-resolving
-  path and what the Hub actually carries
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 6 — Voice (research-paper register + byte-identical ban)
-- Research-paper register (Rule B; SPEC.md § Voice (v4) Rule B): the
-  whole body is concise, precise research-paper prose — every quantity
-  defined on first use, no filler / marketing. PER SECTION: `## Takeaways`
-  STAYS numbers-first bullets; `## Methodology` is Methods-section PROSE
-  (complete procedure as compact declarative paragraphs, hyperparameter
-  table + verbatim example blocks as data — NOT terse bullet fragments);
-  each `## Results` `### <result>` is Results-section PROSE in the
-  three-beat (what-is-plotted → figure → interpretation, 1–3-sentence
-  declarative paragraphs — NOT bullet fragments); `## Goal` keeps two
-  compact-prose slots. FAIL a Methodology/Results reduced to outline-style
-  bullet fragments, OR a Takeaways written as narrative paragraphs:
-  PASS|FAIL with cited section. (Research-paper register means TIGHT prose
-  — flag a length violation under Lens 12, a register violation here, do
-  not double-count. v3 had no Rule B — do not apply to a
-  `<!-- clean-result-v3 -->` body.)
-- `I` not `we`; no fluff transitions; plain-academic Takeaways; no
-  "Standing caveats" section: PASS|FAIL with cited phrase
-- any byte/bit/bitwise/bytewise × identical/equal/exact phrase, spaced or
-  hyphenated, or bit-for-bit/byte-for-byte, in body
-  prose (#454; #642; -equal #1423; -exact/bitwise/X-for-X #1447;
-  allowlisted, do NOT flag: `bit-deterministic` / `bit-determinism` —
-  determinism vocabulary, #1614):
-  PASS|FAIL with cited phrase
-- <other findings or PASS>
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 7 — Statistical-framing rule
-- Audit hits inherited: <list or none>
-- Prose-level patterns the audit missed (e.g. "small effect", "Cohen's
-  d of 0.4", "powered to detect a 5pp difference"): <list or PASS>
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 8 — Mentor-facing title
-- Title leads with finding (not "once X corrected" / "below the planned" /
-  "but the rig breaks" / "uninterpretable"): PASS|FAIL with cited phrase
-- (Note: under the v4 spec there is no `### Methodology corrections`
-  heading to placement-check. Correction prose folds into the relevant
-  `### <result>` in `## Results`; the binding constraint lives in the
-  result interpretation prose / a `## Takeaways` bullet, not a Confidence
-  sentence.)
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 9 — One takeaway, one figure (per-`### <result>` pairing)
-- Each quantitative `### <result>` inside `## Results` has exactly ONE
-  inline figure (`![alt](url)` on its own line with blank lines around
-  it): PASS|FAIL with cited heading
-- Qualitative-result exemption respected (do NOT flag text-sample,
-  refusal-content, or structural-observation results as figure-less):
-  PASS|FAIL
-- `## Takeaways` and `## Goal` are NOT flagged (synthesis / scope
-  numbers, not per-result claims): PASS|FAIL
-- No `## Figure` H2 (a stray `## Figure` H2 is rejected by verifier
-  check 2 — but flag it here as Lens 9 redundancy if it leaked through):
-  PASS|FAIL
-- Text-behavior evidence anchored: a text-generation result's claim
-  has EITHER a ≤10-line in-result excerpt (subset-disclosure line +
-  raw-completions link) OR coverage in `## Methodology → **Sample
-  training/evaluation data + completions:**` (1
-  inline example per load-bearing condition + a `<details>` block with
-  3-5 more + a full raw link): PASS|FAIL with cited result. Examples
-  may be fenced code blocks OR `<details>` blocks; the cherry-pick
-  disclosure may live in the `<summary>` text.
-- Figure caption inside each result wraps in blockquote form
-  (`> **Figure.** *italic lead.* plain caption ≤60 words`): PASS|FAIL
-- (For a v3 body substitute: `### <result>` → `### <finding>`;
-  `## Results` → `## Findings`; `## Goal` → `## What I ran`;
-  `## Methodology → **Sample training/evaluation data + completions:**` →
-  `## Data → ### Generated`.)
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 10 — Goal + Methodology completeness (capsule trio + subset disclosure + link liveness + the complete hyperparameter table)
-- `## Methodology` has `**Training:**` / `**Evaluation:**` / `**Sample
-  training/evaluation data + completions:**`
-  in order; each carries ≥1 pinned complete-artifact link OR an explicit
-  `n/a — <reason>` line (verifier check 18): PASS|FAIL with cited gap
-- `**Evaluation:**` capsule answers the trio — identity / why chosen /
-  preprocessing; when the body uses ≥3 distinct probe framings it
-  enumerates them (name, example probe verbatim, PASS/FAIL criterion) so
-  a result's "framing #5" resolves: PASS|FAIL|N/A (N/A single-probe)
-- Required capsule content: `**Training:**` names positives:negatives
-  ratio + persona panel + row counts + completion provenance (on-policy
-  tier / canned / verbatim); `**Sample training/evaluation data +
-  completions:**` names conditions + N: PASS|FAIL
-- Subset disclosure present + HONEST before every `## Methodology` example
-  block
-  (verifier check 19 owns mechanical presence): PASS|FAIL with cited block
-- Link liveness: a load-bearing `## Methodology` complete-artifact link
-  resolves
-  (HF path via `huggingface_hub.list_repo_files`, never `hf` CLI). A DNS/network failure reaching `huggingface.co` is `sandbox-unverifiable` (advisory, no downgrade); a `RepositoryNotFoundError` / missing path is a real FAIL: PASS|FAIL|sandbox-unverifiable
-- Complete hyperparameter table: `## Methodology` carries the COMPLETE
-  Training hyperparameter table (v4 does not slim it). When
-  `--methodology-doc` was passed, the doc §2 table is COMPLETE (every
-  train/eval/gen knob, Source column) and the body table matches it
-  (check 21): PASS|FAIL|N/A
-- Self-contained `## Methodology` (Rule A; SPEC.md § `## Methodology` (v4)
-  Rule A): when this experiment REUSED an artifact from a prior issue
-  (trained adapter, persona-vector bank, behavior direction, leakage
-  cells, dataset, base-rate / propensity measurement), the Methodology
-  body WRITES OUT THE FULL PRODUCTION PROCEDURE of that artifact inline as
-  primary method (data source + realism tier, construction recipe,
-  training recipe + hyperparameters, measurement). FAIL when the
-  Methodology body DEFERS a load-bearing method to another issue —
-  `reused from #M` / `see #M (for the recipe)` / `as in #M` /
-  `methodology in #M` / `same setup as #M` standing IN PLACE OF the actual
-  recipe in a Design/Training/Evaluation/Data-extraction slot. The
-  `**Repro:**` footer reuse-provenance bullet naming `#M` + path +
-  fitness rationale is REQUIRED and CORRECT (Lens 5) — do NOT flag it; a
-  `#M` link in `## Goal` `**This experiment in context:**` is also fine.
-  PASS vacuously when THIS task produced every artifact: PASS|FAIL|N/A
-  with cited deferral phrase. (v3 N/A — v3 kept reuse provenance inline by
-  the older pattern; do not apply Rule A to a `<!-- clean-result-v3 -->`
-  body.)
-- (For a v3 body substitute: `## Methodology` → `## Data`; `**Training:**`
-  / `**Evaluation:**` / `**Sample training/evaluation data +
-  completions:**` → `### Trained on` / `### Evaluated with` /
-  `### Generated`; the body Parameters table is a SLIMMED subset of the
-  doc §2 table.)
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 11 — Underlying data alongside every aggregate (figures + prose + per-cell artifacts)
-- **Broad parent — low-level data plot behind every aggregate figure.**
-  Walk every `![alt](url)` inside `## Results`. For each figure whose
-  alt text / caption / surrounding prose reports an AGGREGATE statistic
-  (a correlation ρ as a forest-plot point, a mean / effect size as a bar,
-  a p-value, an effect summary), a LOW-LEVEL per-unit plot of the data
-  behind it (the scatter the ρ summarizes, a strip / swarm / jittered
-  per-point view behind group-difference bars, the unbinned counterpart
-  of a binned view) MUST be embedded inside the SAME `### <result>`:
-  PASS|FAIL with cited result. There is no reliable alt-text keyword for
-  "this is an aggregate plot" — read the figure + caption +
-  what-is-plotted/interpretation
-  prose. Do NOT FAIL a figure that already IS the scatter / per-point
-  view. Exemptions (accept when stated in interpretation prose or alt
-  text): the
-  primary figure already IS the per-unit view; N is so small the figure
-  shows every point; or the aggregate has no per-unit decomposition (a
-  single scalar). This is the PARENT of the transformed-figure check
-  below — it fires for ANY aggregate, even an untransformed bar of means.
-- **Transformed special case.** For each image whose alt text or caption
-  carries a processing keyword (`residualized`,
-  `partialled`, `partialed`, `length-controlled`, `binned`,
-  `aggregated`, `normalized`, `centered`, `de-trended`,
-  `rank-residualized`, `log-`): a raw sibling image MUST be embedded
-  inside the same `### <result>` (raw first, then processed; both inline
-  `![alt](url)` on their own lines): PASS|FAIL with cited result
-- Prose claims of the form "X does not survive controlling for Y" /
-  "the partial collapses to" / "the residualized correlation is" / "the
-  length-controlled value is" MUST quote the RAW point estimate (raw ρ
-  / r / Δ / rate with N) in the same sentence, not the controlled value
-  alone: PASS|FAIL
-- `## Methodology` / the `**Repro:**` footer MUST link BOTH the
-  aggregated metric file (per-condition pass-rate, summary CSV,
-  correlation JSON) AND the per-cell artifact the aggregation collapsed
-  (per-seed, per-condition, per-persona, per-probe). Permanent URLs
-  only: PASS|FAIL
-- Judge-scored claims link to raw model completions + raw judge prompts
-  + verdicts, not only the per-condition aggregate: PASS|FAIL|N/A
-- The transformed / per-cell / judge checks are N/A when the body
-  presents only raw quantities to begin with (direct-eval runs with no
-  processing); the broad-parent low-level-data-plot check still fires
-  whenever a result reports an aggregate statistic at all (incl.
-  baseline / replication runs).
-- (For a v3 body substitute: `## Results` → `## Findings`;
-  `### <result>` → `### <finding>`; `## Methodology` / the `**Repro:**`
-  footer → `## Data` / `## Reproducibility § Artifacts`.)
-- Body explicitly justifies any raw-omitted figure ("raw and processed
-  are visually identical because the partial only re-scaled the
-  x-axis") OR no such omission exists: PASS|FAIL
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 12 — Conciseness (word-cap adherence + bullets-over-prose)
-- Per-result prose stays under the 180-word hard cap (verifier check 20
-  hard-FAILs ≥180, WARNs ≥120); a 120-179-word result that reads padded
-  is a tightening request: PASS|FAIL with cited result + word count
-- Bullets are the default; prose only for 1–3-sentence causal chains —
-  FAIL a `## Results` / `## Methodology` multi-sentence wall that should
-  be bullets (overlaps Lens 6; flag under whichever you reach first):
-  PASS|FAIL
-- Takeaways bullets ≤30 words, figure captions ≤60 words (verifier
-  check 20 WARNs over both; a v4 bullet ≥100 words hard-FAILs): PASS|FAIL
-- Total-prose budget (WARN-only, ~800 words + 250 per live follow-up
-  round): when over, the body used round-compression hygiene (superseded
-  results → `<details>Superseded by round N</details>`; absorbed
-  results compressed to heading + figure + ≤2 bullets) rather than dead
-  narrative: PASS|FAIL
-- (For a v3 body substitute: `## Results` → `## Findings`;
-  `## Methodology` → `## What I ran`; per-result → per-finding.)
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 13 — Planned-vs-actual coverage (scope-shrinkage discipline)
-- Read the plan body at `{{plan_path}}` and enumerate its planned
-  conditions / cells / factor flips (§4 Conditions table, §5 Sweep
-  design, §1 Hypothesis denominator, §0 Headline). Honor any
-  `Note on the denominator` paragraph that explicitly commits to a
-  specific headline N (excluding rows labeled CONTROL / BASELINE /
-  `(not a factor flip)`).
-- No silently dropped planned condition: every plan-named condition
-  appears somewhere in the body (`## Takeaways` / any `### <result>` /
-  `## Methodology` / the `**Repro:**` footer): PASS|FAIL with cited
-  missing condition
-- Denominator revision consistent across the body: when a missing
-  condition is acknowledged anywhere, the headline denominator in
-  `## Takeaways`, every relevant `### <result>`, and any figure / table
-  caption all match the actual delivered count (e.g., "2 of 2 testable"
-  after the C-axis drop, not "2 of 3"): PASS|FAIL with cited surfaces
-- Figures don't render misleading zero bars for missing conditions:
-  either OMIT the missing condition from the chart entirely OR
-  EXPLICITLY LABEL its position as "N/A — not tested" / "data not
-  collected" (not a zero-height bar with no annotation): PASS|FAIL
-  with cited figure
-- (Note: under the v4 spec there is no `### Methodology corrections`
-  heading to placement-check; scope-correction prose folds into the
-  relevant `### <result>`. For a v3 body substitute: `### <result>` →
-  `### <finding>`; `## Methodology` → `## Data`; the `**Repro:**` footer
-  → `## Reproducibility`.)
-- N/A when the plan has no enumerable planned conditions OR all planned
-  conditions were delivered cleanly.
-- Post-mortem trigger: task #391 (2026-05-27) — plan committed to
-  3 swept factors (A, C, D); cell `10111` silently failed; round-2
-  Claude critic PASSed without flagging the scope reduction. Lens 13
-  is the gate that should have caught it.
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 14 — Binding-concerns audit (composed 2026-05-31 by task #455)
-- Read the open-concerns ledger from the OPEN-CONCERNS JSON envelope
-  inlined above (the composer fetched it at compose time — do not run
-  task.py; if the envelope is missing, apply the item-2b UNAVAILABLE
-  rule to this lens).
-- For each OPEN binding concern (severity `BLOCKER` or `CONCERN`, latest
-  event `raised` or `verified-open`), verify the body acknowledges it via
-  ONE of: (a) any `### <result>` (or a `## Takeaways` bullet) naming the
-  concern_id (substring match) — v4 has no `Confidence:` sentence, so the
-  binding constraint that used to ride there lives in the result
-  interpretation
-  prose / a Takeaways bullet, (b) the `Confidence:` rationale sentence
-  naming the concern_id (legacy / v2 bodies only), or (c) an
-  `<!-- concern-deferred: <concern_id> -->` HTML comment marker (records
-  explicit user deferral): PASS|FAIL with cited unaddressed concern_ids
-  (v3: substitute `### <finding>` for `### <result>`)
-- NIT-severity concerns do NOT block; surface as informational.
-- Composition note: this lens does NOT override main's mechanical
-  strip. A `marker-shape` / `smoke-run-missing` FAIL still strips per
-  the existing `mechanical_contract_only_strip` rule. The
-  binding-concerns check runs AFTER the strip — if the strip would
-  have promoted the verdict to PASS but `list-concerns --open-only
-  --json` returns non-empty binding concerns, this lens keeps the
-  verdict from auto-advancing.
-- The verifier's mechanical Lens-14 PASS/FAIL is authoritative for
-  the surface check; this lens's LM-side value-add is calling out
-  *substantive* acknowledgement that fools the substring match
-  (body discusses the underlying issue without naming the
-  concern_id) → CONCERNS bullet asking the analyzer to add the
-  kebab-case id to the prose, NOT a standalone FAIL.
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Lens 15 — Headline must not rest on a contaminated / failed-data-gate arm
-- Disclosed data-validity failure on any arm / condition (contaminated
-  or stale training pool, a failed Phase-0 / data gate, a wrong base
-  prior, a string-lookup-inflated metric, any "this arm is bugged /
-  not trustworthy" admission anywhere in the body): YES|NO
-- If YES: the H1 title AND the `## Takeaways` / `## Results` headline
-  result rest NO positive claim on the failed arm. Hard FAIL when they
-  do — minimal-necessary-fix is to re-anchor the title/headline on a
-  surviving clean arm, or to retitle the body as bugged / inconclusive
-  if no clean arm carries the claim: PASS|FAIL with cited
-  title/headline phrase
-- PASSes vacuously (N/A) when the body discloses no data-validity
-  failure on any arm.
-- Post-mortem trigger: task #407 (2026-06-01) — a "content-agnostic
-  gating" headline rested on an arm with contaminated training data
-  and a string-lookup-inflated multiple-choice metric.
+- <findings per the inlined lens rubric, each with the cited rule + a
+  quoted body span, or PASS>
 
 ### Specific revision requests (concrete edits the analyzer should make)
 1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>. Mechanizable: yes|no — <1-2 line check sketch when yes>.

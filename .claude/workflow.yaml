@@ -1584,41 +1584,62 @@ markers:
     fields: |
       Implementer self-tag verifying smoke and sweep paths share the
       same dispatcher / subprocess shape / env injection / logging
-      surface. Unification is the default; canary is the escape hatch
-      when unification is genuinely impossible (#397). Body shape: one of:
+      surface. Body shape: one of:
         `verdict: PASS_UNIFIED` — smoke IS sweep with one cell
           (`--cells 1 --seeds 1` or equivalent); both paths share the
           same dispatcher and subprocess shape end-to-end, AND the
           cell-subset parameterization threads through EVERY phase the
-          dispatcher executes, AND every planned arm's per-arm-resolution
-          row reads REAL or N/A, AND the Axis 1 import-resolution leg
-          passed on the REAL branch. A subset honored by the train loop
-          only, with a downstream phase re-enumerating the full grid, is
-          FAIL_NO_CANARY (#546); non-cell smoke axes sized below a
-          downstream phase's minimum-N assert are likewise FAIL_NO_CANARY
-          (#1315), and the notes: line names the floor per sliced axis.
-        `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge AND
-          the plan §4 justified the divergence AND named the canary cell
-          that exercises the sweep path during smoke. Same per-arm
-          invariant as PASS_UNIFIED; a FALLBACK row under PASS_CANARY is
-          a marker-shape violation.
+          dispatcher executes (train, eval enumeration, anchor/analyze
+          tolerance), AND every planned arm's per-arm-resolution row
+          reads REAL or N/A, AND the Axis 1 import-resolution leg passed
+          on the REAL branch. A subset honored by the train loop only,
+          with a downstream phase re-enumerating the full registered
+          grid, is FAIL_NO_CANARY (incident #546 round 1, 2026-06-10:
+          PASS_UNIFIED train + full-grid cross-eval → HF 404 on
+          never-trained adapters; the smoke could never pass by
+          construction). Non-cell smoke axes (questions/rows/steps/draws)
+          sized below a downstream phase's minimum-N assert are likewise
+          FAIL_NO_CANARY — the smoke crashes by construction (incident
+          #1315 r4); the notes: line names the floor per sliced axis.
+          The notes: MUST also carry an `import-resolution: <cmd>` line
+          (Axis 1, experiment-implementer.md item 5) and a
+          `per-arm-resolution:` sub-block with one row per plan-named
+          arm (Axis 2); a `kind: infra` plan whose §4 names no arms
+          writes `per-arm-resolution: N/A — no plan-named arms`.
+        `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge
+          (e.g., smoke uses in-process train, sweep uses subprocess
+          wrapper) AND the plan §4 Design section justified the
+          divergence in two sentences AND named the canary cell that
+          exercises the sweep path during smoke. Same per-arm invariant
+          as PASS_UNIFIED — every per-arm row reads REAL or N/A; a
+          FALLBACK row under PASS_CANARY is a marker-shape violation.
         `verdict: PASS_PARTIAL arms_stubbed=<comma-list>` — phase
-          coverage + Axis 1 hold BUT ≥1 planned arm's per-arm-resolution
-          row reads FALLBACK (a stub / bias-refit / early-return in place
-          of the arm's production path). `arms_stubbed` MUST equal the
-          names of every FALLBACK-rowed arm verbatim. The Step 6d.0 gate
-          (inline gates id=10) refuses to dispatch on PASS_PARTIAL —
-          bounce to planner to resolve or re-authorize the stubs in §4
-          (#1689).
+          coverage holds AND the Axis 1 import-resolution leg passed
+          BUT ≥1 planned arm's per-arm-resolution row reads FALLBACK
+          (a stub / bias-refit / early-return in place of the arm's
+          production computation path). The `arms_stubbed` set MUST
+          equal the names of every FALLBACK-rowed arm verbatim. SKILL.md
+          Step 6d.0 gate (inline gates id=10) refuses to dispatch
+          experimenter on PASS_PARTIAL — bounces to planner to either
+          resolve the stubbed arms in the diff or re-authorize the stubs
+          in §4 Design (canary-like exception, v1.1). Closes the #1689
+          rounds-2/3/4 false-pass class where literal fallback stubs
+          satisfied phase coverage but delivered arms of the wrong
+          science.
         `verdict: FAIL_NO_CANARY` — paths diverge without the §4
-          justification + canary; the Step 6d.0 gate refuses to dispatch,
-          and the implementer also emits a `workflow-fix-candidate v1`
-          suggesting re-architect toward unification.
-      Required notes lines regardless of verdict: an `import-resolution:
-      <cmd>` line (Axis 1, experiment-implementer.md item 5) and a
-      `per-arm-resolution:` sub-block with one row per plan-named arm
-      (Axis 2; a `kind: infra` plan whose §4 names no arms writes
-      `per-arm-resolution: N/A — no plan-named arms`).
+          justification + canary; implementer also emits a
+          `workflow-fix-candidate v1` suggesting re-architect toward
+          unification. SKILL.md Step 6d.0 gate (inline gates id=10)
+          refuses to dispatch experimenter on FAIL_NO_CANARY — bounces
+          to planner for unification re-architect.
+      Rationale: task #397 rounds 9/10/10' (2026-05-27) — smoke ran
+      in-process `train_one_cell`; sweep ran `run_one_cell.py` as a
+      subprocess. Smoke kept PASSing; sweep crashed within ~5s of nohup
+      on every architectural assumption the in-process path silently
+      satisfied. Round 11's pivot was to UNIFICATION (in-process
+      serial). Unification is the default; canary is the escape hatch
+      when unification is genuinely impossible (e.g., per-cell vLLM
+      that can't reset in-process).
   - kind: "epm:compute-deviation"
     posted_by: "skill (via experiment-implementer); poll_pipeline (runtime tripwire, #873)"
     when: "Step 4b (implementer report-time, before code-review)"
@@ -2022,34 +2043,49 @@ markers:
     fields: |
       Records which `auto_run: yes` proposals from the most recent
       `epm:follow-ups v1` marker the orchestrator FILED as `proposed`
-      child tasks for manual triage, and which were skipped. FILED-ONLY:
-      no autonomous child sessions are ever spawned from it — automatic
-      follow-up EXECUTION happens exclusively via the same-issue
-      follow-up loop. The marker NAME is kept for dashboard back-compat;
-      the `spawned` list carries FILED semantics. Step 9b PARTITIONS
-      proposals by `question_relation` first: only
+      child tasks for manual triage, and which were skipped. As of
+      2026-06-10 this path is FILED-ONLY: no autonomous child sessions
+      are ever spawned from it — automatic follow-up EXECUTION happens
+      exclusively via the same-issue follow-up loop
+      (`question_relation: same`). The marker NAME is kept for
+      dashboard / back-compat; the `spawned` list now carries FILED
+      semantics (children created at `proposed`, no sessions). Step 9b
+      PARTITIONS proposals by `question_relation` first: only
       `substantially-different` proposals (and untagged ones from
-      pre-2026-06-09 legacy markers — a newer untagged proposal trips
-      the Step 9b step-3 freshness guard) are eligible for child filing
-      here; `same` + `auto_run: yes` proposals route to the same-issue
-      loop instead, recorded under `epm:followup-scope v1` /
-      `epm:same-issue-followup-run v1`, never as children. Body shape:
+      pre-2026-06-09 legacy markers only — a newer untagged proposal
+      trips the Step 9b step-3 freshness guard: one proposer re-spawn
+      to re-emit tagged proposals, then conservative
+      `substantially-different` routing with the violation recorded)
+      are eligible for child filing here; `same` + `auto_run: yes`
+      proposals route to the same-issue follow-up loop instead and are
+      recorded under `epm:followup-scope v1` / `epm:same-issue-followup-run
+      v1`, never as children. Body shape:
       `execution: filed-only,
-      spawned: [{child_id: <M>, title: "...", proposal_rank: <k>}, ...],
-      skipped_auto_run_no: [{proposal_rank: <k>, title: "...",
+      spawned: [{child_id: <M>, title: "...", proposal_rank: 1},
+      {child_id: <M2>, title: "...", proposal_rank: 2}],
+      skipped_auto_run_no: [{proposal_rank: 3, title: "...",
       reason: "<auto_run_reason verbatim>"}],
       cap: 2,
-      proposer_contract_violation: <optional>`. Depth cap: a parent_id
-      chain with >=3 auto-filed ancestors posts empty `spawned` +
-      `auto_spawn_skipped: depth_cap_reached`. Posted AFTER the child
-      tasks are created, as the durable idempotency claim: on re-entry
-      the Step 9b filing block runs only the RECONCILE pass (verify each
-      listed child exists, re-create a missing one; never spawn
-      sessions, never re-partition, never post a new
-      `epm:followup-scope v1` — the step-3 partition runs at most ONCE
-      per task lifetime, #1588). Interactive mode NEVER posts this
-      marker. A filed child executes only when a human triages it and
-      invokes `/issue <CHILD_ID>`; parent promotion remains human-only.
+      proposer_contract_violation: <optional — "question_relation
+      missing after re-spawn" when the freshness-guard re-emit was
+      still untagged>`. When the parent's `parent_id` chain already has >=3
+      auto-filed ancestors the depth cap fires: `spawned` is empty and
+      the body carries `auto_spawn_skipped: depth_cap_reached` (the
+      proposals still post as `epm:follow-ups v1` for the user). Posted
+      AFTER the child tasks are created, as the durable idempotency
+      claim. Idempotent: presence of this marker on a parent task makes
+      the Step 9b filing block a no-op on re-entry / backstop tick — the
+      re-entry runs the RECONCILE pass (verifies each listed child
+      exists, re-creating a missing one; it never spawns sessions,
+      never re-creates an existing child, and never re-partitions the
+      proposal set or posts a new `epm:followup-scope v1` — the Step 9b
+      step-3 partition, including the expensive-band `same` selection,
+      runs at most ONCE per task lifetime, #1588). Interactive mode
+      (EPM_AUTONOMOUS_SESSION unset) NEVER posts this marker. A filed
+      child executes only when a human triages it and invokes
+      `/issue <CHILD_ID>`; it then hits its own Step 2c plan-approval
+      GPU-hour cap as normal. Parent promotion remains human-only —
+      filing follow-ups does NOT promote the parent.
   - kind: "epm:followup-scope"
     posted_by: skill (Step 9b cheap-band block, Step 9b autonomous same-issue partition, or Step 10b user pick) OR chat session (user-requested same-question follow-up)
     when: "Whenever a `question_relation: same` follow-up is scoped to execute ON the parent issue: the Step 9b cheap-band block (`source: proposer-9b-cheap` — `0 < est_gpu_hours < 20`, fires in BOTH interactive and autonomous sessions), the autonomous Step 9b expensive partition (`source: proposer-9b` — `est_gpu_hours >= 20`, autonomous only), a chat-requested follow-up (`source: user-chat` — the chat session posts this marker on #N, then re-invokes /issue <N>), or an interactive Step 10b pick (`source: step-10b-pick`)"
@@ -2089,32 +2125,47 @@ markers:
       source: proposer-9b-cheap | proposer-9b | user-chat | step-10b-pick,
       round: <1-based index over this task's same-issue rounds>,
       outcome: <one line — what the re-run found / how the body
-      changed>`. Same parser tolerance as epm:followup-scope — but a
+      changed>`. Fields line-initial one-per-line preferred; the
+      `; `-joined single-line form is accepted by the parser — but a
       PROSE-LED note with no fields parses no label, closes nothing,
-      and undercounts the round caps (#1090); backslash-n notes are
-      normalized parse-side (#1120). Posted as the round exits
-      `followups_running` and re-parks at `awaiting_promotion`.
-      Idempotency record: a scope whose `followup_label` has a matching
+      and undercounts the round caps (#1090 fu1); literal backslash-n
+      escaped-newline notes are normalized parse-side (#1120). Posted
+      as the round
+      exits `followups_running` and
+      re-parks at `awaiting_promotion`. Idempotency record: an
+      `epm:followup-scope v1` whose `followup_label` has a matching
       marker of this kind is RUN and is never re-dispatched. TWO
       independent proposer-initiated round caps, each at most 2 rounds
-      per task: the CHEAP band counts `source: proposer-9b-cheap`
-      (`0 < est_gpu_hours < 20`); the EXPENSIVE autonomous band counts
-      `source: proposer-9b` (`est_gpu_hours >= 20`; its dispatcher runs
-      at most once per task lifetime, so this cap is a defensive bound,
-      #1588). A proposer-band marker consuming the FINAL cap slot of ITS
-      band is followed by a `followup-parked-by-cap` structured
-      `epm:progress` note per remaining unrun band-eligible proposal
-      (idempotent per verbatim follow-up title; names the band's
-      cap-raise alternative; mechanics: SKILL.md Step 9b — #1558,
-      #1575). User-initiated rounds do not consume either cap. Run
-      markers whose `outcome` begins `retroactive-close` count toward
-      NO cap — bookkeeping closure of a round that already ran
-      (SKILL.md Step 0 § Stale-label disposition rule). A mid-round
-      defer/teardown exit ALSO posts this marker, AFTER the defer
-      re-park, with `outcome: deferred — <one-line reason>`: the label
-      closes and is never auto-re-dispatched (a deliberate resume posts
-      a fresh scope under a NEW label); a deferred proposer-band round
-      still counts toward its cap.
+      per task: the CHEAP band (both session modes) counts markers with
+      `source: proposer-9b-cheap` (`0 < est_gpu_hours < 20`); the
+      EXPENSIVE autonomous band counts markers with `source: proposer-9b`
+      (`est_gpu_hours >= 20`, autonomous only; its dispatcher — the
+      Step 9b autonomous-block step-3 partition — runs at most once per
+      task lifetime, so this cap is a defensive bound: at most one
+      proposer-9b round is dispatchable under the current contract,
+      #1588). A proposer-band marker
+      that consumes the FINAL cap slot of ITS band is followed by a
+      `followup-parked-by-cap` structured `epm:progress` note per
+      remaining unrun band-eligible proposal (idempotent per verbatim
+      follow-up title; names the band's cap-raise alternative — cheap:
+      SKILL.md Step 9b block C2 § Cheap-band cap-park surfacing, #1558;
+      expensive: autonomous block step-3 § Expensive-band cap-park
+      surfacing, #1575 — defensive parity; the band's primary surfacing
+      fires at the step-3 partition itself).
+      User-initiated rounds
+      (`user-chat`, `step-10b-pick`) are explicitly requested and gated
+      by interactive plan approval, so they do not consume either cap.
+      Run markers whose `outcome` begins `retroactive-close` do NOT
+      count toward either round cap — they record bookkeeping closure
+      of a round that already ran (or was superseded), not a new
+      auto-run (SKILL.md Step 0 § Stale-label disposition rule). A
+      mid-round defer/teardown exit ALSO posts this marker, AFTER the
+      defer re-park, with `outcome: deferred — <one-line reason>`
+      (SKILL.md Step 9b § Same-issue follow-up loop step 3 defer exit):
+      the label closes and the deferred round is never
+      auto-re-dispatched (a deliberate resume posts a fresh scope under
+      a NEW label); a deferred proposer-band round still counts toward
+      its cap.
   - kind: "epm:question-linked"
     posted_by: skill (via scripts/living_docs.py link, at /issue Step 0c after the Goal gate)
     when: "Step 0c (kind:experiment only; analysis/infra/batch/survey exempt)"
