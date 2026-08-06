@@ -42,7 +42,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - planner-section-reference.md — the planner writes a plan section (pointer-loaded from planner.md).
 - pm-audit-reference.md — the PM scopes fleet burn, triages unmapped/non-EPS team pods, or renders a Mode-2 audit.
 - pod-config.md — pod SSH/MCP keeps failing, you touch the pod scripts/pods.conf (live-API vs pods.conf authority split), or you stop/park a pod for >~1h (STOPPED volume is NON-durable — persist resume state to HF first).
-- pod-side-reporting.md — writing pod-side dispatcher/sentinel/poller-facing code (incl. a dispatcher reading back its OWN sentinels — drain-rename tolerance, #1311), or (re)launching ANY detached pod/VM workload (pid-file rewrite, log rotation), or pushing result commits.
+- pod-side-reporting.md — writing pod-side dispatcher/sentinel/poller code (incl. dispatcher OWN-sentinel read-back — drain-rename tolerance, #1311), or (re)launching ANY detached pod/VM workload (pid-file rewrite, log rotation, box teardown leg), or pushing result commits.
 - replication-fidelity.md — the Goal replicates a published finding (match the paper's data + recipe FIRST; change only the tested variable).
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).
 - selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI (selection rides per draw / freeze held-out; band vs ceiling), or difference-vector legs sharing one SAMPLED baseline vs noise-free nulls (disjoint halves / shared-B).

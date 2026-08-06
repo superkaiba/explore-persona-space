@@ -348,8 +348,9 @@ relaunch, a watch-session correction — not just first launches:
 1g. **A RELAUNCH re-runs the original launcher FILE — never a
    hand-re-typed / reconstructed inline chain (#1768).** The launcher
    script is the carrier of every side duty a launch owes — the pid-file
-   rewrite (item 1), log rotation (1b/1c), stdio detach (1f), and the
-   completion-sentinel write the poller's done-verdict keys on — and a
+   rewrite (item 1), log rotation (1b/1c), stdio detach (1f), the
+   completion-sentinel write the poller's done-verdict keys on, and the
+   dedicated-box done-path teardown leg (1i) — and a
    from-memory `bash -c` reconstruction silently drops whichever duty the
    re-typer forgets (#1768: the rebuilt chain dropped the
    completion-sentinel write; the finished run's handoff stranded ~5.8 h).
@@ -376,6 +377,36 @@ relaunch, a watch-session correction — not just first launches:
    pre-exec `echo $$`; `$!` of the setsid-exec'd unit; the parent-scoped
    child-walk `pgrep -P <captured wrapper pid>`) — 1d's ban on unanchored
    post-hoc `pgrep` is unchanged.
+1i. **Done-path teardown leg on every DEDICATED-box workload —
+   hand-rolled launchers included.** A workload on a dedicated ephemeral
+   box must not end by merely uploading its results and exiting; the
+   teardown leg is LANE-SPLIT:
+   - GCE / DELETE-on-poweroff ephemeral box: the launcher/workload chain
+     ENDS with the rendered lane's done-path teardown — set
+     `eps/phase=done`, then poweroff (directly, or via the rendered #935
+     done-grace self-poweroff when sentinel draining matters); on crash,
+     the crash-persist → `phase=failed` → poweroff tail. A hand-composed
+     / inline launcher (the 1g materialize-a-launcher path) is the risk
+     case: nothing renders the teardown for it, so the leg must be
+     written in.
+   - Dedicated POD: the workload's leg is SENTINEL-ONLY — write the
+     completion sentinel the poller's done-verdict keys on; teardown
+     stays the owning session's VM-side verify-then-terminate
+     (`pod.py terminate` after upload-verification PASS), NEVER an
+     in-workload self-stop (it would preempt the upload-verifier, and a
+     STOPPED volume is not durable, #1112).
+   Scope: dedicated ephemeral boxes ONLY — NEVER the shared VM (a
+   VM-side detached phase, SKILL.md § Detached VM-side long compute
+   phases, must never poweroff its host) and never a SLURM node (the
+   scheduler owns node lifecycle). And the box-side leg is the BACKSTOP,
+   not the plan: the launching session's own
+   `dispatch_issue.py finalize` at harvest (pod: verify-then-terminate)
+   remains PRIMARY — never wait out the #935 done-grace window or the
+   janitor fence. Incident signature (#1739, 2026-08-01): the
+   router-dispatched box `gap1nulldiag` finished, then lingered RUNNING
+   at `eps/phase=done` with idle-GPU billing ≈1h before a manual reap; a
+   second box (`newarma5evil`) needed a manual finalize the same day
+   (incident record).
 2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
    `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
    `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR
