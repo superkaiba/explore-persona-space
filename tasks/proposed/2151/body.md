@@ -4,6 +4,7 @@ title: Give API-level stop_reason=refusal its own judge drop class (rules 9/24/1
 kind: infra
 tags:
 - wf-fix
+- trigger-dense
 created_at: '2026-08-06T15:14:53Z'
 has_clean_result: false
 parent_id: 1739
