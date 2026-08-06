@@ -8916,8 +8916,8 @@
     "2153": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2153",
-      "status": "planning",
+      "path": "tasks/approved/2153",
+      "status": "approved",
       "title": "Detached HF transfers must have timeout + observable progress (xet read-hang is silent); warn off snapshot_download(allow_patterns) on the 1M-file data repo"
     },
     "216": {
