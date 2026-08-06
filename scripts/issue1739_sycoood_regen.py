@@ -469,7 +469,7 @@ def phase_upload(args) -> dict:
         pack_raw_tree(src, pack_root)
         names = sorted(p.name for p in pack_root.iterdir() if p.is_file())
         dest = f"{HF_PREFIX}/raw_completions/{label}"
-        hub._upload_folder_filtered(
+        rollouts_url = hub._upload_folder_filtered(
             pack_root,
             repo_id=hub.DEFAULT_DATASET_REPO,
             repo_type="dataset",
@@ -477,6 +477,8 @@ def phase_upload(args) -> dict:
             allow_patterns=["*"],
             expected_repo_paths=[f"{dest}/{n}" for n in names],
         )
+        if not rollouts_url:
+            raise RuntimeError(f"[upload] rollouts upload returned no path ({label} -> {dest})")
         out[f"rollouts_{label}"] = {"dest": dest, "n_shard_files": len(names)}
         logger.info("[upload] %s -> %s (%d files)", label, dest, len(names))
 
@@ -501,7 +503,7 @@ def phase_upload(args) -> dict:
     missing_local = [e for e in expected if not (store_dir / e.rsplit("/", 1)[-1]).exists()]
     if missing_local:
         raise SystemExit(f"[upload] {len(missing_local)} recaptured files missing locally")
-    hub._upload_folder_filtered(
+    store_url = hub._upload_folder_filtered(
         store_dir,
         repo_id=hub.DEFAULT_DATASET_REPO,
         repo_type="dataset",
@@ -509,6 +511,8 @@ def phase_upload(args) -> dict:
         allow_patterns=sorted(set(pats)),
         expected_repo_paths=expected,
     )
+    if not store_url:
+        raise RuntimeError(f"[upload] store upload returned no path ({dest})")
     out["store"] = {"dest": dest, "n_files": len(expected), "shards": affected}
     logger.info("[upload] store: %d files across shards %s", len(expected), affected)
 
@@ -517,13 +521,15 @@ def phase_upload(args) -> dict:
     aux = [p for p in (work / "regen_scope.json", work / "regen_report.json") if p.exists()]
     for p in aux:
         # UPLOAD_LOOP_EXEMPT: fixed <=2-file list (scope + report JSONs), bounded by construction
-        hub._upload(
+        aux_url = hub._upload(
             p,
             repo_id=hub.DEFAULT_DATASET_REPO,
             repo_type="dataset",
             path_in_repo=f"{aux_dest}/{p.name}",
             upload_as_file=True,
         )
+        if not aux_url:
+            raise RuntimeError(f"[upload] aux upload returned no path ({p.name})")
 
     # exact-set verify of everything this phase wrote
     all_expected = list(expected)
