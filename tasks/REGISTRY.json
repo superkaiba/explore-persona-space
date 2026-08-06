@@ -8559,8 +8559,8 @@
     "2105": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2105",
-      "status": "reviewing",
+      "path": "tasks/completed/2105",
+      "status": "completed",
       "title": "workflow-fix: triage window boundary opens at post time, hiding enumerate-to-post seam markers"
     },
     "2106": {
