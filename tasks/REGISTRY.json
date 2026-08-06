@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2151,
+  "highest_id": 2152,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8905,6 +8905,13 @@
       "path": "tasks/proposed/2151",
       "status": "proposed",
       "title": "Give API-level stop_reason=refusal its own judge drop class (rules 9/24/18 + judge_dispatch.py:670-681)"
+    },
+    "2152": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2152",
+      "status": "proposed",
+      "title": "Rule-26 judge pilot gate must exercise the same TRANSPORT as the wave it gates (sync pilot passed a batch wave that lost 34% of draws)"
     },
     "216": {
       "has_clean_result": true,
