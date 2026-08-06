@@ -34,6 +34,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2094.md](https://github.com/superkaiba/explore-persona-space/blob/85dce182640f900dab8b3fe20258673417a0ed72/docs/methodology/issue_2094.md) · [gist mirror](https://gist.github.com/superkaiba/ae1636afdacfa2da12970e5a0a20e488)
+
 ## Takeaways
 
 - A grid-wide bootstrap screen on well-separated pairs finds 36 of 1,245 behavior cell families with the steered mean above the shuffled-donor null on fully disjoint 95% intervals; 21 sit in cap-hit-compromised cells — 15 in the multi-token controls, 6 at context-end joint-layer cells — and are untestable, and all 15 clean survivors are context-end edits — 14 matched-query (prefix transfer) and 1 cross — reading 0.18-0.63 of a full swap against nulls of -0.24 to 0.07.
