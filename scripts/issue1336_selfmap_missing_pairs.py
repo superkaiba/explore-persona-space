@@ -67,7 +67,7 @@ from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E
 
 # Version tag for the resume predicate: bump on ANY output-affecting algebra
 # change so stale per-cell checkpoints refit instead of being reused.
-ALGEBRA_VERSION = "v2-foldlocal-1"
+ALGEBRA_VERSION = "v2-foldlocal-2-cross"
 
 # The self-map stage (all 8 surfaces) + the three missing forward pairs
 # (all 8 surfaces, tiers 0 + 6). Named HERE, never added to cm.PAIRS
@@ -222,7 +222,7 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
     n, d = int(Xt.shape[0]), int(Xt.shape[1])
     folds = fc._cv_folds(np.asarray(common), n_folds, seed)
 
-    names = ("within",) if is_self else ("within", "t0", "t6")
+    names = ("within",) if is_self else ("within", "t0", "t6", "cross")
     ss_res = dict.fromkeys(names, 0.0)
     ss_tot_local = 0.0
     ss_tot_global = 0.0
@@ -264,6 +264,19 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
             sel_log.setdefault("W_s", []).append(fit_ws["selector"])
             lam_log.setdefault("A_ctx_rev", []).append(float(fit_actx["lam"]))
             sel_log.setdefault("A_ctx_rev", []).append(fit_actx["selector"])
+            # CROSS: a map fitted DIRECTLY from the SOURCE's context vector to the
+            # TARGET's answer vector (X = v_context(source), Y = v_answer(target)),
+            # scored on the target's answers. Distinct from t0, which TRANSFERS a
+            # within-source map: t0 asks "does the source's map still work on the
+            # target?", cross asks "is the target's answer state predictable from
+            # the source's context state at all?" — separating a changed MAP from
+            # moved REPRESENTATIONS, which the tiers alone conflate. Reuses prep_s
+            # (same input space as W_s, different fit target), so the marginal cost
+            # is one _v2_yfit per fold.
+            fit_cross = ml._v2_yfit(prep_s, Yt[tr], grid)
+            preds["cross"] = ml._v2_predict(prep_s, fit_cross, Xs[te])
+            lam_log.setdefault("cross", []).append(float(fit_cross["lam"]))
+            sel_log.setdefault("cross", []).append(fit_cross["selector"])
             del prep_s
 
         yt_te = Yt[te]
@@ -322,12 +335,16 @@ def cell_records(source: str, target: str, fmt: str, corpus: str, layer: int, fi
                 "r2_globalmu": fit["r2_globalmu"]["within"],
             }
         ]
+    # cross_r2 is a per-CELL quantity (no tier), repeated on both tier rows so
+    # every emitted row stays self-describing under a tier filter.
     return [
         {
             **base,
             "tier": t,
             "r2": fit["r2"][f"t{t}"],
             "r2_globalmu": fit["r2_globalmu"][f"t{t}"],
+            "cross_r2": fit["r2"]["cross"],
+            "cross_r2_globalmu": fit["r2_globalmu"]["cross"],
         }
         for t in (0, 6)
     ]

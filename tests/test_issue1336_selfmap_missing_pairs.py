@@ -86,10 +86,18 @@ def test_cell_records_self_and_pair_schema():
     assert r["degenerate_n_lt_d"] is True
 
     pair_recs = sm.cell_records(
-        "sft", "rlvr", "chat", "if11k", 30, _fake_fit(["within", "t0", "t6"])
+        "sft", "rlvr", "chat", "if11k", 30, _fake_fit(["within", "t0", "t6", "cross"])
     )
     assert [r["tier"] for r in pair_recs] == [0, 6]
     for r in pair_recs:
         assert r["pair"] == "sft__rlvr"
         assert r["within_r2"] == 0.5
         assert "selected_lambda" in r and "selectors" in r
+        # cross is a per-CELL quantity (no tier) repeated on every tier row so a
+        # tier-filtered consumer still sees it.
+        assert r["cross_r2"] == 0.5
+        assert r["cross_r2_globalmu"] == 0.6
+
+    # A SELF cell has no cross map (source == target makes it the within map),
+    # so the self record must not advertise one.
+    assert "cross_r2" not in self_recs[0]
