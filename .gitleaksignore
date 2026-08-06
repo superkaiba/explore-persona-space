@@ -60,3 +60,10 @@ eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:5
 eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:123715
 eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:399403
 tasks/planning/2094/events.jsonl:generic-api-key:7
+
+# task #2091: false positive — the wandb-api-key rule matches a 40-hex REVISION SHA
+# sitting near the sentinel note text "wandb_url". Verified 2026-08-06: all three
+# 40-hex strings on that line resolve as revisions (git commit 33f9c34ad9, HF model
+# revision a09a3545, HF dataset-repo commit c8de6fb), and the real WANDB_API_KEY is
+# 86 chars so no 40-hex string can equal it. No credential is present.
+tasks/running/2091/events.jsonl:wandb-api-key:53
