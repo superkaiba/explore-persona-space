@@ -22,6 +22,7 @@ No network, no GPU requirement (``device`` parametrized; CPU default).
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import logging
 
@@ -36,6 +37,28 @@ from explore_persona_space.experiments.issue_1739.constants import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Opt-in sink for per-fit ridge selected-lambda diagnostics (#1739 r2v2; the
+# "report the per-fit selector and selected lambda alongside every ridge read"
+# duty — .claude/rules/llm-judging.md sibling #1887). When armed via
+# :func:`capture_selected_lambdas`, :func:`ridge_gcv_predict_per_target`
+# appends one record per layer-chunk: n_train / d / gram space / per-target
+# selected-lambda counts. Plain list.append (GIL-atomic) — safe under the
+# multi-GPU thread-pool shard in ``arms._solve_ridge_groups``.
+_SELECTED_LAMBDA_SINK: list[dict] | None = None
+
+
+@contextlib.contextmanager
+def capture_selected_lambdas(sink: list[dict]):
+    """Arm the module-level selected-lambda sink for the enclosed fits."""
+    global _SELECTED_LAMBDA_SINK
+    prev = _SELECTED_LAMBDA_SINK
+    _SELECTED_LAMBDA_SINK = sink
+    try:
+        yield sink
+    finally:
+        _SELECTED_LAMBDA_SINK = prev
+
 
 # Nonlinear context->answer map kinds (#1739 nonlinear-map round). Both reuse
 # the #779 N1M fitters verbatim (``scripts/issue779_ffc_n1m_fits.py``:
@@ -693,6 +716,23 @@ def ridge_gcv_predict_per_target(
             )
         best = gcv.argmin(dim=1)  # (c, T)
         lam_sel = torch.as_tensor(lam_grid, device=dev)[best]  # (c, T)
+        if _SELECTED_LAMBDA_SINK is not None:
+            vals, counts = torch.unique(lam_sel, return_counts=True)
+            _SELECTED_LAMBDA_SINK.append(
+                {
+                    "n_train": int(ntr),
+                    "d": int(d),
+                    "gram_space": "primal" if primal else "dual",
+                    "n_slices": int(s.shape[0]),
+                    "n_targets": int(n_t),
+                    "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+                    "lambda_grid": [float(x) for x in lam_grid],
+                    "selected_lambda_counts": {
+                        str(float(v)): int(c)
+                        for v, c in zip(vals.tolist(), counts.tolist(), strict=True)
+                    },
+                }
+            )
         f_sel = 1.0 / (s[:, :, None] + lam_sel[:, None, :])  # (c, d|ntr, T)
         if primal:
             w = v @ (a * f_sel)  # (c, d, T) standardized-space weights
