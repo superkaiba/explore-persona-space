@@ -18,7 +18,11 @@ Staging root: ``/mnt/eps-data/thomasjiralerspong/issue2091_hf_dl/`` (plan
 §9 disk row — NEVER ``data/issue_2091/`` (the #681 worktree bind is not
 live, so that path lands on ``/``), never ``/tmp``). ``df -P`` is probed at
 driver start; free < 30 GB exits with the DESIGNED rc naming the
-pre-registered ``cpu-bigmem`` fallback (plan §4.2 MF-1 item 4).
+pre-registered ``cpu-bigmem`` fallback (plan §4.2 MF-1 item 4). Plan §7 G3
+(fit pilot): the FIRST fresh ``fit_pool_regime`` call is timed by
+``FitTimer`` and a > 2x projection over the §9 P4-fits booking exits
+``rc=RC_FIT_WALL`` with ``g3_fit_pilot_gate.json`` persisted — the remedy is
+the vectorize check, never a silent descope.
 
 Outputs (§6.5 primary-deliverable globs, all under ``eval_results/issue_2091/``):
 ``r1_dispersion.json``, ``r2_delta.json``, ``r3_moderators_<behavior>.json``,
@@ -109,11 +113,14 @@ BANKED_DV_DIR = REPO_ROOT / "eval_results" / "issue_1739" / "dv_dataset"
 
 # Designed exit codes (never anonymous rc=1; pilot-gate routing family, #1415).
 RC_DISK_FALLBACK = 8  # staging headroom below floor -> cpu-bigmem fallback
+RC_FIT_WALL = 9  # G3 fit pilot: projected fits wall > 2x the §9 P4-fits booking
 CPU_BIGMEM_FALLBACK_CMD = (
     "uv run python scripts/dispatch_issue.py --issue 2091 --intent cpu-bigmem --boot-disk-gb 120"
 )
 START_FLOOR_GB = 30.0  # 1.5x the declared 20 GB co-resident peak (plan §9)
 FAMILY_FLOOR_GB = {"generic": 22.0, "sycophancy": 12.0, "hallucination": 12.0, "evil": 12.0}
+FIT_WALL_BUDGET_S = 3600.0  # plan §9 P4-fits row booking (1.0 h)
+FIT_TOTAL_CALLS = 27  # 9 pools x 3 regimes fit_pool_regime wrapper calls (plan §9 P4-fits)
 
 # Rung-job -> family map (behavior families own their rung-jobs; wildchat = generic).
 FAMILY_JOBS = {
@@ -123,6 +130,9 @@ FAMILY_JOBS = {
     "evil": ("evil_train", "evil_hhrt", "evil_toxicchat"),
 }
 REGIMES: tuple[str, ...] = ("greedy", "avg_k5", "single")
+# R3 commonality reads ONE pinned regime per map family (never dict-order-dependent):
+# avg_k5 matches the commonality DV reference (dv_avg) + the oracle's eval_v5_mean.
+COMMONALITY_MAP_REGIME = "avg_k5"
 
 
 # ── deferred imports (heavy / sibling-script; import-check executes all) ────
@@ -1073,6 +1083,79 @@ def build_regime_targets(
     }
 
 
+class FitTimer:
+    """Plan §7 G3 fit-pilot gate: the FIRST fresh ``fit_pool_regime`` call is the pilot.
+
+    ``observe(elapsed, report_dir, fid)`` records the first FRESH wrapper-call
+    wall (resumed checkpoints never observe), extrapolates
+    ``elapsed x FIT_TOTAL_CALLS / parallelism`` (parallelism 1 — the family
+    driver is serial on VM CPU) against the §9 P4-fits booking
+    (``FIT_WALL_BUDGET_S``), persists ``g3_fit_pilot_gate.json`` either way,
+    and on a > 2x projection fires a DESIGNED halt (``rc=RC_FIT_WALL``,
+    mirroring the ``probe_disk`` rc=8 shape) — never a silent descope: the
+    registered remedy is the vectorize check (plan §7 G3;
+    ``.claude/rules/vectorize-many-cell-fits.md``). The synthetic pilot path
+    (``issue2091_fits.py --mode pilot-synthetic``) calls ``fit_pool_regime``
+    directly and never routes through ``fit_setting_grids``, so this gate
+    binds the production family run only. The halt fires AFTER the pilot
+    fit's checkpoint is persisted, so a post-fix relaunch resumes past it.
+    Under ``--phase all`` (one process) the module singleton observes once —
+    the first fresh fit of family A (generic); under per-family ``--phase
+    family`` invocations each process re-pilots on its own first fresh fit.
+    """
+
+    def __init__(self) -> None:
+        self.elapsed_first: float | None = None
+
+    def observe(self, elapsed: float, report_dir: Path, fid: str) -> None:
+        if self.elapsed_first is not None:
+            return
+        self.elapsed_first = elapsed
+        projected = elapsed * FIT_TOTAL_CALLS
+        threshold = 2 * FIT_WALL_BUDGET_S
+        verdict = "halt" if projected > threshold else "pass"
+        report_path = report_dir / "g3_fit_pilot_gate.json"
+        write_json_atomic(
+            report_path,
+            {
+                "gate": "G3 fit pilot (plan §7; §9 P4-fits row)",
+                "pilot_fit_id": fid,
+                "measured_first_call_s": round(elapsed, 2),
+                "total_calls": FIT_TOTAL_CALLS,
+                "parallelism": 1,
+                "projected_wall_s": round(projected, 1),
+                "booked_wall_s": FIT_WALL_BUDGET_S,
+                "threshold_s": threshold,
+                "verdict": verdict,
+                "remedy": "vectorize check per .claude/rules/vectorize-many-cell-fits.md",
+            },
+        )
+        logger.info(
+            "[fits] G3 pilot %s: %.1fs/call -> projected %.0fs over %d calls "
+            "(threshold %.0fs) -> %s",
+            fid,
+            elapsed,
+            projected,
+            FIT_TOTAL_CALLS,
+            threshold,
+            verdict.upper(),
+        )
+        if verdict == "halt":
+            print(
+                f"[issue2091-p4] DESIGNED HALT rc={RC_FIT_WALL}: G3 fit pilot ({fid}) measured "
+                f"{elapsed:.1f}s/call -> projected {projected:.0f}s over {FIT_TOTAL_CALLS} "
+                f"wrapper calls > 2x the §9 P4-fits booking ({FIT_WALL_BUDGET_S:.0f}s). "
+                f"Pilot fit checkpoint persisted; report at {report_path}. Do NOT descope: "
+                f"run the vectorize check (.claude/rules/vectorize-many-cell-fits.md), "
+                f"then relaunch (resumes past the persisted fit).",
+                flush=True,
+            )
+            sys.exit(RC_FIT_WALL)
+
+
+FIT_TIMER = FitTimer()
+
+
 def fit_setting_grids(
     *,
     setting: str,
@@ -1134,10 +1217,12 @@ def fit_setting_grids(
             inner_caches=inner_caches,
             eval_groups=eval_groups,
         )
+        elapsed = time.time() - t0
         write_json_atomic(ck, fr.to_json())
         result["fits"][regime] = fr.to_json()
         predictions[regime] = fr.predictions
-        logger.info("[fits] unit %s elapsed=%.1fs", fid, time.time() - t0)
+        logger.info("[fits] unit %s elapsed=%.1fs", fid, elapsed)
+        FIT_TIMER.observe(elapsed, fits_dir, fid)  # G3 gate: after the checkpoint write
     for li, layer in enumerate(LAYERS):
         result["r2_grid"][f"L{layer}"] = {
             fr_: {er: r2_score_rows(predictions[fr_][li], eval_y[er][li]) for er in REGIMES}
@@ -1213,7 +1298,10 @@ def behavioral_readouts(
     Method families (plan §4.2): pv_projection (label-free), supervised_context
     (S5 pool-side labeled rows only), map_pv_projection, map_supervised_answer,
     oracle_answer, disjoint_half. Returns ``_percontext_scores`` for the R3
-    commonality decomposition (popped by the caller before persisting).
+    commonality decomposition (popped by the caller before persisting); the
+    map families' per-context commonality scores are pinned to
+    ``COMMONALITY_MAP_REGIME`` (recorded as ``commonality_regime`` in the
+    persisted family blocks — never the dv_cols iteration order).
     """
     fits = _fits2091()
     percontext: dict[str, dict[str, np.ndarray]] = {}
@@ -1258,6 +1346,7 @@ def behavioral_readouts(
             percontext["supervised_context"] = {"score": pred}
             sup = {c: rho_with_ci(pred, c) for c in dv_cols}
             sup["selected_lambda"] = sel.best_lambda
+            sup["selection"] = sel.to_json()  # full selector diagnostics (plan §8; n<d regime)
             sup["n_labeled_pool"] = int(keep.sum())
         else:
             sup = {"note": f"n_labeled_pool={int(keep.sum())} < 20 — readout skipped"}
@@ -1284,9 +1373,15 @@ def behavioral_readouts(
                         sel_a.best_lambda,
                     )[:, 0]
                     out["map_supervised_answer"][col] = rho_with_ci(score_map, col)
-                    percontext.setdefault("map_supervised_answer", {})["score"] = score_map
+                    if regime == COMMONALITY_MAP_REGIME and "map_supervised_answer" not in (
+                        percontext
+                    ):
+                        # R3 commonality score pinned to ONE regime (never dict-order)
+                        percontext["map_supervised_answer"] = {"score": score_map}
                 else:
                     out["map_supervised_answer"][col] = {"rho": None, "note": "no map prediction"}
+            out["map_supervised_answer"]["commonality_regime"] = COMMONALITY_MAP_REGIME
+            out["map_supervised_answer"]["selection"] = sel_a.to_json()
             score_oracle = fits.fit_predict_at_lambda(
                 labeled_pool_va[layer_idx][keep].astype(np.float64),
                 y_dv[keep, None],
@@ -1295,6 +1390,7 @@ def behavioral_readouts(
             )[:, 0]
             percontext["oracle_answer"] = {"score": score_oracle}
             out["oracle_answer"] = {c: rho_with_ci(score_oracle, c) for c in dv_cols}
+            out["oracle_answer"]["selection"] = sel_a.to_json()  # same ansread fit as map_*
 
     mp = {}
     for col in dv_cols:
@@ -1304,8 +1400,11 @@ def behavioral_readouts(
             mp[col] = {"rho": None, "note": "no map prediction for regime"}
             continue
         score = vhat[layer_idx].astype(np.float64) @ rb_vec
-        percontext.setdefault("map_pv_projection", {})["score"] = score
+        if regime == COMMONALITY_MAP_REGIME and "map_pv_projection" not in percontext:
+            # R3 commonality score pinned to ONE regime (never dict-order)
+            percontext["map_pv_projection"] = {"score": score}
         mp[col] = rho_with_ci(score, col)
+    mp["commonality_regime"] = COMMONALITY_MAP_REGIME
     out["map_pv_projection"] = mp
 
     if dv_half_a is not None and dv_half_b is not None:
@@ -1756,7 +1855,12 @@ def s1_picks_from_wcrung(staging: Path, revision: str, cids: list[str]) -> dict[
 
     A context judged under several rubrics keeps the FIRST behavior's pick;
     a context with no judged scores gets a seeded vector-side draw (excluded
-    from every single-draw DV column, per S1).
+    from every single-draw DV column, per S1). Cross-behavior divergence: the
+    vector-side targets use these first-behavior-precedence picks while each
+    behavior's single-draw DV column uses its OWN ``s1_picks`` — the indices
+    can diverge on contexts whose per-behavior all-None drop patterns differ
+    (rare; identical kept-sets yield identical picks via the shared
+    context-keyed rng). Recorded as ``s1_note`` in the generic r4 grid.
     """
     picks: dict[str, dict] = {}
     for behavior in BEHAVIORS:
@@ -2066,6 +2170,13 @@ def run_family_generic(args) -> None:
             boot=wc_boot,
         )
     grid["behavioral_rho_wildchat_L19"] = behavioral
+    grid["s1_note"] = (
+        "S1 shared draw index (wildchat rung): vector-side single/avg_k5 targets use "
+        "first-behavior-precedence picks (s1_picks_from_wcrung); each behavior's "
+        "single-draw DV column uses its own picks — indices can diverge on contexts "
+        "whose per-behavior all-None drop patterns differ (rare; identical kept-sets "
+        "yield identical picks via the shared context-keyed rng)"
+    )
 
     # ── stat blocks: wildchat + lmsys settings ──
     wc_all = wc_pool_sel + wc_eval

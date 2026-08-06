@@ -12,11 +12,18 @@ network, no staged data.
 
 from __future__ import annotations
 
+import json
+
 import numpy as np
+import pytest
 
 from scripts.issue2091_analysis import (
+    FIT_TOTAL_CALLS,
+    FIT_WALL_BUDGET_S,
     MID_HI,
     MID_LO,
+    RC_FIT_WALL,
+    FitTimer,
     GroupBootstrap,
     column_ceilings,
     commonality,
@@ -225,3 +232,40 @@ def test_holm_adjusted_cis_orders_and_bounds():
     assert lo > 0.0 and hi > lo
     # Holm-adjusted p is monotone: max over ordered running values
     assert out["null"]["p_holm"] >= out["strong"]["p_holm"]
+
+
+# ── G3 fit-pilot gate (plan §7; concern g3-fit-pilot-gate-not-wired) ──────────
+def test_fit_timer_pass_branch_writes_report_and_continues(tmp_path):
+    ft = FitTimer()
+    fast = (2 * FIT_WALL_BUDGET_S) / FIT_TOTAL_CALLS / 10  # projection well under 2x booking
+    ft.observe(fast, tmp_path, "generic__greedy")
+    assert ft.elapsed_first == fast  # observed, no SystemExit
+    rep = json.loads((tmp_path / "g3_fit_pilot_gate.json").read_text())
+    assert rep["verdict"] == "pass"
+    assert rep["pilot_fit_id"] == "generic__greedy"
+    assert rep["total_calls"] == FIT_TOTAL_CALLS
+    assert rep["threshold_s"] == 2 * FIT_WALL_BUDGET_S
+    assert rep["projected_wall_s"] == pytest.approx(fast * FIT_TOTAL_CALLS, rel=1e-3)
+
+
+def test_fit_timer_fire_branch_designed_halt_rc(tmp_path, capsys):
+    ft = FitTimer()
+    slow = (2 * FIT_WALL_BUDGET_S) / FIT_TOTAL_CALLS * 1.5  # projection 3x booking
+    with pytest.raises(SystemExit) as ei:
+        ft.observe(slow, tmp_path, "generic__greedy")
+    assert ei.value.code == RC_FIT_WALL  # designed rc, mirrors probe_disk's rc=8 shape
+    rep = json.loads((tmp_path / "g3_fit_pilot_gate.json").read_text())
+    assert rep["verdict"] == "halt"
+    out = capsys.readouterr().out
+    assert f"DESIGNED HALT rc={RC_FIT_WALL}" in out
+    assert "vectorize-many-cell-fits" in out  # remedy pointer, never a silent descope
+
+
+def test_fit_timer_observes_only_the_first_call(tmp_path):
+    ft = FitTimer()
+    ft.observe(0.5, tmp_path, "generic__greedy")
+    # a later slow call is NOT re-gated (the pilot is the FIRST fresh call only)
+    ft.observe(1e9, tmp_path, "generic__avg_k5")
+    assert ft.elapsed_first == 0.5
+    rep = json.loads((tmp_path / "g3_fit_pilot_gate.json").read_text())
+    assert rep["pilot_fit_id"] == "generic__greedy" and rep["verdict"] == "pass"
