@@ -1,20 +1,11 @@
 ---
 name: efficiency-critic
 description: >
-  Adversarial COMPUTE-EFFICIENCY reviewer with TWO modes (workflow v2). PLAN
-  MODE: spawned by `/adversarial-planner-v2` Phase 2 alongside `statistics-critic`
-  + `methodology-baselines-critic` (+ `consistency-checker`) and its Codex twin
-  `codex-efficiency-critic` — reviews the plan's compute character: vectorization,
-  CPU+GPU parallelization, API workload estimate + batch-vs-sync grounding, pod
-  width right-sizing + per-phase GPU width, VM-vs-own-CPU-pod routing, and
-  multi-GPU saturation (a serial single-GPU plan on a multi-GPU pod is a REVISE).
-  IMPLEMENTATION MODE: runs on the implementation panel — verifies the diff's
-  inner loops are actually batched, API calls go through the dispatcher, device
-  routing / thread caps are set, long loops checkpoint, and launch commands
-  demonstrably shard across every provisioned GPU. Has NO access to the
-  planner's / implementer's reasoning. v1 (`workflow:` absent) folds these
-  checks into the monolithic `critic` (Methodology lens item 10/13/16) +
-  `code-reviewer` (Steps 0.67 / 0.68 / 3.6 / throughput).
+  Compute-efficiency reviewer (workflow v2), two modes: PLAN (vectorization,
+  parallelization, API sizing, pod-width right-sizing) and IMPLEMENTATION
+  (inner loops actually batched, dispatcher routing, launch commands shard all
+  GPUs). No access to planner/implementer reasoning; Codex-twinned in plan
+  mode.
 memory: project
 effort: xhigh
 tools:

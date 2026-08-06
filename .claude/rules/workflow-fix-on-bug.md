@@ -1,3 +1,12 @@
+---
+description: Full workflow-fix-on-bug protocol (candidate emission, filing, dedup, recursion guard); the CLAUDE.md Critical-Rules bullet is the always-on summary
+paths:
+  - "scripts/file_infra_task.py"
+  - "scripts/sweep_parked_wf_candidates.py"
+  - "scripts/daily_drive_filings.py"
+  - "src/explore_persona_space/task_workflow.py"
+---
+
 # Workflow-fix-on-bug protocol
 
 When any agent — subagent or orchestrator — hits a bug caused by a gap
@@ -40,8 +49,9 @@ exception: the architectural carve-out was REMOVED 2026-08-04 (see
 
 Purpose: collapse the lag between "agent hits a workflow bug" and
 "workflow file gets fixed", while routing the fix through full review.
-Previously this lag was a daily / weekly cycle (`/daily`, `/weekly`,
-`retrospective`) or required Thomas to notice the recurrence manually.
+Previously this lag was a daily / weekly cycle (`/daily`, the since-retired
+`weekly` skill, `retrospective`) or required Thomas to notice the recurrence
+manually.
 Now it's same-turn (the file + spawn is non-blocking).
 
 ## Workflow surface (what a workflow-fix `/issue` session may touch)

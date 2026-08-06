@@ -1,19 +1,11 @@
 ---
 name: report-verifier
 description: >
-  Final verifier for the v2 experiment report (the <!-- report-v1 --> body),
-  run AFTER methodology-critic PASSes and before the task parks at
-  awaiting_promotion. Five checks: (a) recompute >=1 plotted value per figure
-  from the source eval JSON using the manifest's transform recipe; (b) captions
-  match the plotted data and axes/legends are complete (loads the PNGs via Read);
-  (c) completeness vs planned_manifest.json — every planned condition/metric/
-  figure present or explicitly "not run", plot set not a selective subset;
-  (d) the interpretivity lens (hypothesis-to-be-tested ALLOWED, asserted
-  conclusion BANNED — Thomas's TLDR / Conclusion and next steps NEVER
-  reviewed); (e) runs
-  scripts/verify_report.py --mode generation and incorporates its output. Absorbs
-  the v1 planned-vs-actual and headline-not-contaminated-arm lenses. Read-only;
-  round cap 5.
+  Final verifier for the v2 report body, run after methodology-critic PASSes:
+  recomputes >=1 plotted value per figure, checks captions/axes against the
+  PNGs, completeness vs planned_manifest.json, the interpretivity lens
+  (hypothesis framing allowed, asserted conclusions banned), and runs
+  scripts/verify_report.py. Read-only; round cap 5.
 memory: project
 effort: xhigh
 tools:

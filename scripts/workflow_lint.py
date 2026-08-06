@@ -336,6 +336,24 @@ Behaviours:
   in :data:`UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST` (count-grain — a NEW
   offense inside a grandfathered file surfaces instead of hiding;
   never hand-extended).
+* ``--check-upload-return-discard`` (also bundled into the no-flags
+  default run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on
+  any Expr-statement (discarded-return) call to the fail-soft-by-return
+  hub upload helpers ``_upload`` / ``_upload_folder_filtered`` — both
+  return ``""`` on upload failure (``_upload`` raises only under
+  ``raise_on_error=True``, and even then the non-exception ``""``
+  returns are unchanged; ``_upload_folder_filtered``'s pre-flight
+  ``assert_hub_dir_filecounts`` guard raises, its upload failures never
+  do), so a discarded return converts silent durability loss into
+  exit 0 (#2087; incident #2054). Import/definition-resolved arming: a
+  same-named LOCAL helper never arms the check. Waive a deliberate
+  fail-soft caller with ``# UPLOAD_RETURN_DISCARD_EXEMPT: <reason>``
+  (reason ≥ 10 chars) on the call's first physical line or the
+  immediately preceding non-blank line; pre-existing sites are
+  grandfathered with <=-tolerant per-file counts in
+  :data:`UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST` (live-owned entries
+  listed in :data:`UPLOAD_RETURN_DISCARD_PENDING_OWNER`; never
+  hand-extended).
 * ``--check-jsonl-splitlines`` (also bundled into the no-flags default
   run): AST-walk every ``*.py`` under ``scripts/`` AND
   ``src/explore_persona_space/`` and FAIL on any ``.splitlines()`` call
@@ -1523,16 +1541,6 @@ AGENT_TOOLS_MENTION_EXCEPTIONS: dict[tuple[str, str], str] = {
         "'Both spawned from a single Agent(...) call' describes the "
         "orchestrator's ensemble spawn, not a wrapper instruction"
     ),
-    ("codex-reviewer.md", "Agent"): (
-        "DEPRECATED file (2026-05-13, never spawned); the Agent(...) mention "
-        "describes the historical ensemble spawn pattern"
-    ),
-    ("workflow-improver.md", "Agent"): (
-        "DEPRECATED/frozen file (#678, never spawned; "
-        "--check-no-workflow-improver-spawn bans it); Agent( appears only in "
-        "historical examples of the retired auto-spawn pattern and a "
-        "grep-target example"
-    ),
     ("critic-lean.md", "WebFetch"): (
         "lean twin (#2062): the body's `no WebSearch/WebFetch` line NEGATES "
         "the tool — descriptive-not-instructive; the lean drops WebFetch by "
@@ -1759,6 +1767,131 @@ UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST: dict[str, int] = {
     "scripts/issue923_reduce_spans.py": 1,  # L339
     "scripts/run_issue_360_target_logprobs.py": 1,  # L1669
 }
+
+
+# `--check-upload-return-discard` (#2087; incident #2054): the two shared
+# hub upload helpers are fail-soft BY RETURN — `_upload` returns "" on
+# missing HF_TOKEN / absent local path / failed verify (and on upload
+# exceptions unless raise_on_error=True); `_upload_folder_filtered`
+# returns "" on every upload-failure shape (only its pre-flight
+# assert_hub_dir_filecounts guard raises, hub.py ~1744, the #1190 cap
+# check). A caller that discards the return converts silent durability
+# loss into exit 0 (.claude/rules/upload-policy.md: "'upload returned no
+# path' is a TRACKED GAP ... never a warning-and-continue"). Inline
+# waiver for a deliberate fail-soft caller; reason >= 10 chars, same
+# convention as UPLOAD_AS_FILE_EXEMPT / UPLOAD_LOOP_EXEMPT.
+UPLOAD_RETURN_DISCARD_WAIVER_RE = re.compile(r"#\s*UPLOAD_RETURN_DISCARD_EXEMPT\s*:\s*(.+?)\s*$")
+UPLOAD_RETURN_DISCARD_WAIVER_MIN_REASON_CHARS = 10
+# Grandfathered pre-existing discarded-return call sites — legacy
+# EXPERIMENT code the workflow-fix scope bars #2087 from editing
+# (grandfather-all posture; the UPLOAD_FILE_IN_LOOP precedent). Rebuilt
+# mechanically from the live tree (run the finished check with
+# legacy_allowlist={}). Check gate is <=-tolerant (findings suppressed
+# while count <= grandfathered N; an excess reports ALL of the file's
+# findings), so a count DROP from a sibling's fix merging keeps main
+# green. Pinned by tests/test_workflow_lint.py::
+# test_check_upload_return_discard_allowlist_load_bearing with SPLIT
+# semantics: EXACT per-file counts for stable entries; observed <= pinned
+# for UPLOAD_RETURN_DISCARD_PENDING_OWNER entries. NOT hand-extended: a
+# NEW discard must capture-and-raise (the
+# hub.upload_raw_completions_to_data_repo shape) or carry an
+# UPLOAD_RETURN_DISCARD_EXEMPT waiver, never extend this set.
+# Dict: repo-root-relative posix path -> grandfathered site count.
+# Enumerated mechanically 2026-08-05 (75 sites / 43 files; empty-allowlist run
+# on the #2087 worktree at origin/main 89207ffc50).
+UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST: dict[str, int] = {
+    # ── stable entries (owning task terminal/idle; EXACT-count pinned) ──
+    "scripts/issue1112_dispatch.py": 2,  # L424, L1035
+    "scripts/issue1112_rankem_dispatch.py": 4,  # L1280, L1301, L1333, L1352
+    "scripts/issue1112_rankem_prep_corpus.py": 1,  # L132
+    # L272 (raise_on_error=True; the '' returns stay silent):
+    "scripts/issue1310_recapture_script_store.py": 1,
+    "scripts/issue1333_dispatch.py": 6,  # L1494, L1501, L2306, L2679, L2695, L2739
+    "scripts/issue1333_geometry.py": 3,  # L843, L868, L874
+    "scripts/issue1482_early_layer.py": 2,  # L963, L992
+    "scripts/issue1482_error_analysis.py": 1,  # L1939
+    "scripts/issue1482_matryoshka_tier.py": 2,  # L926, L952
+    "scripts/issue1482_run_length.py": 1,  # L1027
+    "scripts/issue1586_dispatch.py": 1,  # L3024
+    "scripts/issue1689_capture.py": 1,  # L409 (function-local hub import at L401)
+    "scripts/issue1768_lasttoken.py": 1,  # L327
+    "scripts/issue1768_lasttoken_gate.py": 1,  # L249
+    "scripts/issue1768_map_augmentation.py": 1,  # L1287
+    "scripts/issue1774_draws.py": 2,  # L431, L440
+    "scripts/issue1774_steering.py": 1,  # L509
+    "scripts/issue1900_gpu.py": 2,  # L1783, L1798
+    "scripts/issue1900_judge.py": 1,  # L814
+    "scripts/issue1900_offfloor.py": 2,  # L797, L1107
+    "scripts/issue1900_tfm.py": 6,  # L561, L721, L729, L957, L967, L1466
+    "scripts/issue595_prefix_carrier.py": 1,  # L1312
+    "scripts/issue640_postfix_carrier.py": 1,  # L822
+    "scripts/issue664_dispatch.py": 3,  # L1844, L1924, L2003
+    "scripts/issue734_dispatch.py": 1,  # L954
+    "scripts/issue825_kresample_user_capture.py": 2,  # L287, L294
+    "scripts/issue825_kresample_user_gen.py": 2,  # L249, L256
+    "scripts/issue923_capture.py": 3,  # L995, L1002, L1027
+    "scripts/issue923_figures.py": 1,  # L232
+    "scripts/issue923_fit_decomposition.py": 2,  # L1658, L1661
+    "scripts/issue923_reduce_spans.py": 1,  # L339
+    # ── PENDING_OWNER entries (live in-flight owner; <=-pinned) ─────────
+    # owned by in-flight #2054 (live session at 2026-08-05; open concern
+    # upload-mirror-return-discard — its branch already converts phase_a
+    # discards to capture-and-raise); #2054's merge zeroing a count
+    # retires that entry + its PENDING_OWNER row on the next
+    # lint-touching round:
+    "scripts/issue2054_capture.py": 1,  # L943 (function-local hub import at L914)
+    "scripts/issue2054_fits.py": 1,  # L949
+    "scripts/issue2054_ladder.py": 1,  # L982
+    "scripts/issue2054_phase_a.py": 2,  # L1067, L1089
+    "scripts/issue2054_phase_b.py": 1,  # L255
+    "scripts/issue2054_phase_c.py": 1,  # L445
+    "scripts/issue2054_phase_d.py": 1,  # L489
+    # owned by in-flight #1739 (live session at 2026-08-05,
+    # followups_running — its rounds may still edit these scripts); a
+    # merged #1739 round zeroing a count retires that entry + its
+    # PENDING_OWNER row on the next lint-touching round:
+    "scripts/issue1739_armfill_upload.py": 1,  # L63
+    "scripts/issue1739_bareq_pod.py": 1,  # L755
+    "scripts/issue1739_pvsynth_arms_run.py": 2,  # L256, L376
+    "scripts/issue1739_pvsynth_score.py": 2,  # L586, L594
+    "scripts/issue1739_wcrung_arms_run.py": 2,  # L356, L487
+}
+# Allowlist entries owned by a task with a LIVE in-flight session at
+# #2087 implementation time (spawn_session.py list, 2026-08-05) — the
+# load-bearing test asserts observed <= pinned for these (never exact),
+# so main stays green whichever order the owner's fix and this lint
+# merge. RETIREMENT CONVENTION: once the owning task's fix lands and its
+# file's empty-allowlist count reads 0 (or the session ends with the
+# sites unfixed and the count is stable), the NEXT lint-touching round
+# moves the entry to a stable exact pin (count > 0) or deletes it
+# (count 0) TOGETHER with its allowlist row. Accepted residual: while an
+# entry sits at count 0 against a pinned N > 0, up to N NEW discards in
+# exactly that file are suppressed at check level (bounded,
+# status-quo-preserving; exact pins would redden main fleet-wide on the
+# sibling's merge).
+UPLOAD_RETURN_DISCARD_PENDING_OWNER: frozenset[str] = frozenset(
+    {
+        # owned by in-flight #2054 (live round-11 implementer; its branch
+        # already converts phase_a's discards to capture-and-raise) — each
+        # entry retires per the convention above when #2054's fix merges:
+        "scripts/issue2054_capture.py",
+        "scripts/issue2054_fits.py",
+        "scripts/issue2054_ladder.py",
+        "scripts/issue2054_phase_a.py",
+        "scripts/issue2054_phase_b.py",
+        "scripts/issue2054_phase_c.py",
+        "scripts/issue2054_phase_d.py",
+        # owned by in-flight #1739 (live session, followups_running — its
+        # rounds may still edit these scripts) — each entry retires per the
+        # convention above when a #1739 round merges a fix (count drops)
+        # or the session ends with the counts stable:
+        "scripts/issue1739_armfill_upload.py",
+        "scripts/issue1739_bareq_pod.py",
+        "scripts/issue1739_pvsynth_arms_run.py",
+        "scripts/issue1739_pvsynth_score.py",
+        "scripts/issue1739_wcrung_arms_run.py",
+    }
+)
 
 
 # `--check-upload-prefix-clobber` (#1452 / incident #1005): reused #928
@@ -2897,7 +3030,7 @@ def _resolve_autonomous_ask_target_files(roots: list[Path] | None) -> list[Path]
     """The autonomous-asks check is narrower than ``check_asks``: it only
     scopes to ``.claude/skills/issue/SKILL.md`` (the per-issue orchestrator
     that ever runs in autonomous mode) and the agents it dispatches. Other
-    skills (``/daily``, ``/weekly``, ``/pm``, etc.) never run under
+    skills (``/daily``, ``/pm``, etc.) never run under
     ``EPM_AUTONOMOUS_SESSION``, so an AskUserQuestion in them is fine
     without the autonomous-mode annotation.
     """
@@ -5875,6 +6008,236 @@ def check_upload_file_in_loop(
                 f"was added to a grandfathered file; all of its findings are reported "
                 f"below. Batch the new upload into one upload_folder commit (or waive "
                 f"with '# UPLOAD_LOOP_EXEMPT: <reason>') — never extend the allowlist."
+            )
+        errors.extend(file_findings)
+    return errors
+
+
+def _upload_return_discard_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """Return True iff a ``# UPLOAD_RETURN_DISCARD_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`UPLOAD_RETURN_DISCARD_WAIVER_MIN_REASON_CHARS` chars) is
+    on the call's first physical line (``call_lineno``, 1-based) or the
+    immediately preceding non-blank line. Same convention as
+    :func:`_upload_as_file_waiver_present`."""
+    idx = call_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = UPLOAD_RETURN_DISCARD_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= UPLOAD_RETURN_DISCARD_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = UPLOAD_RETURN_DISCARD_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= UPLOAD_RETURN_DISCARD_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+# The two hub helpers whose failure contract is fail-soft BY RETURN, and the
+# module paths whose imports arm the check (see check_upload_return_discard).
+_UPLOAD_RETURN_DISCARD_TARGETS = frozenset({"_upload", "_upload_folder_filtered"})
+_URD_HUB_MODULE = "explore_persona_space.orchestrate.hub"
+_URD_HUB_PARENT = "explore_persona_space.orchestrate"
+
+
+def check_upload_return_discard(  # noqa: C901 -- two-pass binding-collection + firing walk (plan #2087 §4.1); extracting a branch would just relocate it
+    *, scripts_dir: Path | None = None, legacy_allowlist: dict[str, int] | None = None
+) -> list[str]:
+    """AST-walk every ``*.py`` under ``scripts/`` and FAIL on any
+    Expr-statement (discarded-return) call to the fail-soft-by-return hub
+    upload helpers ``_upload`` / ``_upload_folder_filtered`` (#2087;
+    incident #2054).
+
+    Rationale: ``explore_persona_space.orchestrate.hub._upload``
+    (hub.py ~1426) returns ``""`` on missing ``HF_TOKEN``, an absent local
+    path, and failed post-upload verification — and on upload exceptions
+    unless ``raise_on_error=True`` (the docstring: "ONLY the exception path
+    changes"). ``hub._upload_folder_filtered`` (hub.py ~1671) returns
+    ``"{repo_id}/{path_in_repo}"`` on verified success and ``""`` on EVERY
+    upload-failure shape (its pre-flight ``assert_hub_dir_filecounts``
+    guard — the #1190 per-dir cap check, outside the swallowing try — still
+    raises; upload failures themselves never do). A caller that discards
+    the return converts a durability failure into a false-success exit 0 —
+    the class ``.claude/rules/upload-policy.md`` bans ("'upload returned no
+    path' is a TRACKED GAP ... never a warning-and-continue"). Six such
+    sites reached main across issue2054 phase scripts despite full review
+    rounds; this check is the mechanical gate. The canonical fix shape is
+    capture-and-raise (``hub.upload_raw_completions_to_data_repo``,
+    hub.py ~2152: ``base_url = _upload_folder_filtered(...)`` then
+    ``if not base_url: raise RuntimeError(...)``).
+
+    Detection — import/definition-resolved arming, two passes per file:
+
+    * **Pass 1 (binding collection):** name bindings from
+      ``from explore_persona_space.orchestrate.hub import _upload [as X]``
+      (``ast.walk`` covers function-local imports — the issue2054_capture /
+      issue1689_capture shape); module aliases from
+      ``from explore_persona_space.orchestrate import hub [as H]`` and
+      ``import explore_persona_space.orchestrate.hub as H`` (a bare dotted
+      ``import`` with no asname produces a 3-deep attribute chain at the
+      call site — out of scope v1, zero live sites at plan time); and a
+      shadow-disarm set from any ``def``/``async def``/assignment binding a
+      bare target name (a same-named LOCAL helper — e.g. the fail-LOUD
+      ``_upload`` wrappers in issue1481/issue825/issue952 scripts — never
+      arms the Name form; conservative: prefer a false negative over
+      firing on an unread local contract).
+    * **Pass 2 (firing rule):** every ``ast.Expr`` statement whose value
+      (unwrapping one ``await``) is a Call to an armed Name, or to an
+      Attribute ``<hub-alias>._upload`` / ``<hub-alias>._upload_folder_filtered``,
+      is a finding — the return value is unreachable BY CONSTRUCTION.
+      A consumed return (assignment incl. ``_ =``, walrus, ``return`` /
+      ``yield``, a condition, an argument position) is never an Expr
+      statement's direct value, so it never fires. ``raise_on_error=True``
+      calls STILL fire (the non-exception ``""`` returns are unchanged —
+      three failure shapes stay silent). Known v1 false negatives,
+      accepted + documented: the bare dotted-chain import form, a Call
+      nested inside a tuple-expression statement, and the greppable
+      ``_ = _upload(...)`` deliberate-discard idiom.
+
+    Pass conditions: a ``# UPLOAD_RETURN_DISCARD_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`UPLOAD_RETURN_DISCARD_WAIVER_MIN_REASON_CHARS` chars)
+    on the call's first physical line or the immediately preceding
+    non-blank line; or the file's findings are covered by
+    :data:`UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST` — COUNT-grain and
+    <=-tolerant (the :func:`check_upload_file_in_loop` gate, verbatim):
+    findings suppressed only while their count <= the grandfathered N, so
+    a sibling task's fix landing (a count DROP) keeps main green in either
+    merge order; an excess count reports ALL of the file's findings.
+    Entries owned by live in-flight tasks are additionally listed in
+    :data:`UPLOAD_RETURN_DISCARD_PENDING_OWNER` (the load-bearing test
+    pins those ``observed <= pinned`` instead of exact).
+
+    v1 scope notes, both measured at implement time (2026-08-05): the walk
+    covers ``scripts/`` only — an independent sweep of
+    ``src/explore_persona_space/`` (this check pointed at ``src/`` plus a
+    statement-position grep for both helper names, name AND attribute
+    form) found ZERO statement-shaped calls (``src/`` imports only the
+    public wrappers); and the sibling ``-> str``-returning-``""`` wrappers
+    ``upload_model`` / ``upload_dataset`` have zero live discard-shaped
+    callers — the only statement-position hits live in the frozen,
+    ruff-excluded ``scripts/archive/`` (2 ``upload_dataset`` sites), so
+    the v1 target set stays the two private helpers.
+
+    ``scripts_dir`` / ``legacy_allowlist`` are override hooks for unit
+    tests; production callers pass None and the function walks the
+    canonical ``<repo_root>/scripts`` tree against the module allowlist.
+    Allowlist paths are computed relative to the WALK ROOT'S PARENT (so
+    production paths read ``scripts/<name>.py``). Read-only over
+    :func:`_cached_parse` trees (SHARED across checks — never mutate
+    nodes). Bundled into the no-flags default run.
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    allow = UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST if legacy_allowlist is None else legacy_allowlist
+    errors: list[str] = []
+    for py in sorted(root.rglob("*.py")):
+        if not py.is_file():
+            continue
+        rel = py.relative_to(root.parent).as_posix()
+        text = py.read_text(encoding="utf-8")
+        tree = _cached_parse(py, text)
+        if tree is None:
+            # A scripts/ file that does not parse is its own (separate)
+            # problem; this check stays silent on it rather than crashing.
+            continue
+        # Pass 1 — binding collection (read-only; cached trees are SHARED).
+        hub_name_bindings: dict[str, str] = {}  # local alias -> hub helper name
+        hub_module_aliases: set[str] = set()
+        shadow_disarm: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                if node.module == _URD_HUB_MODULE:
+                    for alias in node.names:
+                        if alias.name in _UPLOAD_RETURN_DISCARD_TARGETS:
+                            hub_name_bindings[alias.asname or alias.name] = alias.name
+                elif node.module == _URD_HUB_PARENT:
+                    for alias in node.names:
+                        if alias.name == "hub":
+                            hub_module_aliases.add(alias.asname or "hub")
+            elif isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name == _URD_HUB_MODULE and alias.asname:
+                        hub_module_aliases.add(alias.asname)
+            elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+                if node.name in _UPLOAD_RETURN_DISCARD_TARGETS:
+                    shadow_disarm.add(node.name)
+            elif isinstance(node, ast.Assign):
+                for tgt in node.targets:
+                    if isinstance(tgt, ast.Name) and tgt.id in _UPLOAD_RETURN_DISCARD_TARGETS:
+                        shadow_disarm.add(tgt.id)
+            elif isinstance(node, ast.AnnAssign):
+                tgt = node.target
+                if isinstance(tgt, ast.Name) and tgt.id in _UPLOAD_RETURN_DISCARD_TARGETS:
+                    shadow_disarm.add(tgt.id)
+        if not hub_name_bindings and not hub_module_aliases:
+            continue
+        lines = text.splitlines()
+        # Pass 2 — Expr-statement (discarded-return) calls to armed names.
+        file_findings: list[str] = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Expr):
+                continue
+            v = node.value
+            if isinstance(v, ast.Await):
+                v = v.value  # an awaited discard is still a discard
+            if not isinstance(v, ast.Call):
+                continue
+            fn = v.func
+            helper: str | None = None
+            if isinstance(fn, ast.Name):
+                target = hub_name_bindings.get(fn.id)
+                if target is not None and fn.id not in shadow_disarm:
+                    helper = target
+            elif isinstance(fn, ast.Attribute):
+                if (
+                    fn.attr in _UPLOAD_RETURN_DISCARD_TARGETS
+                    and isinstance(fn.value, ast.Name)
+                    and fn.value.id in hub_module_aliases
+                ):
+                    helper = fn.attr
+            if helper is None:
+                continue
+            if _upload_return_discard_waiver_present(lines, node.lineno):
+                continue
+            if helper == "_upload":
+                raise_kw = next((kw.value for kw in v.keywords if kw.arg == "raise_on_error"), None)
+                raise_true = isinstance(raise_kw, ast.Constant) and raise_kw.value is True
+                exc_shape = "" if raise_true else " / upload exception"
+                shapes = f"missing HF_TOKEN / absent local path / failed verify{exc_shape}"
+            else:
+                shapes = (
+                    "missing HF_TOKEN / failed post-upload verify / upload exception "
+                    "(only the pre-flight assert_hub_dir_filecounts cap guard raises)"
+                )
+            file_findings.append(
+                f"{py}:{node.lineno}: discarded return of {helper}(...) — {helper} is "
+                f"fail-soft by RETURN ('' on {shapes}), so a discarded return exits 0 "
+                f"on silent durability loss (.claude/rules/upload-policy.md: 'upload "
+                f"returned no path' is a TRACKED GAP, never warning-and-continue). "
+                f"Capture and raise (the hub.upload_raw_completions_to_data_repo shape: "
+                f"base_url = {helper}(...); if not base_url: raise RuntimeError(...)), "
+                f"or waive with '# UPLOAD_RETURN_DISCARD_EXEMPT: <reason>' (reason >= "
+                f"{UPLOAD_RETURN_DISCARD_WAIVER_MIN_REASON_CHARS} chars) on the call's "
+                f"first line or the previous non-blank line."
+            )
+        # Grandfather gate: per-file COUNT vs the allowlist dict — findings
+        # suppressed only while count <= grandfathered N (<=-tolerant: a
+        # sibling fix's count DROP stays green); an excess count reports
+        # ALL of the file's findings.
+        allowed = allow.get(rel, 0)
+        if len(file_findings) <= allowed:
+            continue
+        if allowed:
+            errors.append(
+                f"{py}: {len(file_findings)} discarded-return finding(s) exceed the "
+                f"grandfathered count ({allowed}) in "
+                f"UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST — a NEW discarded hub-upload "
+                f"return was added to a grandfathered file; all of its findings are "
+                f"reported below. Capture and raise (or waive with "
+                f"'# UPLOAD_RETURN_DISCARD_EXEMPT: <reason>') — never extend the "
+                f"allowlist."
             )
         errors.extend(file_findings)
     return errors
@@ -9792,8 +10155,9 @@ def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
     fence, ANY fence line with the SAME token CLOSES it (the closer's tag is
     ignored), while a DIFFERENT-token fence line is body content (the
     CommonMark reading). The naive "closer = same token with EMPTY tag" rule
-    demonstrably desyncs on the live nested-fence shape at
-    ``.claude/skills/weekly/SKILL.md:196-204`` (an outer ```` ```markdown ````
+    demonstrably desyncs on the nested-fence shape formerly at
+    ``.claude/skills/weekly/SKILL.md:196-204`` (skill retired 2026-08-05;
+    the shape is preserved in the fixture test) (an outer ```` ```markdown ````
     fence whose body contains an inner ```` ```diff ```` fence): the inner
     tagged line must CLOSE the outer fence, or the bare ```` ``` ```` two
     lines later opens a phantom fence that swallows the git-bearing
@@ -12002,8 +12366,9 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # contract: lens rubrics from clean-result-critic-lens-reference.md,
     # report schema from the slim agent spec), 73,000 — measured
     # 72,229 B post-#1056, 72,000 post-#1050 r2, 71,000 post-#1050 r1,
-    # 60,554 B pre-#1050)
-    "codex-clean-result-critic.md": 75_200,
+    # 60,554 B pre-#1050; 75,200 pre-description-rewrite — measured
+    # 71,784 B after the 2026-08-05 frontmatter-description compaction)
+    "codex-clean-result-critic.md": 74_784,
     # measured 61,503 B post-#1805 (Step 4 copy-list bullet extension:
     # round-new-script no-flags lint duty, no-uv static hub-verify
     # adaptation — plan-mandated growth; cap = measured + ~1.3 KB. Prior:
@@ -13401,6 +13766,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-upload-return-discard",
+        action="store_true",
+        help="AST-walk scripts/**/*.py and FAIL on any Expr-statement "
+        "(discarded-return) call to the fail-soft-by-return hub upload "
+        "helpers _upload / _upload_folder_filtered — both return '' on "
+        "upload failure, so a discarded return exits 0 on silent "
+        "durability loss (#2087; incident #2054). Import/definition-"
+        "resolved arming: a same-named LOCAL helper never arms. Waive a "
+        "deliberate fail-soft caller with "
+        "'# UPLOAD_RETURN_DISCARD_EXEMPT: <reason>'; pre-existing sites "
+        "are grandfathered with <=-tolerant per-file counts in "
+        "UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST. Bundled into the "
+        "no-flags default run.",
+    )
+    parser.add_argument(
         "--check-dotenv-before-hf-import",
         action="store_true",
         help="AST-walk scripts/**/*.py and FAIL on any script that uses the "
@@ -13993,6 +14373,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_hub_dir_filecount
         or args.check_upload_prefix_clobber
         or args.check_upload_file_in_loop
+        or args.check_upload_return_discard
         or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
         or args.check_hub_verify_retry
@@ -14112,6 +14493,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_upload_prefix_clobber())
     if args.check_upload_file_in_loop or no_flags:
         errors.extend(check_upload_file_in_loop())
+    if args.check_upload_return_discard or no_flags:
+        errors.extend(check_upload_return_discard())
     if args.check_dotenv_before_hf_import or no_flags:
         errors.extend(check_dotenv_before_hf_import())
     if args.check_batch_judge_client or no_flags:

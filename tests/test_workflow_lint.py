@@ -46,6 +46,8 @@ from workflow_lint import (  # noqa: E402
     SKILL_REF_FS_ROOTS,
     UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST,
     UPLOAD_PREFIX_CLOBBER_ALLOWLIST,
+    UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST,
+    UPLOAD_RETURN_DISCARD_PENDING_OWNER,
     _head_is_main,
     _iter_ask_target_files,
     _live_skill_names,
@@ -93,6 +95,7 @@ from workflow_lint import (  # noqa: E402
     check_upload_as_file,
     check_upload_file_in_loop,
     check_upload_prefix_clobber,
+    check_upload_return_discard,
     check_vm_thread_cap_guidance,
     check_wandb_required,
 )
@@ -4732,6 +4735,314 @@ def test_check_upload_file_in_loop_pass_other_upload_names_in_loop(tmp_path):
     assert errors == [], f"expected PASS (exact-name only), got: {errors}"
 
 
+# ── --check-upload-return-discard (task #2087; incident #2054) ────────────────
+# Each test writes a tiny fixture into ``tmp_path`` and calls
+# ``check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})``
+# unless it is exercising the committed allowlist / real tree (plan #2087
+# §4.7 table).
+
+
+def test_check_upload_return_discard_fail_bare_name_import(tmp_path):
+    """§4.7 — FAIL: from-import of ``_upload_folder_filtered`` + an
+    Expr-statement discard of its return."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload_folder_filtered\n\n"
+        "def push(d):\n"
+        '    _upload_folder_filtered(d, "repo", "dataset", "p", ["*.json"], set())\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert ":4:" in errors[0], errors[0]
+    assert "discarded return of _upload_folder_filtered" in errors[0]
+    assert "assert_hub_dir_filecounts" in errors[0]  # item-1 wording: pre-flight guard raises
+
+
+def test_check_upload_return_discard_fail_attribute_form(tmp_path):
+    """§4.7 — FAIL: ``hub._upload(...)`` discard after a hub module import
+    (the issue1112_rankem_dispatch shape)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def push(p):\n"
+        '    hub._upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "discarded return of _upload" in errors[0]
+    assert "upload exception" in errors[0]  # no raise_on_error=True -> exception shape named
+
+
+def test_check_upload_return_discard_fail_alias_import(tmp_path):
+    """§4.7 — FAIL: aliased imports still arm — the name alias
+    (``import ... as up``) AND the module alias (``import hub as H``)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload as up\n"
+        "from explore_persona_space.orchestrate import hub as H\n\n"
+        "def push(p):\n"
+        '    up(p, "repo", "dataset", "p/x.json")\n'
+        '    H._upload_folder_filtered(p, "repo", "dataset", "p", ["*.json"], set())\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 2, f"expected two errors (name alias + module alias), got: {errors}"
+
+
+def test_check_upload_return_discard_fail_function_local_import(tmp_path):
+    """§4.7 — FAIL: a FUNCTION-LOCAL hub from-import arms the check (the
+    issue2054_capture L914 / issue1689_capture L401 shape) — ``ast.walk``
+    covers nested imports."""
+    (tmp_path / "x.py").write_text(
+        "def push(d):\n"
+        "    from explore_persona_space.orchestrate.hub import _upload_folder_filtered\n\n"
+        '    _upload_folder_filtered(d, "repo", "dataset", "p", ["*.json"], set())\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_return_discard_fail_inside_try(tmp_path):
+    """§4.7 — FAIL: a discard inside a ``try:`` block flags regardless of
+    the except clause — the helpers report failure by RETURN, so no except
+    clause ever observes it."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        "    try:\n"
+        '        _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n'
+        "    except Exception:\n"
+        "        raise\n"
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error (try does not shield), got: {errors}"
+
+
+def test_check_upload_return_discard_fail_raise_on_error_true_still_fires(tmp_path):
+    """§4.1 decision pin — FAIL: ``raise_on_error=True`` calls still fire
+    (the issue1310 L272 shape) — only the exception path changes; the
+    non-exception '' returns stay silent — and the message drops the
+    exception shape from the enumerated silent failures."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        '    _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True, raise_on_error=True)\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "upload exception" not in errors[0], errors[0]
+    assert "failed verify" in errors[0], errors[0]
+
+
+def test_check_upload_return_discard_fail_waiver_reason_too_short(tmp_path):
+    """§4.7 — FAIL: a waiver with a < 10-char reason does NOT silence (the
+    reason is a justification, not a token bypass)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        "    # UPLOAD_RETURN_DISCARD_EXEMPT: ok\n"
+        '    _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error (short reason), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_return_consumed(tmp_path):
+    """§4.7 — PASS: the canonical capture-and-raise consumer shape (and an
+    ``_ =`` deliberate discard, the documented greppable evasion) never
+    fire — a consumed return is not an Expr statement."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload, _upload_folder_filtered\n\n"
+        "def push(p, d):\n"
+        '    url = _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n'
+        "    if not url:\n"
+        '        raise RuntimeError("upload returned no path")\n'
+        '    _ = _upload_folder_filtered(d, "repo", "dataset", "p", ["*.json"], set())\n'
+        "    return url\n"
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (return consumed / _ = assigned), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_waiver_same_line(tmp_path):
+    """§4.7 — PASS: a same-line waiver with a >= 10-char reason silences."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        '    _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)'
+        "  # UPLOAD_RETURN_DISCARD_EXEMPT: best-effort mirror, primary verify downstream\n"
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (same-line waiver), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_waiver_previous_line(tmp_path):
+    """§4.7 — PASS: a previous-non-blank-line waiver silences."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        "    # UPLOAD_RETURN_DISCARD_EXEMPT: best-effort mirror, primary verify downstream\n"
+        '    _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (previous-line waiver), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_local_def_shadow(tmp_path):
+    """§4.7 — PASS: a same-named LOCAL helper (the fail-LOUD issue1481 /
+    issue825 / issue952 ``_upload`` wrappers) disarms the Name form — no
+    hub import binds the name."""
+    (tmp_path / "x.py").write_text(
+        'def _upload(p):\n    raise RuntimeError("fail loud")\n\ndef push(p):\n    _upload(p)\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (local def, no hub import), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_local_def_shadow_with_hub_import(tmp_path):
+    """§4.1 shadow pin — PASS: a local ``def _upload`` disarms the Name
+    form even when the hub from-import ALSO appears in the file
+    (conservative: prefer a false negative over firing on an unread local
+    contract)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def _upload(p):\n"
+        '    raise RuntimeError("fail loud")\n\n'
+        "def push(p):\n"
+        "    _upload(p)\n"
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (shadowed name disarmed), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_non_hub_attribute_base(tmp_path):
+    """§4.7 — PASS: ``self._upload(...)`` / ``other._upload(...)`` with no
+    hub module alias never arm the Attribute form."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "class Pusher:\n"
+        "    def _upload(self, p):\n"
+        "        return p\n\n"
+        "    def push(self, p, other):\n"
+        "        self._upload(p)\n"
+        "        other._upload(p)\n"
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (non-hub attribute bases), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_no_hub_import(tmp_path):
+    """§4.7 — PASS: a bare ``_upload(...)`` statement with no hub import at
+    all never arms (arming requires the exact hub module path)."""
+    (tmp_path / "x.py").write_text("def push(p):\n    _upload(p)\n")
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (no import), got: {errors}"
+
+
+def test_check_upload_return_discard_fail_excess_over_allowlist_count(tmp_path):
+    """§4.4 — FAIL: N+1 findings against an allowlist pin of N report the
+    excess header + ALL of the file's findings (a NEW discard in a
+    grandfathered file surfaces instead of hiding)."""
+    (tmp_path / "legacy.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        '    _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n\n'
+        "def push_more(p):\n"
+        '    _upload(p, "repo", "dataset", "p/y.json", upload_as_file=True)\n'
+    )
+    rel = f"{tmp_path.name}/legacy.py"
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={rel: 1})
+    assert len(errors) == 3, f"expected count-exceeded note + both findings, got: {errors}"
+    assert "exceed" in errors[0] and "grandfathered" in errors[0], errors[0]
+    assert "discarded return" in errors[1] and "discarded return" in errors[2]
+
+
+def test_check_upload_return_discard_pass_within_allowlist_count(tmp_path):
+    """§4.4 — PASS (<=-tolerant gate): findings at OR BELOW the
+    grandfathered count are suppressed — a count DROP from a sibling's fix
+    merging keeps main green in either merge order."""
+    (tmp_path / "legacy.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        '    _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n'
+    )
+    rel = f"{tmp_path.name}/legacy.py"
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={rel: 2})
+    assert errors == [], f"expected PASS (1 finding <= pinned 2), got: {errors}"
+    # Sanity: without the allowlist the same file IS flagged (non-vacuous).
+    errors_unlisted = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors_unlisted) == 1, errors_unlisted
+
+
+def test_check_upload_return_discard_live_trees_pass():
+    """§6 criterion 2 — the committed scripts/**/*.py tree must pass with
+    the committed allowlist. A NEW discarded hub-upload return must
+    capture-and-raise or carry an UPLOAD_RETURN_DISCARD_EXEMPT waiver —
+    never extend the allowlist."""
+    errors = check_upload_return_discard()
+    assert errors == [], (
+        "scripts/**/*.py has ungrandfathered discarded hub-upload returns "
+        "(#2054 silent-durability-loss class):\n" + "\n".join(errors)
+    )
+
+
+def test_check_upload_return_discard_allowlist_load_bearing():
+    """§4.4 split-semantics anti-vacuity pin: with the allowlist EMPTIED on
+    the REAL tree, STABLE entries assert EXACT per-file counts (catches
+    silent under-trigger AND stale entries); PENDING_OWNER entries (live
+    in-flight owner, e.g. #2054/#1739) assert observed <= pinned only, so
+    the test stays green before AND after the owner's fix merges. No
+    un-allowlisted file may be flagged."""
+    errors = check_upload_return_discard(legacy_allowlist={})
+    per_file: dict[str, int] = {}
+    for e in errors:
+        path = e.split(": ", 1)[0].rsplit(":", 1)[0]
+        per_file[path] = per_file.get(path, 0) + 1
+    assert UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST, "committed allowlist unexpectedly empty"
+    assert set(UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST) >= UPLOAD_RETURN_DISCARD_PENDING_OWNER, (
+        "PENDING_OWNER entries must be a subset of the allowlist"
+    )
+    for rel, pinned in sorted(UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST.items()):
+        observed = per_file.get(str(_REPO_ROOT / rel), 0)
+        if rel in UPLOAD_RETURN_DISCARD_PENDING_OWNER:
+            assert observed <= pinned, (
+                f"PENDING_OWNER entry {rel}: observed {observed} > pinned {pinned} — "
+                f"a NEW discard was added to a live-owned grandfathered file."
+            )
+        else:
+            assert observed == pinned, (
+                f"stable allowlist entry {rel}: observed {observed} != pinned {pinned} — "
+                f"stale entry, silent under-trigger, or a new offense netting into a "
+                f"grandfathered file."
+            )
+    allowed_paths = {str(_REPO_ROOT / rel) for rel in UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST}
+    extra = set(per_file) - allowed_paths
+    assert not extra, (
+        f"empty-allowlist findings in files OUTSIDE the committed allowlist: {sorted(extra)}"
+    )
+
+
+def test_check_upload_return_discard_bundled_in_no_flags():
+    """§4.5 — NON-VACUOUS no-flags bundling pin: source-inspection assert
+    on the dispatch branch + the no_flags tuple membership (house pattern:
+    test_check_upload_file_in_loop_bundled_in_no_flags)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_upload_return_discard or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_upload_return_discard\(\)\)",
+        src,
+    ), "check_upload_return_discard is not dispatched on the no-flags branch"
+    assert "or args.check_upload_return_discard" in src, (
+        "--check-upload-return-discard is missing from the no_flags detection tuple"
+    )
+
+
+def test_workflow_lint_check_upload_return_discard_cli_exits_zero():
+    """§6 criterion 2 — the dedicated flag must exist and pass on the
+    committed tree."""
+    result = _run("--check-upload-return-discard")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-upload-return-discard failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
 # ── --check-batch-judge-client (task #658/#663 post-mortem) ───────────────────
 # Each test writes a fixture into ``tmp_path`` and calls
 # ``check_batch_judge_client(scripts_dir=tmp_path, src_dir=<empty>)``. The
@@ -7856,7 +8167,8 @@ def test_check_git_recipes_root_guard_selftest_fail_closed(tmp_path):
 
 
 def test_check_git_recipes_root_guard_nested_fence_recovers(tmp_path):
-    """Replicates the LIVE nested-fence shape at weekly/SKILL.md:196-204
+    """Replicates the nested-fence shape formerly at weekly/SKILL.md:196-204
+    (skill retired 2026-08-05; this fixture preserves the shape)
     (outer ```markdown fence containing an inner ```diff fence) FOLLOWED by
     a blocked bash fence: the parity-toggle parser must recover and flag the
     blocked fence at its CORRECT opener line — the naive empty-tag-closer
