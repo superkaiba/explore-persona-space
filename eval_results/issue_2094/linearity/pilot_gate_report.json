@@ -1,0 +1,16 @@
+{
+  "criterion": "P7 fit pilot (plan §9): 1 fold timed through the production entrypoint",
+  "s_per_fold": 0.2922792620956898,
+  "n_fold_fits_projected": 300,
+  "projected_wall_h": 0.024356605174640816,
+  "planned_wall_h": 1.5,
+  "refusal_threshold_h": 4.5,
+  "recommended_fence_h": 0.04871321034928163,
+  "allowed": true,
+  "repro": {
+    "git_commit": "e24c95ff3fbff03a93a4f8fe0b92e4031b5fb24a",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp": "2026-08-06T13:46:59.061740+00:00"
+  }
+}

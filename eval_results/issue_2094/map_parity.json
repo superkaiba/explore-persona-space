@@ -1,0 +1,204 @@
+{
+  "maps": [
+    {
+      "map_id": "m779_ce_L14",
+      "slot": "ce",
+      "layer": 14,
+      "repo_path": "issue779_monitoring/n1m_readout/weights/L14/ridge.pt",
+      "input_convention": "cx_last (context-end last token, generation prompt included — matches the injected ce slot, plan §4.2)",
+      "map_output_pooling": "v_x (answer span INCLUDING end-of-turn tail — the capture_answer_vector convention; plan §6 pooling row)",
+      "transport_va_variant": "va_tail (tail-inclusive, captured in the same forward as va_span — unit C captures BOTH)",
+      "f_act_va_variant": "va_span (the #1415 capture_vectors convention; F_act keeps parent parity — deliberate dual pooling, plan §6)",
+      "orientation": {
+        "orientation": "zW",
+        "criterion": "probe-residual",
+        "margin": 4.252444501486794,
+        "stats": {
+          "rms_residual_zW": 15.926314976329289,
+          "rms_residual_Wz": 67.72577055003826
+        }
+      },
+      "probe_reproduction": {
+        "kind": "own-bank anchors reproduction (OFF-lineage: probes are this run's 15 contexts + anchor answer means, not the map's own lineage sample — a reproduction-STYLE sanity, plan §12 'where cheap')",
+        "n_probe": 15,
+        "r2_vs_context_mean": 0.34254994604793,
+        "rms_residual": 15.926314964418696
+      },
+      "bundle_meta": {
+        "kind": "ridge",
+        "layer": 14,
+        "arm": null,
+        "selected_lambda": 0.001
+      }
+    },
+    {
+      "map_id": "m779_ce_L19",
+      "slot": "ce",
+      "layer": 19,
+      "repo_path": "issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+      "input_convention": "cx_last (context-end last token, generation prompt included — matches the injected ce slot, plan §4.2)",
+      "map_output_pooling": "v_x (answer span INCLUDING end-of-turn tail — the capture_answer_vector convention; plan §6 pooling row)",
+      "transport_va_variant": "va_tail (tail-inclusive, captured in the same forward as va_span — unit C captures BOTH)",
+      "f_act_va_variant": "va_span (the #1415 capture_vectors convention; F_act keeps parent parity — deliberate dual pooling, plan §6)",
+      "orientation": {
+        "orientation": "zW",
+        "criterion": "probe-residual",
+        "margin": 4.186978772156348,
+        "stats": {
+          "rms_residual_zW": 18.632944531935347,
+          "rms_residual_Wz": 78.01574321797999
+        }
+      },
+      "probe_reproduction": {
+        "kind": "own-bank anchors reproduction (OFF-lineage: probes are this run's 15 contexts + anchor answer means, not the map's own lineage sample — a reproduction-STYLE sanity, plan §12 'where cheap')",
+        "n_probe": 15,
+        "r2_vs_context_mean": 0.6529376359269874,
+        "rms_residual": 18.63294452381646
+      },
+      "bundle_meta": {
+        "kind": "ridge",
+        "layer": 19,
+        "arm": null,
+        "selected_lambda": 0.001
+      }
+    },
+    {
+      "map_id": "m779_ce_L26",
+      "slot": "ce",
+      "layer": 26,
+      "repo_path": "issue779_monitoring/n1m_readout/weights/L26/ridge.pt",
+      "input_convention": "cx_last (context-end last token, generation prompt included — matches the injected ce slot, plan §4.2)",
+      "map_output_pooling": "v_x (answer span INCLUDING end-of-turn tail — the capture_answer_vector convention; plan §6 pooling row)",
+      "transport_va_variant": "va_tail (tail-inclusive, captured in the same forward as va_span — unit C captures BOTH)",
+      "f_act_va_variant": "va_span (the #1415 capture_vectors convention; F_act keeps parent parity — deliberate dual pooling, plan §6)",
+      "orientation": {
+        "orientation": "zW",
+        "criterion": "probe-residual",
+        "margin": 2.8043030521878753,
+        "stats": {
+          "rms_residual_zW": 74.05776266288792,
+          "rms_residual_Wz": 207.6804098737419
+        }
+      },
+      "probe_reproduction": {
+        "kind": "own-bank anchors reproduction (OFF-lineage: probes are this run's 15 contexts + anchor answer means, not the map's own lineage sample — a reproduction-STYLE sanity, plan §12 'where cheap')",
+        "n_probe": 15,
+        "r2_vs_context_mean": 0.6309734117473339,
+        "rms_residual": 74.0577628339734
+      },
+      "bundle_meta": {
+        "kind": "ridge",
+        "layer": 26,
+        "arm": null,
+        "selected_lambda": 0.001
+      }
+    },
+    {
+      "map_id": "m1738_pe_L14",
+      "slot": "pe",
+      "layer": 14,
+      "repo_path": "issue1738_multiturn/analysis_tensors/weights/L14/prefix_ridge.pt",
+      "input_convention": "px_last (prefix-end last token — matches the injected pe slot, plan §4.2)",
+      "map_output_pooling": "v_x (answer span INCLUDING end-of-turn tail — the capture_answer_vector convention; plan §6 pooling row)",
+      "transport_va_variant": "va_tail (tail-inclusive, captured in the same forward as va_span — unit C captures BOTH)",
+      "f_act_va_variant": "va_span (the #1415 capture_vectors convention; F_act keeps parent parity — deliberate dual pooling, plan §6)",
+      "orientation": {
+        "orientation": "zW",
+        "criterion": "probe-residual",
+        "margin": 1.9069043310143836,
+        "stats": {
+          "rms_residual_zW": 24.662940778277676,
+          "rms_residual_Wz": 47.029868585648956
+        }
+      },
+      "probe_reproduction": {
+        "kind": "own-bank anchors reproduction (OFF-lineage: probes are this run's 15 contexts + anchor answer means, not the map's own lineage sample — a reproduction-STYLE sanity, plan §12 'where cheap')",
+        "n_probe": 15,
+        "r2_vs_context_mean": -0.5766013249230739,
+        "rms_residual": 24.662940839546764
+      },
+      "bundle_meta": {
+        "kind": "ridge",
+        "layer": 14,
+        "arm": "prefix",
+        "selected_lambda": 3162.2776601683795
+      }
+    },
+    {
+      "map_id": "m1738_pe_L19",
+      "slot": "pe",
+      "layer": 19,
+      "repo_path": "issue1738_multiturn/analysis_tensors/weights/L19/prefix_ridge.pt",
+      "input_convention": "px_last (prefix-end last token — matches the injected pe slot, plan §4.2)",
+      "map_output_pooling": "v_x (answer span INCLUDING end-of-turn tail — the capture_answer_vector convention; plan §6 pooling row)",
+      "transport_va_variant": "va_tail (tail-inclusive, captured in the same forward as va_span — unit C captures BOTH)",
+      "f_act_va_variant": "va_span (the #1415 capture_vectors convention; F_act keeps parent parity — deliberate dual pooling, plan §6)",
+      "orientation": {
+        "orientation": "zW",
+        "criterion": "probe-residual",
+        "margin": 1.8478655516261828,
+        "stats": {
+          "rms_residual_zW": 40.10875744745157,
+          "rms_residual_Wz": 74.11559120567587
+        }
+      },
+      "probe_reproduction": {
+        "kind": "own-bank anchors reproduction (OFF-lineage: probes are this run's 15 contexts + anchor answer means, not the map's own lineage sample — a reproduction-STYLE sanity, plan §12 'where cheap')",
+        "n_probe": 15,
+        "r2_vs_context_mean": -0.6081366690032328,
+        "rms_residual": 40.10875745632799
+      },
+      "bundle_meta": {
+        "kind": "ridge",
+        "layer": 19,
+        "arm": "prefix",
+        "selected_lambda": 3162.2776601683795
+      }
+    },
+    {
+      "map_id": "m1738_pe_L26",
+      "slot": "pe",
+      "layer": 26,
+      "repo_path": "issue1738_multiturn/analysis_tensors/weights/L26/prefix_ridge.pt",
+      "input_convention": "px_last (prefix-end last token — matches the injected pe slot, plan §4.2)",
+      "map_output_pooling": "v_x (answer span INCLUDING end-of-turn tail — the capture_answer_vector convention; plan §6 pooling row)",
+      "transport_va_variant": "va_tail (tail-inclusive, captured in the same forward as va_span — unit C captures BOTH)",
+      "f_act_va_variant": "va_span (the #1415 capture_vectors convention; F_act keeps parent parity — deliberate dual pooling, plan §6)",
+      "orientation": {
+        "orientation": "zW",
+        "criterion": "probe-residual",
+        "margin": 7.376008271053086,
+        "stats": {
+          "rms_residual_zW": 179.7861998791573,
+          "rms_residual_Wz": 1326.1044973298676
+        }
+      },
+      "probe_reproduction": {
+        "kind": "own-bank anchors reproduction (OFF-lineage: probes are this run's 15 contexts + anchor answer means, not the map's own lineage sample — a reproduction-STYLE sanity, plan §12 'where cheap')",
+        "n_probe": 15,
+        "r2_vs_context_mean": -1.1748494006287529,
+        "rms_residual": 179.78620040555344
+      },
+      "bundle_meta": {
+        "kind": "ridge",
+        "layer": 26,
+        "arm": "prefix",
+        "selected_lambda": 1000.0
+      }
+    }
+  ],
+  "jacobian": {
+    "map_id": "j1776_L14_to_L19",
+    "shape": [
+      3584,
+      3584
+    ],
+    "convention": "L14 last-token -> L19 answer-mean (plan §12 assumption 8); used ONLY in the direction-aware comparison (space-matched L14->L19 variant)"
+  },
+  "repro": {
+    "git_commit": "e24c95ff3fbff03a93a4f8fe0b92e4031b5fb24a",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp": "2026-08-06T13:28:36.171687+00:00"
+  }
+}
