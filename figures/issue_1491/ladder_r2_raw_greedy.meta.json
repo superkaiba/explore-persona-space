@@ -1,0 +1,262 @@
+{
+  "commit": "34cf9a5e",
+  "git_commit": "34cf9a5e",
+  "git_dirty": false,
+  "created": "2026-08-06T16:06:33Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "held-out test R\u00b2 (variance-weighted)": 0.5506350628869827,
+      "series": "ridge (linear map)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "held-out test R\u00b2 (variance-weighted)": 0.5972315999117004,
+      "series": "ridge (linear map)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.6621875068644685,
+      "series": "ridge (linear map)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7286695822712991,
+      "series": "ridge (linear map)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7276979213437553,
+      "series": "ridge (linear map)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.6980991910256598,
+      "series": "ridge (linear map)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "held-out test R\u00b2 (variance-weighted)": 0.5506350628869827,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "held-out test R\u00b2 (variance-weighted)": 0.5972315999117004,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.6621875068644685,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7286695822712991,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7276979213437553,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.6980991910256598,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "held-out test R\u00b2 (variance-weighted)": 0.5635035921991538,
+      "series": "MLP, width 32768",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "held-out test R\u00b2 (variance-weighted)": 0.6264045168289327,
+      "series": "MLP, width 32768",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.6758747144793806,
+      "series": "MLP, width 32768",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7372040826153103,
+      "series": "MLP, width 32768",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7253925208995524,
+      "series": "MLP, width 32768",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7085114058583935,
+      "series": "MLP, width 32768",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "held-out test R\u00b2 (variance-weighted)": 0.6007634370049082,
+      "series": "kernel ridge (Nystr\u00f6m)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "held-out test R\u00b2 (variance-weighted)": 0.6535761452667352,
+      "series": "kernel ridge (Nystr\u00f6m)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7108771545822794,
+      "series": "kernel ridge (Nystr\u00f6m)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7692191171714499,
+      "series": "kernel ridge (Nystr\u00f6m)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7567035233529765,
+      "series": "kernel ridge (Nystr\u00f6m)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7284083780903126,
+      "series": "kernel ridge (Nystr\u00f6m)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "held-out test R\u00b2 (variance-weighted)": -0.018451617379484864,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "held-out test R\u00b2 (variance-weighted)": -0.013557200014522763,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.0202720322774661,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.0261558418126977,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.02743912962215478,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.025103545760224888,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "raw predictability",
+        "xlabel": "model size (Qwen2.5-Instruct, parameters)",
+        "ylabel": "held-out test R\u00b2 (variance-weighted)",
+        "legend_labels": [
+          "MLP, width 32768",
+          "kernel ridge (Nystr\u00f6m)",
+          "shuffled-pairing null",
+          "ridge (linear map)"
+        ],
+        "xticklabels": [
+          "0.5B",
+          "1.5B",
+          "3B",
+          "7B",
+          "14B",
+          "32B"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ],
+    "series": [
+      "MLP, width 32768",
+      "kernel ridge (Nystr\u00f6m)",
+      "shuffled-pairing null",
+      "ridge (linear map)"
+    ]
+  }
+}
