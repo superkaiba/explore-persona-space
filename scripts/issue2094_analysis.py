@@ -433,6 +433,16 @@ def phase_stage(cfg: AnalysisConfig) -> int:
         f"{HF_PREFIX}/analysis_tensors/manifests",
     ]
     for prefix in own_prefixes:
+        local = cfg.in_root / prefix
+        local_files = sorted(p for p in local.rglob("*") if p.is_file()) if local.is_dir() else []
+        if cfg.smoke and local_files:
+            # Smoke: the run's own stores were mirrored locally by the driver's
+            # ``--upload local-mirror`` mode and never reached HF — consume the
+            # mirror in place. The banked maps above ALWAYS stage from HF (the
+            # real reuse path); production (non-smoke) staging is unchanged.
+            manifest["prefixes"][prefix] = len(local_files)
+            logger.info("[stage] %s: %d files (smoke local mirror)", prefix, len(local_files))
+            continue
         staged = hub.stage_hub_prefix(HF_DATA_REPO, prefix, cfg.in_root, revision=revision)
         manifest["prefixes"][prefix] = len(staged)
         logger.info("[stage] %s: %d files", prefix, len(staged))

@@ -265,7 +265,13 @@ def smoke_block_families(pairs: list[BANK.Pair], n_layers: int) -> list[tuple[Bl
     Classes covered (each with BOTH arms, so every donor-null path runs too):
     single-layer add on a full-sweep slot, replace mode, joint-middle multi-layer,
     joint-all, Type B, a single-position control slot, a multi-position control
-    slot (l3j), and the query span. 8 families = 16 blocks.
+    slot (l3j), and the query span. 11 families = 22 blocks. The pair subset
+    ALWAYS includes a conv-``context_a`` pair (the multi-turn history render is
+    otherwise smoke-invisible — the unit-E render-seam requirement), and the
+    ``ce``/mid slot carries FOUR additive doses so the downstream P7 linearity
+    family (n_obs = 4 pairs x 4 doses) clears the PC-ridge ``n_train > d_eff``
+    floor on the tiny model (hidden 8) and the homogeneity read has a full
+    dose-cosine matrix.
     """
     variants = layer_variant_names(n_layers)
     mid = variants[n_layers // 2]  # a single-layer variant that exists on any model
@@ -275,12 +281,19 @@ def smoke_block_families(pairs: list[BANK.Pair], n_layers: int) -> list[tuple[Bl
         first = next((p.pair_id for p in pairs if p.setting == setting), None)
         if first is not None:
             a_ids.append(first)
+    conv_a = next((p.pair_id for p in pairs if p.a.startswith("conv")), None)
+    if conv_a is not None and conv_a not in a_ids:
+        a_ids.append(conv_a)  # conv-context_a arm class (render seam, unit E)
     a_subset = tuple(a_ids)
     mq_subset = tuple(p.pair_id for p in pairs if p.setting == "matched_query")[:1]
     assert a_subset and mq_subset, (a_subset, mq_subset)
+    assert any(pid.split("--")[1].startswith("conv") for pid in a_subset), a_subset
 
     spec: list[tuple[str, str, str, str, tuple[str, ...]]] = [
+        ("ce", mid, "a0.5", "A", a_subset),
         ("ce", mid, "a1", "A", a_subset),
+        ("ce", mid, "a2", "A", a_subset),
+        ("ce", mid, "a4", "A", a_subset),
         ("ce", mid, "replace", "A", a_subset),
         ("pe", last, "a2", "A", a_subset),
         ("pe", "joint_mid", "a1", "A", a_subset),
@@ -1303,11 +1316,24 @@ def phase_anchors(cfg: RunConfig) -> int:
     if cfg.smoke:
         # ONE context per PREFIX class — the conv prefix is the only one that
         # exercises the multi-turn history render + prefix_end_index_multi, so a
-        # first-N slice would leave that arm class unrun (#1090 fu5 lesson).
-        order = [
+        # first-N slice would leave that arm class unrun (#1090 fu5 lesson) —
+        # UNION every context the smoke GRID pairs touch: downstream F tables
+        # index anchor V_a by BOTH endpoints of every graded pair, so an anchor
+        # slice missing a smoke pair's context_b KeyErrors at P7 (cross-phase
+        # data-contract floor; found by the unit-F end-to-end smoke).
+        per_prefix = [
             next(cid for cid in order if contexts[cid]["prefix"] == prefix)
             for prefix in BANK.PREFIX_ORDER
         ]
+        pairs_by_id = {p.pair_id: p for p in BANK.build_pairs()}
+        smoke_ctx = {
+            cid
+            for fam in smoke_block_families(BANK.build_pairs(), cfg.n_layers)
+            for block in fam
+            for pid in block.pair_ids
+            for cid in (pairs_by_id[pid].a, pairs_by_id[pid].b)
+        }
+        order = [cid for cid in order if cid in smoke_ctx or cid in per_prefix]
     ctx_list = [contexts[c] for c in order]
     eot = eot_tail_ids(tok)
     # >= 2 draws even under --smoke: the disjoint-half floor F_act needs

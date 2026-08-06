@@ -170,6 +170,17 @@ def test_smoke_slice_covers_every_arm_class(pairs):
     assert R.SLOTS_CONTROL[0] in {b.slot for b in blocks} or any(
         b.slot in R.SLOTS_CONTROL for b in blocks
     )
+    # conv-context_a arm class: the multi-turn history render seam is otherwise
+    # smoke-invisible (unit-E requirement; steering.context_messages drops history).
+    assert any(pid.split("--")[1].startswith("conv") for b in blocks for pid in b.pair_ids)
+    # >= 2 additive doses on one single-layer full-sweep family so the P7
+    # linearity fit + homogeneity reads are runnable on the smoke outputs.
+    ce_single_doses = {
+        b.dose
+        for b in blocks
+        if b.slot == "ce" and b.layer_variant.startswith("L") and b.dose != "replace"
+    }
+    assert len(ce_single_doses) >= 2, ce_single_doses
     # Cheap by construction: a couple of pairs per block, not the full bank.
     assert R.grid_totals(fam)["cells_total"] < 100
 
