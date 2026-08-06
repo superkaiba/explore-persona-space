@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2131,
+  "highest_id": 2132,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8758,6 +8758,13 @@
       "path": "tasks/proposed/2131",
       "status": "proposed",
       "title": "daily-held: HF storage 16TB vs 10TB - purge or upgrade"
+    },
+    "2132": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2132",
+      "status": "proposed",
+      "title": "daily-held: perform the #681 worktree bind cutover"
     },
     "215": {
       "has_clean_result": true,
