@@ -1200,7 +1200,30 @@ def _run_labels(events: list[dict]) -> set[str]:
 # "2026-08-01T03:30:56Z") — are likewise deliberately NOT allowlisted: their
 # fields are explicit, and the #1984-widened parser strips the dash-led
 # version stamp as decoration too.)
-KNOWN_MALFORMED_RUN_MARKERS = {(1090, "2026-07-07T09:54:27Z")}
+# (#1739's 2026-08-05T22:28:00Z run marker IS allowlisted, and is a DISTINCT
+# malformed class from #1090's prose-led note above: its note IS field-led
+# (`v1 label=evil-ood-spread-round source=user-chat initiation=manual`) but
+# uses the BARE key `label` instead of `followup_label`. Not a delimiter
+# problem — the parser accepts `<field>:` and `<field>=` by design and 21
+# corpus run markers use `followup_label=` and all parse; the bare key is the
+# only causal deviation. NOT systematic (task #2154 surveyed all 191
+# historical run markers: 168 `followup_label:` + 21 `followup_label=` all
+# parse; this is the only bare-`label=` note): the sole mechanical producer,
+# autonomous_session_watch._post_followup_run_marker, emits the correct
+# `followup_label: ` form, and this task's OTHER run marker
+# (2026-08-03T07:58:57Z) is correct too — so the note was hand-composed.
+# Mechanism: `label=` is the CORRECT token for the same loop's
+# `stage=followup-<phase>` dispatch breadcrumbs (SKILL.md Step 9b;
+# `_breadcrumb_fields(note).get("label")`), carried onto the adjacent
+# completion marker by mistake. The parser is deliberately NOT widened to
+# accept bare `label` — `parse_followup_note_field` is field-only by design
+# (#1111) and is called generically for `source`/`round`/`outcome` too, so an
+# alias would change run/unrun classification corpus-wide. As with #1090, the
+# ROUND is closed by a corrective re-post on #1739 (#2154), not by parsing.)
+KNOWN_MALFORMED_RUN_MARKERS = {
+    (1090, "2026-07-07T09:54:27Z"),
+    (1739, "2026-08-05T22:28:00Z"),
+}
 
 
 def test_corpus_replay_all_historical_markers():
