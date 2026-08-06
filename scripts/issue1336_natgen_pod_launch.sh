@@ -17,12 +17,29 @@
 # and that reuse declaration covers CHAT gen only — a naturalistic run must
 # generate it fresh (no wave-1 naturalistic exists for it).
 #
-# SCOPE LIMIT (carried, not silently absorbed): gsm8k_train_full naturalistic is
-# EXTENSION-ONLY under current prep (new_rows_only stages prompt_idx >= 5000,
-# ~2473 rows). Unlike lmsys23k — whose 5k prefix reuses lmsys5k's v1 naturalistic
-# wave — there is no wave-1 naturalistic generation for gsm8k_train5k, so that
-# corpus's chat and naturalistic arms are NOT row-matched. Closing it is a prep
-# decision, not a gen-gate change.
+# SCOPE LIMIT (carried, not silently absorbed): BOTH concat corpora are
+# EXTENSION-ONLY in this ON-POLICY naturalistic arm — new_rows_only stages
+# prompt_idx >= V2_CONCAT_BOUNDARY (5000 for both), so the wave-1 rows 0..4999
+# are absent from the on-policy pool. MEASURED on the rlvr stage of this run:
+#   lmsys23k__gen_naturalistic          18000 rows, prompt_idx 5000..22999
+#   gsm8k_train_full__gen_naturalistic   2473 rows, prompt_idx 5000..7472
+# so neither corpus's chat and on-policy-naturalistic arms are row-matched.
+#
+# An earlier revision of this comment claimed lmsys23k was EXEMPT because its
+# 5k prefix "reuses lmsys5k's v1 naturalistic wave". That is WRONG for this arm
+# and the distinction is provenance, not coverage. The two wave-1 situations
+# differ, and neither yields on-policy naturalistic rows:
+#   gsm8k_train5k: FORMATS_BY_CORPUS == ("chat",) — no naturalistic wave at all.
+#   lmsys5k:       FORMATS_BY_CORPUS == ("chat","naturalistic"), BUT that wave is
+#                  MATCHED-TEXT — a naturalistic RENDER of chat-generated answers.
+#                  Verified: the data repo's generation prefix has exactly one
+#                  `lmsys5k` child and no `lmsys5k__gen_naturalistic` sibling, and
+#                  --gen-format did not exist before 6182b041ab, so no on-policy
+#                  naturalistic generation for it can exist.
+# Concatenating on-policy rows 5000+ onto matched-text rows 0..4999 would splice
+# two different completion provenances into one arm — worse than the short n.
+# Closing this is a prep decision (regenerate wave-1 on-policy for both corpora),
+# not a gen-gate change; until then the on-policy arm is extension-only and says so.
 #
 # Usage:  bash issue1336_natgen_pod_launch.sh [<slug>]
 set -uo pipefail
