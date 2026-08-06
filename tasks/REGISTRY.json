@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2157,
+  "highest_id": 2158,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8947,6 +8947,13 @@
       "path": "tasks/planning/2157",
       "status": "planning",
       "title": "workflow-fix: pods.md names a --boot-disk-gb flag pod.py provision lacks; cpu-bigmem defaults to 50GB not 240GB"
+    },
+    "2158": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2158",
+      "status": "proposed",
+      "title": "Pre-split intermediate-unit review guard + cross-session shared-worktree writer arbitration"
     },
     "216": {
       "has_clean_result": true,
