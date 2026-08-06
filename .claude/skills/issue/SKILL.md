@@ -4207,7 +4207,7 @@ dispatch; #1964 — extends the argv dry-run above; same trigger + same
 byte-identical-re-dispatch exemption).** The argv dry-run validates PARSE
 + early post-parse validation only; the four probes below cover what it
 deliberately excludes — each is a VM-side check costing seconds, run
-BEFORE provisioning (~15 wasted provision+staging cycles across
+BEFORE provisioning (repeated wasted provision+staging cycles across
 #1739/#1689/#1345/#1902/#1946/#1900 were all discoverable pre-boot).
 Auto-continue duties in the argv-dry-run register — no new gate; record
 each probe's one-line disposition in the dispatch note.
@@ -5142,9 +5142,9 @@ by which point ~5.4 h of idle-A100 billing had already accrued; recovery
 (After-Every-Experiment item 8 / `verify_task_body.py` check 11b / the
 clean-result-critic planned-vs-actual lens), but it fires only at
 clean-result time; during a multi-lane run a lane that completes WITHOUT
-covering a planned cell is invisible until terminal analysis (#1481: the
-sycophancy bare arm was never dose-banded and never re-swept; the gap
-surfaced only when the user asked, hours after the lanes completed). So:
+covering a planned cell is invisible until terminal analysis (#1481: an
+arm was never dose-banded and never re-swept; the gap
+surfaced only when the user asked, after the lanes completed). So:
 whenever the orchestrator observes that a LANE or PHASE of the run
 completed — a poll tick / drained-sentinel batch showing ALL of a lane's
 DISPATCHED runs terminal (per-run `status: done`/failed JSON lines), an
@@ -14627,7 +14627,7 @@ composer.
 | `followups_running` | unrun `epm:followup-scope` (≥1 UNRUN `followup_label` per `task_workflow.unrun_followup_labels`: entries grouped by label, within-label latest-(`ts`,`version`) authoritative, a label unrun iff no matching `epm:same-issue-followup-run v1`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top; `task_workflow.executing_followup_label` resolves WHICH label the round is executing (labeled breadcrumb first, dispatchable queue head fallback), and the planner-snapshot re-read (Step 9b § Same-issue follow-up loop step 3) picks up that label's latest scope so a correction posted mid-round is honored on resume |
 | `followups_running` | no unrun followup-scope; at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | legacy semantics: children still in flight | show child-task table, EXIT |
 | `followups_running` | no unrun followup-scope; every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
-| `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
+| `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: #462/#463.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
 
 **Reconcile predicates are role-scoped.** There is exactly ONE marker-mode
 reconcile kind (`epm:review-reconcile` — workflow.yaml § markers); the
