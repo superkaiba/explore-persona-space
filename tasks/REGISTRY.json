@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2143,
+  "highest_id": 2144,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8842,6 +8842,13 @@
       "path": "tasks/proposed/2143",
       "status": "proposed",
       "title": "daily-fix: bare-API blinded-read recipe as a rule"
+    },
+    "2144": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2144",
+      "status": "proposed",
+      "title": "daily-fix: null-statistic gates need measured calibration"
     },
     "215": {
       "has_clean_result": true,
