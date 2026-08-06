@@ -2,7 +2,8 @@
 title: Detached HF transfers must have timeout + observable progress (xet read-hang
   is silent); warn off snapshot_download(allow_patterns) on the 1M-file data repo
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-08-06T15:50:49Z'
 has_clean_result: false
 parent_id: 1739
