@@ -8881,8 +8881,8 @@
     "2149": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2149",
-      "status": "proposed",
+      "path": "tasks/planning/2149",
+      "status": "planning",
       "title": "keep-running wedged-owner arm cannot fire on a busy task: add a pod-grain idleness leg (#1739: 3 pods idle 19.6h behind 129 markers)"
     },
     "215": {
