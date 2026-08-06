@@ -307,6 +307,7 @@ def phase_gen_split(
     no_upload: bool,
     engine_seed: int,
     regen_budget: int,
+    force_rebuild: bool = False,
 ) -> dict:
     """Generate (or salvage) every regen chunk of one (slug, split); persist
     raw text FIRST (persist-by-default), upload in batches."""
@@ -315,8 +316,18 @@ def phase_gen_split(
     seed = SPLIT_PREFIX_SEEDS[split]
     cache_dir = scratch / ".cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    done_raw = set() if no_upload else GC._remote_index(prefix, "raw_completions")
-    done_pt = set() if no_upload else GC._remote_index(prefix, "final_token_capture")
+    # force_rebuild empties the Hub done-index, which is exactly the FIRST-RUN
+    # state — every chunk regenerates and re-uploads, overwriting in place (an
+    # HF upload to an existing path is a new commit, so no delete is needed).
+    # Required after the BASE corpus of a split changes: the regen namespace is
+    # derived from it, so a repaired shard silently invalidates the overlay and
+    # the capture-side ci-membership guard then refuses ("base-artifact drift").
+    done_raw = (
+        set() if (no_upload or force_rebuild) else GC._remote_index(prefix, "raw_completions")
+    )
+    done_pt = (
+        set() if (no_upload or force_rebuild) else GC._remote_index(prefix, "final_token_capture")
+    )
     # Regen-namespace decoding-identity guard (mode AND cap) — BEFORE any
     # chunk decision, exactly like the base driver.
     GC._enforce_sampling_identity(
@@ -508,6 +519,7 @@ def phase_capture_split(
     h_dim: int,
     capture_choice: str,
     batch_size: int,
+    force_rebuild: bool = False,
 ) -> dict:
     """Teacher-forced capture of every regen chunk of one (slug, split).
 
@@ -521,8 +533,14 @@ def phase_capture_split(
     seed = SPLIT_PREFIX_SEEDS[split]
     cache_dir = scratch / ".cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    done_raw = set() if no_upload else GC._remote_index(prefix, "raw_completions")
-    done_pt = set() if no_upload else GC._remote_index(prefix, "final_token_capture")
+    # See phase_gen_split: force_rebuild reproduces the first-run state so a
+    # stale overlay is rewritten rather than skipped-then-refused.
+    done_raw = (
+        set() if (no_upload or force_rebuild) else GC._remote_index(prefix, "raw_completions")
+    )
+    done_pt = (
+        set() if (no_upload or force_rebuild) else GC._remote_index(prefix, "final_token_capture")
+    )
     chunks = regen_chunk_membership(list(scan["rows"]))
     pending_pt: list[str] = []
     stats: dict = {
@@ -1167,6 +1185,7 @@ def run(args) -> int:
                 no_upload=args.no_upload,
                 engine_seed=engine_seed,
                 regen_budget=regen_budget,
+                force_rebuild=args.force_rebuild,
             )
     finally:
         if llm is not None:
@@ -1227,6 +1246,7 @@ def run(args) -> int:
                 h_dim=h_dim,
                 capture_choice=capture_choice,
                 batch_size=args.capture_batch_size,
+                force_rebuild=args.force_rebuild,
             )
     finally:
         del hf
@@ -1287,6 +1307,18 @@ def _parse_args() -> argparse.Namespace:
     )
     ap.add_argument("--device", choices=["cpu", "cuda"], default="cuda")
     ap.add_argument("--capture-batch-size", type=int, default=8)
+    ap.add_argument(
+        "--force-rebuild",
+        action="store_true",
+        help=(
+            "ignore the Hub done-index and REBUILD every regen chunk for the selected "
+            "splits, overwriting in place. Required after a split's BASE corpus changes "
+            "(e.g. a dead shard was repaired): the regen namespace is derived from the "
+            "base, so the existing overlay is stale and the capture-side ci-membership "
+            "guard refuses it as 'base-artifact drift'. Scope this with --splits — it "
+            "re-spends generation for every split it touches."
+        ),
+    )
     ap.add_argument(
         "--out-dir",
         type=Path,
