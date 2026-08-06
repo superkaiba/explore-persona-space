@@ -1079,6 +1079,57 @@ def test_pod_idle_probe_shell_roundtrip(tmp_path):
     assert parsed["done_sentinel_age_s"] is None
 
 
+def test_probe_pod_idleness_body_subprocess_boundary(monkeypatch):
+    """PRODUCTION-BODY coverage of _probe_pod_idleness (the rigs seam-stub
+    it): the real body executes with ONLY the subprocess boundary faked,
+    signature-conformantly (autospec'd subprocess.run returning a REAL
+    CompletedProcess). rc=0 -> the first non-empty stdout line; rc != 0 /
+    a SubprocessError / empty stdout -> None; the dispatched argv + outer
+    timeout are exactly the pinned probe composition."""
+    from unittest.mock import create_autospec
+
+    real_run = subprocess.run  # autospec the REAL callable, not a prior mock
+    calls: dict = {}
+
+    def _fake_run(argv, capture_output=False, text=False, timeout=None):
+        calls["argv"] = argv
+        calls["timeout"] = timeout
+        return subprocess.CompletedProcess(
+            argv, 0, stdout="\n   \nlog_age=5 sentinel_age=na gpu_util=0 gpu_rc=0\nextra\n"
+        )
+
+    monkeypatch.setattr(asw.subprocess, "run", create_autospec(real_run, side_effect=_fake_run))
+    assert asw._probe_pod_idleness("pod-x") == "log_age=5 sentinel_age=na gpu_util=0 gpu_rc=0"
+    assert calls["argv"] == asw._pod_idleness_probe_argv("pod-x")
+    assert calls["timeout"] == asw._POD_IDLE_PROBE_TIMEOUT_S
+
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        create_autospec(
+            real_run,
+            return_value=subprocess.CompletedProcess(["ssh"], 255, stdout="", stderr="denied"),
+        ),
+    )
+    assert asw._probe_pod_idleness("pod-x") is None
+
+    def _boom(*a, **kw):
+        raise subprocess.TimeoutExpired(cmd="ssh", timeout=1)
+
+    monkeypatch.setattr(asw.subprocess, "run", create_autospec(real_run, side_effect=_boom))
+    assert asw._probe_pod_idleness("pod-x") is None
+
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        create_autospec(
+            real_run,
+            return_value=subprocess.CompletedProcess(["ssh"], 0, stdout="   \n\n", stderr=""),
+        ),
+    )
+    assert asw._probe_pod_idleness("pod-x") is None
+
+
 def test_pod_idle_env_overrides_and_malformed_fallback(monkeypatch):
     """The two HOURS floors, the probe-fail row count, and the leg flag are
     honored; malformed / non-positive values fall back to the defaults."""
