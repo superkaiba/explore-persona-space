@@ -533,11 +533,16 @@ def phase_capture_split(
     seed = SPLIT_PREFIX_SEEDS[split]
     cache_dir = scratch / ".cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    # See phase_gen_split: force_rebuild reproduces the first-run state so a
-    # stale overlay is rewritten rather than skipped-then-refused.
-    done_raw = (
-        set() if (no_upload or force_rebuild) else GC._remote_index(prefix, "raw_completions")
-    )
+    # force_rebuild applies to done_pt ONLY — the two sets have different roles
+    # in this phase and are NOT symmetric:
+    #   done_pt  is the SKIP set (a .pt already on the Hub is not recaptured), so
+    #            a stale overlay requires emptying it.
+    #   done_raw is the LOOKUP index telling _load_persisted_gen_chunk that the
+    #            gen wave's raw text lives on the Hub. The gen phase PURGES its
+    #            local copy right after verifying the upload, so emptying this
+    #            sends the loader to a local path that no longer exists and it
+    #            dies with "gen-wave raw completions missing".
+    done_raw = set() if no_upload else GC._remote_index(prefix, "raw_completions")
     done_pt = (
         set() if (no_upload or force_rebuild) else GC._remote_index(prefix, "final_token_capture")
     )
