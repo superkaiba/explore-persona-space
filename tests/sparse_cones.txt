@@ -88,3 +88,6 @@ eval_results/issue_779
 eval_results/issue_1415
 eval_results/issue_1776
 eval_results/issue_1481
+
+#   eval_results/issue_2094 — test_issue2094_fu1.py reads fragility/fragility_cells.json + f_metrics/bootstrap_cis_wellsep.json (fu1 derivation pins)
+eval_results/issue_2094
