@@ -11,11 +11,12 @@ the chat / bare template; narrative prose dropped). The model continues; the
 generated tokens BEFORE the form's stop string ARE the answer span (100% keep
 by construction; no post-hoc verbatim matcher).
 
-Writes per-row rollouts under `data/issue_2054/on_policy/{variant}/` with the
-final spliced text + exact answer offsets recorded via `sc.splice_answer`, and
-mirrors to HF `issue2054_lattice/on_policy/{variant}/` (best-effort,
-non-fatal). Answer-length per row is recorded for downstream DV 7 length
-parity.
+Writes per-row rollouts under `data/issue_2054/on_policy/{model}/{variant}/`
+with the final spliced text + exact answer offsets recorded via
+`sc.splice_answer`, and mirrors to HF
+`issue2054_lattice/on_policy/{model}/{variant}/` (FATAL on failure — M2; the
+prefix is model-scoped because the filename carries no model axis).
+Answer-length per row is recorded for downstream DV 7 length parity.
 
 Emits `[phase=phase_c]` log lines terminating in `[phase=done]` on graceful
 completion. `--dry-run` verifies wiring without vLLM (no GPU): it reads the
@@ -416,11 +417,18 @@ def _cap_hit_stats(n_cap_hit: int, n_out: int) -> dict:
     }
 
 
-def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path) -> None:
+def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path, model: str) -> None:
     """Mirror on-policy JSONLs — ONE bulk upload_folder commit. FATAL on
     failure (M2): generations MUST land on HF before the pod-side phase can
     print `[phase=done]` (#521/#664 class — a swallowed upload failure +
-    exit 0 loses the rollouts at pod teardown)."""
+    exit 0 loses the rollouts at pod teardown).
+
+    The HF prefix is MODEL-SCOPED (`on_policy/{model}/...`): the filename
+    carries variant+form but NOT the model axis, and `rel` is computed
+    against the per-model out_dir, so a model-less prefix makes the two
+    models' uploads COLLIDE last-writer-wins (2026-08-06 incident: the base
+    model's bulk commits silently overwrote every instruct file; recovered
+    by a pod-side re-upload before teardown)."""
     from explore_persona_space.orchestrate.hub import _upload_folder_filtered
 
     allow_patterns: list[str] = []
@@ -433,7 +441,7 @@ def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path) -> None:
         except ValueError:
             continue
         allow_patterns.append(rel)
-        expected_paths.append(f"{TASK_PREFIX}/on_policy/{rel}")
+        expected_paths.append(f"{TASK_PREFIX}/on_policy/{model}/{rel}")
     if not allow_patterns:
         if paths_by_variant:
             # Declared outputs but nothing upload-eligible: an empty-set
@@ -446,7 +454,7 @@ def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path) -> None:
         out_dir,
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
-        path_in_repo=f"{TASK_PREFIX}/on_policy",
+        path_in_repo=f"{TASK_PREFIX}/on_policy/{model}",
         allow_patterns=allow_patterns,
         expected_repo_paths=expected_paths,
     )
@@ -456,7 +464,7 @@ def _upload_to_hf(paths_by_variant: dict[str, Path], out_dir: Path) -> None:
         # — an empty return is a failed upload, not a success (M2). These
         # are on-policy model generations: never discardable.
         raise RuntimeError(
-            f"on-policy bulk upload failed or incomplete -> {TASK_PREFIX}/on_policy/ "
+            f"on-policy bulk upload failed or incomplete -> {TASK_PREFIX}/on_policy/{model}/ "
             "(returned no path; local files kept)"
         )
     _log(f"uploaded {len(allow_patterns)} on-policy file(s) in one bulk commit")
@@ -532,7 +540,7 @@ def run_phase(args: argparse.Namespace) -> int:
     if not is_smoke and not args.skip_upload and not args.dry_run:
         # FATAL on failure (M2): the sentinel/`[phase=done]` must never report
         # done with the generations un-persisted (#521 class). No try/except.
-        _upload_to_hf(out_paths, out_dir)
+        _upload_to_hf(out_paths, out_dir, args.model)
 
     # M4: aggregate cap-hit report (per-variant fractions live in `counts`).
     total_cap_hit = sum(int(c.get("n_cap_hit") or 0) for c in counts.values())

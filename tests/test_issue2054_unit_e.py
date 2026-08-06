@@ -343,7 +343,7 @@ def test_phase_c_upload_empty_set_is_fatal(tmp_path):
     (#1482 empty-set-vacuous class), never a silent pass."""
     missing = tmp_path / "nope" / "x.jsonl"  # never created
     with pytest.raises(RuntimeError, match="EMPTY"):
-        phase_c._upload_to_hf({"char_helios": missing}, tmp_path)
+        phase_c._upload_to_hf({"char_helios": missing}, tmp_path, "qwen2.5-7b")
 
 
 def test_ladder_upload_failure_propagates(tmp_path):

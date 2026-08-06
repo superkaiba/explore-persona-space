@@ -88,13 +88,13 @@ def test_phase_c_upload_raises_on_empty_return(tmp_path, monkeypatch):
     _patch_folder_upload(monkeypatch, "")
     paths = {"char_helios": _variant_file(tmp_path, "onpolicy_char_helios.jsonl")}
     with pytest.raises(RuntimeError, match="on-policy bulk upload failed or incomplete"):
-        pc._upload_to_hf(paths, tmp_path)
+        pc._upload_to_hf(paths, tmp_path, "qwen2.5-7b")
 
 
 def test_phase_c_upload_passes_on_url_return(tmp_path, monkeypatch):
     fake = _patch_folder_upload(monkeypatch, _URL)
     paths = {"char_helios": _variant_file(tmp_path, "onpolicy_char_helios.jsonl")}
-    pc._upload_to_hf(paths, tmp_path)  # no raise
+    pc._upload_to_hf(paths, tmp_path, "qwen2.5-7b")  # no raise
     assert fake.call_count == 1
 
 
