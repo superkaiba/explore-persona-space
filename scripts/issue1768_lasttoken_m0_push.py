@@ -81,13 +81,28 @@ def _drop_unit_store(out_root: Path, unit: str) -> None:
 
 
 def _stage_corpus_sample(out_root: Path) -> None:
+    """The p0 corpus sample, from the local run tree or HF (the durable copy).
+
+    The file is a round-1 RUN artifact, never committed to git (8.6 MB), so a
+    fresh pod checkout does not carry it and HF is the only durable source.
+    """
+    from explore_persona_space.orchestrate import hub
+
     dest = out_root / "inputs" / "corpus_sample.json"
     if dest.exists():
         return
-    src = REPO_ROOT / "eval_results" / "issue_1768" / "inputs" / "corpus_sample.json"
-    assert src.exists(), f"missing committed corpus sample: {src}"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(src, dest)
+    local = REPO_ROOT / "eval_results" / "issue_1768" / "inputs" / "corpus_sample.json"
+    if local.exists():
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(local, dest)
+        return
+    hub.stage_hub_file(
+        X.HF_DATA_REPO,
+        f"{X.HF_PREFIX}/inputs/corpus_sample.json",
+        dest,
+        repo_type="dataset",
+        overwrite=True,
+    )
 
 
 def _committed_cells_dir() -> Path:
