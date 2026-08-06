@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2150,
+  "highest_id": 2151,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8898,6 +8898,13 @@
       "path": "tasks/running/2150",
       "status": "running",
       "title": "wf-compact fallout: codex-code-reviewer.md lost the Step 4.6 gate-scope copy-list bullet \u2014 3 pin tests red on main"
+    },
+    "2151": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2151",
+      "status": "proposed",
+      "title": "Give API-level stop_reason=refusal its own judge drop class (rules 9/24/18 + judge_dispatch.py:670-681)"
     },
     "216": {
       "has_clean_result": true,
