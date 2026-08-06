@@ -24,6 +24,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2091.md](https://github.com/superkaiba/explore-persona-space/blob/00e0c0cfb9fe22ba7f3938df874cfab6c43ccef0/docs/methodology/issue_2091.md) · [gist](https://gist.github.com/superkaiba/ddccad9ed9d337cbb51cf08e776c473f)
+
 ## Takeaways
 
 - Five-draw-averaged answer targets lift held-out variance explained by 0.059 to 0.101 over one greedy answer, but 0.050 to 0.095 of that comes from averaging the target, not the map.
