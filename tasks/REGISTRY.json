@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2132,
+  "highest_id": 2133,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8765,6 +8765,13 @@
       "path": "tasks/proposed/2132",
       "status": "proposed",
       "title": "daily-held: perform the #681 worktree bind cutover"
+    },
+    "2133": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2133",
+      "status": "proposed",
+      "title": "daily-fix: measured n_train + regime-change pilot basis"
     },
     "215": {
       "has_clean_result": true,
