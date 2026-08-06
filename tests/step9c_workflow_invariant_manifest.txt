@@ -60,6 +60,7 @@ tests/test_issue_skill_step2_floor.py
 tests/test_issue_skill_stopped_volume_persist_pin.py
 tests/test_issue_skill_terminal_landing_pin.py
 tests/test_issue_skill_tick_parse_preservation.py
+tests/test_issue_skill_triage_boundary_token.py
 tests/test_issue_skill_trigger_dense_tag_adoption.py
 tests/test_issue_skill_width_reeval_pointer.py
 tests/test_issue_tick_skill.py

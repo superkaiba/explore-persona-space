@@ -580,3 +580,202 @@ def test_advisory_by_values_are_never_machine_stripped():
         assert by not in TRIAGE_MACHINE_BY, by
     out = triage_candidates_since_last_dispatch([_ev("2026-07-03T00:00:00Z", by="pm-chat")])
     assert len(out) == 1
+
+
+# ─── #2105 enumeration-boundary token (enumerate-to-post seam reopen) ────────
+#
+# A triage-record line may carry a trailing ``(boundary=<ts>)`` token — the
+# ts of the LAST event its enumerator actually read. The window then reopens
+# from that recorded enumeration point instead of the record's own post
+# position, so a marker landing in the enumerate-to-post seam is enumerated
+# at the NEXT call (incident #2054: user-directive marker v91 landed 53 s
+# before the r11 breadcrumb post and was invisible to rounds r11-r14). The
+# ONE-STEP CHAIN covers the pod/backend-launch form (token-bearing
+# ``epm:progress`` triage note posted immediately BEFORE the token-less
+# launch marker — SKILL.md :4394/:4731 note-then-launch ordering).
+
+from explore_persona_space.task_workflow import (  # noqa: E402
+    parse_triage_boundary_ts,
+    triage_enumeration_boundary,
+)
+
+B0 = "2026-08-05T10:00:00Z"  # the enumeration boundary (last event read at T0)
+
+
+def test_boundary_token_reopens_enumerate_to_post_seam():
+    """#2054 v91 replay: a directive landing between enumeration (T0) and the
+    breadcrumb post IS returned by the next call when the record carries the
+    ``(boundary=<T0>)`` token."""
+    events = [
+        _ev(B0, note="advisory: enumerated at T0"),
+        _ev("2026-08-05T10:00:53Z", by="user", note="user directive: raise n to 5000"),
+        _ev("2026-08-05T10:01:30Z", note=f"{TRIAGE_LINE_PREFIX} none (boundary={B0})"),
+    ]
+    out = triage_candidates_since_last_dispatch(events)
+    assert [e["note"] for e in out] == ["user directive: raise n to 5000"]
+
+
+def test_legacy_triage_line_without_token_keeps_post_boundary():
+    # Explicit pin of today's behavior: no token -> post-position boundary.
+    events = [
+        _ev(B0, note="advisory: enumerated at T0"),
+        _ev("2026-08-05T10:00:53Z", by="user", note="user directive in the seam"),
+        _ev("2026-08-05T10:01:30Z", note=f"{TRIAGE_LINE_PREFIX} none"),
+        _ev("2026-08-05T10:02:00Z", note="advisory after"),
+    ]
+    out = triage_candidates_since_last_dispatch(events)
+    assert [e["note"] for e in out] == ["advisory after"]
+
+
+def test_malformed_boundary_ts_falls_back_to_post_boundary():
+    events = [
+        _ev("2026-08-05T10:00:53Z", by="user", note="user directive in the seam"),
+        _ev("2026-08-05T10:01:30Z", note=f"{TRIAGE_LINE_PREFIX} none (boundary=garbage)"),
+        _ev("2026-08-05T10:02:00Z", note="advisory after"),
+    ]
+    out = triage_candidates_since_last_dispatch(events)
+    assert [e["note"] for e in out] == ["advisory after"]
+
+
+def test_future_boundary_ts_never_shrinks_window():
+    # A bogus-future recorded ts degrades to (at worst) today's window: the
+    # reopen scan starts at the record's index - 1, so the reopened window is
+    # structurally a superset of today's events[idx + 1:].
+    events = [
+        _ev("2026-08-05T10:00:53Z", by="user", note="user directive in the seam"),
+        _ev(
+            "2026-08-05T10:01:30Z",
+            note=f"{TRIAGE_LINE_PREFIX} none (boundary=2099-01-01T00:00:00Z)",
+        ),
+        _ev("2026-08-05T10:02:00Z", note="advisory after"),
+    ]
+    out = triage_candidates_since_last_dispatch(events)
+    assert [e["note"] for e in out] == ["advisory after"]
+
+
+def test_token_note_followed_by_launch_marker_reopens_seam():
+    """The LAUNCH-FORM regression (critic round-1 Must-Fix, mechanized): the
+    token-bearing triage ``epm:progress`` note is posted immediately BEFORE
+    dispatch, the token-less ``epm:run-launched`` lands AFTER — the one-step
+    chain honors the note's token. FAILS without the chain (the launch
+    marker would close the window at its own position)."""
+    events = [
+        _ev(B0, note="advisory: enumerated at T0"),
+        _ev("2026-08-05T10:00:53Z", by="user", note="user directive in the seam"),
+        _ev("2026-08-05T10:01:30Z", note=f"{TRIAGE_LINE_PREFIX} none (boundary={B0})"),
+        _ev("2026-08-05T10:01:40Z", kind="epm:run-launched", note='{"pod": "pod-2105"}'),
+    ]
+    out = triage_candidates_since_last_dispatch(events)
+    assert [e["note"] for e in out] == ["user directive in the seam"]
+
+
+def test_launch_marker_with_own_token_line_honored():
+    # A launch-kind marker whose OWN note carries the line + token reopens
+    # directly (no chain needed).
+    events = [
+        _ev(B0, note="advisory: enumerated at T0"),
+        _ev("2026-08-05T10:00:53Z", by="user", note="user directive in the seam"),
+        _ev(
+            "2026-08-05T10:01:40Z",
+            kind="epm:run-launched",
+            note=f"launched pod-2105 -- {TRIAGE_LINE_PREFIX} none (boundary={B0})",
+        ),
+    ]
+    out = triage_candidates_since_last_dispatch(events)
+    assert [e["note"] for e in out] == ["user directive in the seam"]
+
+
+def test_chain_stops_at_prior_launch_marker():
+    # The chain is EXACTLY ONE step and stops at another launch marker ->
+    # today's launch-position boundary (fail-toward-today).
+    events = [
+        _ev("2026-08-05T10:00:53Z", by="user", note="never-triaged directive"),
+        _ev("2026-08-05T10:01:00Z", kind="epm:run-launched", note="launch A"),
+        _ev("2026-08-05T10:01:40Z", kind="epm:run-launched", note="launch B, no triage line"),
+        _ev("2026-08-05T10:02:00Z", note="advisory after"),
+    ]
+    out = triage_candidates_since_last_dispatch(events)
+    assert [e["note"] for e in out] == ["advisory after"]
+
+
+def test_chain_stops_at_legacy_tokenless_note():
+    # A token-less (legacy) triage note stops the chain without a token ->
+    # today's launch-position boundary.
+    events = [
+        _ev("2026-08-05T10:00:53Z", by="user", note="user directive in the seam"),
+        _ev("2026-08-05T10:01:30Z", note=f"{TRIAGE_LINE_PREFIX} none"),
+        _ev("2026-08-05T10:01:40Z", kind="epm:run-launched", note="launched"),
+        _ev("2026-08-05T10:02:00Z", note="advisory after"),
+    ]
+    out = triage_candidates_since_last_dispatch(events)
+    assert [e["note"] for e in out] == ["advisory after"]
+
+
+def test_events_at_or_before_recorded_boundary_not_reenumerated():
+    # Events at ts <= recorded were read by the prior enumerator run and stay
+    # OUT of the reopened window (the `<=` tie semantics).
+    events = [
+        _ev("2026-08-05T09:59:00Z", note="already triaged: before T0"),
+        _ev(B0, note="already triaged: exactly at T0"),
+        _ev("2026-08-05T10:00:53Z", by="user", note="seam directive"),
+        _ev(
+            "2026-08-05T10:01:30Z",
+            note=f"{TRIAGE_LINE_PREFIX} 1 applied (folded) (boundary={B0})",
+        ),
+    ]
+    out = triage_candidates_since_last_dispatch(events)
+    assert [e["note"] for e in out] == ["seam directive"]
+
+
+def test_unparseable_ts_events_in_seam_stay_candidates():
+    # An event with a malformed ts between the recorded boundary and the
+    # record remains enumerated (fail-toward-triage).
+    events = [
+        _ev(B0, note="already triaged: at T0"),
+        _ev("not-a-timestamp", by="user", note="malformed-ts directive"),
+        _ev("2026-08-05T10:01:30Z", note=f"{TRIAGE_LINE_PREFIX} none (boundary={B0})"),
+    ]
+    out = triage_candidates_since_last_dispatch(events)
+    assert [e["note"] for e in out] == ["malformed-ts directive"]
+
+
+def test_triage_enumeration_boundary_helper():
+    assert triage_enumeration_boundary([]) == ""
+    events = [_ev("2026-08-05T09:00:00Z"), _ev(B0)]
+    assert triage_enumeration_boundary(events) == B0
+    # A last event with no / empty ts yields "" (composers omit the token).
+    assert triage_enumeration_boundary([{"kind": "epm:progress"}]) == ""
+    assert triage_enumeration_boundary([{"ts": "", "kind": "epm:progress"}]) == ""
+
+
+def test_parse_triage_boundary_ts_requires_triage_line():
+    # A (boundary=...) token with no triage-line prefix is NOT a triage
+    # record -> None.
+    assert parse_triage_boundary_ts(f"random note (boundary={B0})") is None
+
+
+def test_parse_triage_boundary_ts_fail_soft():
+    assert parse_triage_boundary_ts(f"{TRIAGE_LINE_PREFIX} none") is None
+    assert parse_triage_boundary_ts(f"{TRIAGE_LINE_PREFIX} none (boundary=garbage)") is None
+    parsed = parse_triage_boundary_ts(f"{TRIAGE_LINE_PREFIX} none (boundary={B0})")
+    assert parsed is not None
+    assert parsed.isoformat() == "2026-08-05T10:00:00+00:00"
+
+
+def test_parse_triage_boundary_ts_anchored_after_line():
+    # A note whose BODY quotes a prior triage line with a token BEFORE its
+    # own triage line binds its OWN token (rfind anchors at the LAST prefix
+    # occurrence; the record's own line is appended last per the format
+    # spec) — never the quoted one. The #2054 v98/v108 forensics notes quote
+    # triage lines exactly this way.
+    quoted = (
+        "forensics: the r11 record said "
+        f"'{TRIAGE_LINE_PREFIX} none (boundary=2026-08-01T00:00:00Z)'"
+    )
+    own_with_token = f"{quoted}\n{TRIAGE_LINE_PREFIX} 1 applied (folded) (boundary={B0})"
+    parsed = parse_triage_boundary_ts(own_with_token)
+    assert parsed is not None
+    assert parsed.isoformat() == "2026-08-05T10:00:00+00:00"
+    # Own line WITHOUT a token -> None, even though the quoted line has one.
+    own_without_token = f"{quoted}\n{TRIAGE_LINE_PREFIX} none"
+    assert parse_triage_boundary_ts(own_without_token) is None
