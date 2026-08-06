@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2141,
+  "highest_id": 2142,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8828,6 +8828,13 @@
       "path": "tasks/proposed/2141",
       "status": "proposed",
       "title": "daily-fix: subfloor reclaim never fired + local-date logs"
+    },
+    "2142": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2142",
+      "status": "proposed",
+      "title": "daily-fix: dispatch lease races (4 dup spawns + cap 6>5)"
     },
     "215": {
       "has_clean_result": true,
