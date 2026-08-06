@@ -497,11 +497,202 @@ def make_tier_grid(
     return plotted
 
 
+# Post-training ladder order. `base` never appears as a TARGET in the realized
+# pair set — no pair transfers backwards down the ladder — so its column is
+# deliberately kept and left empty rather than dropped, so the gap is visible.
+STAGE_ORDER = [
+    ("base", "base"),
+    ("sft", "SFT"),
+    ("dpo", "DPO"),
+    ("rlvr", "RLVR"),
+    ("rlvr_long", "longer RLVR"),
+]
+STAGE_IDX = {s: i for i, (s, _) in enumerate(STAGE_ORDER)}
+
+
+def split_pair(pair):
+    """Split a `<source>__<target>` pair id into its two ladder stages.
+
+    Raises ValueError when either side is not a known ladder stage, so a new
+    pair id can never be silently dropped from a source→target figure.
+    """
+    src, _, tgt = pair.partition("__")
+    if src not in STAGE_IDX or tgt not in STAGE_IDX:
+        raise ValueError(f"pair {pair!r} does not split into two known ladder stages")
+    return src, tgt
+
+
+def make_source_target_lines(
+    tier="t0",
+    scale="raw",
+    outname="metric_ladder_source_target",
+):
+    """One panel per corpus: x = TARGET stage, one line per SOURCE stage.
+
+    Re-cut of the same held-out R² the tier grid plots, on the axis assignment
+    that reads transfer as a function of how far along the ladder the target
+    sits. Colour encodes the SOURCE stage on an ordered (sequential) ramp —
+    deliberately distinct from the tier grid's categorical corpus palette, so a
+    colour never means two different factors across the pair of figures.
+    """
+    sources = [s for s, _ in STAGE_ORDER if any(split_pair(p)[0] == s for p, _ in PAIR_ORDER)]
+    cmap = matplotlib.colormaps["viridis"]
+    # sampled below the yellow end — the light tail is unreadable on white
+    src_color = {s: cmap(v) for s, v in zip(sources, np.linspace(0.10, 0.70, len(sources)))}
+
+    ncol = 4
+    nrow = (len(CORPUS_ORDER) + ncol - 1) // ncol
+    fig, axes = plt.subplots(
+        nrow, ncol, figsize=(15.0, 7.6), sharey=True, sharex=True, layout="none"
+    )
+    axes = np.atleast_1d(axes).ravel()
+
+    plotted = []
+    for k, (fmt, cp, clabel) in enumerate(CORPUS_ORDER):
+        ax = axes[k]
+        for src in sources:
+            xs, ys, cs = [], [], []
+            for p, plabel in PAIR_ORDER:
+                s, t = split_pair(p)
+                if s != src:
+                    continue
+                r = get_row(p, fmt, cp, scale)
+                if r is None:
+                    raise RuntimeError(
+                        f"cell missing from {AGG_PATH}: pair={p} fmt={fmt} "
+                        f"corpus={cp} scale={scale}"
+                    )
+                xs.append(STAGE_IDX[t])
+                ys.append(r[f"{tier}_r2"])
+                cs.append(r["within_r2"])
+                plotted.append(
+                    {
+                        "tier": tier,
+                        "scale": scale,
+                        "pair": p,
+                        "pair_label": plabel,
+                        "source": s,
+                        "target": t,
+                        "format": fmt,
+                        "corpus": cp,
+                        "corpus_label": clabel,
+                        "r2": r[f"{tier}_r2"],
+                        "within_r2": r["within_r2"],
+                        "n": r.get("n"),
+                    }
+                )
+            if not xs:
+                continue
+            order = np.argsort(xs)
+            xs = [xs[i] for i in order]
+            ys = [ys[i] for i in order]
+            cs = [cs[i] for i in order]
+            # target's own within-stage ceiling (grey dash). markeredgewidth is
+            # explicit: "_" renders as a marker EDGE, invisible under the paper
+            # style's lines.markeredgewidth=0 default.
+            ax.plot(
+                xs,
+                cs,
+                linestyle="none",
+                marker="_",
+                markersize=9,
+                markeredgewidth=1.6,
+                markeredgecolor="#9a9a9a",
+                color="#9a9a9a",
+                zorder=1,
+            )
+            ax.plot(
+                xs,
+                ys,
+                linestyle="-",
+                linewidth=1.4,
+                marker="o",
+                markersize=5.0,
+                color=src_color[src],
+                markeredgewidth=0.6,
+                label=dict(STAGE_ORDER)[src],
+                zorder=3,
+            )
+
+        ax.axhline(0, color="#888", linewidth=0.7, linestyle="--", zorder=0)
+        ax.set_yscale("symlog", linthresh=1.0, linscale=1.0)
+        ax.set_xticks(range(len(STAGE_ORDER)))
+        ax.set_xticklabels([lbl for _, lbl in STAGE_ORDER], rotation=30, ha="right")
+        ax.set_xlim(-0.5, len(STAGE_ORDER) - 0.5)
+        title = clabel + (" (n<d companion)" if cp == "gsm8k_test1319" and fmt == "chat" else "")
+        set_title_subtitle(ax, title)
+
+    for ax in axes[len(CORPUS_ORDER) :]:
+        ax.set_visible(False)
+
+    ylo, yhi = axes[0].get_ylim()
+    yticks = [v for v in (0.6, 0.4, 0.2, 0.0, -0.25, -0.5, -1, -2, -4) if ylo <= v <= yhi]
+    for ax in axes[: len(CORPUS_ORDER)]:
+        ax.set_yticks(yticks)
+        ax.set_yticklabels([f"{v:g}" for v in yticks])
+        ax.minorticks_off()
+        ax.set_ylim(ylo, yhi)
+    scale_note = "raw pooled" if scale == "raw" else "per-dim recalibrated"
+    for r in range(nrow):
+        axes[r * ncol].set_ylabel(f"held-out R² ({scale_note})")
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    seen, uh, ul = set(), [], []
+    for h, lb in zip(handles, labels):
+        if lb not in seen:
+            seen.add(lb)
+            uh.append(h)
+            ul.append(lb)
+    ceiling_handle = plt.Line2D(
+        [],
+        [],
+        linestyle="none",
+        marker="_",
+        markersize=9,
+        markeredgewidth=1.6,
+        markeredgecolor="#9a9a9a",
+        color="#9a9a9a",
+    )
+    fig.legend(
+        uh + [ceiling_handle],
+        [f"source: {lb}" for lb in ul] + ["target's within-stage R² (ceiling)"],
+        loc="center",
+        ncol=5,
+        fontsize=9,
+        frameon=False,
+        bbox_to_anchor=(0.5, 0.085),
+    )
+    data_min = min(rec["r2"] for rec in plotted)
+    y_note = (
+        f"y is symlog below -1 (worst transfer {data_min:.2f})"
+        if data_min < -1
+        else "y is linear over the plotted range"
+    )
+    fig.text(
+        0.5,
+        0.020,
+        f"{TIER_LABELS[tier]}. Layer 30, Llama-3.1-8B Tulu ladder; {y_note}. The base column "
+        "is EMPTY because no pair transfers INTO base — backwards transfer down the ladder was "
+        "never run, so it is unmeasured, not zero.\nOnly 7 of the 20 ordered stage pairs exist "
+        "(base→all four, SFT→DPO, DPO→RLVR, DPO→longer RLVR), so SFT contributes one point and "
+        "RLVR none. All arms are on-policy — each stage answers in its own words — so every "
+        "point mixes representation change with answer-distribution change.",
+        ha="center",
+        va="bottom",
+        fontsize=8,
+        color="#555555",
+    )
+    fig.subplots_adjust(left=0.065, right=0.99, top=0.93, bottom=0.235, wspace=0.07, hspace=0.42)
+    savefig_paper(fig, outname, dir=str(FIG_DIR), embed_data=True)
+    plt.close(fig)
+    return plotted
+
+
 def _main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "--only",
-        choices=["all", "hero", "delta", "tier-profile", "tier-grid"],
+        choices=["all", "hero", "delta", "tier-profile", "tier-grid", "source-target"],
         default="all",
         help="Render one figure family instead of the whole round-3 set.",
     )
@@ -539,6 +730,27 @@ def _main(argv=None):
         }
         (out / "tier_grid_points.json").write_text(json.dumps(payload, indent=2) + "\n")
         print(f"wrote {out / 'tier_grid_points.json'} ({len(payload['points'])} points)")
+    if sel in ("all", "source-target"):
+        print("Generating source→target lines, one panel per corpus (t0, raw)...")
+        st_t0 = make_source_target_lines(
+            tier="t0", scale="raw", outname="metric_ladder_source_target_t0"
+        )
+        print("Generating source→target lines, one panel per corpus (t6, raw)...")
+        st_t6 = make_source_target_lines(
+            tier="t6", scale="raw", outname="metric_ladder_source_target_t6"
+        )
+        out = _REPO_ROOT / "eval_results" / "issue_1336" / "metric_ladder_source_target"
+        out.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "source_aggregate": str(AGG_PATH),
+            "layer": 30,
+            "tiers": {"t0": TIER_LABELS["t0"], "t6": TIER_LABELS["t6"]},
+            "ladder_order": [s for s, _ in STAGE_ORDER],
+            "backwards_pairs_present": False,
+            "points": st_t0 + st_t6,
+        }
+        (out / "source_target_points.json").write_text(json.dumps(payload, indent=2) + "\n")
+        print(f"wrote {out / 'source_target_points.json'} ({len(payload['points'])} points)")
     print("done.")
 
 

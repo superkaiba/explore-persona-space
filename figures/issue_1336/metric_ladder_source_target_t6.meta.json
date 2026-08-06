@@ -1,0 +1,675 @@
+{
+  "commit": "a4b2577b8f",
+  "created": "2026-08-06T16:34:53Z",
+  "figsize": [
+    15.0,
+    7.6
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (raw pooled)": 0.36674285771555526,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (raw pooled)": 0.37283911258757707,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (raw pooled)": 0.3664291102026641,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2 (raw pooled)": 0.3867412070191215,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (raw pooled)": 0.06882943563134336,
+      "series": "base",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (raw pooled)": 0.0527061487531455,
+      "series": "base",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (raw pooled)": 0.05510096246892826,
+      "series": "base",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2 (raw pooled)": 0.04813797794961583,
+      "series": "base",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (raw pooled)": 0.2673944830530087,
+      "series": "SFT",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (raw pooled)": 0.3661863209803998,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2 (raw pooled)": 0.3509589410643634,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": 0.48751519892239736,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.48509141656834565,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.4773106702704819,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.5033216410446997,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.1010040161736172,
+      "series": "base",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.049051434490750334,
+      "series": "base",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.029157647397659914,
+      "series": "base",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.07101281673586424,
+      "series": "base",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.3597765406197527,
+      "series": "SFT",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": 0.4733015498634662,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.4591512840149595,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.4885350267509556,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.5609068166051785,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 0.5476107572536445,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 0.5622132095100953,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.021052388367134856,
+      "series": "base",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": -0.1222240329747395,
+      "series": "base",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "y": -0.184951830866388,
+      "series": "base",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "y": -0.12855907502257757,
+      "series": "base",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": 0.2245446198461457,
+      "series": "SFT",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": 0.5255357776683545,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": 0.5296365762058811,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.5719443203880382,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "y": 0.6046372717816131,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "y": 0.5513692355604354,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "y": 0.5824176876508448,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 0.11734520399660331,
+      "series": "base",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": 0.04152243324170313,
+      "series": "base",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": 0.01747128612419102,
+      "series": "base",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "y": 0.023120495448011202,
+      "series": "base",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": 0.5034110074496612,
+      "series": "SFT",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 0.5091334605875796,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 0.3416012938526457,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (raw pooled)": 0.5467537849163495,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (raw pooled)": 0.5652653274153661,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (raw pooled)": 0.56367381553628,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2 (raw pooled)": 0.5767494243101213,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (raw pooled)": 0.20826840052324314,
+      "series": "base",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (raw pooled)": 0.14570421078867535,
+      "series": "base",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (raw pooled)": 0.13771645870479687,
+      "series": "base",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2 (raw pooled)": 0.15445219281317935,
+      "series": "base",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (raw pooled)": 0.4847917904128509,
+      "series": "SFT",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (raw pooled)": 0.557555874589158,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2 (raw pooled)": 0.5074335220434089,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": 0.5877445796935119,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": 0.5885639062500374,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "y": 0.5971944837148677,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "y": 0.5906744901985771,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "y": 0.22867757296921132,
+      "series": "base",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "y": 0.17377284936785742,
+      "series": "base",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "y": 0.1722385064448193,
+      "series": "base",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "y": 0.19732313892789122,
+      "series": "base",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "y": 0.5177357841290442,
+      "series": "SFT",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "y": 0.590535750277041,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.0,
+      "y": 0.5760749176607721,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "y": 0.5768163166372693,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "y": 0.6055901074012833,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "y": 0.6104564893051007,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "y": 0.6044010961573183,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "y": 0.24408913912659003,
+      "series": "base",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "y": 0.17219936147171178,
+      "series": "base",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "y": 0.16922717336784754,
+      "series": "base",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "y": 0.2067555362841783,
+      "series": "base",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "y": 0.5182287824102375,
+      "series": "SFT",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.0,
+      "y": 0.6042676846557707,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.0,
+      "y": 0.5832107929209709,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "y": 0.5434958865307488,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "y": 0.5792232500063627,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.0,
+      "y": 0.5852972293550394,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.0,
+      "y": 0.5850756492923336,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "y": 0.247124529844157,
+      "series": "base",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.0,
+      "y": 0.1895114588931791,
+      "series": "base",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "y": 0.1870460465797973,
+      "series": "base",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.0,
+      "y": 0.22426445112692006,
+      "series": "base",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.0,
+      "y": 0.5017956069629945,
+      "series": "SFT",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.0,
+      "y": 0.5794302867751534,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.0,
+      "y": 0.5637281973593284,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 31
+    }
+  ],
+  "n_series": 32,
+  "total_points": 88,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Tier 6 \u2014 linear reparameterization of contexts. Layer 30, Llama-3.1-8B Tulu ladder; y is linear over the plotted range. The base column is EMPTY because no pair transfers INTO base \u2014 backwards transfer down the ladder was never run, so it is unmeasured, not zero.\nOnly 7 of the 20 ordered stage pairs exist (base\u2192all four, SFT\u2192DPO, DPO\u2192RLVR, DPO\u2192longer RLVR), so SFT contributes one point and RLVR none. All arms are on-policy \u2014 each stage answers in its own words \u2014 so every point mixes representation change with answer-distribution change."
+    ],
+    "axes": [
+      {
+        "title_left": "GSM8K test (n<d companion)",
+        "ylabel": "held-out R\u00b2 (raw pooled)",
+        "yticklabels": [
+          "0.6",
+          "0.4",
+          "0.2",
+          "0"
+        ]
+      },
+      {
+        "title_left": "GSM8K train"
+      },
+      {
+        "title_left": "MATH"
+      },
+      {
+        "title_left": "IF-constraints"
+      },
+      {
+        "title_left": "UltraFeedback",
+        "ylabel": "held-out R\u00b2 (raw pooled)",
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR",
+          "longer RLVR"
+        ],
+        "yticklabels": [
+          "0.6",
+          "0.4",
+          "0.2",
+          "0"
+        ]
+      },
+      {
+        "title_left": "Tulu-SFT mix",
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR",
+          "longer RLVR"
+        ]
+      },
+      {
+        "title_left": "LMSYS chat",
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR",
+          "longer RLVR"
+        ]
+      },
+      {
+        "title_left": "LMSYS natural.",
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR",
+          "longer RLVR"
+        ]
+      }
+    ],
+    "series": [
+      "base",
+      "SFT",
+      "DPO"
+    ]
+  }
+}
