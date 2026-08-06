@@ -1,5 +1,5 @@
 ---
-description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads + brief composition for such targets (first-pass #1503, revision-round #1413; findings by reference); orchestrator poll/forensics turns ingest run-failure text as structural digests (#1546); orchestrator ordinary turns on guard-surface rounds keep authored text + own reads digest-only (#1563); real-corpus datagen briefs start from the #1739 content-risk decomposition (#1748); judge-run monitoring reads are digest-grain (#1871). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
+description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads; brief composition (first-pass #1503, revision-round #1413); orchestrator poll/forensics digests (#1546); ordinary guard-surface turns digest-only (#1563); real-corpus datagen decomposition (#1748); judge-run monitoring digest-grain (#1871). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (#1058, #1152).
 paths:
   - ".claude/hooks/*.sh"
   - "scripts/guard_*.sh"
@@ -43,11 +43,10 @@ Recognition heuristic (any one suffices):
   never touches the input pool (§ Judge-run monitoring reads, #1871);
 - steering / causal-intervention APPLICATION surfaces — steering scripts,
   intervention configs + hyperparameter blocks — and any surface whose text
-  carries intervention-control phrasing (#1415 brief precedent; #1769,
-  2026-07-28: an owner session was refusal-killed grepping steering-script
-  hyperparameters on an ordinary turn); plain direction-extraction /
-  analysis code with mechanistic vocabulary does NOT match on category
-  alone;
+  carries intervention-control phrasing (#1415; #1769: an owner session was
+  refusal-killed grepping steering-script hyperparameters on an ordinary
+  turn); plain direction-extraction / analysis code with mechanistic
+  vocabulary does NOT match on category alone;
 - the diff or plan under review EDITS any of the above, or a verdict body
   you must adjudicate QUOTES such content (the reconciler case).
 
@@ -93,8 +92,7 @@ reviewers never attempt model pins themselves (pins live on the Agent call).
    file) → `Bash` (post-marker `--file`) → return text; composing the
    verdict body as inline assistant text on a turn that then gets killed
    by the filter destroys the verdict before it ever reaches the file
-   (four refusal kills on the #1667–#1689 wave: #1673, #1675 15 tool calls
-   in, #1676 24 tool calls in, #1687 on the orchestrator turn itself).
+   (four refusal kills on the #1667–#1689 wave: #1673/#1675/#1676/#1687).
    The in-context RETURN TEXT (marker mode) or the role-tagged verdict
    block (in-context mode) is composed AFTER the marker lands and stays
    under the discipline 4 shape (verdict + pointer + counts, no findings
@@ -177,9 +175,8 @@ the duties attach to the brief itself:
 Rationale: rung (e) neutralizes first-pass brief VOCABULARY, but the
 READ discipline previously attached only to review roles and revision
 briefs — first-pass fact-checkers/critics paged whole guard files and
-were filter-killed before any recovery rung fired (2026-07-17: 4 kills
-across #1436/#1443 — fact-checker ×2, Alternatives critic ×2 — ~35+ min
-recovered via rung (b2)).
+were filter-killed before any recovery rung fired (#1436/#1443: 4
+first-pass kills).
 
 Datagen sibling: an implementer / experimenter brief for a DATAGEN
 pipeline that ingests a real-world corpus or a harmful-content bank ALSO
@@ -217,16 +214,11 @@ fallback ladder reached only after dead spawns:
   reached only after dead report-stage spawns (CLAUDE.md refusal
   rung (c) is the recovery-side sibling).
 
-Incident (#1739, 2026-07-28): a real-corpus datagen pipeline converged
-on exactly (a)-(d) only after repeated spawn attrition. Marker-recorded
-on #1739's events: an implementer thrash death at 11 tool calls (v3),
-the round-B sonnet-respawn thrash death at 5 calls (v5), the C2
-report-stage refusal at 127 calls + C2b thrash at 21 calls (v9); the
-fuller tally — ~9 dead spawns over ~5h, incl. two planner refusal kills
-and a consistency-checker thrash death — is transcript-mined (session
-`bae92cbd`), not marker-recorded. Rounds B1/C1 then ran clean under
-(a)-(c) (markers v6/v8), and (d) closed the report stage after two
-agent attempts had died there (v9).
+(#1739: a real-corpus datagen pipeline converged on exactly (a)-(d)
+only after repeated spawn attrition — ~9 dead spawns over ~5h across
+implementer/planner/consistency-checker roles; rounds then ran clean
+under (a)-(c), and (d) closed the report stage after two agent attempts
+had died there.)
 
 ## Revision-round briefs (composition-side, #1413)
 
@@ -260,26 +252,23 @@ artifacts (`crash_report.json` / `workload.log` under the HF
 BLOCKED runtime output. The composition-side sections above protect
 SUBAGENT briefs; this section protects the orchestrator's own context —
 the one context whose loss costs a session respawn (CLAUDE.md
-§ Spurious usage-policy refusals rung (f); 2026-07-18: 7 content-filter
-kills on one session's poll turns while it paged raw crash-forensics
-tails; session replaced).
+§ Spurious usage-policy refusals rung (f); #1546: 7 content-filter kills
+on one session's poll turns while it paged raw crash-forensics tails).
 
 1. **Digest-first, unconditionally.** Ingest failure text as STRUCTURAL
    DIGESTS: bounded pattern COUNTS
    (`grep -ciE 'error|traceback|killed|OOM' <log>`), exit codes,
    phase/lane fields from the poll JSON, and file references (path +
    byte size + mtime) for the tail itself. The CLAUDE.md § Monitoring
-   matched-line grep and the § 429-pacing `tail -50` bound remain the
-   CEILING for any raw-line read on an ordinary run — never `cat` a
-   multi-KB tail (`guard_log_dump.sh` blocks the local dump shapes
-   mechanically; SSH-remote reads and bounded re-reads are NOT
-   hook-covered, so the discipline there is yours) — and never RE-page
-   the same tail across consecutive poll turns: repetition is what
-   accumulates the refusal surface. Mechanized at the producer since
-   #1556: tag the task (`task.py add-tag <N> trigger-dense`) and
-   `scripts/poll_pipeline.py` emits exactly this structural digest in
-   place of the raw 5-line `log_tail_excerpt` on every tick (post-done
-   phase lines reduce to bare `[phase=<token>]` tokens).
+   matched-line grep and the `tail -50` bound remain the CEILING for any
+   raw-line read — never `cat` a multi-KB tail (`guard_log_dump.sh`
+   blocks local dump shapes; SSH-remote reads are NOT hook-covered) —
+   and never RE-page the same tail across consecutive poll turns:
+   repetition is what accumulates the refusal surface. Mechanized at the
+   producer since #1556: tag the task (`task.py add-tag <N>
+   trigger-dense`) and `scripts/poll_pipeline.py` emits exactly this
+   structural digest in place of the raw `log_tail_excerpt` on every
+   tick.
 2. **Routing stays script-side.** `failure_class` routing runs through
    `scripts/failure_classifier.py --body - --log "$LATEST_LOG_PATH"`
    (issue SKILL.md Step 7): the SCRIPT reads the log and prints a
@@ -338,14 +327,11 @@ failure/forensics-keyed and does not fire there).
    rung (d)'s digest prescription for harmful-completion ingest is the
    recovery-side sibling; this section is its prevention-side
    monitoring twin.
-4. **Ownership split vs § Orchestrator ordinary turns.** On a round that
-   is ALREADY trigger-dense per that section's Step-0 predicate, this
-   section is the judge-output instantiation of its item 2 (counts-first
-   / windowed / delegated). Its OWN coverage is the genuinely uncovered
-   case — a judge-monitoring read (tick turns included) on a round whose
-   task or diff does NOT match that predicate, which is the incident's
-   shape — so the #1563 ownership line never makes this section
-   retirable.
+4. **Ownership split vs § Orchestrator ordinary turns.** On a round
+   already trigger-dense per that section's Step-0 predicate, this
+   section is the judge-output instantiation of its item 2; its OWN
+   coverage is a judge-monitoring read on a round whose task or diff does
+   NOT match that predicate (the incident's shape).
 
 ## Orchestrator ordinary turns (authoring + own-reads, #1563)
 
@@ -359,10 +345,8 @@ text; this section owns everything else the orchestrator does on such a
 round, Step-0 state read through Step-10d merge narration. The #1538
 wedge was CONTEXT ACCUMULATION on ordinary turns — guard-surface tool
 output paged in during normal reads plus the text the orchestrator then
-authored: the first kill fired on the first generation after
-guard-surface tool output entered context on an ordinary working turn,
-and every later wake turn died (unrecoverable in-session; recovery was a
-fresh respawn, CLAUDE.md rung (f)).
+authored; every later wake turn died, and recovery was a fresh respawn
+(CLAUDE.md rung (f)).
 
 1. **Authored text — reference, never quote, on every surface.**
    Progress/marker notes (`epm:progress`, `epm:failure`, followup-scope
@@ -374,18 +358,15 @@ fresh respawn, CLAUDE.md rung (f)).
    item-4 ≤80-char reason-slice bound generalizes: at most ONE ≤80-char
    slice of guard-surface text per authored artifact, and prefer zero.
 2. **Own-turn ordinary reads — counts-first, windowed, or delegated.**
-   Verifying guard-surface work (did the diff touch the hook? did the
-   pattern list change?) uses name/stat/count forms first
+   Verifying guard-surface work uses name/stat/count forms first
    (`git diff --stat`, `--name-status`, `grep -c`), then grep-anchored
    ≤~120-line windows (discipline 3) only where content is genuinely
    needed; NEVER wholesale-read a guard file or its full diff body into
    your own context, and route content-shaped checks through a
    script/pipeline that prints a verdict or count wherever one exists.
    Where content-level verification is unavoidable at depth, dispatch a
-   fresh-context subagent that returns a digest per disciplines 1/4
-   (the § poll/forensics item-3 escalation, generalized to ordinary
-   reads) — a subagent's context is disposable; the orchestrator's is
-   the session.
+   fresh-context subagent that returns a digest per disciplines 1/4 — a
+   subagent's context is disposable; the orchestrator's is the session.
 3. **No re-paging across turns.** Accumulation is the wedge mechanism:
    the same guard-surface content re-entering context turn after turn is
    what turns one risky read into every-turn deaths. Read once, carry
@@ -401,14 +382,10 @@ fresh respawn, CLAUDE.md rung (f)).
    respawn is what recovered #1538); this section exists so it is not
    needed.
 
-Incident #1538 (2026-07-19): two consecutive /issue orchestrator
-sessions wedged on a guard-hook grep-pattern round — first kill
-immediately after guard-surface tool results entered context on an
-ordinary working turn (not a forensics turn), then consecutive wake-turn
-deaths; a second session died the same way at its tail; the task
-completed only in a third watcher-respawned session after ~1h+ lost
-wall-clock. Session references 539d277f / 40a23453 are transcript ids,
-not commits.
+(#1538: two consecutive /issue orchestrator sessions wedged on a
+guard-hook grep-pattern round — the first kill fired immediately after
+guard-surface tool results entered context on an ordinary working turn;
+the task completed only in a third watcher-respawned session, ~1h+ lost.)
 
 ## What this rule does NOT change
 
@@ -434,39 +411,15 @@ not commits.
 
 ## Files of record
 
-Incidents: #1058 (3 review-role refusal kills + 1 autocompact death; these
-mitigations validated ad hoc), #1098 (guard-vocabulary refusals, 2 reviewer
-kills + ~2.7h orchestrator wedge), #1092 (implementer refusal kills;
-orchestrator rung b2), #866 (bank-text paging kills), #1090
-(refusal-truncated Agent spawns), #1152 (a findings recap in a reviewer's
-return text wedged the parent orchestrator — discipline 4), #1413 (a
-revision brief inlining a round's findings text — § Revision-round briefs),
-#1436/#1443 (4 first-pass kills on guard-surface targets — § First-pass
-briefs, #1503), 2026-07-18 (7 poll-turn content-filter kills wedged the
-#1481 session while it paged raw crash-forensics tails, session
-replaced, + 3 brief kills from inlined hook-BLOCKED text —
-§ Orchestrator poll/forensics turns + § First-pass briefs item 5,
-#1546), #1538 (2 orchestrator sessions refusal-wedged on ordinary turns
-of a guard-hook grep-pattern round — § Orchestrator ordinary turns,
-#1563), #1739 (repeated refusal + thrash spawn deaths on a real-corpus
-datagen pipeline before converging on the (a)-(d) first-pass
-decomposition — § Real-corpus datagen briefs, #1748), #1871 (2026-07-29:
-one tick turn refusal-killed after paging raw judge reasoning text into
-context while monitoring a healthy judge run — temporal correlation
-only, content trigger not isolated — § Judge-run monitoring reads).
-Enforcing pointers:
-`.claude/agents/code-reviewer.md` § Context budget (READ FIRST);
+Incidents: #1058, #1098, #1092, #866, #1090, #1152 (discipline 4), #1413
+(§ Revision-round briefs), #1436/#1443/#1503 (§ First-pass briefs), #1546
+(§ Orchestrator poll/forensics turns + § First-pass briefs item 5),
+#1538/#1563 (§ Orchestrator ordinary turns), #1739/#1748 (§ Real-corpus
+datagen briefs), #1871 (§ Judge-run monitoring reads).
+Enforcing pointers: `.claude/agents/code-reviewer.md` § Context budget;
 `.claude/agents/reconciler.md` § Rules (Rule 11);
-`.claude/skills/issue/SKILL.md` Step 5a (orchestrator-side excerpt-file
-pre-materialization);
-`.claude/skills/issue/SKILL.md` § File-only Codex verdict posting
-(orchestrator-side posting path, #1275);
-`.claude/skills/issue/SKILL.md` Step 6d.2 (poll-loop forensics-ingest
-pointer, #1546);
-`.claude/skills/issue/SKILL.md` § Orchestration Procedure preamble
-(guard-surface round orchestrator-turn discipline, #1563);
-`.claude/skills/adversarial-planner/SKILL.md` Phase 3 +
-`.claude/skills/issue/SKILL.md` Step 5d (revision-brief composition
-pointers, #1413);
-`.claude/skills/adversarial-planner/SKILL.md` Phase 1.5 + Phase 2
-(first-pass brief-composition pointers, #1503).
+`.claude/skills/issue/SKILL.md` Step 5a, § File-only Codex verdict posting
+(#1275), Step 6d.2 (#1546), § Orchestration Procedure preamble (#1563),
+Step 5d (#1413);
+`.claude/skills/adversarial-planner/SKILL.md` Phases 1.5/2 (#1503) +
+Phase 3 (#1413).

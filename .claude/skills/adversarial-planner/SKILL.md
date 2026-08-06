@@ -1004,8 +1004,9 @@ overall = max(lens_verdict.values(), key=severity)
 # 6. Present final plan to user for approval
 # 7. Execute implementation (subagent_type: "experimenter")
 
-# 8. Post-implementation review (subagent_type: "reviewer" — fresh context)
-review = Agent(subagent_type="reviewer", prompt="Verify this implementation matches the plan...")
+# 8. Post-implementation review (subagent_type: "code-reviewer" — fresh context;
+#    within /issue this is the Step 5 code-reviewer + codex-code-reviewer ensemble)
+review = Agent(subagent_type="code-reviewer", prompt="Verify this implementation matches the plan...")
 
 # 9. Fix blockers if any, re-review if needed
 ```
@@ -1028,7 +1029,7 @@ review = Agent(subagent_type="reviewer", prompt="Verify this implementation matc
 | Cross-lens merge | Manager (inline) | Manager merges 3 lens verdicts after reconciliation: worst verdict wins, concatenate critique bodies with lens labels. |
 | Revision | Manager (inline) | Manager has plan + 6 critique bodies + reconciler outputs in context. |
 | Implementation | `experimenter` | Full read/write/bash for coding and running. |
-| Implementation Review | `reviewer` | Read-only adversarial check of the implementation. |
+| Implementation Review | `code-reviewer` | Read-only adversarial check of the implementation (within /issue: the Step 5 Claude+Codex ensemble). |
 
 All 6 critics run in **parallel** (6 simultaneous `Agent()` calls in a single
 message). Each has its own fresh context and specialized lens prompt. They do

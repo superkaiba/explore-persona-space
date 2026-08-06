@@ -1,3 +1,12 @@
+---
+description: Full LLM-judged-DV recipe (graded 0-100 primary, drop-never-coerce, transport retry, max_tokens floors, pilot gate); the CLAUDE.md LLM-judge bullet is the always-on summary
+paths:
+  - "src/explore_persona_space/eval/**"
+  - "src/explore_persona_space/llm/**"
+  - "scripts/*judge*.py"
+  - "tasks/**/plans/*.md"
+---
+
 # LLM judging of behavior-expression DVs
 
 **Load this rule whenever a plan or code DESIGNS or WRITES an LLM-judged

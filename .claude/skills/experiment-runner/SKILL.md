@@ -9,9 +9,9 @@ description: Run ML experiments systematically — pre-flight checks, monitoring
 
 **Owns:** preflight → launch → monitor → report, for one experiment.
 
-**Called by:** `/issue` (run phase), `auto-experiment-runner` (queue iteration), or the main agent directly.
+**Called by:** `/issue` (run phase) or the main agent directly.
 
-**Does NOT own:** deciding what to run (→ `experiment-proposer`), full issue lifecycle (→ `/issue`), overnight queue orchestration (→ `auto-experiment-runner`).
+**Does NOT own:** deciding what to run (→ `experiment-proposer`) or full issue lifecycle (→ `/issue`).
 
 ## Pre-Experiment Checklist
 
