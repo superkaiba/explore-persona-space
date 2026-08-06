@@ -54,6 +54,12 @@ def parse_args() -> argparse.Namespace:
         help="full-corpora follow-up figures (metric_ladder + cells_v2 + decision_v2 "
         "inputs; *_v2.png outputs). Default OFF: the v1 path is byte-unchanged.",
     )
+    ap.add_argument(
+        "--v3",
+        action="store_true",
+        help="round-4 pooled/off-policy figures (decision_v3 inputs; 2x2_panel_*.png + "
+        "delta_q_*.png outputs). Default OFF: the v1/v2 paths are byte-unchanged.",
+    )
     return ap.parse_args()
 
 
@@ -713,8 +719,336 @@ def main_v2(args: argparse.Namespace) -> None:
     print("[figs1336] v2 done")
 
 
+# ===========================================================================
+# v3 figures (round 4, plan v15): pooled off-policy 2x2 panel (Hero 3) +
+# per-transition per-cluster delta-Q scatters (Hero 4). Inputs: decision_v3/.
+# Colour = ladder STAGE (viridis 0.10-0.70 ramp — the issue1336_metric_ladder
+# _plots.py convention: one colour = one stage across every #1336 figure);
+# linestyle + marker fill = tier (solid+filled = plain read, dashed/dotted +
+# hollow = reparameterized reads).
+# ===========================================================================
+
+_V3_STAGE_ORDER = ("base", *_STAGE_ORDER)
+_V3_STAGE_SHORT = {
+    "base": "base",
+    "sft": "SFT",
+    "dpo": "DPO",
+    "rlvr": "RLVR",
+    "rlvr_long": "longer RLVR",
+}
+_V3_ARM_LABELS = {"on": "on-policy answers", "off": "off-policy answers"}
+_V3_REGISTERED_TRANSITIONS = (("base", "sft"), *cm.ADJACENT_PAIRS)
+# Tier -> (linestyle, marker, filled, plain-English legend label). Extends the
+# established tier_style convention (tier 0 solid+filled, tier 6 dashed+hollow);
+# the two v3-only reads take a diamond (own ceiling) and a dotted hollow square.
+_V3_TIER_STYLE = {
+    "own": ("-", "D", True, "own map (within-stage ceiling)"),
+    "t0": ("-", "o", True, "direct transfer (T0)"),
+    "t6": ("--", "o", False, "context-reparameterized (T6)"),
+    "t8": (":", "s", False, "both-sides reparameterized (T8)"),
+}
+_V3_TIER_ORDER = ("own", "t0", "t6", "t8")
+_V3_TIER_JITTER = {"own": -0.18, "t0": -0.06, "t6": 0.06, "t8": 0.18}
+
+
+def _v3_stage_colors() -> dict[str, tuple]:
+    """Colour = ladder stage on the viridis ramp sampled below the yellow end
+    (0.10-0.70 — the make-source-target-lines convention), one colour per stage
+    across every v3 figure."""
+    cmap = matplotlib.colormaps["viridis"]
+    ramp = np.linspace(0.10, 0.70, len(_V3_STAGE_ORDER))
+    return {s: cmap(v) for s, v in zip(_V3_STAGE_ORDER, ramp, strict=True)}
+
+
+def _v3_corpus_order(panel: dict, present: set[str]) -> list[str]:
+    """Column order for the 2x2 panel: the JSON's own corpus_order when given,
+    else name-sorted with naturalistic-format slices LAST (the plan renders
+    naturalistic-lmsys separately from the 7 chat-format corpora)."""
+    declared = [c for c in (panel.get("corpus_order") or []) if c in present]
+    rest = sorted(present - set(declared), key=lambda c: ("natural" in c.lower(), c))
+    return declared + rest
+
+
+def _v3_pair_for_target(pairs: dict, target: str) -> tuple[str, dict] | None:
+    """The transfer pair read AT a target stage: the registered
+    adjacent-predecessor transition (base->sft, sft->dpo, dpo->rlvr,
+    dpo->rlvr_long) when present, else the deepest available source."""
+    cands = {
+        (p["source"], p["target"]): (k, p)
+        for k, p in pairs.items()
+        if p["target"] == target and p["source"] != p["target"]
+    }
+    if not cands:
+        return None
+    for src, tgt in _V3_REGISTERED_TRANSITIONS:
+        if tgt == target and (src, tgt) in cands:
+            return cands[(src, tgt)]
+    deepest = max(cands, key=lambda st: _V3_STAGE_ORDER.index(st[0]))
+    return cands[deepest]
+
+
+def _v3_tier_read(
+    pairs: dict, target: str, arm: str, corpus: str, tier: str
+) -> tuple[str, dict] | None:
+    """(source stage, tier block) for one (target, arm, corpus, tier) cell.
+    Transfer tiers read the registered pair; 'own' prefers the transfer pair's
+    own block and falls back to a source==target (diagonal) entry."""
+    entries: list[dict] = []
+    cand = _v3_pair_for_target(pairs, target)
+    if cand is not None:
+        entries.append(cand[1])
+    if tier == "own":
+        entries.extend(p for p in pairs.values() if p["source"] == p["target"] == target)
+    for p in entries:
+        blk = p["arms"].get(arm, {}).get("per_corpus", {}).get(corpus, {}).get(tier)
+        if blk is not None:
+            return (target if tier == "own" else p["source"]), blk
+    return None
+
+
+def fig_v3_pooled_2x2(panel: dict, fig_dir: Path) -> None:
+    """Hero 3: pooled per-corpus held-out R^2 by correction tier — rows = arm
+    (on-/off-policy answers), cols = eval corpus (naturalistic slices last),
+    x = target stage; 4 series per panel (own / T0 / T6 / T8), point colour =
+    SOURCE stage of the read.
+
+    Expected ``decision_v3/pooled_offpolicy_2x2.json`` schema (defined here —
+    no writer exists at the C-ii pin; C-iii's decision builder must match):
+    {"headline_layer": int, "scale": "raw"|...,
+     "arms": ["on", "off"], "corpus_order": [...],   # corpus_order optional
+     "pairs": {"<i>__<j>": {"source": i, "target": j, "arms": {"<arm>": {
+       "per_corpus": {"<corpus>": {"own"|"t0"|"t6"|"t8": {
+         "r2": float, "r2_bootstrap": {"ci_lo": float, "ci_hi": float}}}}}}}}}
+    A source==target entry may carry only "own" (the diagonal ceiling).
+    """
+    from matplotlib.lines import Line2D
+
+    headline = int(panel["headline_layer"])
+    scale = str(panel.get("scale", "raw"))
+    arms = [a for a in ("on", "off") if a in panel["arms"]]
+    assert arms, f"no known arms in panel JSON: {panel['arms']!r}"
+    pairs = panel["pairs"]
+    present: set[str] = set()
+    for p in pairs.values():
+        for ab in p["arms"].values():
+            present.update(ab["per_corpus"])
+    corpora = _v3_corpus_order(panel, present)
+    assert corpora, "panel JSON carries no per_corpus blocks"
+    targets = [t for t in _V3_STAGE_ORDER if any(p["target"] == t for p in pairs.values())]
+    xpos = {t: k for k, t in enumerate(targets)}
+    stage_colors = _v3_stage_colors()
+    fig, axes = plt.subplots(
+        len(arms),
+        len(corpora),
+        figsize=(2.7 * len(corpora), 3.2 * len(arms)),
+        sharex=True,
+        sharey=True,
+        squeeze=False,
+    )
+    used_sources: set[str] = set()
+    n_points = 0
+    n_missing = 0
+    for i, arm in enumerate(arms):
+        for j, corpus in enumerate(corpora):
+            ax = axes[i][j]
+            for tier in _V3_TIER_ORDER:
+                ls, marker, filled, _lbl = _V3_TIER_STYLE[tier]
+                jit = _V3_TIER_JITTER[tier]
+                pts = []
+                for t in targets:
+                    got = _v3_tier_read(pairs, t, arm, corpus, tier)
+                    if got is None:
+                        n_missing += 1
+                        continue
+                    src, blk = got
+                    lo, hi = _err_lo_hi(float(blk["r2"]), blk["r2_bootstrap"])
+                    pts.append((xpos[t] + jit, float(blk["r2"]), lo, hi, src))
+                if not pts:
+                    continue
+                ax.plot(
+                    [p[0] for p in pts],
+                    [p[1] for p in pts],
+                    ls,
+                    color="0.70",
+                    lw=1.0,
+                    zorder=2,
+                )
+                for x, y, lo, hi, src in pts:
+                    col = stage_colors[src]
+                    used_sources.add(src)
+                    ax.errorbar(
+                        x,
+                        y,
+                        yerr=[[lo], [hi]],
+                        fmt=marker,
+                        ms=4.5,
+                        color=col,
+                        markerfacecolor=col if filled else "white",
+                        markeredgecolor=col,
+                        markeredgewidth=0.9,
+                        elinewidth=0.8,
+                        capsize=2,
+                        zorder=3,
+                    )
+                    n_points += 1
+            ax.axhline(0.0, color="grey", lw=0.6, zorder=1)
+            if i == 0:
+                ax.set_title(corpus, fontsize=8)
+            if i == len(arms) - 1:
+                ax.set_xticks(list(xpos.values()))
+                ax.set_xticklabels([_V3_STAGE_SHORT[t] for t in targets], fontsize=7, rotation=45)
+                ax.set_xlabel("target stage", fontsize=8)
+        axes[i][0].set_ylabel(f"{_V3_ARM_LABELS[arm]}\nheld-out pooled R² ({scale})", fontsize=8)
+    assert n_points > 0, "2x2 panel: zero plottable points"
+    if n_missing:
+        print(f"[figs1336-v3] 2x2 panel: {n_missing} absent tier reads (plotted {n_points})")
+    tier_handles = [
+        Line2D(
+            [0],
+            [0],
+            color="0.45",
+            ls=ls,
+            marker=marker,
+            ms=5,
+            markerfacecolor="0.45" if filled else "white",
+            markeredgecolor="0.45",
+            label=lbl,
+        )
+        for ls, marker, filled, lbl in (_V3_TIER_STYLE[t] for t in _V3_TIER_ORDER)
+    ]
+    stage_handles = [
+        Line2D(
+            [0],
+            [0],
+            ls="none",
+            marker="o",
+            ms=6,
+            color=stage_colors[s],
+            label=f"source: {_V3_STAGE_SHORT[s]}",
+        )
+        for s in _V3_STAGE_ORDER
+        if s in used_sources
+    ]
+    fig.legend(
+        handles=tier_handles + stage_handles,
+        fontsize=6.5,
+        ncol=min(4, len(tier_handles) + len(stage_handles)),
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.055),
+        frameon=False,
+    )
+    fig.suptitle(
+        f"Pooled context→answer map: per-corpus held-out R² by correction "
+        f"tier (layer {headline}; transfer reads use the registered "
+        f"adjacent-predecessor source)",
+        fontsize=9,
+    )
+    _save(fig, fig_dir, "2x2_panel_v3.png")
+
+
+def fig_v3_delta_q_scatter(dq: dict, fig_dir: Path) -> None:
+    """Hero 4: per-transition per-cluster delta-Q scatter, one figure per
+    registered transition, one panel per arm; every point labeled with its
+    cluster id (the #1902 clusters_delta_qc_scatter convention). Horizontal
+    lines: 97.5% quantile of the per-draw MAX-cluster permutation null, and
+    the achievable ceiling (band-vs-ceiling clause). Consumes the C-i battery
+    JSON decision_v3/cluster_delta_q_per_transition.json verbatim — no
+    statistics are recomputed here."""
+    stage_colors = _v3_stage_colors()
+    li = dq.get("headline", {}).get("headline_layer")
+    n_draws = dq.get("perm_draws")
+    transitions = sorted(dq["transitions"].items(), key=lambda kv: kv[1]["transition_idx"])
+    assert transitions, "delta-Q JSON carries no transitions"
+    for t_slug, tb in transitions:
+        src, tgt = tb["source"], tb["target"]
+        arms = [a for a in ("on", "off") if a in tb["arms"]]
+        assert arms, f"transition {t_slug}: no known arms in {list(tb['arms'])!r}"
+        fig, axes = plt.subplots(
+            1, len(arms), figsize=(6.2 * len(arms), 4.0), sharey=True, squeeze=False
+        )
+        for ax, arm in zip(axes[0], arms, strict=True):
+            blk = tb["arms"][arm]
+            ids = np.asarray(blk["cluster_ids"], dtype=int)
+            vals = np.asarray(blk["delta_q"], dtype=float)
+            assert ids.shape == vals.shape and ids.size > 0, (t_slug, arm, ids.shape)
+            ax.scatter(
+                ids,
+                vals,
+                s=16,
+                color=stage_colors[src],
+                edgecolors="#333333",
+                linewidths=0.4,
+                zorder=3,
+            )
+            for cid, v in zip(ids.tolist(), vals.tolist(), strict=True):
+                if np.isfinite(v):
+                    ax.annotate(
+                        str(cid),
+                        (cid, v),
+                        fontsize=5,
+                        xytext=(1, 2),
+                        textcoords="offset points",
+                    )
+            ax.axhline(0.0, color="grey", lw=0.6, zorder=1)
+            ax.axhline(
+                float(blk["null_band_97p5"]),
+                ls="--",
+                lw=1.0,
+                color="#333333",
+                label="max-cluster permutation null (97.5%)",
+            )
+            ax.axhline(
+                float(blk["ceiling_max"]),
+                ls=":",
+                lw=1.0,
+                color="#333333",
+                label="achievable ceiling (max per-cluster source residual)",
+            )
+            p = float(blk["max_cluster_p"])
+            p_str = "p < 0.001" if p < 0.001 else f"p = {p:.3f}"
+            ax.set_title(
+                f"{_V3_ARM_LABELS[arm]} — most-improved cluster "
+                f"{blk['obs_argmax_cluster']} (max-cluster {p_str})",
+                fontsize=8,
+            )
+            ax.set_xlabel("cluster id", fontsize=8)
+        axes[0][0].set_ylabel(
+            "ΔQ per cluster (held-out residual ratio,\nsource − target; "
+            "+ = better predicted at the target)",
+            fontsize=8,
+        )
+        axes[0][0].legend(fontsize=6, loc="best", frameon=False)
+        fig.suptitle(
+            f"{_V3_STAGE_SHORT[src]} → {_V3_STAGE_SHORT[tgt]}: per-cluster "
+            f"ΔQ under the pooled map (layer {li}; {n_draws} permutation draws)",
+            fontsize=9,
+        )
+        _save(fig, fig_dir, f"delta_q_scatter_{t_slug}_v3.png")
+
+
+def main_v3(args: argparse.Namespace) -> None:
+    set_paper_style()
+    dec_dir = args.eval_dir / "decision_v3"
+    panel_path = dec_dir / "pooled_offpolicy_2x2.json"
+    dq_path = dec_dir / "cluster_delta_q_per_transition.json"
+    panel = _maybe(panel_path) if args.smoke else _load(panel_path)
+    dq = _maybe(dq_path) if args.smoke else _load(dq_path)
+    if panel is None:
+        print(f"[figs1336-v3] SKIP 2x2 panel — missing {panel_path} (smoke)")
+    else:
+        fig_v3_pooled_2x2(panel, args.fig_dir)
+    if dq is None:
+        print(f"[figs1336-v3] SKIP delta-Q scatters — missing {dq_path} (smoke)")
+    else:
+        fig_v3_delta_q_scatter(dq, args.fig_dir)
+    print("[figs1336] v3 done")
+
+
 def main() -> None:
     args = parse_args()
+    if args.v3:
+        main_v3(args)
+        return
     if args.v2:
         main_v2(args)
         return
