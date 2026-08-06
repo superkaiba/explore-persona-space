@@ -54,7 +54,13 @@ import warnings
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
-import numpy as np
+# Canonical dotenv wrapper BEFORE the first heavy import (#847 thread-caps gate);
+# also the credential load for the Hub phases (idempotent with _hub()'s call).
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 
 def _ensure_repo_root_on_syspath() -> Path:

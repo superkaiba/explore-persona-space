@@ -38,13 +38,18 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
-
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-import matplotlib
+# shared-VM thread caps must bind in-process BEFORE the first heavy import (#847):
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
