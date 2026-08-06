@@ -231,6 +231,7 @@ def _resolve_generation_revision(api, model: str, slug: str) -> tuple[str, str]:
 
     def _resolve():
         entries = list(
+            # HUB_VERIFY_RETRY_EXEMPT: _resolve is retried by hub.retry_transient below
             api.list_repo_tree(
                 cm.HF_DATA_REPO,
                 path_in_repo=prefix,
@@ -262,6 +263,7 @@ def _download_answers_jsonl(
     """
     entries = hub.retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: lambda is retried by hub.retry_transient
             api.list_repo_tree(
                 cm.HF_DATA_REPO,
                 path_in_repo=prefix,

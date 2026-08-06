@@ -144,6 +144,7 @@ def _stage_answers_files(
     dest.mkdir(parents=True, exist_ok=True)
     entries = hub.retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: lambda is retried by hub.retry_transient
             api.list_repo_tree(
                 cm.HF_DATA_REPO,
                 path_in_repo=prefix,
