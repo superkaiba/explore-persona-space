@@ -370,12 +370,22 @@ def _collect_legacy_results(
     API response's ``stop_reason`` (#2021, rule 26) via
     ``judge_dispatch._with_stop_reason``; rows with no API response
     (errored/expired/canceled) carry no ``stop_reason`` key.
+
+    Succeeded-row parses run through the SAME ``_normalize_scalar_score`` the
+    judge_dispatch drains apply (#2092 route parity — bare in-range numerics
+    keep the ``{"score": N}`` envelope on every drain, never a route-dependent
+    shape); the ``_parsed_with_raw`` raw-text retention wrapper is deliberately
+    OMITTED here (retention is a judge_dispatch-internal contextvar no legacy
+    caller enables, and classification parity does not depend on it).
     """
     # FUNCTION-level import: a module-level batch_judge -> judge_dispatch
     # import risks the documented api_dispatch -> batch_judge -> alignment ->
     # judge_dispatch cycle (judge_dispatch L222-224); precedent for this
     # direction: judge_completions_batch's dispatch_judge_items import.
-    from explore_persona_space.eval.judge_dispatch import _with_stop_reason
+    from explore_persona_space.eval.judge_dispatch import (
+        _normalize_scalar_score,
+        _with_stop_reason,
+    )
 
     for result in client.messages.batches.results(batch_id):
         custom_id = result.custom_id
@@ -387,7 +397,7 @@ def _collect_legacy_results(
                 (b.text for b in msg.content if b.type == "text"),
                 "",
             )
-            parsed = parse_judge_json(text)
+            parsed = _normalize_scalar_score(parse_judge_json(text))
             score = parsed if parsed is not None else _legacy_error_dict("parse_error")
             results[custom_id] = _with_stop_reason(score, stop_reason)
         elif rtype == "errored":

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2102,
+  "highest_id": 2104,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8214,8 +8214,8 @@
       "goal": "Fit a map from the pooled context activation to the SAE feature vector of the answer state, holding ONE fixed SAE dictionary across every post-training stage of an open ladder, and determine whether any individual SAE feature's per-feature held-out predictability improves across adjacent stage transitions beyond a selection-symmetric null over the whole dictionary.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2061",
-      "status": "running",
+      "path": "tasks/planning/2061",
+      "status": "planning",
       "title": "Does post-training make particular SAE features more predictable from context? (per-stage context -> answer-SAE-feature map)"
     },
     "2062": {
@@ -8453,8 +8453,8 @@
     "2092": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2092",
-      "status": "reviewing",
+      "path": "tasks/completed/2092",
+      "status": "completed",
       "title": "batch drain loses bare-numeric judge verdicts (#1434 parity not ported): 64% vs 2.8% drops"
     },
     "2093": {
@@ -8541,6 +8541,20 @@
       "path": "tasks/proposed/2102",
       "status": "proposed",
       "title": "workflow-fix: workflow.yaml wf-fix prose vs 8 daily-doc pins (main-red)"
+    },
+    "2103": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2103",
+      "status": "reviewing",
+      "title": "workflow-fix: verify pinned one-off installs resolve + dist-name != import-name"
+    },
+    "2104": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2104",
+      "status": "reviewing",
+      "title": "workflow-fix: reconcile tests/test_workload_cmd_env_lint.py's mock-backend"
     },
     "212": {
       "has_clean_result": true,
