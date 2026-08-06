@@ -297,7 +297,9 @@ def stage_contexts(args: argparse.Namespace) -> dict:
     manifest = json.loads(manifest_path.read_text())
     print(
         f"[phase=p0_stage] rung_jobs={manifest['n_rung_jobs']} "
-        f"contexts={manifest['n_contexts_total']} revision={manifest['dataset_revision'][:12]}",
+        f"contexts={manifest['n_contexts_total']} "
+        f"consumed_revision={(args.dataset_revision or 'unpinned')[:12]} "
+        f"manifest_input_revision={manifest['dataset_revision'][:12]}",
         flush=True,
     )
     return manifest
@@ -867,7 +869,16 @@ def build_results_payload(
             "hf_dataset_repo": _dataset_repo(),
             "hf_text_prefixes": [r["hf_text_prefix"] for r in records.values()],
             "hf_store_prefixes": [r["hf_store_prefix"] for r in records.values()],
-            "contexts_dataset_revision": manifest["dataset_revision"],
+            # Two DISTINCT revisions — do NOT "simplify" them back into one field.
+            # contexts_dataset_revision = the data-repo revision this run actually
+            # CONSUMED the contexts tree at (args.dataset_revision, the p0_stage
+            # fetch pin) — the run-of-record a reproducer must resolve against.
+            # contexts_manifest_input_revision = the revision the STAGING script
+            # read the upstream #1739 labeling data FROM (input provenance only).
+            # In the P0 pilot these differed and the card recorded the manifest
+            # field; reproducing from it resolved 0/27 context files (#2091).
+            "contexts_dataset_revision": args.dataset_revision,
+            "contexts_manifest_input_revision": manifest["dataset_revision"],
             "staging_seed": manifest["seed"],
             "gen_fingerprints": {n: r.get("gen_fingerprint") for n, r in records.items()},
             "wandb_project": None,
