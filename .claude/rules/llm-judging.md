@@ -95,7 +95,12 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
    seeing the content. A call that failed in TRANSPORT (rate-limit, overload,
    timeout, connection — no verdict was ever produced) is NOT a drop: it is
    retried and, on exhaustion, reported as transport-loss per rule 24, never
-   blended into this count. This generalizes the persona-vectors judge-filter
+   blended into this count. And an API-LEVEL refusal — a SUCCEEDED row whose
+   `stop_reason` is `"refusal"` with an EMPTY content array (the provider's
+   safety classifier declined; NO verdict was produced) — is NOT a rule-9
+   drop either: it is the THIRD drop class (rule 28, #2151), distinct from
+   the instructed rubric `REFUSAL` above, which IS a produced verdict and
+   stays a content drop. This generalizes the persona-vectors judge-filter
    rule (`.claude/rules/persona-vectors-recipe.md` step 4) to every judged
    DV, and the per-arm dropped count is REPORTED (a high or arm-asymmetric
    drop rate is itself a diagnostic — see rule 23's truncation check).
@@ -174,7 +179,11 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     (rule 18's pins) — never a mixed-instrument merge.
     (iii) **Boundary cases — NOT transport.** A judge `REFUSAL` is
     content-informative (the judge saw the content and declined) → rule-9
-    drop. A parse failure from `max_tokens` truncation is a budget defect →
+    drop. An API-LEVEL `stop_reason == "refusal"` on a SUCCEEDED row (empty
+    content — the provider's safety classifier declined; no verdict exists)
+    is NEITHER content nor transport: it is the THIRD top-level drop class,
+    transport-conditional and retriable → rule 28 (#2151/#1739). A parse
+    failure from `max_tokens` truncation is a budget defect →
     rule 23 (resize + re-judge against a fresh cache). An HTTP 400
     `invalid_request_error` is a pipeline bug (a malformed request fails
     identically on resubmit — `batch_judge.py` correctly quarantines it): it
@@ -193,6 +202,68 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     transport-class dict. The primary batch path's re-dispatch is the
     pre-existing #1019 machinery (verified, not duplicated);
     `_score_from_parsed` is unchanged (classification lives in the tally).
+
+28. **API-level `stop_reason == "refusal"` is the THIRD top-level drop class —
+    transport-conditional and RETRIABLE; report it separately from BOTH
+    content drops and transport losses, and remediate by targeted SYNC
+    re-issue at the IDENTICAL instrument (#2151).** The Batch API can return
+    a `result.type == "succeeded"` row whose `stop_reason` is `"refusal"`
+    with an EMPTY content array: the request was accepted, the provider's
+    safety classifier declined, and NO verdict about the content was
+    produced. That row is NEITHER a rule-9 content drop (no verdict exists —
+    unlike the instructed rubric `"REFUSAL"`, which IS a produced verdict)
+    NOR a rule-24 transport loss (the API answered; the in-band retry
+    envelope re-issues on the SAME transport and cannot fix it). Blending it
+    into either count recreates the censoring the rule-24 split exists to
+    prevent, and #1739's evil-OOD wave shows the miscount at scale: 44,310
+    forced-BATCH judge calls returned 15,091 refusal draws (34.1%), all
+    filed as `parse_error` content drops; 4,982/14,770 items (33.7%) were
+    left with ZERO valid draws. The class is TRANSPORT-CONDITIONAL, not
+    content-informative: re-issuing the IDENTICAL instrument on the SYNC
+    path produced 0 re-refusals in 14,887 draws and rescued 5,077/5,172
+    censored items (98.2%). The censoring is OUTCOME-CORRELATED, never
+    missing-at-random — for answer-keyed corpora the classifier keys on the
+    ANSWER's severity (rescued items scored 1.4x higher than never-censored
+    items overall; 2.3x on mhj, 3.7x on pair), and for a jailbreak-query
+    corpus (tom-gibbs) on the QUERY occupying the `{question}` slot (~2/3 of
+    the corpus censored near-indiscriminately, 1.24x) — so absorbing it into
+    the content tally biases the DV downward on exactly its highest-scoring
+    rows.
+    Mechanics (#2151): classification lives in the reduce —
+    `batch_judge.API_REFUSAL_STOP_REASONS` / `is_api_refusal_stop_reason` /
+    `is_api_refusal_error_dict`; `JudgeResult.n_api_refusal_draws` +
+    `per_item_api_refusals`, a SIBLING of `n_transport_lost_draws`, with the
+    instructed rubric-`REFUSAL` counter (`n_refusal_draws`, #1801) moving
+    independently. The reduce WARNs on any non-zero count; api-refusal-class
+    error dicts are cache PUT-SKIPPED and read back as cache MISSES
+    (mirroring the #1313/#2021 transport/truncation treatment), so a
+    transport change self-heals censored rows with no fresh `cache_dir`. A
+    persisted dict lacking `stop_reason` (pre-#2021 legacy) classifies as a
+    content drop, exactly as before.
+    Remediation (the recipe that worked, #1739): re-issue ONLY the censored
+    draws on the SYNC path at the IDENTICAL instrument — same judge model,
+    rubric, temperature, `max_tokens` (rule 18's pins); never a
+    mixed-instrument merge — merge the sync scores alongside each item's
+    surviving genuine batch draws, LICENSE the merge with a dual-scored
+    parity check on ~200-300 overlapping items with the batch-vs-sync offset
+    REPORTED (#1739: 287 items, batch mean 7.26 vs sync 7.77), and DISCLOSE
+    the batch/sync split in the run's `judge_meta`. Reference
+    implementation: `scripts/issue1739_evilood_refusal_rejudge.py`.
+    NON-COVERAGE NOTE: the rule-26 pilot gate does NOT key on this class — a
+    forced-BATCH pilot against a censoring wave will PASS the parse-fail
+    gate BY DESIGN (api-refusal draws leave both the parse-fail numerator
+    AND its denominator, alongside transport losses), and the routing-parity
+    gap (rule-26 pilots route SYNC below the crossover while gating a
+    forced-BATCH production wave) is a separately-filed sibling task — do
+    NOT read a rule-26 PASS as protection against api-refusal censoring.
+    The residual backstops that DO fire: a censored arm's shrunken
+    `n_answered` / `n_scored` — api-refusal draws leave the `n_answered`
+    parse-fail denominator, so a downstream consumer's scored-count floor
+    can trip, while the gate's OWN effective-draws floor
+    (`min_effective_draws_per_arm`, evaluated against
+    `n_draws - n_transport_lost`) does NOT shrink: api-refusal draws stay
+    inside it — the reduce's WARNING on any non-zero count, and the
+    `n_api_refusal` field now carried per arm in the pilot report.
 
 10. **Pin nuisance formatting identical across conditions.** Response length,
     markdown, system-prompt boilerplate, and the presence/absence of a
@@ -492,7 +563,10 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
     per-arm dropped-draw rate SPLIT content-drops vs transport-losses
     (rules 23/24), the per-draw `stop_reason` tally + its truncation-drop
     subset (`JudgeResult.stop_reason_tally` / `n_truncation_dropped_draws`,
-    rules 23/26; #2021), the rule-26 pilot-gate verdict for any ≥5k-call wave,
+    rules 23/26; #2021), the api-refusal count
+    (`JudgeResult.n_api_refusal_draws` — the THIRD top-level drop class,
+    reported separately from BOTH content drops and transport losses;
+    rule 28, #2151), the rule-26 pilot-gate verdict for any ≥5k-call wave,
     per-behavior reliability
     (test-retest + judge–human agreement), and the reliability ceiling
     √(r_yy). A judged DV is a measurement instrument; report it like one.

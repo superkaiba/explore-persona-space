@@ -170,16 +170,31 @@ class JudgeResult:
     when the response then truncated; a transport row has no response at
     all). ``per_item_truncation_drops`` is the per-item breakdown.
 
+    ``n_api_refusal_draws`` (#2151) is the THIRD top-level drop class — an
+    API-CLASSIFIER refusal: the Batch/sync request SUCCEEDED but the provider's
+    safety classifier declined (``stop_reason == "refusal"``, empty content
+    array), so NO verdict about the content was ever produced. A SIBLING of
+    ``n_transport_lost_draws``, NOT a subset of ``n_dropped_draws`` — rule
+    24(ii): blending classes recreates the censoring the split prevents. The
+    class is transport-conditional and retriable (#1739: 0 re-refusals in
+    14,887 sync re-issues of the identical instrument — remediation recipe in
+    llm-judging.md rule 28), and DISTINCT from the #1801 instructed rubric
+    ``"REFUSAL"``, which IS a produced verdict and stays a rule-9 content
+    drop. Classification precedence per draw: transport -> api-refusal ->
+    content (refusal-over-truncation within content).
+    ``per_item_api_refusals`` is the per-item breakdown.
+
     ``stop_reason_tally`` (#2021, rule 26) counts the persisted per-draw
-    ``stop_reason`` over every draw the judge actually ANSWERED — kept draws
-    AND content-dropped draws alike (``"unknown"`` for a draw without the
-    field: legacy save_raw rows, bare-scalar parses). TRANSPORT-lost draws
-    are EXCLUDED from the tally: they carry no API response, hence no
-    ``stop_reason``, and tallying them as ``"unknown"`` would blend outage
-    blips into the legacy/SDK-absent unknown count the rule-26 pilot gate's
-    unknown advisory reads. A kept-but-truncated verdict (parsed in-range
-    score with ``stop_reason == "max_tokens"``) is visible ONLY here — it
-    increments no drop counter.
+    ``stop_reason`` over every draw carrying an API response — kept draws,
+    content-dropped draws, AND api-refusal draws alike (``"unknown"`` for a
+    draw without the field: legacy save_raw rows, bare-scalar parses); the
+    tally is a raw census, so ``"refusal"`` appears there too (#2151).
+    TRANSPORT-lost draws are EXCLUDED from the tally: they carry no API
+    response, hence no ``stop_reason``, and tallying them as ``"unknown"``
+    would blend outage blips into the legacy/SDK-absent unknown count the
+    rule-26 pilot gate's unknown advisory reads. A kept-but-truncated verdict
+    (parsed in-range score with ``stop_reason == "max_tokens"``) is visible
+    ONLY here — it increments no drop counter.
     """
 
     scores: dict[str, float | None]
@@ -194,9 +209,14 @@ class JudgeResult:
     # is unchanged; precedence: transport -> refusal -> truncation)
     n_truncation_dropped_draws: int = 0
     per_item_truncation_drops: dict[str, int] = field(default_factory=dict)
-    # raw stop_reason -> count over ANSWERED draws (kept + content-dropped);
-    # "unknown" for absent; transport-lost draws EXCLUDED (#2021, rule 26)
+    # raw stop_reason -> count over ANSWERED draws (kept + content-dropped +
+    # api-refusal); "unknown" for absent; transport-lost EXCLUDED (#2021, rule 26)
     stop_reason_tally: dict[str, int] = field(default_factory=dict)
+    # THIRD top-level drop class (#2151, rule 18): an API-classifier refusal.
+    # A SIBLING of n_transport_lost_draws, NOT a subset of n_dropped_draws —
+    # rule 24(ii): blending classes recreates the censoring the split prevents.
+    n_api_refusal_draws: int = 0
+    per_item_api_refusals: dict[str, int] = field(default_factory=dict)
 
 
 def judge_graded(
@@ -319,12 +339,14 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
     per_item_draws: dict[str, list[float]] = {item_id: [] for item_id, _, _ in items}
     per_item_transport: dict[str, int] = {}
     per_item_trunc: dict[str, int] = {}
+    per_item_api_ref: dict[str, int] = {}
     stop_tally: dict[str, int] = {}
     n_total = 0
     n_dropped = 0
     n_transport = 0
     n_refusal = 0
     n_trunc = 0
+    n_api_refusal = 0
     for cid, parsed in all_scores.items():
         # item_id is everything before the FIRST "__idx__comp" tail. Since each
         # item has exactly one question and idx increments per (persona,question),
@@ -353,6 +375,18 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
         stop_reason = parsed.get("stop_reason") if isinstance(parsed, dict) else None
         tally_key = stop_reason if isinstance(stop_reason, str) else "unknown"
         stop_tally[tally_key] = stop_tally.get(tally_key, 0) + 1
+        if s is None and _batch_judge.is_api_refusal_error_dict(parsed):
+            # THIRD top-level class (#2151): API-classifier refusal — the row
+            # SUCCEEDED but the provider's safety classifier declined
+            # (stop_reason == "refusal", empty content), so no verdict about
+            # the content exists: like transport, the draw is NOT
+            # content-informative and must not enter n_dropped_draws.
+            # Placement is deliberate — AFTER the stop_reason tally (a raw
+            # census, so "refusal" still counts there), BEFORE the
+            # content-drop accounting and its refusal/truncation precedence.
+            n_api_refusal += 1
+            per_item_api_ref[item_id] = per_item_api_ref.get(item_id, 0) + 1
+            continue
         if s is None:
             n_dropped += 1
             if _is_refusal_parsed(parsed):
@@ -370,6 +404,17 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
             "judge reduce: %d transport-lost draws (bounded retries exhausted) — "
             "re-judgeable; NOT blended into content drops (rule 24)",
             n_transport,
+        )
+    if n_api_refusal:
+        logger.warning(
+            "judge reduce: %d API-refusal draws across %d item(s) "
+            "(stop_reason == 'refusal', empty content) — the wave ran a transport "
+            "whose safety classifier CENSORS; transport-conditional and retriable "
+            "via targeted SYNC re-issue at the identical instrument "
+            "(llm-judging.md rule 28, #2151/#1739). NOT blended into content "
+            "drops or transport losses.",
+            n_api_refusal,
+            len(per_item_api_ref),
         )
     if n_dropped:
         logger.warning(
@@ -400,4 +445,6 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
         n_truncation_dropped_draws=n_trunc,
         per_item_truncation_drops=per_item_trunc,
         stop_reason_tally=stop_tally,
+        n_api_refusal_draws=n_api_refusal,
+        per_item_api_refusals=per_item_api_ref,
     )
