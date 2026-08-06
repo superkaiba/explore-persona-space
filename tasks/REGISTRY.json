@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2134,
+  "highest_id": 2135,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8779,6 +8779,13 @@
       "path": "tasks/proposed/2134",
       "status": "proposed",
       "title": "daily-fix: pre-dispatch staleness pass for queued tasks"
+    },
+    "2135": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2135",
+      "status": "proposed",
+      "title": "daily-fix: pod HOLD gates + launches must arm a re-drive"
     },
     "215": {
       "has_clean_result": true,
