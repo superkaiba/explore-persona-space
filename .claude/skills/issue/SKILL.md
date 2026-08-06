@@ -10455,8 +10455,7 @@ work* contract.
 
    Rationale: the previous ordering (teardown → `set-status completed` →
    `epm:done` → Step 10d) left the entire Step 10d merge window (up to
-   ~33 min under fleet churn — recovery cycle + two ~12-min lint-gate
-   waits observed on 2026-07-26) with NO `/issue-tick` re-drive coverage
+   ~33 min under fleet churn) with NO `/issue-tick` re-drive coverage
    AND with the durable record reading `completed`+`epm:done` on an
    unmerged branch — the `completed_unmerged_pass` (#1540, #1653) flag
    class. Moving the terminal transition to AFTER `epm:merged` closes
@@ -10558,7 +10557,7 @@ for the most recent park is ALREADY present on the parent's
 `events.jsonl`, the proposer ran at Step 9b — either the autonomous
 follow-up auto-spawn block (an `epm:follow-ups-autospawned v1` marker is
 also present) OR the cheap-band block (block C0, which fires in
-interactive sessions too as of 2026-06-13). SKIP re-spawning the
+interactive sessions too). SKIP re-spawning the
 proposer here — it would duplicate the proposal list and is unnecessary.
 The `epm:follow-ups v1` posted at Step 9b is still the canonical list
 for the user; any `auto_run: no` / cap-skipped / fail-safe-skipped
@@ -10631,7 +10630,7 @@ moment `task.py new` returns a new id (here, or anywhere mid-session a
 child task is filed), immediately post ONE line in chat:
 `Filed #<N> '<title>' (child of #<parent>, status:<s>)`. A created task
 that stays invisible until the user asks "what is #<N>?" is a dropped
-handoff. (Incident 2026-06-01: #461 was filed and worked on but never
+handoff. (#461 was filed and worked on but never
 announced — the user lost track and had to ask.)
 
 ### Step 10c: Living-docs update hook (experiments only)
@@ -10855,7 +10854,7 @@ single canonical merge procedure, invoked from TWO trigger points:
 
 Rationale: deferring the merge stranded shared-library fixes on unmerged
 branches, so the next experiment inheriting from `main` lacked them
-(incident #456 -> #466: a `format_dataset` fix to
+(#456 -> #466: a `format_dataset` fix to
 `src/explore_persona_space/train/trainer.py` lived on the #456 branch
 that deferred merging; #466 inherited the older `format_dataset` from
 `main` and crashed Phase-0 on the same data #456 trained on fine).
@@ -10892,10 +10891,10 @@ skill — and any
 IMPROVISED recovery around one — runs BARE with its exit code checked. Never
 pipe one through `tail` / `grep` / `head` / any filter: bash makes a
 pipeline's exit status the LAST stage's, so the pipe masks a rejected push
-and the session proceeds on a merge that never landed (#957; 4 sessions
-2026-07-02). The `guard_piped_git_push.sh` PreToolUse hook BLOCKS the piped
-shape anyway, so composing it just wastes a turn (~10 blocks across ≥8
-sessions on 2026-07-07, #1138). Push/merge output is a few lines — it needs
+and the session proceeds on a merge that never landed (#957). The
+`guard_piped_git_push.sh` PreToolUse hook BLOCKS the piped
+shape anyway, so composing it just wastes a turn (#1138). Push/merge
+output is a few lines — it needs
 no trimming. Copy these forms; the earlier composition sites (Step 5 round
 pushes, the failure-lesson memory persist, Step 9a-ter re-analysis commits,
 the Step 9b auto-merge trigger) point here:
@@ -10971,8 +10970,8 @@ triage stays human.
 
 Derive the two paths cwd-robustly FIRST — never via `git rev-parse
 --show-toplevel`, which from a worktree cwd returns the WORKTREE root and
-nests `$WT` into `.../issue-<N>/.claude/worktrees/issue-<N>` (incident #506,
-2026-06-09: the guard snippet exit-128'd with "cannot change to ..."):
+nests `$WT` into `.../issue-<N>/.claude/worktrees/issue-<N>` (#506: the
+guard snippet exit-128'd with "cannot change to ..."):
 
 ```bash
 eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
@@ -10989,7 +10988,7 @@ and needs no `uv run` wrapper.)
 merge form).** Review rounds write per-agent memories
 (`.claude/agent-memory/**`) with cwd in the worktree, leaving the tree dirty;
 a dirty tree aborts the merge-conflict recovery's `git -C "$WT" merge
-origin/main` below (incident #906, 2026-07-04). Commit them by explicit
+origin/main` below (#906). Commit them by explicit
 pathspec — never `git add -A`:
 
 ```bash
@@ -11191,9 +11190,9 @@ rebase-merged. Five guards:
    exits non-zero (#1184), and the guard never
    touches THIS task's own `tasks/*/<N>/` folder (the `grep -Ev
    "^tasks/[^/]+/<N>/"` carve-out). Never let a behind-`main` branch revert
-   another task's `events.jsonl` / `comments.jsonl`. (Incident 2026-06-01:
-   #458's merge branch, 1,146 commits behind main, silently rewound
-   `tasks/running/448/events.jsonl`.) The `--rebase` merge form below replays
+   another task's `events.jsonl` / `comments.jsonl`. (#458's merge
+   branch, over a thousand commits behind main, silently rewound
+   another task's `events.jsonl`.) The `--rebase` merge form below replays
    the branch's commits on top of current `main`, so files the branch never
    committed keep `main`'s version (the `--squash` form lands the same
    own-diff content as one commit) — this is what keeps the clean-result body
@@ -11223,7 +11222,7 @@ rebase-merged. Five guards:
    automatic unsafe verdict — in this repo every `task.py` marker is a
    commit (~100+/hr fleet-wide), so a same-day, single-own-commit,
    mainline-based branch routinely reads `BEHIND` in the hundreds
-   (incident #598, 2026-06-12: `BEHIND=305` tripped the old fixed-200
+   (#598: `BEHIND=305` tripped the old fixed-200
    threshold and routed an infra task's `src/` deliverables toward the
    artifact-confirmed path, which structurally cannot carry them — its
    surgical checkout is restricted to the task's own `tasks/` /
@@ -11305,7 +11304,7 @@ rebase-merged. Five guards:
    carries the parent's stale `src/` and `scripts/`, and a blind rebase
    replays both the parent's `tasks/` rewinds (already handled) AND its
    `src/` / `scripts/` regressions (NOT handled by Guard 1) onto
-   `main`. (Incident 2026-06-03: `issue-479` was 1,153 commits behind
+   `main`. (#479: `issue-479` was over a thousand commits behind
    `origin/main` and based on the still-unmerged `#472` branch — a
    blind `gh pr merge --rebase` would have replayed `#472`'s old
    commits onto `main`, risking regression of ~50 foreign `tasks/`
@@ -11321,9 +11320,9 @@ rebase-merged. Five guards:
    silently DROPS lines that landed on `origin/main` after the branch's
    merge-base — no conflict, no warning, hard to spot in the diff,
    catastrophic when it drops a bundled `workflow_lint.py` check or an
-   operational SKILL.md guardrail (incident #1701 → #1698, 2026-07-26:
-   153 lines of `check_inline_round_duty_mirror` deleted 45 min after
-   they landed, breaking full-suite collection fleet-wide for ~15.5 h;
+   operational SKILL.md guardrail (#1701 → #1698:
+   153 lines of `check_inline_round_duty_mirror` deleted minutes after
+   they landed, breaking full-suite collection fleet-wide;
    #1713 encodes this guard as the mechanical backstop). Refuse the
    merge with a loud message when the shape is detected.
 
@@ -11366,7 +11365,7 @@ rebase-merged. Five guards:
    halts the merge attempt at exactly the same point the inline prose did.
    Task #1978 extraction.)
 
-   **Recovery ordering (#1753; incident #1727).** When recovering via a
+   **Recovery ordering (#1753; #1727).** When recovering via a
    merge of `origin/main` INTO the branch (instead of the rebase form),
    COMMIT the staged merge BEFORE re-running this guard or the pre-push
    lint gate — the guard's predicate reads `git show HEAD:"$P"` and the
@@ -11576,11 +11575,11 @@ fast-pathed; it takes the ordinary `$MERGE_FORM` merge.
 The gate is an INLINE recipe (the fenced blocks in this subsection, run via
 bg-Bash) — there is NO helper script; do not compose a
 `.claude/skills/issue/step10d_lint_gate.sh` (or similar) path, it does not
-exist (#1720's session invoked exactly that phantom path, 2026-07-27).
+exist (#1720's session invoked exactly that phantom path).
 
-#931 (2026-07-04) merged a workflow-lint offender to `main`, breaking
+#931 merged a workflow-lint offender to `main`, breaking
 `tests/test_workflow_lint.py` on pristine trunk fleet-wide for most of a day
-(5 downstream sessions each burned 5-25 min classifying it as pre-existing).
+(5 downstream sessions each burned rounds classifying it as pre-existing).
 #1147 adds a mapped invariant-test leg to the same gate: dependency-mapped
 payloads (the selector's full map — GLOB_SCAN_TESTS + rules-pin (#1496) + the
 src/scripts import/literal/stem dependency arms (#1573), WORKFLOW_INVARIANT
@@ -11620,8 +11619,8 @@ tests BEFORE anything lands:
   ~4.5-6 min (no-flags) + ~1.4 s (parity leg) + ~1-2 s gate-tree
   construction on the shared VM; WARNs do not fail (PASS = exit 0 on
   both). The two leg pairs + TG legs total ~9-12+ min on an IDLE VM, but
-  **30-40 min under typical fleet load (3+ concurrent gates)** — measured
-  2026-07-26: #1690 32 min, #1694 37 min, #1711 ~30 min. Size any
+  **30-40 min under typical fleet load (3+ concurrent gates)** —
+  measured (#1690/#1694/#1711). Size any
   wall-time-derived fence off the LOADED range, not the idle one. So the
   executable block below can NEVER fit the 600s foreground Bash tool cap — run it as
   ONE BACKGROUND Bash call (`run_in_background=true`) with the per-leg
@@ -12182,9 +12181,9 @@ tests BEFORE anything lands:
   grepped from the gated map's machine-greppable `recommended-timeout-s=`
   stderr sizing line in `/tmp/issue-<N>-tg-map-err.txt`, falling back to a
   fixed 600 s when the line is absent (the sizing floor is also 600 s —
-  raised from 300 s by #1646: #1634's healthy 5-file baseline leg measured
-  202.9 s and the gated leg was killed at 300 s under residual load; the
-  historical 2-test scan map measured ~12.6 s, 2026-07-08). The baseline leg reuses the gated map's
+  raised from 300 s by #1646: a healthy 5-file baseline leg measured
+  ~200 s and the gated leg was killed at 300 s under residual
+  load). The baseline leg reuses the gated map's
   `TG_T` (its own map call discards stderr; the gated map is the superset in
   the common case and over-sizing is the safe direction) — a
   k_baseline ≫ k_gated residual fails CLOSED (rc 124 → crash); the known
@@ -12315,7 +12314,7 @@ tests BEFORE anything lands:
   dispositions — the nightly /daily Step C sweep is the FALLBACK, not
   the primary route: without the urgent grammar every intervening
   session's Step 9c gate must re-classify the same pre-existing red
-  (incident #1701 → #1698: the red lived ~15.5 h fleet-wide before
+  (#1701 → #1698: the red lived fleet-wide until
   #1713 landed the fix). See
   `.claude/rules/workflow-fix-on-bug.md` § Recursion guard "Urgent
   fast path" for the router semantics; the parking session STILL
@@ -12362,7 +12361,7 @@ tests BEFORE anything lands:
   completion-read (surgical block below). On a block at (iii), clean the payload out of BOTH
   index and working tree with the hook-VERIFIED two-step (run from
   `$REPO_ROOT`; simulated against `scripts/guard_repo_root_branch.sh`
-  2026-07-05 — the one-shot restore invocation carrying `--staged` PLUS a
+  — the one-shot restore invocation carrying `--staged` PLUS a
   worktree flag is mechanically BLOCKED by its #897 restore detector, whose allow
   arm requires `--staged` AND no worktree flag, and the hook's own
   guidance bans pointing `-C` at the repo root for a DESTRUCTIVE op):
@@ -12435,7 +12434,7 @@ tests BEFORE anything lands:
   origin/main`, so a re-sync AFTER the gate returns does not invalidate
   the gate verdict — but a re-sync BEFORE a ~30-min gate snapshots
   origin/main against a tip that will be stale by merge time, and #1476
-  (the 67cf175e session, 2026-07-26T16:25Z) proved that
+  proved that
   origin/main advances DURING the gate window often enough to break the
   squash merge with `CONFLICTING`. The re-sync is invoked from the
   auto-merge subsection below (the H4 heading immediately following
@@ -12861,7 +12860,7 @@ no `git worktree remove`).
 For `kind: infra|batch` branches `$MERGE_FORM` is `--squash` (#1288):
 the branch is a single logical change by construction, the squash lands
 it as ONE independently-revertible commit, and the empirical record
-(0/4 first-try rebases 2026-07-12; 10/24 sessions 07-11; every failure
+(0/4 first-try rebases in one fleet day; every failure
 landing on --squash anyway) makes the rebase attempt a pure wall-time
 tax under fleet churn. Shape 1 cannot fire on the --squash path (the
 error is rebase-specific); shapes 0/2/else apply to both forms.
@@ -12915,8 +12914,8 @@ uv run python scripts/task.py post-marker <N> epm:progress \
 this shape fell through to the "anything else" catch-all (then
 numbered (3); now class (4) after #1657 added the head-sync shape) and
 burned a full
-~16-min scratch-worktree recovery on a transient (one of the three
-error shapes in the 2026-07-12 fleet's 4/4 first-attempt failures).
+scratch-worktree recovery on a transient (one of the three
+error shapes in a fleet day's 4/4 first-attempt failures).
 
 **Known failure shape 1 — branch carries a merge commit (`can't be
 rebased`, #1041).** A branch that CARRIES A MERGE COMMIT (e.g. after a
@@ -12925,8 +12924,7 @@ server-side rebased — `gh pr merge --rebase` fails with
 `GraphQL: This branch can't be rebased`. The working recovery is
 `gh pr merge <PR> --squash --delete-branch=false` (acceptable for a
 single-logical-change branch; the squash loses per-commit revert
-granularity, which the merge commit already compromised). (Incident
-#1041 PR #801, 2026-07-05.)
+granularity, which the merge commit already compromised). (#1041.)
 The SHA-bound verdict file SURVIVES this failure by design
 (consume-on-merge-success): run the squash retry through the SAME gated
 conditional (substituting `--squash` for `--rebase`) so the still-valid
@@ -13021,11 +13019,11 @@ gate re-run is needed.)
 
 **Known failure shape 3 — PR head-sync lag
 (`Head branch is out of date`, #1614).** Substring-match
-`Head branch is out of date` (transcript-mined from #1614 / PR #1394,
-2026-07-23; may drift — treat a `Head branch was modified` refusal as
+`Head branch is out of date` (transcript-mined from #1614;
+may drift — treat a `Head branch was modified` refusal as
 the same class). GitHub's PR OBJECT (what `gh pr view` and the merge
-API read) lags a JUST-PUSHED head ref under fleet churn — ~6 min
-observed after #1614's pre-gate spec-freshness push — so the merge is
+API read) lags a JUST-PUSHED head ref under fleet churn — minutes
+observed (#1614) — so the merge is
 refused against a stale view of the head. NOT branch-behind-main
 staleness: #1614's attempt 3 landed the SAME 132-behind tip
 byte-unchanged once the PR object re-synced, so `gh pr update-branch` /
@@ -13099,15 +13097,15 @@ most one probe re-entry, then `epm:merge-failed`).
   and the #1058 strip_heredoc_bodies() pre-pass is fail-closed — the common
   merged-note shape (unquoted <<EOF tag + $( ) expansion in the body)
   REFUSES the strip, so git-verb prose in the note blocks the whole call
-  (2026-07-27 heredoc variant, #1756). Resolve dynamic values — SHAs,
+  (the #1756 heredoc variant). Resolve dynamic values — SHAs,
   counts — in PRIOR Bash calls and embed them as literals in the Write
   content) carrying the SHA
   list plus `merge_form: squash|rebase` and `merge_attempts: <n>` (note-token
   convention — no schema change, #1288). The `--file` channel bypasses the
   argv-prose scan `guard_repo_root_branch.sh` runs on `--note`; merge-recovery
   notes routinely quote `git merge`, `git rebase`, and the pre-fix guard's
-  own blocked argv would fire on any of them (incident session `7ce3a81f`,
-  2026-07-26). Update the chat title with `merged`. Then run the **post-merge
+  own blocked argv would fire on any of
+  them. Update the chat title with `merged`. Then run the **post-merge
   stale-task-folder guard** below (it runs on every merge form).
 
   **Authoritative merge-SHA derivation (#1722).** Read the merge SHA
@@ -13121,15 +13119,14 @@ most one probe re-entry, then `epm:merge-failed`).
   (`state`, `mergeable`, `headRefOid`), and `mergeCommit` is a documented
   `gh pr view --json` field — it resolves the merge commit for BOTH
   merge forms (`--squash` returns the single squash commit; `--rebase`
-  returns the tip of the replayed commits; verified live 2026-07-27
-  against PR #1487 (rebase form) → `85db2fba593a1b201175cbb5438568be32ca161f`).
+  returns the tip of the replayed commits; verified live, #1722).
   A NOT-YET-MERGED PR returns `null` for `.mergeCommit`, so the derivation
   is ordering-safe as long as it runs AFTER `gh pr merge` reports success.
   NEVER derive the SHA from the shared `origin/main` tip
   (e.g. `git log -1 --format=%H origin/main`) — concurrent sessions'
   merges advance the shared tip between the merge and the read, so a
-  sibling task's merge commit can substitute for yours (incident
-  2026-07-26 session `06447a89`: the tip read #1692's SHA while
+  sibling task's merge commit can substitute for yours (the tip once
+  read #1692's SHA while
   posting the #1691 merge marker).
 
   **Pre-post commit-subject cross-check (#1722; object-availability
@@ -13140,7 +13137,7 @@ most one probe re-entry, then `epm:merge-failed`).
   mean "another sync in flight, no pull ran"), and the
   merge-conflict-recovery path has no pre-marker sync at all — so
   ensure the object is local FIRST; a MISSING object is
-  staleness/transport, never a MISMATCH (incident #1735, 2026-07-27: a
+  staleness/transport, never a MISMATCH (#1735: a
   pre-fetch `git log -1` read `fatal: bad object` and the false
   MISMATCH aborted the `epm:merged` post one round):
 
@@ -13203,9 +13200,9 @@ most one probe re-entry, then `epm:merge-failed`).
 When the safe-case merge is refused on mergeability (a REAL conflict —
 `main` and the branch both changed the same lines), do NOT hand-resolve
 in the shared repo root and do NOT force-push. Recover IN THE WORKTREE
-(worked example: #598 / PR #454, 2026-06-12 — both sides appended a new
+(worked example: #598 — both sides appended a new
 checklist item to `.claude/agents/experimenter.md`; resolved in the
-worktree, 210 targeted tests re-run, merged on retry):
+worktree, targeted tests re-run, merged on retry):
 
 ```bash
 git -C "$WT" fetch origin main --quiet
@@ -13525,7 +13522,7 @@ checkout it degrades to — is structurally restricted to this task's own
 modules under `src/explore_persona_space/`, the artifact-confirmed path
 would silently strand them on the branch — a downstream child that
 reuses the harness then breaks its import path on a clean `main`
-checkout (incident #595: parent #545 / grandparent #503 introduced
+checkout (#595: parent #545 / grandparent #503 introduced
 `src/explore_persona_space/experiments/issue503/`, which the
 artifact-confirmed merge left on the branch; the child's eval battery
 imported it and crashed). Scan for it FIRST:
@@ -13686,8 +13683,8 @@ Decision tree:
   pathspec-limited commit is load-bearing: many sessions commit to the
   shared repo root concurrently, so its index may carry a CONCURRENT
   session's staged files, and a bare `git commit` sweeps them in
-  (incident #562/#550, 2026-06-10: 70 foreign staged files landed in
-  #562's surgical commit) — limiting the commit by pathspec commits
+  (#562/#550: 70 foreign staged files landed in
+  one surgical commit) — limiting the commit by pathspec commits
   ONLY this task's files and ignores every other staged entry:
 
   ```bash
@@ -14055,8 +14052,8 @@ Decision tree:
   either. The retry therefore RE-RUNS the producer diff clause to
   regenerate the list file BEFORE re-running the corrected `-C`-qualified
   consumer — re-running only the consumer (or `cat`-ing the list) fails
-  with exit 128 / `cat: ... No such file` (incident 2026-07-05: the #813
-  and #1056 sessions). The guard's block message gives only generic
+  with exit 128 / `cat: ... No such file` (#813/#1056).
+  The guard's block message gives only generic
   worktree / `sync_repo_root.py` retry advice and does NOT mention the
   skipped producer — this paragraph is the recovery contract.
 
@@ -14108,8 +14105,8 @@ OLD status folder onto `main` next to its live one (e.g.
 `tasks/approved/<N>/` lands alongside `tasks/awaiting_promotion/<N>/`,
 same task number, two status dirs). The autonomous-session watcher then
 reads the stale folder as a live task and respawns the session
-indefinitely (incident #644, 2026-06-16: an orphan-respawn cap-2-per-day
-cycle ran ~8h; #643 hit the same class at archive time). Guard 1 above
+indefinitely (#644: an orphan-respawn cap-2-per-day
+cycle ran for hours; #643 hit the same class at archive time). Guard 1 above
 catches FOREIGN tasks' folders but not this task's own old-status
 duplicate, and it only runs on the safe-case (`$MERGE_FORM`) path. Keep exactly ONE
 folder for this task on `main` — and never by deleting origin's ONLY copy
@@ -14376,9 +14373,8 @@ convention).
 1. **Run CRON-TEARDOWN** — the two-leg sweep (§ CRON-TEARDOWN
    procedure; recurring tick + stray one-shot `/issue <N>` wakeups).
    The `/issue-tick` backstop stayed armed through the
-   entire Step 10d merge window (up to ~33 min under fleet churn — the
-   shape-2 conflict-recovery cycle + two ~12-min lint-gate waits
-   observed on 2026-07-26); a wedged / refused session during the
+   entire Step 10d merge window (up to ~33 min under fleet
+   churn); a wedged / refused session during the
    merge would have been re-driven by the tick, and now that
    `epm:merged` is posted the backstop has done its job. Step 1 is
    idempotent — a paranoid re-entry that already ran teardown reads
@@ -14413,10 +14409,10 @@ convention).
    `scripts/sync_repo_root.py` exits 0 on `state=in-flight` BY DESIGN —
    "your push has NOT landed; re-run after the in-flight sync
    completes" (sync_repo_root.py L33-35) — so the retry duty is
-   CALLER-owned, and this step is that caller. Incident #1792
-   (2026-07-29): the in-flight advisory printed at 13:20:47Z, teardown
-   followed 12 s later with no re-run; the terminal commits reached
-   origin only via concurrent sessions' pushes.
+   CALLER-owned, and this step is that caller. (#1792: the in-flight
+   advisory printed, teardown
+   followed seconds later with no re-run; the terminal commits reached
+   origin only via concurrent sessions' pushes.)
 
    The LANDED arbiter is a fetched-origin blob check — the task's
    canonical `events.jsonl` on `origin/main` carries `"epm:done"` —
