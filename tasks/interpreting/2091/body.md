@@ -1,6 +1,6 @@
 ---
-title: 'Deterministic vs stochastic decoding: answer-vector variance, mapping quality,
-  and behavioral-expression prediction'
+title: Averaging five sampled answers buys a cleaner measurement target, not a better
+  context-to-answer map (MODERATE confidence)
 kind: experiment
 tags:
 - trigger-dense
