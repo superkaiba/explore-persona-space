@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2144,
+  "highest_id": 2145,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8849,6 +8849,13 @@
       "path": "tasks/proposed/2144",
       "status": "proposed",
       "title": "daily-fix: null-statistic gates need measured calibration"
+    },
+    "2145": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2145",
+      "status": "proposed",
+      "title": "daily-fix: dispatch_issue launch lacks name-suffix/gpu-type"
     },
     "215": {
       "has_clean_result": true,
