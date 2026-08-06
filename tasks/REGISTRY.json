@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2135,
+  "highest_id": 2136,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8786,6 +8786,13 @@
       "path": "tasks/proposed/2135",
       "status": "proposed",
       "title": "daily-fix: pod HOLD gates + launches must arm a re-drive"
+    },
+    "2136": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2136",
+      "status": "proposed",
+      "title": "daily-fix: stale prior-round PASS in verdict-present check"
     },
     "215": {
       "has_clean_result": true,
