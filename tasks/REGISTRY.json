@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2137,
+  "highest_id": 2138,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8800,6 +8800,13 @@
       "path": "tasks/proposed/2137",
       "status": "proposed",
       "title": "daily-fix: pod_audit ownership by substring self-poisons"
+    },
+    "2138": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2138",
+      "status": "proposed",
+      "title": "daily-fix: reap-husks symlink plan.md reads as unique"
     },
     "215": {
       "has_clean_result": true,
