@@ -337,7 +337,7 @@ def _fetch_store_sidecars(tree_path: str, revision: str | None, max_workers: int
 def collect_cells_from_hub(
     stages: list[str] | None,
     render: str | None,
-    corpus: str | None,
+    corpus: list[str] | None,
     revision: str | None,
     max_workers: int,
 ) -> list[dict]:
@@ -356,7 +356,7 @@ def collect_cells_from_hub(
         for t in v2_stores
         if (not stages or t["stage"] in stages)
         and (render is None or t["render"] == render)
-        and (corpus is None or t["corpus"] == corpus)
+        and (not corpus or t["corpus"] in corpus)
     ]
     if not targets:
         raise SystemExit(
@@ -454,7 +454,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stage", action="append", default=None, help="repeatable stage filter")
     parser.add_argument("--render", type=str, default=None)
-    parser.add_argument("--corpus", type=str, default=None)
+    parser.add_argument(
+        "--corpus",
+        action="append",
+        default=None,
+        help="repeatable corpus filter (the two-grain smoke passes one concat "
+        "corpus AND one plain-v2 corpus — crash-fix 2026-08-06)",
+    )
     parser.add_argument("--all-cells", action="store_true")
     parser.add_argument(
         "--expect-n-cells",
@@ -498,6 +504,15 @@ def main() -> int:
     if not args.all_cells and not (args.stage or args.render or args.corpus):
         print("[error] pass --all-cells or at least one of --stage/--render/--corpus")
         return 1
+
+    # Pin ONE data-repo commit for the whole gate pass (crash-fix 2026-08-06;
+    # same rationale as sae_encode.main — an unpinned revision re-resolves
+    # `main` per hf_hub_download on the constantly-moving shared repo). The
+    # manifest meta then records the RESOLVED sha, not None.
+    import issue2061_hub_io as hio
+
+    args.data_revision = hio.resolve_data_repo_revision(args.data_revision)
+    print(f"[grain] data revision pinned: {args.data_revision}")
 
     cells = collect_cells_from_hub(
         args.stage, args.render, args.corpus, args.data_revision, args.max_workers

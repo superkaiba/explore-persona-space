@@ -25,7 +25,8 @@
 #
 # Modes:
 #   --smoke-only   Full tiny-N pipeline P1->P5 (parity gate, 1 stage-pair x 1
-#                  render x smallest corpus, --n-draws 4) into ISSUE2061_SMOKE_ROOT
+#                  render x ONE CORPUS PER CONSUMPTION GRAIN — concat AND
+#                  plain-v2, --n-draws 4) into ISSUE2061_SMOKE_ROOT
 #                  (never the canonical out-roots); sentinel kind epm:smoke-result.
 #   --dry-run      Walk every phase printing the composed command without
 #                  executing (cell-iteration plumbing + env passthrough +
@@ -43,6 +44,9 @@
 #   ISSUE2061_UPLOAD=0 — disable the per-phase HF upload legs (default ON)
 #   ISSUE2061_HF_PREFIX — override the HF bucket (scratch-prefix smoke probes)
 #   ISSUE2061_STAGING_DIR / ISSUE2061_SMOKE_ROOT / ISSUE2061_SENTINEL_DIR
+#   ISSUE2061_SMOKE_CORPORA — space-separated smoke corpora (default
+#                  "gsm8k_train_full if11k": one concat + one plain-v2 cell,
+#                  so the smoke exercises BOTH consumption grains)
 #   ISSUE2061_SAE_REVISION / ISSUE2061_DATA_REVISION — HF pins
 #   ISSUE2061_N_DRAWS / ISSUE2061_P3_DEVICE — P3 knobs (defaults: script / auto)
 #
@@ -359,14 +363,18 @@ run_smoke() {
   # NEVER the canonical eval_results/figures trees.
   local SMOKE_ROOT="${ISSUE2061_SMOKE_ROOT:-/tmp/issue-2061-smoke}"
   local SA="${ISSUE2061_SMOKE_STAGE_A:-base}" SB="${ISSUE2061_SMOKE_STAGE_B:-sft}"
-  # CORPUS must be a stem of the REGISTERED capture generation (v2). The old
-  # default `gsm8k_test1319` is a v1-ONLY stem: once the v7 grid restricted the
-  # registered generation to v2, resolve_turnstore_tree() raises
-  # FileNotFoundError on it and the smoke dies at its first turnstore
-  # resolution. `gsm8k_train_full` is the smallest REGISTERED v2 cell
-  # (n_tr 5,978) and the smallest cell plan §9's P3 pilot names, so the smoke
-  # and the pilot exercise the same small end of the grid.
-  local RD="${ISSUE2061_SMOKE_RENDER:-chat}" CP="${ISSUE2061_SMOKE_CORPUS:-gsm8k_train_full}"
+  # CORPORA (space-separated) must be stems of the REGISTERED capture
+  # generation (v2) — the old default `gsm8k_test1319` was a v1-ONLY stem that
+  # FileNotFoundError'd at first resolution under the v7 generation pin.
+  # ONE CELL PER CONSUMPTION GRAIN (crash-fix 2026-08-06): the resolver has
+  # TWO grains — concat (V2_CONCAT_SOURCES: gsm8k_train_full, lmsys23k = wave-1
+  # source + v2 extension) and plain-v2 (if11k/math7500/sft11k/uf11k, the
+  # MAJORITY of the 35 cells) — and the round-5 single-cell smoke selected only
+  # the concat grain, so P1 died on its FIRST plain-v2 cell in production. The
+  # default covers both: `gsm8k_train_full` (smallest concat cell, n_tr 5,978,
+  # also plan §9's P3 pilot cell) + `if11k` (the plain-v2 cell that crashed).
+  local RD="${ISSUE2061_SMOKE_RENDER:-chat}"
+  local CPS="${ISSUE2061_SMOKE_CORPORA:-gsm8k_train_full if11k}"
   local DRAWS="${ISSUE2061_SMOKE_DRAWS:-4}"
   local enc="$SMOKE_ROOT/sae_encoded" r2="$SMOKE_ROOT/per_feature_r2"
   local null="$SMOKE_ROOT/null" fit="$SMOKE_ROOT/fitness" figs="$SMOKE_ROOT/figures"
@@ -382,24 +390,36 @@ run_smoke() {
     ctx_args=(--context-shard-dir "$ISSUE2061_CONTEXT_SHARD_DIR")
   fi
 
+  # HF pins threaded exactly as production P1 threads them (smoke IS the
+  # pipeline; a smoke that drops the pins diverges from the production argv).
+  local rev_args=()
+  [[ -n "${ISSUE2061_SAE_REVISION:-}" ]] && rev_args+=(--sae-revision "$ISSUE2061_SAE_REVISION")
+  [[ -n "${ISSUE2061_DATA_REVISION:-}" ]] && rev_args+=(--data-revision "$ISSUE2061_DATA_REVISION")
+
   echo "[phase=smoke_p0_grain_gate]"
-  # Same production gate, filtered to the smoke cells; the manifest is the
-  # acceptance reference for realized n below (plan delta (e) item (ii)).
+  # Same production gate, filtered to the smoke cells (BOTH grains, one
+  # --corpus per grain, ONE manifest); the manifest is the acceptance
+  # reference for realized n below (plan delta (e) item (ii)).
   mkdir -p "$SMOKE_ROOT/grain_gate"
-  local gate_args=(--stage "$SA" --stage "$SB" --render "$RD" --corpus "$CP"
-    --output "$SMOKE_ROOT/grain_gate/grain_manifest.json")
+  local gate_args=(--stage "$SA" --stage "$SB" --render "$RD")
+  local cp
+  for cp in $CPS; do gate_args+=(--corpus "$cp"); done
+  gate_args+=(--output "$SMOKE_ROOT/grain_gate/grain_manifest.json")
   [[ -n "${ISSUE2061_DATA_REVISION:-}" ]] && gate_args+=(--data-revision "$ISSUE2061_DATA_REVISION")
   run uv run python scripts/issue2061_grain_gate.py "${gate_args[@]}"
 
   echo "[phase=smoke_p1_parity]"
   ensure_sparsify
-  run uv run python scripts/issue2061_sae_encode.py --smoke-only
+  run uv run python scripts/issue2061_sae_encode.py --smoke-only "${rev_args[@]}"
 
   echo "[phase=smoke_p1_encode]"
+  # BOTH grains through the production entrypoint: stages x corpora.
   local st
   for st in "$SA" "$SB"; do
-    run uv run python scripts/issue2061_sae_encode.py \
-      --stage "$st" --render "$RD" --corpus "$CP" --output-dir "$enc"
+    for cp in $CPS; do
+      run uv run python scripts/issue2061_sae_encode.py \
+        --stage "$st" --render "$RD" --corpus "$cp" --output-dir "$enc" "${rev_args[@]}"
+    done
   done
 
   echo "[phase=smoke_p2_fit]"
@@ -454,7 +474,7 @@ run_smoke() {
   fi
 
   finish "epm:smoke-result" \
-    "{\"smoke\": true, \"phases\": [\"p0_grain_gate\", \"p1_parity\", \"p1_encode\", \"p2_fit\", \"smoke_accept\", \"p3_null\", \"p4_fitness\", \"p5_figures\"], \"cells\": \"${SA}+${SB}/${RD}/${CP}\", \"n_draws\": ${DRAWS}, \"smoke_root\": \"${SMOKE_ROOT}\"}"
+    "{\"smoke\": true, \"phases\": [\"p0_grain_gate\", \"p1_parity\", \"p1_encode\", \"p2_fit\", \"smoke_accept\", \"p3_null\", \"p4_fitness\", \"p5_figures\"], \"cells\": \"${SA}+${SB}/${RD}/{${CPS// /,}}\", \"grains\": \"concat+plain-v2\", \"n_draws\": ${DRAWS}, \"smoke_root\": \"${SMOKE_ROOT}\"}"
 }
 
 # ─── argparse-lite ──────────────────────────────────────────────────────────

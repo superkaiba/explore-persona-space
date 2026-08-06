@@ -312,10 +312,21 @@ def iter_local_shards(tree_path: str, revision: str | None = None):
     ALSO fetches each shard's `.json` sidecar (same repo-relative dir, so it
     lands ADJACENT to the `.pt` in the snapshot cache) — the loader's
     per-shard sidecar asserts read it (plan v13 delta a1-bis).
+
+    ADJACENCY IS GUARANTEED ONLY UNDER A PINNED `revision` (crash-fix
+    2026-08-06): with `revision=None`, `hf_hub_download` re-resolves `main`
+    PER CALL, and the fleet commits to the shared data repo constantly — a
+    mid-run `main` move between a shard's sidecar call and its `.pt` call
+    lands the two files in DIFFERENT `snapshots/<sha>/` dirs, so the loader's
+    `with_suffix('.json')` read misses (P1 cell [2/35] crash: if11k's 15
+    shards spread over 5 snapshot dirs in ~5 min). `main()` pins one resolved
+    sha for the whole run; this guard fail-louds if a future unpinned caller
+    reintroduces the race, naming the true cause instead of the misleading
+    "re-stage the turnstore" the downstream assert would emit.
     """
     for rel in hub_shard_files(tree_path, revision=revision):
         sidecar_rel = rel.removesuffix(".pt") + ".json"
-        retry_transient(
+        sidecar_local = retry_transient(
             lambda rel=sidecar_rel: hf_hub_download(
                 repo_id=DATA_REPO,
                 filename=rel,
@@ -324,7 +335,7 @@ def iter_local_shards(tree_path: str, revision: str | None = None):
             ),
             what=f"issue2061 sidecar {sidecar_rel}",
         )
-        yield retry_transient(
+        pt_local = retry_transient(
             lambda rel=rel: hf_hub_download(
                 repo_id=DATA_REPO,
                 filename=rel,
@@ -333,6 +344,15 @@ def iter_local_shards(tree_path: str, revision: str | None = None):
             ),
             what=f"issue2061 shard {rel}",
         )
+        if Path(pt_local).with_suffix(".json") != Path(sidecar_local):
+            raise RuntimeError(
+                f"revision drift fetching {rel}: the shard landed at {pt_local} but its "
+                f"sidecar at {sidecar_local} — the two hf_hub_download calls resolved "
+                "DIFFERENT commits (unpinned revision on the moving shared data repo). "
+                "Pin ONE --data-revision for the run "
+                "(issue2061_hub_io.resolve_data_repo_revision; main() pins automatically)."
+            )
+        yield pt_local
 
 
 def _load_turnstore_state(
@@ -681,6 +701,11 @@ def encode_turnstore(
             "max_rows": max_rows,
             "sae_repo": SAE_REPO,
             "data_repo": DATA_REPO,
+            # The PINNED data-repo commit the shards were fetched at (None only
+            # for direct library callers that skipped main()'s pin) — the skip
+            # predicate deliberately does NOT key on it (an immutable banked
+            # store's rows are revision-independent; #922 provenance record).
+            "data_revision": revision,
             "tree_path": turnstore["tree_path"],
             "tree_paths": trees,
             "consumption_grain": grain,
@@ -740,6 +765,19 @@ def main() -> int:
         "pod terminates (the #521/#1482 downstream-input loss class).",
     )
     args = parser.parse_args()
+
+    # Pin ONE data-repo commit for the WHOLE run (crash-fix 2026-08-06; the
+    # cell [2/35] sidecar crash): with revision=None every hf_hub_download
+    # re-resolves `main` PER CALL and the fleet's constant commits to the
+    # shared data repo split a shard's `.json` sidecar from its `.pt` across
+    # snapshot dirs (measured: 5 snapshot dirs in ~5 min; shard014.json in
+    # 9ba8d73…, shard014.pt in 710ad8b…). One resolved sha = one snapshot dir
+    # = sidecars ALWAYS beside their shards, on BOTH consumption grains. The
+    # staging lane (issue2061_hub_io.stage_turnstore) already pins this way.
+    import issue2061_hub_io as hio
+
+    args.data_revision = hio.resolve_data_repo_revision(args.data_revision)
+    print(f"[setup] data revision pinned: {args.data_revision}")
 
     # Smoke gate first, ALWAYS when --smoke-only or --smoke-then-encode.
     if args.smoke_only or args.smoke_then_encode:
@@ -867,9 +905,8 @@ def main() -> int:
         # are P2/P3's inputs on OTHER machines — verified upload before the
         # pod terminates, fail-loud on any missing dest. delete_local=False:
         # a same-pod P4 (or debugging) may still read them; the pod's local
-        # copies die with the pod either way.
-        import issue2061_hub_io as hio
-
+        # copies die with the pod either way. (`hio` imported at main() top
+        # for the revision pin.)
         hio.upload_dir(args.output_dir, "sae-encoded")
 
     return 0

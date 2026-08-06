@@ -231,6 +231,91 @@ def test_sae_encode_loader_max_rows_stops_early(tmp_path, monkeypatch):
     assert all("shard000" in f for f in downloads)
 
 
+def test_iter_local_shards_fail_loud_on_revision_drift(tmp_path, monkeypatch):
+    """Crash-fix 2026-08-06 (P1 cell [2/35]): a shard's `.pt` and its `.json`
+    sidecar landing in DIFFERENT hub snapshot dirs must fail loud AT FETCH
+    time, naming revision drift — not surface downstream as the misleading
+    "re-stage the turnstore" sidecar-missing assert.
+
+    Mechanism reproduced: with `revision=None`, `hf_hub_download` re-resolves
+    `main` PER CALL; a mid-run commit on the shared data repo between the
+    sidecar call and the `.pt` call splits the pair across `snapshots/<sha>/`
+    dirs (measured on pod-2061: if11k's 15 shards over 5 snapshot dirs in
+    ~5 min). The fake below is signature-conformant at the network boundary
+    and simulates exactly that split: the sidecar resolves under snapshot dir
+    A, the `.pt` under snapshot dir B.
+    """
+    snap_a = tmp_path / "snapshots" / "aaaa" / STEM
+    snap_b = tmp_path / "snapshots" / "bbbb" / STEM
+    _write_shard(snap_a, 0, [0, 1])  # sidecar (and stale .pt) at revision A
+    _write_shard(snap_b, 0, [0, 1])  # fresh .pt at revision B
+
+    def fake_hub_shard_files(tree_path: str, revision: str | None = None) -> list[str]:
+        return [f"{tree_path}/{STEM}_shard000.pt"]
+
+    def fake_hf_hub_download(
+        repo_id: str,
+        filename: str,
+        repo_type: str | None = None,
+        revision: str | None = None,
+    ) -> str:
+        # main moved between the two calls: .json resolves at A, .pt at B.
+        snap = snap_a if filename.endswith(".json") else snap_b
+        return str(snap / Path(filename).name)
+
+    monkeypatch.setattr(enc, "hub_shard_files", fake_hub_shard_files)
+    monkeypatch.setattr(enc, "hf_hub_download", fake_hf_hub_download)
+    with pytest.raises(RuntimeError, match="revision drift"):
+        list(enc.iter_local_shards("some/tree"))
+
+
+def test_iter_local_shards_adjacent_landing_passes(tmp_path, monkeypatch):
+    """Same-snapshot (pinned-revision) landings pass the adjacency guard and
+    still yield sidecar-first per shard (the v13 a1-bis fetch order)."""
+    d = tmp_path / STEM
+    _write_shard(d, 0, [0, 1])
+    _fake_hub(monkeypatch, enc, d)
+    paths = list(enc.iter_local_shards("some/tree"))
+    assert [Path(p).name for p in paths] == [f"{STEM}_shard000.pt"]
+    assert Path(paths[0]).with_suffix(".json").exists()
+
+
+def test_resolve_data_repo_revision_pin(monkeypatch):
+    """The pin helper passes an explicit revision through untouched and
+    resolves None -> the repo's current main sha (network boundary faked
+    signature-conformantly)."""
+    import huggingface_hub
+    import issue2061_hub_io as hio
+
+    assert hio.resolve_data_repo_revision("abc123") == "abc123"
+
+    class _FakeInfo:
+        sha = "f00dfeedbeef"
+
+    class _FakeApi:
+        def __init__(self, token=None):
+            self.token = token
+
+        def repo_info(self, repo_id, repo_type=None):
+            assert repo_id == hio.DATA_REPO and repo_type == "dataset"
+            return _FakeInfo()
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+    assert hio.resolve_data_repo_revision(None) == "f00dfeedbeef"
+
+
+def test_p1_and_p0_entrypoints_pin_the_data_revision():
+    """sae_encode.main + grain_gate.main pin ONE data-repo commit for the run
+    (crash-fix 2026-08-06) — the call-site wiring, pinned textually so a
+    refactor cannot silently drop the pin from either entrypoint."""
+    scripts_dir = Path(enc.__file__).resolve().parent
+    for name in ("issue2061_sae_encode.py", "issue2061_grain_gate.py"):
+        body = (scripts_dir / name).read_text()
+        assert "hio.resolve_data_repo_revision(args.data_revision)" in body, (
+            f"{name} no longer pins the data revision at its entrypoint"
+        )
+
+
 # ---------------------------------------------------------------------------
 # P1 -> P2/P3 sparse-payload round trip (review M1: the producer writes the
 # TopK sparse layout; BOTH consumers open it; dense reconstruction is exactly

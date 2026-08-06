@@ -372,7 +372,7 @@ def test_stage_turnstore_maps_shards_to_consumer_layout(tmp_path, monkeypatch):
     from explore_persona_space.orchestrate import hub as hub_mod
 
     def fake_resolve(revision):
-        """Signature mirror of hio._resolve_data_repo_revision (network boundary)."""
+        """Signature mirror of hio.resolve_data_repo_revision (network boundary)."""
         return revision or "deadbeefcafe"
 
     def fake_resolve_tree(stage, render, corpus, revision=None, generation="v2"):
@@ -402,7 +402,7 @@ def test_stage_turnstore_maps_shards_to_consumer_layout(tmp_path, monkeypatch):
         Path(target).touch()
         return Path(target)
 
-    monkeypatch.setattr(hio, "_resolve_data_repo_revision", fake_resolve)
+    monkeypatch.setattr(hio, "resolve_data_repo_revision", fake_resolve)
     monkeypatch.setattr(enc, "resolve_turnstore_tree", fake_resolve_tree)
     monkeypatch.setattr(enc, "hub_shard_files", fake_hub_shard_files)
     monkeypatch.setattr(hub_mod, "stage_hub_file", fake_stage_hub_file)
@@ -549,44 +549,77 @@ V1_ONLY_STEMS = frozenset({"gsm8k_test1319", "gsm8k_train5k", "lmsys5k"})
 V2_STEMS = frozenset({"gsm8k_train_full", "if11k", "lmsys23k", "math7500", "sft11k", "uf11k"})
 
 
-def test_smoke_default_cell_is_a_registered_generation_stem():
-    """The smoke's default corpus must exist in the REGISTERED generation.
+def test_smoke_default_cells_are_registered_stems_covering_both_grains():
+    """The smoke defaults must resolve under the REGISTERED generation AND
+    cover BOTH consumption grains.
 
-    Regression pin for a real pre-launch defect: the smoke default was
-    `gsm8k_test1319`, a v1-ONLY stem chosen when enumeration still covered all
-    55 turnstores. Once the v7 grid pinned the registered generation to v2,
-    `resolve_turnstore_tree()` raised FileNotFoundError on it and the smoke
-    died at its first turnstore resolution -- on the pod, after provision +
-    bootstrap.
+    Two stacked regression pins:
 
-    The round-4 generation-pin acceptance test checked enumeration COUNTS
-    (35 stores / 7 combos) and passed, because counts say nothing about
-    whether a given consumer's cell resolves. This asserts the consumer side.
+    1. (round 5) the smoke default was `gsm8k_test1319`, a v1-ONLY stem;
+       once the v7 grid pinned the registered generation to v2,
+       `resolve_turnstore_tree()` FileNotFoundError'd at first resolution --
+       on the pod, after provision + bootstrap.
+    2. (crash-fix 2026-08-06) the round-5 SINGLE-cell smoke selected
+       `gsm8k_train_full` -- a CONCAT combo -- so it exercised only the
+       concat resolution path of the TWO-grain resolver, and P1 production
+       died on its FIRST plain-v2 cell (if11k, the majority grain: 4 of 6
+       corpora are plain-v2). A single-cell smoke over a multi-path resolver
+       tests only the path it selects; the default must carry at least one
+       corpus per grain.
     """
-    m = re.search(r'CP="\$\{ISSUE2061_SMOKE_CORPUS:-([a-z0-9_]+)\}"', DISPATCH)
-    assert m, "could not find the smoke default corpus in the dispatcher"
-    corpus = m.group(1)
+    import issue2061_turnstore as ts
 
-    assert corpus not in V1_ONLY_STEMS, (
-        f"smoke default corpus {corpus!r} is a v1-ONLY stem; it cannot resolve "
-        f"under the registered v2 generation and the smoke will die at its "
-        f"first turnstore resolution"
-    )
-    assert corpus in V2_STEMS, (
-        f"smoke default corpus {corpus!r} is not a known registered (v2) stem"
-    )
+    m = re.search(r'CPS="\$\{ISSUE2061_SMOKE_CORPORA:-([a-z0-9_ ]+)\}"', DISPATCH)
+    assert m, "could not find the smoke default corpora in the dispatcher"
+    corpora = m.group(1).split()
+    assert corpora, "empty smoke corpora default"
 
-    # The render must be one the chosen stem actually carries. Only lmsys23k
+    for corpus in corpora:
+        assert corpus not in V1_ONLY_STEMS, (
+            f"smoke default corpus {corpus!r} is a v1-ONLY stem; it cannot resolve "
+            f"under the registered v2 generation and the smoke will die at its "
+            f"first turnstore resolution"
+        )
+        assert corpus in V2_STEMS, (
+            f"smoke default corpus {corpus!r} is not a known registered (v2) stem"
+        )
+
+    # BOTH grains: >=1 concat corpus (a V2_CONCAT_SOURCES key) AND >=1
+    # plain-v2 corpus (not a key) -- pin 2 above.
+    concat = [c for c in corpora if c in ts.V2_CONCAT_SOURCES]
+    plain = [c for c in corpora if c not in ts.V2_CONCAT_SOURCES]
+    assert concat, f"smoke corpora {corpora} carry NO concat-grain cell"
+    assert plain, f"smoke corpora {corpora} carry NO plain-v2-grain cell"
+
+    # The render must be one the chosen stems actually carry. Only lmsys23k
     # carries `naturalistic`; every other v2 stem is chat-only.
     rm = re.search(r'RD="\$\{ISSUE2061_SMOKE_RENDER:-([a-z]+)\}"', DISPATCH)
     assert rm, "could not find the smoke default render in the dispatcher"
     render = rm.group(1)
     if render == "naturalistic":
-        assert corpus == "lmsys23k", (
-            f"render 'naturalistic' is only carried by lmsys23k, not {corpus!r}"
+        assert corpora == ["lmsys23k"], (
+            f"render 'naturalistic' is only carried by lmsys23k, not {corpora!r}"
         )
     else:
         assert render == "chat", f"unexpected smoke render {render!r}"
+
+
+def test_smoke_p1_encode_iterates_stages_and_corpora():
+    """The smoke's P1 encode leg loops stages x corpora (both grains reach the
+    production entrypoint), and the P0 gate receives one --corpus per grain."""
+    m = re.search(r"run_smoke\(\) \{(.*?)\n\}", DISPATCH, flags=re.S)
+    assert m, "run_smoke() block not found"
+    body = m.group(1)
+    p1 = body[body.index("smoke_p1_encode") :]
+    assert re.search(r'for st in "\$SA" "\$SB"; do\s*\n\s*for cp in \$CPS; do', p1), (
+        "smoke P1 encode must nest stages x corpora so BOTH grains are encoded"
+    )
+    assert '--corpus "$cp"' in p1
+    # The gate builds one --corpus flag per smoke corpus into ONE manifest.
+    gate = body[body.index("smoke_p0_grain_gate") : body.index("smoke_p1_parity")]
+    assert re.search(r"for cp in \$CPS; do gate_args\+=\(--corpus \"\$cp\"\); done", gate), (
+        "smoke P0 gate must receive one --corpus per smoke corpus"
+    )
 
 
 # ---------------------------------------------------------------------------

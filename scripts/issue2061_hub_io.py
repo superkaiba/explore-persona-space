@@ -135,8 +135,18 @@ def stage_dir(what: str, staging_root: Path | str) -> Path:
     return consumed
 
 
-def _resolve_data_repo_revision(revision: str | None) -> str:
-    """Pin ONE data-repo commit for a multi-file staging leg (#833 coherence)."""
+def resolve_data_repo_revision(revision: str | None) -> str:
+    """Pin ONE data-repo commit for a multi-file hub leg (#833 coherence).
+
+    PUBLIC — the P1 encode (`issue2061_sae_encode.main`) and the P0 grain gate
+    (`issue2061_grain_gate.main`) pin through this too (crash-fix 2026-08-06):
+    with `revision=None` every `hf_hub_download` re-resolves `main` PER CALL,
+    and the fleet commits to the shared data repo constantly, so mid-run
+    movement lands a shard's `.json` sidecar and its `.pt` in DIFFERENT
+    snapshot dirs — the loader's adjacency read (`with_suffix('.json')`) then
+    misses and the v13 a1-bis sidecar assert fires (P1 cell [2/35] crash:
+    if11k's 15 shards spread over 5 snapshot dirs in ~5 min).
+    """
     if revision is not None:
         return revision
     from huggingface_hub import HfApi
@@ -215,7 +225,7 @@ def stage_turnstore(
     import issue2061_sae_encode as enc
     import issue2061_turnstore as ts
 
-    rev = _resolve_data_repo_revision(revision)
+    rev = resolve_data_repo_revision(revision)
     root = Path(turnstore_root)
     # (corpus, generation) parts in the canonical concat order.
     parts: list[tuple[str, str]] = []
@@ -352,6 +362,9 @@ def _run_import_check() -> int:
         Path("d"), "repo", "pfx", repo_type="dataset", verify=True, delete_local=False
     )
     inspect.signature(ts.parse_r2_stem).bind("base_chat_c_prefix_L29", 29)
+    # The P1/P0 revision-pin call shape (crash-fix 2026-08-06): sae_encode.main
+    # + grain_gate.main call this cross-script with one optional-str arg.
+    inspect.signature(resolve_data_repo_revision).bind(None)
     print("[import-check] OK: all deferred imports + call shapes resolve", file=sys.stderr)
     return 0
 
