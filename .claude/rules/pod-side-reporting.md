@@ -193,6 +193,10 @@ anonymous crash). Full convention + the #1415 incident:
 
 ### Pid-file launch contract — rewrite on EVERY (re)launch (#813, #451, #521)
 
+(A detached workload whose phase is an HF TRANSFER additionally owes the
+timeout + flushed-progress + exit-rc contract of `.claude/rules/upload-policy.md`
+§ "Detached HF transfers: timeout + observable progress" — #2153/#1739.)
+
 The pid file (`/workspace/logs/issue-<N>.pid` pod-side; the VM analogue for a
 detached VM-side stage is the `pid=` field of its stage-dispatch breadcrumb,
 SKILL.md § Detached VM-side long compute phases) is the poller's PRIMARY
