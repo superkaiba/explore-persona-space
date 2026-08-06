@@ -54,6 +54,7 @@ import argparse
 import dataclasses
 import hashlib
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -117,6 +118,56 @@ HIDDEN_D_PIN = 3584  # Qwen-2.5-7B hidden dim — the well-posedness denominator
 
 def _log(msg: str) -> None:
     print(f"[r2v2 {time.strftime('%H:%M:%S')}] {msg}", flush=True)
+
+
+def _log_rss(tag: str) -> None:
+    """Phase-boundary RSS breadcrumb (the 128 GB-cgroup OOM diagnosability line).
+
+    The cpu-bigmem container is cgroup-capped at 128 GB decimal (119.2 GiB)
+    while ``free`` reports the HOST's 251 GB — resident-set arithmetic against
+    the cgroup cap is the binding constraint (pilot r1 died SIGKILL here).
+    """
+    import resource
+
+    try:
+        cur_gib = (
+            int(Path("/proc/self/statm").read_text().split()[1])
+            * os.sysconf("SC_PAGE_SIZE")
+            / 2**30
+        )
+        peak_gib = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**20
+        _log(f"[rss {tag}] current={cur_gib:.1f} GiB peak={peak_gib:.1f} GiB")
+    except (OSError, ValueError, IndexError):
+        pass  # /proc absent (non-linux test host) — breadcrumb only, never load-bearing
+
+
+def _drop_unused_arrays(loaded, tbl_ood, variant: str) -> None:
+    """Free activation arrays the context_end-scoped fits never read.
+
+    Every table's OTHER variant (prefix_end under the default scope) and the
+    u_store's other-variant kind are dead weight (~9 GiB at the sycophancy
+    shape) that sat resident through the map-fit peak in pilot r1's OOM.
+    In-place mutation of the shared dicts (callee `del` frees nothing —
+    the caller's dict entry is the binding).
+    """
+    tables = [loaded.tbl, loaded.tbl_wc, loaded.tbl_ev] + ([tbl_ood] if tbl_ood else [])
+    for t in tables:
+        for v in [k for k in t.z_by_variant if k != variant]:
+            del t.z_by_variant[v]
+    for key in [k for k in loaded.u_arrays if k[0] not in (variant, "t1")]:
+        del loaded.u_arrays[key]
+
+
+def _release_table_arrays(loaded, tbl_ood, tbl_pv) -> None:
+    """Free every raw fp16 activation block once the merged fp64 table exists.
+
+    dv / groups / ctx_order / row_rungs stay (the fits read only those after
+    the merge). Saves ~9-15 GiB of steady-state residency under the cgroup cap.
+    """
+    tables = [loaded.tbl, loaded.tbl_wc, loaded.tbl_ev, tbl_pv] + ([tbl_ood] if tbl_ood else [])
+    for t in tables:
+        t.z_by_variant.clear()
+        t.z_ans = None
 
 
 # ---------------------------------------------------------------------------
@@ -403,6 +454,49 @@ def _leakage_assert(readout_ids: set, eval_sets: dict[str, set], label: str) -> 
 # ---------------------------------------------------------------------------
 
 
+def fit_linear_add_map(args, loaded, variant: str, layers: list[int]):
+    """The r2fair ADD-condition LINEAR map/whitening recipe with staged frees.
+
+    Same pool composition + seed + reviewed compose/fit path as
+    ``issue1739_result2fair_score.fit_add_maps`` restricted to kind=linear
+    (map weights are never persisted, so the deterministic re-fit IS the
+    reuse). Deltas are pure memory hygiene for the 128 GB cgroup (pilot r1
+    OOM): the staged u_store arrays are freed the moment the pool is built,
+    and each fp16 pool array is freed as soon as its fp64 whitened copy
+    exists — peak drops ~40 GiB with bit-identical outputs.
+    """
+    from explore_persona_space.experiments.issue_1739 import fits
+    from scripts.issue1739_fits import _fit_map
+    from scripts.issue1739_jobd_r2aug import _fitmap_ns, build_pool
+
+    x, y, u_label, n_u, pool_meta = build_pool(args, loaded, variant, layers, "add")
+    loaded.u_arrays.clear()  # U pool consumed; free before the fp64 copies land
+    _log_rss("map-pool-built")
+    t0 = time.time()
+    wh = fits.fit_whitening(x, device=args.device, seed=args.seed)
+    x_w = fits.apply_whitening(x, wh)
+    del x
+    y_w = fits.apply_whitening(y, wh)
+    del y
+    wh_s = round(time.time() - t0, 1)
+    _log_rss("map-pool-whitened")
+    t1 = time.time()
+    mapfit = _fit_map(_fitmap_ns(args), x_w, y_w)
+    del x_w, y_w
+    diag = {
+        **mapfit.diagnostics,
+        "map_kind": "linear",
+        "map_source": "refit",
+        "map_fit_s": round(time.time() - t1, 1),
+        "whitening_fit_s": wh_s,
+        "n_u": int(n_u),
+        "u_pool_label": u_label,
+        **pool_meta,
+    }
+    _log(f"[map] linear ADD map fit: whitening {wh_s}s, map {diag['map_fit_s']}s")
+    return wh, mapfit, diag, u_label, n_u
+
+
 def run_behavior(args, behavior: str, layers: list[int]) -> dict:
     import numpy as np
 
@@ -419,7 +513,6 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
     from scripts.issue1739_result2fair_score import (
         _wc_eval_mask,
         _wc_fold_ids,
-        fit_add_maps,
         load_pvsynth,
     )
 
@@ -430,10 +523,12 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
     tbl_ood, ood_note = load_ood_table(args, behavior, layers, loaded.dim, loaded.shas)
     if tbl_ood is None and behavior in OOD_SPECS:
         raise RuntimeError(f"[{behavior}] expected new OOD stores but loader returned none")
+    _drop_unused_arrays(loaded, tbl_ood, variant)
+    _log_rss("tables-loaded")
 
     # map + whitening: IDENTICAL across P-A and P-B (linear ADD recipe)
-    wh, mapfits, map_diags, u_label, n_u = fit_add_maps(args, loaded, variant, layers)
-    mapfit = mapfits["linear"]
+    wh, mapfit, map_diag_linear, u_label, n_u = fit_linear_add_map(args, loaded, variant, layers)
+    map_diags = {"linear": map_diag_linear}
 
     # ---- merged labeled table: [train | wc | ev | ood] ----------------------
     n_tr = len(loaded.tbl.ctx_order)
@@ -472,6 +567,11 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
     za_pv = fits.apply_whitening(tbl_pv.z_ans, wh)
     dv_pv = np.asarray(tbl_pv.dv, dtype=np.float64)
     ids_pv = {str(c) for c in tbl_pv.ctx_order}
+
+    # every raw fp16 activation block is now merged/whitened — free them (the
+    # fits read only dv/groups/ctx_order/row_rungs past this point)
+    _release_table_arrays(loaded, tbl_ood, tbl_pv)
+    _log_rss("merged-table-built")
 
     # WildChat split (shared with r2fair: sha1(ctx_id) mod 5 == 4 -> eval)
     ev_mask = _wc_eval_mask(loaded.tbl_wc.ctx_order)
@@ -641,6 +741,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         _log(
             f"[{behavior}] {fit_label}: {len(rows)} rows in {wall}s (n_readout={len(readout_rows)})"
         )
+        _log_rss(f"fit-done-{fit_label}")
 
     # ---- P-A: the r2fair protocol (one eliciting dataset + judged WC train) --
     if "A" in args.protocols:
