@@ -34,10 +34,19 @@ parity unit test (``tests/test_issue2091_fits_parity.py``) pins both the selecte
 lambda set (exact) and the held-out predictions (via the rescale identity) against
 ``issue825_fit_cells.heldout_r2_sweep`` on a small synthetic cell.
 
-Pool construction (plan §4.2): U = 4,000 fixed; generic core = 1,500 WildChat-pool
-+ 2,500 LMSYS-pool rows; admixed pools REPLACE generic rows LMSYS-first (constant
-U); realized f_u recorded per cell, never silently degraded; the matched
-all-generic control is the 4,000-row generic core itself. Pool/eval stay
+Pool construction (plan §4.2): per-rung ``u_pool = max(U_FLOOR, 2 * A)`` with
+``U_FLOOR = 4000`` and ``A`` = that rung's available target-domain admix supply.
+The rule honors the registered ``f_u = 0.5`` EXACTLY wherever a rung can supply
+it and otherwise falls back to the well-posedness floor: d = 3,584, so a smaller
+U is estimator-degenerate rather than merely weaker (#1701/#1887, task-body
+decision 3). On this round's realized pools (max A = 1,003) it evaluates to
+U = 4,000 on every rung, so realized f_u spans 0.084..0.251. Generic core =
+1,500 WildChat-pool + 2,500 LMSYS-pool rows; admixed pools REPLACE generic rows
+LMSYS-first (constant U WITHIN a rung); realized (U, f_u) recorded per cell,
+never silently degraded; the matched all-generic control is the 4,000-row
+generic core itself (a U-row control is impossible against the finite generic
+supply once U > 4,000 — unreachable this round, plan-level if it ever engages).
+Pool/eval stay
 group-disjoint by the staging-time designation (asserted here). S1/S4 single-draw
 dispositions and the S5 pool-side readout filter live here too, so unit C's
 analysis driver can consume one module.
