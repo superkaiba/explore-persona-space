@@ -3670,7 +3670,7 @@ blocked repo halts with the gate URL for the user to click through once:
 ```bash
 PLAN_PATH=$(uv run python scripts/task.py find <N>)/plans/plan.md
 # Source .env FIRST — the VM shell does not inherit HF_TOKEN, so running this
-# probe bare yields a false "HF_TOKEN missing" exit 2 (hit twice on 2026-06-09).
+# probe bare yields a false "HF_TOKEN missing" exit 2.
 set -a; [ -f "$REPO_ROOT/.env" ] && source "$REPO_ROOT/.env"; set +a
 uv run python - "$PLAN_PATH" <<'PY'
 import os, re, sys
@@ -3819,10 +3819,9 @@ and the launched set cannot drift.
 Step 6a verifies READ access only; a namespace at its public-storage
 quota passes the gate-access check, the carry-over HEAD-checks, AND
 pod-side preflight, then 403s on the run's FIRST upload — after the pod
-is already provisioned. (Incident #555, 2026-06-10: a fresh 4xH100
-provision + sync + preflight + launch died 2 minutes in on `403
-Forbidden: You have exceeded your public storage space`, namespace at
-11.3 TB; a full launch cycle wasted.) Before provisioning, probe the
+is already provisioned. (#555: a fresh provision + sync + preflight +
+launch died on `403 Forbidden: You have exceeded your public storage
+space` — a full launch cycle wasted.) Before provisioning, probe the
 actual failing operation — a tiny (~1 KB) write to the project model
 repo, immediately deleted:
 
@@ -3993,7 +3992,7 @@ ROOT (pinned to `main`), so the `--repo-branch` default (the cwd's
 current branch) resolves to `main`, NOT the issue branch where a
 per-issue driver script lives — the GCE startup script then clones
 `main`, the driver is absent, and the workload dies ~4 min in with the
-EXIT trap powering the VM off (#595, 2026-06-13). Defense-in-depth
+EXIT trap powering the VM off (#595). Defense-in-depth
 (#987): `dispatch_issue.py` and `backend_poll.py` self-pin lane-infra
 imports (`explore_persona_space.backends.*`, lazy `scripts.*`) to the
 MAIN checkout via a `__main__`-guarded git-common-dir sys.path
@@ -4010,7 +4009,7 @@ bootstrap until rebased, an already-running process keeps its cached
 stale modules, import-mode callers (`dispatch_for_issue` from a
 worktree venv) get no pin, and already-launched workloads keep the
 template they were rendered with. Four more gcp/auto
-composition rules ((e) and (f) both hit live on #599, 2026-06-11;
+composition rules ((e)/(f) from #599;
 (g) from #608; (h) from #606): (e) **GPU
 sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —
 the GCP lane maps intent → machine type statically
@@ -4024,7 +4023,7 @@ launch with a mismatched `--gpus` is refused pre-route by
 exported ONLY by the GCE startup script**, so the exact command a
 GCP→RunPod failover (or a SLURM fall-through) re-runs aborts under the
 RunPod launcher's / SLURM custom stage's `set -u` before the driver
-starts (incident #825: `REPO_ROOT="$WORKLOAD_ROOT"` killed the Track-S
+starts (#825: `REPO_ROOT="$WORKLOAD_ROOT"` killed the Track-S
 RunPod failover; `dispatch_issue.py` now lints this at launch —
 warn-by-default + `extra.workload_cmd_lane_env_risk` on the
 `epm:backend-selected` marker, exit-2 refusal on a provably-certain
@@ -4059,8 +4058,8 @@ code-fix round included** — the GCP lane defaults the boot disk to
 ZeRO-3 full-FT (`ft-7b`) fills with optimizer-state checkpoints in ~1h:
 the instance kernel-panics on the full disk, cloud-init ENOSPCs, the
 guest agent cannot write `authorized_keys` (SSH publickey lockout), and
-the wedged VM idles on 4×A100 until deleted (#606, 2026-06-12 — the
-relaunch dropped the plan's explicit "500 GB pd-ssd" spec). When the
+the wedged VM idles on 4×A100 until deleted (#606: the relaunch
+dropped the plan's explicit disk spec). When the
 plan's pod row names a disk size, pass it; for `ft-*` intents whose
 plan names none, default to ≥500 GB. `dispatch_issue.py` warns loud
 (stderr + `extra.boot_disk_default_with_ft_intent=true` on the
@@ -4085,8 +4084,8 @@ script's workload branch, SLURM custom stage, RunPod launcher), AND the
 async failover reconstructors (`backend_poll._runspec_from_gcp_handle` /
 `_runspec_from_runpod_handle`) re-export the pins onto the fresh pod,
 so a wedge-failover pod's runs land in the plan-declared destination
-instead of the generic `issue<N>` fallback (rule (i) above — incident
-#1586: a wedge-failover pod rebooted with only the generic WandB
+instead of the generic `issue<N>` fallback (rule (i) above — #1586: a
+wedge-failover pod rebooted with only the generic WandB
 default and its runs landed in the wrong project). KEY is restricted to
 `backends.base.ENV_PIN_ALLOWED_KEYS` (secret KEY names are
 unrepresentable by construction); consult that frozenset for the current
@@ -4101,12 +4100,10 @@ round — whenever the plan declares a non-default value; a flag-less
 launch keeps today's behavior.
 SLURM custom stages are
 render-tested only as of #588 (never live-run).
-(Incident #571, 2026-06-11: auto routing sent a dispatch-script
-workload to GCP before the router had a custom workload-command field;
-the startup script ran bare `scripts/train.py`, crashed at startup,
-and the EXIT trap powered the VM off. #588 closed it — the GCP
-renderer now refuses to render that bare launch, and `--workload-cmd`
-carries dispatch scripts on every lane.)
+(#571: auto routing sent a dispatch-script workload to a lane with no
+custom workload-command field — the startup script ran a bare default
+and crashed at startup; #588 closed it: the renderer refuses the bare
+launch and `--workload-cmd` carries dispatch scripts on every lane.)
 
 **Ad-hoc probe workloads are committed scripts invoked by path — never
 inline interpreter one-liners in `--workload-cmd`.** A probe dispatch
@@ -4412,7 +4409,7 @@ the provision queued. NOT a failure — the wait loop is state-free, so
 RE-RUN the same `dispatch_issue.py launch` command to continue waiting
 (post an `epm:progress v1` heartbeat per re-run so the watcher sees
 liveness); NEVER post `epm:failure v1` / `set-status blocked` on this
-exit (incident #603, 2026-06-11: the exit previously crashed the CLI
+exit (#603: the exit previously crashed the CLI
 as an rc-4 `CalledProcessError`).
 
 **Follow-up parent reuse.** When the task has a `parent_id` AND the
@@ -4492,8 +4489,8 @@ NEW SSH port via a retry path that bypassed `_upsert_pods_conf`, so
 `pods.conf` still carries the pre-stop value while the live RunPod API
 has the fresh one. The canonical first response is `uv run python
 scripts/pod.py config --refresh-from-api pod-<N>` — pulls fresh
-host/port from the live API into `pods.conf` + `~/.ssh/config`. As of
-2026-06-09 the auto-heal also fires automatically: `poll_pipeline.py`
+host/port from the live API into `pods.conf` + `~/.ssh/config`. The
+auto-heal also fires automatically: `poll_pipeline.py`
 counts consecutive SSH-probe failures and fires `--refresh-from-api`
 after ten consecutive failures (~3-4 min at 20s spacing), and
 `autonomous_session_watch.py` fires it once per stalled episode when a
@@ -4502,8 +4499,8 @@ fail-soft and dedup'd so the manual command stays the surgical
 recovery move; reach for it when the auto-heal has not yet tripped or
 the issue is unambiguously a port drift. See `.claude/rules/upload-policy.md`
 context on the Authority split (live API authoritative for host/port,
-`pods.conf` the on-disk source for SSH/MCP). Incident #488 (2026-06-09)
-spun for 13+ hours at $32/hr before the manual subcommand existed.
+`pods.conf` the on-disk source for SSH/MCP). (#488 spun for 13+ hours
+before the manual subcommand existed.)
 
 The pod / job / VM name passed downstream is recorded in the sidecar
 JSON the router writes (RunPod: `pod-<N>`; SLURM: `eps-issue-<N>`;
@@ -4519,10 +4516,9 @@ but the container restart may have left stale state:
 ssh_execute(pod=epm-issue-<N>, command="cd /workspace/explore-persona-space && uv run python -m explore_persona_space.orchestrate.preflight --json")
 ```
 
-Parse JSON. (Note: the old `Local is N commit(s) behind origin/main`
-false-fail on `issue-<N>` branches was fixed at source by #554,
-2026-06-12 — preflight is branch-aware and that condition is now a
-WARNING, so on current code an `ok=false` here is a real failure.)
+Parse JSON. (#554 made preflight branch-aware — the old
+behind-origin condition is now a WARNING, so on current code an
+`ok=false` here is a real failure.)
 If `ok=false`, post `epm:preflight v1` event with the
 errors/warnings, then post the §5 marker:
 ```bash
@@ -4567,12 +4563,11 @@ Verdict routing:
 The gate is enforced inline (gates.inline id=10) — the implementer
 self-tags at report-time; the orchestrator validates here.
 
-Rationale: task #397 rounds 9/10/10' (2026-05-27) all PASSed smoke and
-crashed sweep within ~5s of nohup because smoke ran in-process
-`train_one_cell` while sweep ran `run_one_cell.py` as a subprocess.
-Round 11's pivot was to UNIFICATION (in-process serial). This gate
-forces the divergence to be explicit at plan time so the pre-dispatch
-moment catches it, not the third pod-side crash.
+Rationale (#397): consecutive rounds all PASSed smoke and crashed
+sweep immediately because smoke ran in-process while sweep ran a
+subprocess. This gate forces the divergence to be explicit at plan
+time so the pre-dispatch moment catches it, not the third pod-side
+crash.
 
 ##### Step 6d.0-bis: End-to-end smoke gate (multi-phase data-gen pipelines)
 
@@ -4689,12 +4684,11 @@ session may have finished the run while this session was mid-review):
 On either mismatch, re-derive the brief from the live markers instead
 of dispatching the stale one. This is the dispatch-site analogue of the
 Step 0 stale-wake ownership re-check and the Step 9 entry guard's
-marker-freshness pattern. (Incident: task #559, 2026-06-11 — a
-concurrent orchestrator completed the run, upload-verified, and
-terminated the pod while this session was mid-code-review; this session
-then dispatched a relaunch brief asserting "pod alive; run pending"
-~10 min after `epm:pod-terminated`; only the experimenter's agent-side
-defense caught it.)
+marker-freshness pattern. (#559: a concurrent orchestrator completed
+the run and terminated the pod while this session was mid-code-review;
+this session then dispatched a relaunch brief asserting "pod alive; run
+pending" after `epm:pod-terminated` — only the experimenter's
+agent-side defense caught it.)
 
 **3. External markers triaged.** Run the Step 9 entry guard
 § Pre-dispatch external-marker triage check before spawning. Pod/backend
@@ -4727,8 +4721,7 @@ launch-and-exit contract of `experimenter.md` § "Contract scope —
 already-bootstrapped pod only"). Never brief the experimenter with a
 cold `dispatch_issue.py launch` command; it will refuse and post
 `epm:failure v1 failure_class: infra reason:
-fresh-provision-in-subagent` per that same Contract scope. (Incident
-#1689 R8, 2026-07-26.)
+fresh-provision-in-subagent` per that same Contract scope (#1689).
 
 Spawn `experimenter` subagent via `Agent()`. Brief:
 - The plan path (the `plans/plan.md` symlink) + the code-reviewed
@@ -4767,9 +4760,8 @@ those are obsolete (see the deprecated memory
 
 Wait for the experimenter to return. The return must include the
 `epm:run-launched` marker. Parse it for `pod`, `pid`, and the log path
-(`log_abs=`; the legacy `log=` fallback was RETIRED per its 2026-06-15
-marker-schema TODO — a marker missing `log_abs=` is a launcher bug,
-fail loud).
+(`log_abs=`; the legacy `log=` fallback is RETIRED — a marker missing
+`log_abs=` is a launcher bug, fail loud).
 
 If the experimenter posted `epm:failure v1` instead (launch-time
 crash), skip the polling loop and proceed to Step 7's failure-
@@ -4869,7 +4861,7 @@ while True:
     # kills ANY call at its 600000 ms (10-minute) ceiling — background
     # calls included — so a composed `sleep 1800` dies mid-sleep, the
     # poll never runs, and the dead call reads as a stale/absent poll
-    # on the next wake (#1768, 2026-07-28).
+    # on the next wake (#1768).
     # NEVER compose a sleep longer than 540s into a single background
     # Bash call, here or anywhere in this loop. A quiet-tick 1800 recommendation
     # (POLL_INTERVAL_QUIET_SEC) is instead REALIZED as the one-wake
@@ -4935,7 +4927,7 @@ while True:
     # work, simply END THE TURN with a one-sentence status — NEVER emit
     # no-op Bash calls to idle (`sleep 1` "yield turn", `true` no-ops):
     # each burns a tool call + context for nothing (33x and 49x in two
-    # 2026-06-10 sessions). Read the JSON line from stdout — the LAST line
+    # sessions). Read the JSON line from stdout — the LAST line
     # of either source (bg-Bash exit output or the quiet-wait Monitor
     # notification, #1924) — parse per § Tick-parse field-preservation
     # below; a status-only parse is BANNED. Decide:
@@ -4984,9 +4976,9 @@ full decision field set: `status`, `current_phase`, `gate`, `stall_reason`,
 `new_milestone`, `next_interval` (the quiet-wait branch key), `gpu_idle_advisory_posted`,
 `gpu_idle_escalation_posted`, `gpu_width_advisory_posted`,
 `eta_deviation_posted`. A status-only parse is BANNED — it structurally
-discards the very fields the handling sections below branch on (#1768,
-2026-07-29: a status-only compact parse dropped a posted
-[gpu-idle-escalation]; ~15h of idle 8xH100 was heartbeated as healthy). Use
+discards the very fields the handling sections below branch on (#1768:
+a status-only compact parse dropped a posted [gpu-idle-escalation];
+hours of idle multi-GPU were heartbeated as healthy). Use
 `d.get(...)` for every field (a mixed-vintage poller may omit newer fields —
 degrade to None, never KeyError). Canonical one-liner:
 
@@ -5060,8 +5052,8 @@ one-per-phase `epm:progress` marker whose note starts with
 `[gpu-idle-escalation]` (plus a `gpu_idle_escalation=True` extra) AND fired a
 best-effort Telegram push: a MULTI-GPU pod has been idle in an upload/CPU-only
 phase for ≥ `EPM_GPU_IDLE_ESCALATION_MIN` (default 60, ≥ the advisory min) min
-— the #664 spend-leak class (an 8×H200 idle in a terminal upload phase burns
-~$44/hr). The orchestrator's response is the SAME as for
+— the #664 spend-leak class (a multi-GPU pod idling through a terminal
+upload phase). The orchestrator's response is the SAME as for
 `gpu_idle_advisory_posted` (the escalation is the advisory's louder second
 tier, not a new action): surface it in the session text, and if the remaining
 work in the current phase is genuinely CPU-only and long, apply CLAUDE.md
@@ -5108,7 +5100,7 @@ branch.
 
 **Same-phase rate/ETA duty (#1863; incident #1482).** When ≥3 consecutive
 poll ticks report the SAME `current_phase` with no `new_milestone`
-(≈25–30 min at the fixed 540 s tick; the #1482 ticks were 30-min), a
+(≈25–30 min at the fixed 540 s tick), a
 phase-name liveness read is no longer enough — the orchestrator MUST
 compute a throughput read instead of echoing phase-name liveness
 indefinitely. Phase-label equivalence: a phase label differing only in an
@@ -5223,18 +5215,18 @@ live pid in the same command chain — a present-but-stale pid file
 silently probes a dead pid every tick and is rescued only while the
 marker pid is itself alive (full contract + atomic recipe:
 `.claude/rules/pod-side-reporting.md` § Pid-file launch contract;
-incident #813 v5).
+#813 v5).
 A crash-fix relaunch (a `code`-row fix round preceded it) additionally
 passes the fix-commit ancestry probe and executes the declared
 stale-checkpoint disposition BEFORE dispatch, recording `fix_sha=` in
 the fresh marker note (`.claude/rules/crash-fix-rounds.md` § Crash-fix
 relaunch: fix-commit ancestry + stale-checkpoint hygiene).
-(Incident: task #521, 2026-06-10 — a VM-side pid file plus an
-`epm:progress`-only relaunch produced `status=dead, pid_alive=False`
-while the pod run was healthy.) On the GCP lane the marker's `pod=`
+(#521: a VM-side pid file plus an `epm:progress`-only relaunch
+produced `status=dead, pid_alive=False` while the pod run was
+healthy.) On the GCP lane the marker's `pod=`
 field MUST be the instance name (`eps-issue-<N>`) — `GcpBackend.poll`
 matches relaunch markers on that field to follow the new process
-(incident #612): a mismatched value (e.g. a RunPod-style `pod-<N>`)
+(#612): a mismatched value (e.g. a RunPod-style `pod-<N>`)
 rejects the marker and the poll keeps reading the frozen startup-script
 phase, and an omitted `pod=` is accepted only via the launch-time
 `epm:cluster-launched` timestamp baseline, so include it explicitly.
@@ -5247,7 +5239,7 @@ succeeded; clearing stale blocked (epm:run-launched <ts>)'`. The stale
 `blocked` arises when an earlier failed round (a cap-hit, a
 STATE-TO-`blocked` exit, or a failed crash-fix cycle) parked the task and
 a LATER round's relaunch succeeded without flipping it back — #742 ran
-healthy ~35h at status `blocked` (2026-07-01→07-02) and the
+healthy for a day and a half at status `blocked` and the
 dashboard/watcher read wrong until the user asked. Guards: (a) flip ONLY
 `blocked` → `running`, never any other status — a same-issue follow-up
 round holds `followups_running`, never `blocked`, so the flip is inert
@@ -5273,10 +5265,9 @@ tool call (corrupted/truncated tool-call text rendered as raw output, an
 API drop, a session crash), the chain dies permanently with no live bg
 work and no scheduled wake. The pod keeps running; the per-issue session
 goes silent; results strand and GPU billing accrues until the user
-notices. (Incident: task #463, 2026-06-02 — reaction turn at 01:28 UTC
-emitted a tool call as raw text, no tool ran, chain died, pod ran
-unmonitored for ~6.5h until the user manually re-invoked `/issue 463`.
-Task #462 hit the same class of failure.)
+notices. (#463/#462: a reaction turn emitted a tool call as raw text,
+no tool ran, the chain died, and the pod ran unmonitored for hours
+until the user manually re-invoked the skill.)
 
 The mandatory backstop is a harness-level recurring fire of
 `/issue-tick <N>` (the LIGHTWEIGHT recurring driver — see
@@ -5320,7 +5311,7 @@ starting the bg-Bash poll:
    lightweight `/issue-tick <N>` skill (dies with the session, auto-
    expires at 7 days like the default pod TTL; the harness jitters
    recurring fires so ticks don't all land on a fixed wall-clock mark).
-   The 45-minute interval (lengthened from 20 min on 2026-06-12) is
+   The 45-minute interval is
    chosen deliberately: the pure-Python `autonomous_session_watch.py`
    cron (every 10 min, free) carries ALL fast detection — DEAD-session
    respawn, alive-but-stalled respawn for ACTIVE statuses, pod safety,
@@ -5485,8 +5476,8 @@ obsolete monitoring stack" below for the single source of truth on
 which mechanisms are live vs retired.
 
 **Long-phase heartbeat duty (BINDS every >60-min quiet stretch — ALL
-loops, BOTH session modes; #1207, incidents #1092/#825/#1112
-2026-07-08).** Nothing external refreshes a session's liveness signals
+loops, BOTH session modes; #1207, #1092/#825/#1112).** Nothing external
+refreshes a session's liveness signals
 between status transitions: the tick skill no longer touches the
 self-report (issue-tick SKILL.md § "Title refresh — moved to the
 watcher") and the watcher's reconcile is status-transition-keyed by
@@ -5510,9 +5501,9 @@ live-escalation debounce covers it.)
    (`until <check> || [ $(elapsed) -gt 2700 ]; …`) rather than arming
    one silent multi-hour wait. Load the deferred schemas BEFORE the
    first poll call — `ToolSearch("select:Monitor,TaskOutput")` — an
-   unloaded deferred-tool call fails with InputValidationError (2
-   sessions burned a turn on this on 2026-07-18). A single 4-h until-loop (#1092,
-   2026-07-08) leaves zero heartbeat opportunities: the watcher's
+   unloaded deferred-tool call fails with InputValidationError. A
+   single 4-h until-loop (#1092)
+   leaves zero heartbeat opportunities: the watcher's
    90-min exemption leash (`LONG_PHASE_HEARTBEAT_FRESH_S`, sized as a
    ~60-min cadence + 30-min slack) lapses mid-wait no matter what was
    posted before entering it. 45 min matches the `*/45` tick cadence
@@ -5552,7 +5543,7 @@ live-escalation debounce covers it.)
    `[phase-rate]` read (#1863): alive ≠ progressing.
 
 **Remote-landing watches carry a producer-fence deadline (#1850;
-incidents #1738/#1739, 2026-07-29).** Any watch whose wake condition is
+#1738/#1739).** Any watch whose wake condition is
 a REMOTE artifact landing — an HF file/prefix appearing, a
 pod/GCE-produced output, a sentinel drained from another box — carries
 an explicit overall DEADLINE = the producer's own lifetime bound (the
@@ -5667,7 +5658,7 @@ signals (`gate=phase`, `gate=smoke`, `gate=dryrun` are the canonical
 ones): their marker IS posted from the VM, but they NEVER end the
 polling loop and NEVER trigger the fail-fast block. They are NOT user
 gates — do not treat a `blocks_pipeline: False` phase signal as an
-unrecognised gate (incident #641).
+unrecognised gate (#641).
 
 The orchestrator handles the named gate inline rather than continuing to
 poll — the pipeline itself has EXITed at the gate. Most gates are PARK-mode
@@ -5735,8 +5726,8 @@ exist yet, so a plain `finalize` FAILs confirm (exit 3) by construction.
 `epm:results`, so the #1026 verifier-currency gate is a no-op here — no
 verifying crumb, no results, no verdict to be stale against.) The
 instance stays up ONLY for sentinel draining — never through an off-pod
-phase or a park (Step 8-bis: a pod must not idle on a halt; incident #763:
-an A100-80 idled ~40 min after the `cofit_phaseA_done` gate-park). The next
+phase or a park (Step 8-bis: a pod must not idle on a halt; #763: a
+GPU idled after the `cofit_phaseA_done` gate-park). The next
 pipeline phase provisions FRESH via the normal Step 6d.1 dispatch. There is
 no GCP analogue of the RunPod `pod.py stop`/`resume` cycle (`pv_phase1_done`
 below): GCE instances are ephemeral by design, and a STOPPED instance would
