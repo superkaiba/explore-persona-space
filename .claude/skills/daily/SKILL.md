@@ -824,8 +824,11 @@ tail) (#994). Three rules:
 
 `/daily` accepts an optional ISO date argument — `/daily 2026-07-01` —
 making the run a BACKFILL for that date. Trigger: the #711 heartbeat
-(`scripts/cron_daily_healthcheck.sh`) alerts that a nightly file never
-landed; its alert names the exact command:
+(`scripts/cron_daily_healthcheck.sh`) detects a missing/husk nightly file,
+AUTO-LAUNCHES one backfill attempt per missed day itself (#2113; detached +
+single-flight; `EPS_HEALTHCHECK_AUTO_BACKFILL=0` disables) and alerts; the
+manual command below remains the recovery for a FAILED auto-attempt (the
+healthcheck re-alerts once, never relaunches):
 
     cd ~/explore-persona-space && CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=10800000 \
       /home/thomasjiralerspong/.local/bin/claude -p '/daily <missed-date>'
