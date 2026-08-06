@@ -267,7 +267,7 @@ def fig_behavioral() -> None:
         [SETTING_LABEL[k] for k in keys], rotation=20, ha="right", rotation_mode="anchor"
     )
     ax.set_ylabel("rank agreement with the judged score (↑ better)")
-    ax.set_title("Raw agreement: the five-draw-average score ranks best", loc="left")
+    ax.set_title("Raw rank agreement with each regime's judged score", loc="left")
     ax.legend(loc="upper right", fontsize=7.5)
 
     # Right panel: only settings whose judged score has a defined noise ceiling.
@@ -297,12 +297,22 @@ def fig_behavioral() -> None:
             color=colors[reg],
             label=REGIME_LABEL[reg],
         )
+    # Flag the two cells whose judged score is floor-censored: HH-RLHF's ceiling
+    # is itself near-floor (0.25 greedy / 0.49 averaged), and toxic chat has 70%
+    # of prompts at the floor with nine middling prompts.
+    NORMALIZED_FLAG = {
+        "evil_hhrt": "\n(near-floor ceiling)",
+        "evil_toxicchat": "\n(70% of prompts at floor)",
+    }
     ax2.set_xticks(x2)
     ax2.set_xticklabels(
-        [SETTING_LABEL[k] for k in keys2], rotation=20, ha="right", rotation_mode="anchor"
+        [SETTING_LABEL[k] + NORMALIZED_FLAG.get(k, "") for k in keys2],
+        rotation=20,
+        ha="right",
+        rotation_mode="anchor",
     )
     ax2.set_ylabel("share of that score's own noise ceiling")
-    ax2.set_title("After the noise-ceiling correction it mostly closes", loc="left")
+    ax2.set_title("The same agreement as a share of each score's own ceiling", loc="left")
     fig.tight_layout()
     savefig_paper(fig, "behavior_prediction_raw_and_ceiling_normalized", dir=FIGDIR)
     plt.close(fig)
