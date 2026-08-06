@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2153,
+  "highest_id": 2154,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8919,6 +8919,13 @@
       "path": "tasks/running/2153",
       "status": "running",
       "title": "Detached HF transfers must have timeout + observable progress (xet read-hang is silent); warn off snapshot_download(allow_patterns) on the 1M-file data repo"
+    },
+    "2154": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2154",
+      "status": "proposed",
+      "title": "workflow-fix: #1739 follow-up-run marker writes label= not followup_label=, reddening test_corpus_replay_all_historical_markers on main"
     },
     "216": {
       "has_clean_result": true,
