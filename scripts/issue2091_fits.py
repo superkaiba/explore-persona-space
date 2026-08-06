@@ -98,10 +98,16 @@ HEADLINE_LAYER = 19
 REGIMES: tuple[str, ...] = ("greedy", "avg_k5", "single")
 K_ROLLOUTS = 5  # banked rollout grain (#1739)
 
-U_POOL = 4000
+# Per-rung pool rule (plan v5 §4.2/§4.3/§11): U_rung = max(U_FLOOR, 2 * A_rung),
+# A_rung = min(U_rung // 2, len(admix_ids)). U_FLOOR is the well-posedness floor
+# (d = 3,584, so U must exceed d — a smaller U is estimator-degenerate, #1701/#1887);
+# the rule honors the registered f_u = 0.5 exactly wherever a rung can supply it
+# (2 * A_rung >= U_FLOOR) and falls back to U = U_FLOOR where it cannot. On this
+# round's realized admix pools (335..1003, all < 2,000) it evaluates to U = 4,000
+# on every rung — identical to the previous fixed U_POOL = 4000 behavior.
+U_FLOOR = 4000
 GENERIC_WC = 1500
 GENERIC_LMSYS = 2500
-ADMIX_CAP = 2000  # A = min(2000, rung admix-half)
 TARGET_F_U = 0.5  # registered target; realized f_u reported per cell
 KNN_KS: tuple[int, ...] = (1, 5)
 
@@ -267,13 +273,15 @@ class PoolSpec:
 
     pool_tag: str
     pool_ids: list[str]
-    control_ids: list[str]  # the U-row generic core (matched all-generic control)
+    control_ids: list[str]  # the full generic core (== U rows on the U_FLOOR branch)
     n_admix: int
     f_u_realized: float
     f_u_target: float
     n_removed_lmsys: int
     n_removed_wc: int
-    u_pool: int
+    u_pool: int  # realized per-rung U (max(u_floor, 2 * A_rung))
+    u_pool_realized: int  # alias of u_pool for per-cell reporting (plan §4.2)
+    u_floor: int  # the well-posedness floor the rung was derived under
     seed: int
 
     def to_json(self) -> dict:
@@ -299,37 +307,60 @@ def assemble_pool_ids(
     pool_tag: str,
     n_wc: int = GENERIC_WC,
     n_lmsys: int = GENERIC_LMSYS,
-    admix_cap: int = ADMIX_CAP,
-    u_pool: int = U_POOL,
+    u_floor: int = U_FLOOR,
     seed: int = SEED,
 ) -> PoolSpec:
-    """Admix-by-REPLACEMENT pool (constant U; LMSYS removed first, then WildChat).
+    """Admix-by-REPLACEMENT pool with per-rung U (LMSYS removed first, then WildChat).
 
-    Plan §4.2: generic core = ``n_wc`` WildChat-pool + ``n_lmsys`` LMSYS-pool rows
-    (= ``u_pool``); A = min(``admix_cap``, len(admix_ids)) target-domain rows are
-    inserted after removing A generic rows LMSYS-first. Realized f_u = A/U is
-    RECORDED, never silently degraded. The control is the generic core itself.
-    ``admix_ids`` are UNLABELED map rows only — group-disjointness from every
-    eval context is the staging split's job; assert via ``assert_group_disjoint``.
+    Plan v5 §4.2/§4.3: ``U_rung = max(u_floor, 2 * A_rung)`` with
+    ``A_rung = min(U_rung // 2, len(admix_ids))`` — the rule honors the
+    registered f_u = 0.5 EXACTLY wherever the rung's admix can supply it
+    (``2 * A >= u_floor``) and falls back to the well-posedness floor
+    ``U = u_floor`` where it cannot (U must exceed d = 3,584; #1701/#1887).
+    Generic core = ``n_wc`` WildChat-pool + ``n_lmsys`` LMSYS-pool rows; the
+    pool draws ``U - A`` generic rows from it (equivalently: removes
+    ``(n_wc + n_lmsys) - (U - A)`` core rows LMSYS-first, then inserts the A
+    admix rows), so the generic core is a FINITE supply: ``U - A`` exceeding
+    ``n_wc + n_lmsys`` fails loud (never silently truncated). Realized
+    f_u = A/U is RECORDED, never silently degraded. The control is the full
+    generic core itself (== U rows on the floor branch; on the 2A branch the
+    finite core cannot supply a U-row all-generic control, so the control
+    stays the ``n_wc + n_lmsys``-row core). ``admix_ids`` are UNLABELED map
+    rows only — group-disjointness from every eval context is the staging
+    split's job; assert via ``assert_group_disjoint``.
+
+    On the floor branch this is draw-for-draw identical to the previous fixed
+    ``U_POOL = 4000`` implementation (same RNG consumption order: core-wc,
+    core-lmsys, admix, remove-lmsys, remove-wc), pinned by
+    ``tests/test_issue2091_pool_rule.py`` golden digests.
     """
     wc = sorted(dict.fromkeys(str(i) for i in generic_wc_ids))
     lm = sorted(dict.fromkeys(str(i) for i in generic_lmsys_ids))
     ad = sorted(dict.fromkeys(str(i) for i in admix_ids))
-    if n_wc + n_lmsys != u_pool:
-        raise ValueError(f"generic core {n_wc}+{n_lmsys} != U={u_pool}")
     overlap = (set(wc) & set(lm)) | (set(wc) & set(ad)) | (set(lm) & set(ad))
     if overlap:
         raise ValueError(f"pool id families overlap (n={len(overlap)}): {sorted(overlap)[:3]}")
+
+    n_core = n_wc + n_lmsys
+    u_pool = max(u_floor, 2 * len(ad))
+    a = min(u_pool // 2, len(ad))  # == len(ad) by construction; keep the registered formula
+    n_generic_needed = u_pool - a
+    if n_generic_needed > n_core:
+        raise ValueError(
+            f"{pool_tag}: generic supply over-draw — U={u_pool} needs {n_generic_needed} "
+            f"generic rows but the core has only {n_wc}+{n_lmsys}={n_core} "
+            "(fail loud, never silently truncate; plan §4.2 pools)"
+        )
+    n_removed = n_core - n_generic_needed
 
     rng = np.random.default_rng([seed, _stable_hash64(f"pool::{pool_tag}")])
     core_wc = _seeded_subset(wc, n_wc, rng, what=f"{pool_tag}/generic-wc")
     core_lm = _seeded_subset(lm, n_lmsys, rng, what=f"{pool_tag}/generic-lmsys")
     control_ids = core_lm + core_wc
 
-    a = min(admix_cap, len(ad))
     admix_sel = _seeded_subset(ad, a, rng, what=f"{pool_tag}/admix") if a else []
-    r_lm = min(a, n_lmsys)
-    r_wc = a - r_lm
+    r_lm = min(n_removed, n_lmsys)
+    r_wc = n_removed - r_lm
     removed_lm = set(_seeded_subset(core_lm, r_lm, rng, what=f"{pool_tag}/remove-lmsys"))
     removed_wc = set(_seeded_subset(core_wc, r_wc, rng, what=f"{pool_tag}/remove-wc"))
     pool_ids = (
@@ -349,6 +380,8 @@ def assemble_pool_ids(
         n_removed_lmsys=r_lm,
         n_removed_wc=r_wc,
         u_pool=u_pool,
+        u_pool_realized=u_pool,
+        u_floor=u_floor,
         seed=seed,
     )
 
