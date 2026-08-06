@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2150,
+  "highest_id": 2153,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8895,9 +8895,30 @@
     "2150": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2150",
-      "status": "running",
+      "path": "tasks/completed/2150",
+      "status": "completed",
       "title": "wf-compact fallout: codex-code-reviewer.md lost the Step 4.6 gate-scope copy-list bullet \u2014 3 pin tests red on main"
+    },
+    "2151": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2151",
+      "status": "running",
+      "title": "Give API-level stop_reason=refusal its own judge drop class (rules 9/24/18 + judge_dispatch.py:670-681)"
+    },
+    "2152": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2152",
+      "status": "proposed",
+      "title": "Rule-26 judge pilot gate must exercise the same TRANSPORT as the wave it gates (sync pilot passed a batch wave that lost 34% of draws)"
+    },
+    "2153": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2153",
+      "status": "running",
+      "title": "Detached HF transfers must have timeout + observable progress (xet read-hang is silent); warn off snapshot_download(allow_patterns) on the 1M-file data repo"
     },
     "216": {
       "has_clean_result": true,
