@@ -8615,8 +8615,8 @@
     "2113": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2113",
-      "status": "proposed",
+      "path": "tasks/planning/2113",
+      "status": "planning",
       "title": "daily-fix: healthcheck auto-launches /daily backfill"
     },
     "2114": {
