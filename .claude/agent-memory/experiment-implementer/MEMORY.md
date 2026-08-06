@@ -21,6 +21,7 @@
 - [Parity-gate tolerance calibration family](feedback_bf16_gpu_parity_gate_tolerance.md) — calibrate on deployment dtype+shape+data; 6 siblings in entry incl feedback_parity_gate_determinate_data_blind.md (#1005 #841 +5)
 - [Post-PCA whitening kills OOF ridge generalization](feedback_post_pca_whitening_kills_oof_generalization.md) — standardize AMBIENT then PCA-project, never (#923)
 - [mpl tight_layout after colorbar crashes under paper style](feedback_mpl_tight_layout_colorbar_paper_style.md) — matplotlib refuses the layout-engine switch (#920)
+- [Constrained layout ignores fig.text captions](feedback_constrained_layout_ignores_figtext_caption.md) — legend band must clear the caption itself; draw-time extent audit (#1739)
 - [batch_judge aggregator crashes on bare-int parse](feedback_batch_judge_aggregator_bare_int_parse.md) — eval.utils.parse_judge_json returns (#778)
 - [Vectorized LOCO MLP: multihead ≠ scalar-per-dim](feedback_vectorized_loco_mlp_multihead_vs_scalar.md) — vectorized_mlp_skill.py: only the (#658 #722); PRESS-LOCO twin sibling in entry (#811)
 - [Long-loop resume discipline](feedback_long_running_analysis_needs_resume.md) — ≥1h loops persist each unit atomically + --resume + fail-loud substrate match; --resume pins every output-affecting regime key (cross-regime resume reuses wrong rows): feedback_resume_metadata_pin_every_regime_key.md (#722 #399 #600)
