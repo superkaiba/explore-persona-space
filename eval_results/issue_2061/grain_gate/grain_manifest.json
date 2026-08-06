@@ -1009,8 +1009,8 @@
   "regime_contradictions": [],
   "verdict": "PASS",
   "meta": {
-    "git_commit": "fd9ff244d6f41d3704a66da2a25a582a2f145536",
-    "created_unix": 1785991205.884898,
+    "git_commit": "08a6517b89beec45537abff9acf19a2c15ac46f7",
+    "created_unix": 1786001392.698308,
     "data_revision": null,
     "n_requested_cells": 35,
     "argv": [
