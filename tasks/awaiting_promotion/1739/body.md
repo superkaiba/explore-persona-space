@@ -82,7 +82,7 @@ relates_to:
 
 A 5-row random spot check (seed 42) per behavior showed coherent records (evil mostly 0 with occasional 80-100 scores, sycophancy 20-40, hallucination fabrication fractions), small per-row drop counts, and zero transport losses.
 
-Evil-ood-spread-round artifacts are referenced by path and count under the same content-hygiene rule: three per-corpus pilot rollout sets (1,000 completions each) with judge aggregates in [`pilot_spread.json`](https://github.com/superkaiba/explore-persona-space/blob/324e77cdaff1a6131aaea8fb676274015da63853/eval_results/issue_1739/evil_ood_spread/pilot_spread.json), the compliance wave's retained judge output (159,990 draws over 53,330 rollout items; `compliance_full/<rung>/judge_raw_compliance_full.json` per rung), attack-tactic labels for 8,602 contexts in [`tactic_labels.json`](https://github.com/superkaiba/explore-persona-space/blob/324e77cdaff1a6131aaea8fb676274015da63853/eval_results/issue_1739/evil_ood_spread/tactic_labels.json), and 437,952 held-out predictions (16 line-split shards plus a manifest on HF).
+Evil-ood-spread-round artifacts are referenced by path and count under the same content-hygiene rule: three per-corpus pilot rollout sets (1,000 completions each) with judge aggregates in [`pilot_spread.json`](https://github.com/superkaiba/explore-persona-space/blob/72d8713bf51a7f8bfcc4b6ae7d508e347afeb4be/eval_results/issue_1739/evil_ood_spread/pilot_spread.json), the compliance wave's retained judge output (159,990 draws over 53,330 rollout items; `compliance_full/<rung>/judge_raw_compliance_full.json` per rung), attack-tactic labels for 8,602 contexts in [`tactic_labels.json`](https://github.com/superkaiba/explore-persona-space/blob/72d8713bf51a7f8bfcc4b6ae7d508e347afeb4be/eval_results/issue_1739/evil_ood_spread/tactic_labels.json), and 437,952 held-out predictions (16 line-split shards plus a manifest on HF).
 
 ## Results
 
@@ -186,7 +186,7 @@ No new arm beats direct ridge: sycophancy held-out Reddit 0.66 (direct MLP) and 
 
 What is plotted: held-out Spearman rho for all 16 arms, refit on the 1,906 jailbreak train contexts outside the Direct Request attack-tactic class and scored on the 4,562 held-out Direct Request contexts, for both mapping variants and all three direction regimes.
 
-![Forest plot of per-arm held-out rho on the tactic holdout, grouped into context, map, oracle, and control families](https://raw.githubusercontent.com/superkaiba/explore-persona-space/324e77cdaff1a6131aaea8fb676274015da63853/figures/issue_1739/oodspread_itemb_arm_forest.png)
+![Forest plot of per-arm held-out rho on the tactic holdout, grouped into context, map, oracle, and control families](https://raw.githubusercontent.com/superkaiba/explore-persona-space/72d8713bf51a7f8bfcc4b6ae7d508e347afeb4be/figures/issue_1739/oodspread_itemb_arm_forest.png)
 
 > **Figure.** *Map arms sit on their shuffled-direction control; the direct context MLP transfers.* The 96 arm-by-regime rows with bootstrap 95% intervals over the 4,562 held-out contexts; symbol shape gives the direction regime; blue = context-side arms, yellow = map-based, gray = true-answer oracles, pink = controls.
 
@@ -196,7 +196,7 @@ On the context variant the best map arm reads 0.514 against 0.510 for the shuffl
 
 What is plotted: the distribution of per-context mean scores on each evil rung — the parent 0-100 trait DV beside a 0-100 graded compliance DV judged over the same retained rollouts; fraction of contexts per 5-point bin.
 
-![Histograms of per-context trait and compliance scores on the three evil rungs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/324e77cdaff1a6131aaea8fb676274015da63853/figures/issue_1739/oodspread_itemd_dv_hist.png)
+![Histograms of per-context trait and compliance scores on the three evil rungs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/72d8713bf51a7f8bfcc4b6ae7d508e347afeb4be/figures/issue_1739/oodspread_itemd_dv_hist.png)
 
 > **Figure.** *The compliance DV keeps range where the trait DV collapses.* Per-context means over 5 rollouts x 3 judge draws; every context with at least one kept draw (n in legends); the same per-context, sample-SD, strict-bottom-bin instrument on both sides.
 
@@ -206,7 +206,7 @@ Every rung passes the two-sided spread floor under the compliance DV — per-con
 
 What is plotted: the distribution of per-context mean trait scores on three 200-context pilot corpora from published attack datasets (human red-team, multi-turn synthetic, optimizer attacks), judged with the parent grid's trait rubric.
 
-![Histograms of per-context trait scores on the three attack-corpus pilots](https://raw.githubusercontent.com/superkaiba/explore-persona-space/324e77cdaff1a6131aaea8fb676274015da63853/figures/issue_1739/oodspread_itema_pilot_hist.png)
+![Histograms of per-context trait scores on the three attack-corpus pilots](https://raw.githubusercontent.com/superkaiba/explore-persona-space/72d8713bf51a7f8bfcc4b6ae7d508e347afeb4be/figures/issue_1739/oodspread_itema_pilot_hist.png)
 
 > **Figure.** *All three fresh attack corpora give the trait DV usable spread.* Per-context means over 5 rollouts x 3 judge draws, 200 contexts per corpus; the floor requires SD of at least 10 with under 80% of contexts in either extreme bin.
 
