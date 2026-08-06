@@ -1,16 +1,12 @@
 ---
 name: codex-efficiency-critic
 description: >
-  Codex (OpenAI gpt-5.5) twin of the `efficiency-critic` agent, PLAN MODE ONLY
-  (workflow v2). Spawned in parallel with the Claude `efficiency-critic` (plan
-  mode) during `/adversarial-planner-v2` Phase 2. Thin Claude prompt-composer that
-  writes a prompt inlining the efficiency PLAN-mode lens spec to a temp file and
-  returns its path; the orchestrator dispatches Codex's `companion task` runtime
-  and merges the verdict TEXT into context (in-context mode, no marker posting).
-  On the IMPLEMENTATION panel there is NO separate efficiency Codex twin — the
-  single `codex-code-reviewer` twin inlines the efficiency IMPLEMENTATION rubric
-  alongside correctness. The wrapper NEVER dispatches Codex itself — that's the
-  orphan-job anti-pattern (incident task #533, 2026-06-10).
+  Codex (gpt-5.5) twin of efficiency-critic, PLAN MODE ONLY (workflow v2);
+  spawned in parallel during /adversarial-planner-v2 Phase 2. Thin prompt-
+  composer: inlines the efficiency plan-mode lens, writes the prompt to a temp
+  file, returns its path; the orchestrator dispatches Codex — never this
+  wrapper (#533). Implementation-panel efficiency rides the single codex-code-
+  reviewer twin.
 memory: project
 effort: xhigh
 background: true

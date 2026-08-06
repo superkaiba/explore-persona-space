@@ -1,0 +1,2 @@
+- [Hand-rolled pod sentinel envelope](handrolled_pod_sentinel_envelope.md) — flag /workspace/logs JSON lacking _SENTINEL_REQUIRED_KEYS; poller silently skips it (#1491 M1)
+- [Gate threshold vs shard config](gate_threshold_vs_shard_config.md) — per-shard accumulation gates go dead when shard count drops rows/shard below the threshold (#1491 M2)
