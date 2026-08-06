@@ -559,6 +559,50 @@ the fleet's earlyoom headroom; the watcher + earlyoom telemetry remain the
 runtime backstop. Plan-time placement, not a mid-run gate.
 
 
+**CPU-phase THROUGHPUT routing — the shared VM is ~6× slower per unit
+than a dedicated RunPod CPU pod; route CPU-only work to a pod by DEFAULT
+(#2054).** The >50 GB disk carve-out and the ≥16 GB RSS gate above are
+SAFETY gates — they answer "will this phase survive on the VM?". This is
+a SPEED gate and it fires FAR BENEATH both: a 2 GB-RSS, 5 GB-footprint
+phase clears every safety bar and still belongs on a pod. MEASURED
+(#2054, fits fleet): the same production entrypoint ran ~**6× faster per
+unit** on `cpu-bigmem` (`cpu5m-16-128`, 16 uncontended vCPU at `OMP=16`)
+than on the shared VM. The mechanism is CONTENTION, not hardware — the
+VM's cores are shared across ~15 concurrent Claude sessions plus crons,
+so a VM per-unit wall prices the fleet's instantaneous load rather than
+the work, and that load is unbounded, non-stationary, and outside the
+plan's control. Consequences for §9 rows:
+
+1. **Route past the trivial floor.** A CPU-only phase projected past the
+   ~15–30 min trivial floor names a RunPod CPU lane
+   (`cpu-small` / `cpu-mid` / `cpu-bigmem`) EVEN WHEN both safety gates
+   pass. CPU pods run N-in-parallel (the one-pod rule is GPU-specific),
+   so width is cheap; a contended free core is not a bargain.
+2. **A VM-measured basis does not transfer to a pod row, or the
+   reverse.** The MEASURED 1-cell pilot must run AT the venue the fleet
+   will use — piloting on the VM to size a pod fleet (or vice versa)
+   imports a contention factor of unknown size. Prefer an entrypoint
+   with a BUILT-IN pilot gate that measures at the production venue and
+   exits non-zero with a report when the projection breaches its
+   ceiling (#2054 ladder: exit 7 + `pilot_gate_report.json` above 12 h,
+   with wider sharding as the prepared response).
+3. **Cite an existing measured ratio instead of re-deriving it.** Once a
+   task has a measured pod-vs-VM per-unit ratio, later dispatches in
+   that task reuse it as the venue basis rather than spending another
+   pilot (#2054: the ladder chose its venue from the fits fleet's
+   measured 6×). A cited ratio is a MEASURED basis and satisfies the
+   per-cell-pilot duty; an asserted or remembered one does not.
+
+Interaction with the safety gates: ORTHOGONAL and additive — the
+throughput gate can send a phase to a pod that the safety gates would
+have allowed on the VM, but it can NEVER keep a phase on the VM that
+either safety gate routes off. Unaffected: the GPU-worthiness carve-out
+(an iterative-optimization fit still routes to a GPU lane) and
+VECTORIZE-FIRST (an overhead-bound loop is batched before any venue
+change — buying a 6× faster venue for a 50× overhead-bound loop is the
+wrong fix; `.claude/rules/vectorize-many-cell-fits.md`).
+
+
 **Cost wall-time against the machine the router will ACTUALLY provision —
 then reconcile worst-case wall against the GCP auto-delete fence.**
 Each row's `planned_wall_h` + `basis` MUST name the machine type of the
