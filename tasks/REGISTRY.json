@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2115,
+  "highest_id": 2116,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8632,6 +8632,13 @@
       "path": "tasks/proposed/2115",
       "status": "proposed",
       "title": "daily-fix: Step 10d lint-gate pending-call wedge"
+    },
+    "2116": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2116",
+      "status": "proposed",
+      "title": "daily-fix: sibling sync arm misses .sh dispatchers"
     },
     "212": {
       "has_clean_result": true,
