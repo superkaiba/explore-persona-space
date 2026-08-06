@@ -12579,6 +12579,18 @@ def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale
 AGENT_MEMORY_INDEX_WARN_BYTES = 20_000
 AGENT_MEMORY_INDEX_FAIL_BYTES = 24_000
 
+# gotchas.md size budget (2026-08-05 compaction): `.claude/rules/gotchas.md` is
+# machine-APPENDED by scripts/consolidate_lessons.py (failure-lesson promotion),
+# so it regrows without bound between hand trims — it reached 324 KB before the
+# 2026-08-05 trim to ~199 KB. The cap is the backstop that forces a periodic
+# re-trim (per entry: keep the operative rule + diagnostic signature + fix +
+# bare #N citations; drop dates, session ids, wall-times, fix-status
+# archaeology). Thresholds STRICTLY-GREATER (exactly-at passes); NO grandfather
+# table — the file was trimmed under WARN in the same change that introduced
+# the check.
+GOTCHAS_SIZE_WARN_BYTES = 200_000
+GOTCHAS_SIZE_FAIL_BYTES = 250_000
+
 _AGENT_MEMORY_CURATION_RECIPE = (
     "curate it: trim each index hook to ~1 line (<=~150 chars), move the "
     "detail into the pointed-to per-entry file, and merge duplicate/sibling "
@@ -12643,6 +12655,65 @@ def check_agent_memory_index_size(
                 f"loader truncates at ~25,000 bytes) — "
                 f"{_AGENT_MEMORY_CURATION_RECIPE}."
             )
+
+    return errors
+
+
+def check_gotchas_size(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """WARN/FAIL `.claude/rules/gotchas.md` over the regrowth size budget.
+
+    gotchas.md is machine-appended by ``scripts/consolidate_lessons.py``
+    (failure-lesson promotion), so it regrows without bound between hand
+    trims; this check is the backstop that forces a periodic re-trim.
+    Semantics (both thresholds STRICTLY-GREATER): size >
+    ``GOTCHAS_SIZE_FAIL_BYTES`` FAILs with the trim recipe; size >
+    ``GOTCHAS_SIZE_WARN_BYTES`` WARNs. No grandfather table. A missing
+    gotchas.md FAILs (parity with ``check_agent_spec_size``'s missing-dir
+    behavior — the file is a load-bearing rules surface). WARNs go to
+    ``warn_sink`` when provided (unit-test hook), else stderr with a
+    ``WARN: `` prefix; WARNs never enter the returned FAIL list.
+    ``repo_root`` is a unit-test override; production callers pass None.
+    Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    path = root / ".claude" / "rules" / "gotchas.md"
+    errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    if not path.is_file():
+        errors.append(
+            f"{path}: missing — .claude/rules/gotchas.md must exist for the "
+            f"gotchas size-budget check."
+        )
+        return errors
+
+    size = path.stat().st_size
+    trim_recipe = (
+        "re-trim per the entry editorial policy: keep the operative rule + "
+        "diagnostic signature + fix + bare #N citations; drop dates, session "
+        "ids, wall-times, and fix-status archaeology (resolve to current "
+        "state); collapse superseded/FIXED entries to one line"
+    )
+    if size > GOTCHAS_SIZE_FAIL_BYTES:
+        errors.append(
+            f".claude/rules/gotchas.md: {size} bytes exceeds the "
+            f"{GOTCHAS_SIZE_FAIL_BYTES}-byte gotchas FAIL threshold (the file "
+            f"is machine-appended and must be periodically re-trimmed) — "
+            f"{trim_recipe}."
+        )
+    elif size > GOTCHAS_SIZE_WARN_BYTES:
+        _warn(
+            f".claude/rules/gotchas.md: {size} bytes exceeds the "
+            f"{GOTCHAS_SIZE_WARN_BYTES}-byte gotchas WARN budget (FAIL above "
+            f"{GOTCHAS_SIZE_FAIL_BYTES}) — {trim_recipe}."
+        )
 
     return errors
 
@@ -14132,6 +14203,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "loader at ~25 KB, silently dropping the newest lessons — #1891)",
     )
     parser.add_argument(
+        "--check-gotchas-size",
+        action="store_true",
+        help="gotchas.md regrowth size budget: WARN >200,000 B, FAIL >250,000 B "
+        "(the file is machine-appended by consolidate_lessons.py; the cap forces "
+        "periodic re-trims)",
+    )
+    parser.add_argument(
         "--check-api-dispatch-routing",
         action="store_true",
         help="FAIL on a NEW direct-Anthropic call site (anthropic.Anthropic(...) / "
@@ -14401,6 +14479,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
         or args.check_agent_memory_index_size
+        or args.check_gotchas_size
         or args.check_api_dispatch_routing
         or args.check_lens_coverage
         or args.check_section_reference_pointers
@@ -14519,6 +14598,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_agent_spec_size())
     if args.check_agent_memory_index_size or no_flags:
         errors.extend(check_agent_memory_index_size())
+    if args.check_gotchas_size or no_flags:
+        errors.extend(check_gotchas_size())
     if args.check_compute_shape_review_lens or no_flags:
         errors.extend(check_compute_shape_review_lens())
     if args.check_long_loop_restartability_review_lens or no_flags:
