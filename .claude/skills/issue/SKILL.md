@@ -4552,7 +4552,7 @@ When the driver spans MULTIPLE ARM CLASSES — distinct source-context
 classes / recipe branches (e.g. persona-context vs bare-context arms)
 AND every other class-defining axis the grid crosses: behavior class
 (marker vs content), training regime (contrastive `con` vs
-positive-only `po`), method (LoRA vs full-FT) — "once at tiny N" means
+positive-only `po`), method (LoRA vs full-FT) (#1586) — "once at tiny N" means
 once PER ARM CLASS: ≥1 tiny cell per realized (class × regime)
 combination, reaching class-gated read-side / aggregation paths
 (panel-disjointness reads, per-class mix asserts, reuse-seam loaders)
