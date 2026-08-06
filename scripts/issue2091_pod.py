@@ -124,6 +124,7 @@ PARITY_PROBE_MODE = "deferred-to-p4"
 PILOT_SENTINEL = "issue-2091-pilot.json"
 UPLOAD_DONE_SENTINEL = "issue-2091-upload-done.json"
 RESULTS_SENTINEL = "issue-2091-results.json"
+REPAIR_RESULTS_SENTINEL = "issue-2091-repair-results.json"
 
 SENTINEL_SCHEMA_VERSION = 1
 
@@ -264,6 +265,11 @@ def probe_store_dir(args: argparse.Namespace, behavior: str) -> Path:
 def job_done_path(args: argparse.Namespace, name: str) -> Path:
     """Per-job completion record — OUTSIDE the drained sentinel glob."""
     return job_out_root(args, name) / "_job_done.json"
+
+
+def repair_done_path(args: argparse.Namespace, name: str) -> Path:
+    """Per-job REPAIR completion record — OUTSIDE the drained sentinel glob."""
+    return job_out_root(args, name) / "_repair_done.json"
 
 
 # ── context staging (parent) ──────────────────────────────────────────────────
@@ -637,24 +643,15 @@ def run_job(args: argparse.Namespace) -> dict:
     return record
 
 
-def run_parity_probe(
-    args: argparse.Namespace, behavior: str, model, tokenizer, fingerprint: str
-) -> dict:
-    """Re-capture this behavior's banked completions through THIS capture rig.
+def write_probe_payload_files(
+    args: argparse.Namespace, behavior: str, rows: list[dict]
+) -> list[Path]:
+    """Banked probe rows -> labeling-shape payload files (the capture input).
 
-    Writes the banked rows out in the labeling-rollout payload shape (what
-    ``capture_rollout_files`` consumes), then captures them into
-    ``parity_probe_<behavior>/``. The banked reference vectors are NOT fetched
-    here (they sit inside a 32-70 GB tar); the per-behavior
-    ``cos(t1_new, t1_banked)`` / ``cos(context_end_new, context_end_banked)``
-    are computed in P4 against the already-staged banked slices.
+    Shared by ``run_parity_probe`` and the repair path so a repair reconstructs
+    BYTE-IDENTICAL payloads — and therefore identical (context_id, rollout_k,
+    source_file) row identities — from the same staged probe rows.
     """
-    from explore_persona_space.experiments.issue_1739 import capture as capture_mod
-    from explore_persona_space.experiments.issue_1739.constants import HIDDEN_DIM, N_LAYERS
-
-    rows = load_probe_rows(args, behavior, args.limit)
-    if not rows:
-        raise RuntimeError(f"[probe {behavior}] no probe rows staged")
     probe_root = args.out_root / "parity_probe" / behavior
     probe_root.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
@@ -677,6 +674,28 @@ def run_parity_probe(
             },
         )
         written.append(path)
+    return written
+
+
+def run_parity_probe(
+    args: argparse.Namespace, behavior: str, model, tokenizer, fingerprint: str
+) -> dict:
+    """Re-capture this behavior's banked completions through THIS capture rig.
+
+    Writes the banked rows out in the labeling-rollout payload shape (what
+    ``capture_rollout_files`` consumes), then captures them into
+    ``parity_probe_<behavior>/``. The banked reference vectors are NOT fetched
+    here (they sit inside a 32-70 GB tar); the per-behavior
+    ``cos(t1_new, t1_banked)`` / ``cos(context_end_new, context_end_banked)``
+    are computed in P4 against the already-staged banked slices.
+    """
+    from explore_persona_space.experiments.issue_1739 import capture as capture_mod
+    from explore_persona_space.experiments.issue_1739.constants import HIDDEN_DIM, N_LAYERS
+
+    rows = load_probe_rows(args, behavior, args.limit)
+    if not rows:
+        raise RuntimeError(f"[probe {behavior}] no probe rows staged")
+    written = write_probe_payload_files(args, behavior, rows)
 
     store_dir = probe_store_dir(args, behavior)
     cap_kwargs: dict = {
@@ -717,6 +736,249 @@ def run_parity_probe(
         flush=True,
     )
     return digest
+
+
+# ── child: append-only capture repair for one rung-job ───────────────────────
+def _stage_store_indexes(args: argparse.Namespace, store_dir: Path, store_prefix: str) -> None:
+    """Stage the existing store's row_index/meta/manifest sidecars (local-first).
+
+    Only the SMALL sidecars are fetched — the npy payloads stay remote (the
+    diff + completeness reconciliation need realized row_index lines only, and
+    ``upload_folder`` never deletes, so absent-local npys are safe). Pod-local
+    files win (a same-pod repair reuses the live store); a fresh pod fetches
+    from HF at ``--repair-revision`` (default main — the store was uploaded
+    AFTER the pinned contexts revision, so the contexts pin must NOT be used).
+    """
+    if (store_dir / "_capture_manifest.json").is_file():
+        logger.info("[repair] store sidecars already local under %s", store_dir)
+        return
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    rels = hub.list_hf_files_under_path(
+        HfApi(),
+        hub.DEFAULT_DATASET_REPO,
+        store_prefix,
+        repo_type="dataset",
+        revision=args.repair_revision,
+    )
+    keep = [
+        r
+        for r in rels
+        if r.rsplit("/", 1)[-1].startswith(
+            ("row_index_shard", "_capture_meta_shard", "_capture_manifest")
+        )
+    ]
+    if not keep:
+        raise RuntimeError(
+            f"no existing store sidecars under {store_prefix} — nothing to repair against"
+        )
+    for rel in keep:
+        target = store_dir / rel.rsplit("/", 1)[-1]
+        if not target.is_file():
+            hub.stage_hub_file(
+                hub.DEFAULT_DATASET_REPO,
+                rel,
+                target,
+                repo_type="dataset",
+                revision=args.repair_revision,
+            )
+    logger.info("[repair] staged %d store sidecar file(s) from %s", len(keep), store_prefix)
+
+
+def repair_probe_store(args: argparse.Namespace, behavior: str, model, tokenizer) -> dict:
+    """Append-only repair of one parity-probe store (same loss, no generation).
+
+    The pilot also ran the probes with ``--limit 64``, so every probe store
+    holds ONLY the pilot's 64-row shard00 (measured 64 of 150 realized per
+    behavior on HF): the full run's single-shard grid read shard00 as done and
+    captured ZERO probe rows. Probe payloads are reconstructed byte-identical
+    from the staged probe rows (``write_probe_payload_files`` — no rollout
+    text involved; the completions are the banked ones), then diffed +
+    captured exactly like the greedy stores.
+    """
+    from explore_persona_space.experiments.issue_1739 import capture as capture_mod
+    from explore_persona_space.experiments.issue_1739.constants import HIDDEN_DIM, N_LAYERS
+
+    rows = load_probe_rows(args, behavior, None)
+    if not rows:
+        raise RuntimeError(f"[probe {behavior}] no probe rows staged")
+    written = write_probe_payload_files(args, behavior, rows)
+
+    store_dir = probe_store_dir(args, behavior)
+    probe_prefix = f"{args.hf_prefix}/capture_store/parity_probe_{behavior}"
+    _stage_store_indexes(args, store_dir, probe_prefix)
+    store_manifest = json.loads((store_dir / "_capture_manifest.json").read_text())
+    fingerprint = store_manifest.get("fingerprint") or ""
+    if not fingerprint:
+        raise RuntimeError(f"[probe {behavior}] existing store manifest carries no fingerprint")
+
+    cap_kwargs: dict = {
+        "store_dir": store_dir,
+        "model": model,
+        "tokenizer": tokenizer,
+        "n_layers": N_LAYERS,
+        "hidden_dim": HIDDEN_DIM,
+        "device": args.device,
+        "fingerprint": fingerprint,
+    }
+    if args.capture_batch_size:
+        cap_kwargs["batch_size"] = args.capture_batch_size
+    repair_manifest = capture_mod.repair_missing_rows(sorted(written), **cap_kwargs)
+    print(
+        f"[phase=repair_probe behavior={behavior}] "
+        f"missing_found={repair_manifest['repair']['n_missing_found']} "
+        f"missing_captured={repair_manifest['repair']['n_missing_captured']} "
+        f"realized={repair_manifest['realized_total_rows']} "
+        f"expected={repair_manifest['n_expected_rows']} "
+        f"shards_appended={repair_manifest['repair']['shards_appended']}",
+        flush=True,
+    )
+    _upload_dir(store_dir, probe_prefix, skip=args.skip_upload)
+    return {
+        "behavior": behavior,
+        "n_probe_rows": len(rows),
+        "fingerprint": fingerprint,
+        "n_missing_found": repair_manifest["repair"]["n_missing_found"],
+        "n_missing_captured": repair_manifest["repair"]["n_missing_captured"],
+        "shards_appended": repair_manifest["repair"]["shards_appended"],
+        "realized_total_rows": repair_manifest["realized_total_rows"],
+        "n_expected_rows": repair_manifest["n_expected_rows"],
+        "n_duplicate_rows": repair_manifest["n_duplicate_rows"],
+        "hf_store_prefix": probe_prefix,
+    }
+
+
+def repair_job(args: argparse.Namespace) -> dict:
+    """Append-only re-capture of the rows missing from one job's greedy store.
+
+    The #2091 P2 data-loss repair: generation is COMPLETE and its TEXT is
+    persisted (packed jsonl shards on HF), so the missing activation rows are
+    re-captured TEACHER-FORCED from the persisted rollouts — no regeneration.
+    Inputs stage local-first (pod-local files win; a fresh pod fetches from
+    HF); the diff + capture + fail-loud completeness reconciliation live in
+    ``capture.repair_missing_rows`` (append-only: existing shards are never
+    rewritten); only new shards + the updated ``_capture_manifest.json``
+    change on HF (``upload_folder`` never deletes, identical files dedupe).
+    Idempotent per job via ``_repair_done.json`` and, beneath it, via the
+    repair diff itself (nothing missing → clean no-op).
+    """
+    from explore_persona_space.experiments.issue_1739 import capture as capture_mod
+    from explore_persona_space.experiments.issue_1739 import generation
+    from explore_persona_space.experiments.issue_1739.constants import HIDDEN_DIM, N_LAYERS
+    from scripts.issue1739_pack import unpack_shards
+    from scripts.issue2091_stage_contexts import RUNG_JOBS_BY_NAME
+
+    name = args.rungjob
+    job = RUNG_JOBS_BY_NAME[name]
+    out_root = job_out_root(args, name)
+    out_root.mkdir(parents=True, exist_ok=True)
+    done_path = repair_done_path(args, name)
+    if done_path.exists() and not args.force:
+        record = json.loads(done_path.read_text())
+        print(f"[phase=repair job={name}] RESUMED-COMPLETE (see {done_path})", flush=True)
+        return record
+
+    store_dir = job_store_dir(args, name)
+    store_prefix = f"{args.hf_prefix}/capture_store/greedy_{name}"
+    hf_job_prefix = f"{args.hf_prefix}/raw_completions/greedy/{name}"
+
+    # 1. Persisted rollout TEXT -> local labeling tree (local-first; the unpack
+    #    verifies shard sha256 + counts and never overwrites a differing file).
+    labeling_root = out_root / "labeling"
+    pack_mirror = args.stage_root / hf_job_prefix
+    if not (pack_mirror / "pack_manifest.json").is_file():
+        from explore_persona_space.orchestrate import hub
+
+        staged = hub.stage_hub_prefix(
+            hub.DEFAULT_DATASET_REPO,
+            hf_job_prefix,
+            args.stage_root,
+            repo_type="dataset",
+            revision=args.repair_revision,
+        )
+        print(f"[phase=repair job={name}] staged {len(staged)} packed text file(s)", flush=True)
+    unpack_summary = unpack_shards(pack_mirror, labeling_root)
+
+    # 2. The existing store's REALIZED row_index set + capture fingerprint.
+    _stage_store_indexes(args, store_dir, store_prefix)
+    store_manifest = json.loads((store_dir / "_capture_manifest.json").read_text())
+    fingerprint = store_manifest.get("fingerprint") or ""
+    if not fingerprint:
+        raise RuntimeError(f"[{name}] existing store manifest carries no fingerprint")
+
+    rollout_dir = labeling_root / job.gen_behavior
+    rollout_paths = sorted(p for p in rollout_dir.glob("*.json") if not p.name.startswith("_"))
+    if not rollout_paths:
+        raise RuntimeError(f"[{name}] no rollout files under {rollout_dir} after unpack")
+    print(
+        f"[phase=repair job={name} behavior={job.gen_behavior}] "
+        f"rollout_files={len(rollout_paths)} gpu={args.gpu_id}",
+        flush=True,
+    )
+
+    # 3. Diff + teacher-forced capture of ONLY the missing rows (no vLLM engine
+    #    in this mode — the HF capture model is the only GPU resident).
+    tokenizer = generation.get_tokenizer()
+    model = capture_mod.load_capture_model(device=args.device)
+    cap_kwargs: dict = {
+        "store_dir": store_dir,
+        "model": model,
+        "tokenizer": tokenizer,
+        "n_layers": N_LAYERS,
+        "hidden_dim": HIDDEN_DIM,
+        "device": args.device,
+        "fingerprint": fingerprint,
+    }
+    if args.capture_batch_size:
+        cap_kwargs["batch_size"] = args.capture_batch_size
+    t0 = time.time()
+    repair_manifest = capture_mod.repair_missing_rows(rollout_paths, **cap_kwargs)
+    print(
+        f"[phase=repair job={name}] missing_found={repair_manifest['repair']['n_missing_found']} "
+        f"missing_captured={repair_manifest['repair']['n_missing_captured']} "
+        f"realized={repair_manifest['realized_total_rows']} "
+        f"expected={repair_manifest['n_expected_rows']} "
+        f"duplicates={repair_manifest['n_duplicate_rows']} "
+        f"shards_appended={repair_manifest['repair']['shards_appended']} "
+        f"elapsed={time.time() - t0:.0f}s",
+        flush=True,
+    )
+
+    _upload_dir(store_dir, store_prefix, skip=args.skip_upload)
+
+    # The pilot's --limit ran the probes too — every probe store carries the
+    # same partial-shard00 loss (measured 64/150 realized per behavior).
+    probe_repair = None
+    if job.probe_behavior:
+        probe_repair = repair_probe_store(args, job.probe_behavior, model, tokenizer)
+
+    record = {
+        "rungjob": name,
+        "mode": "repair_capture",
+        "gen_behavior": job.gen_behavior,
+        "gpu_id": args.gpu_id,
+        "n_rollout_files": len(rollout_paths),
+        "unpack": unpack_summary.get(job.gen_behavior),
+        "fingerprint": fingerprint,
+        "n_missing_found": repair_manifest["repair"]["n_missing_found"],
+        "n_missing_captured": repair_manifest["repair"]["n_missing_captured"],
+        "shards_appended": repair_manifest["repair"]["shards_appended"],
+        "realized_total_rows": repair_manifest["realized_total_rows"],
+        "n_expected_rows": repair_manifest["n_expected_rows"],
+        "n_duplicate_rows": repair_manifest["n_duplicate_rows"],
+        "n_over_budget": repair_manifest["n_over_budget"],
+        "per_shard_rows": repair_manifest["per_shard_rows"],
+        "probe_repair": probe_repair,
+        "hf_store_prefix": store_prefix,
+        "hf_text_prefix": hf_job_prefix,
+        "git_commit": _git_commit(),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    write_json_atomic(done_path, record)
+    print(f"[phase=repair job={name}] repair complete: {done_path}", flush=True)
+    return record
 
 
 # ── parent: work-conserving fan-out ───────────────────────────────────────────
@@ -760,6 +1022,10 @@ def child_command(args: argparse.Namespace, name: str, gpu: str) -> tuple[list[s
         cmd.append("--skip-capture")
     if args.force:
         cmd.append("--force")
+    if args.repair:
+        cmd.append("--repair")
+        if args.repair_revision:
+            cmd += ["--repair-revision", args.repair_revision]
     env = {**os.environ, "CUDA_VISIBLE_DEVICES": gpu}
     return cmd, env
 
@@ -775,6 +1041,7 @@ def dispatch(args: argparse.Namespace, manifest: dict) -> dict:
     """
     from scripts.issue2091_stage_contexts import RUNG_JOBS
 
+    ph = "repair_dispatch" if args.repair else "p1_dispatch"
     gpus = visible_gpu_ids()
     jobs = [j.name for j in RUNG_JOBS if j.name in manifest["rung_jobs"]]
     # Largest first: the longest job must not start last.
@@ -787,7 +1054,7 @@ def dispatch(args: argparse.Namespace, manifest: dict) -> dict:
         jobs = [j for j in jobs if j in wanted]
 
     print(
-        f"[phase=p1_dispatch] jobs={len(jobs)} gpus={','.join(gpus)} order={','.join(jobs)}",
+        f"[phase={ph}] jobs={len(jobs)} gpus={','.join(gpus)} order={','.join(jobs)}",
         flush=True,
     )
     pending = list(jobs)
@@ -814,7 +1081,7 @@ def dispatch(args: argparse.Namespace, manifest: dict) -> dict:
             )
             running[name] = (proc, gpu, time.time())
             print(
-                f"[phase=p1_dispatch] launched job={name} gpu={gpu} pid={proc.pid} log={log_path}",
+                f"[phase={ph}] launched job={name} gpu={gpu} pid={proc.pid} log={log_path}",
                 flush=True,
             )
         time.sleep(5)
@@ -828,7 +1095,7 @@ def dispatch(args: argparse.Namespace, manifest: dict) -> dict:
             elapsed = time.time() - started
             if rc == 0:
                 print(
-                    f"[phase=p1_dispatch] job={name} gpu={gpu} rc=0 elapsed={elapsed:.0f}s",
+                    f"[phase={ph}] job={name} gpu={gpu} rc=0 elapsed={elapsed:.0f}s",
                     flush=True,
                 )
             else:
@@ -838,14 +1105,15 @@ def dispatch(args: argparse.Namespace, manifest: dict) -> dict:
                 # only the main workload log is crash-persisted, so an inner log
                 # dies with the box and the root cause needs a fresh repro.
                 print(
-                    f"[phase=p1_dispatch] job={name} gpu={gpu} FAILED rc={rc} "
+                    f"[phase={ph}] job={name} gpu={gpu} FAILED rc={rc} "
                     f"elapsed={elapsed:.0f}s; child log tail:\n{tail}",
                     flush=True,
                 )
 
     records: dict[str, dict] = {}
+    done_path_fn = repair_done_path if args.repair else job_done_path
     for name in jobs:
-        path = job_done_path(args, name)
+        path = done_path_fn(args, name)
         if path.exists():
             records[name] = json.loads(path.read_text())
     if failures:
@@ -854,7 +1122,7 @@ def dispatch(args: argparse.Namespace, manifest: dict) -> dict:
             f"{len(records)}/{len(jobs)} completed (per-job records under {args.out_root})"
         )
     print(
-        f"[phase=p1_dispatch] all {len(jobs)} job(s) complete elapsed={time.time() - t0:.0f}s",
+        f"[phase={ph}] all {len(jobs)} job(s) complete elapsed={time.time() - t0:.0f}s",
         flush=True,
     )
     return records
@@ -936,6 +1204,66 @@ def build_results_payload(
     }
 
 
+def build_repair_results_payload(
+    args: argparse.Namespace, manifest: dict, records: dict[str, dict], gpu_hours: float
+) -> dict:
+    """Results payload for a ``--repair`` run (all 10 required keys)."""
+    return {
+        "eval_numbers": {
+            "mode": "repair_capture",
+            "n_rung_jobs": len(records),
+            "n_missing_rows_found": sum(r.get("n_missing_found", 0) for r in records.values()),
+            "n_missing_rows_captured": sum(
+                r.get("n_missing_captured", 0) for r in records.values()
+            ),
+            "realized_rows_per_job": {n: r.get("realized_total_rows") for n, r in records.items()},
+            "expected_rows_per_job": {n: r.get("n_expected_rows") for n, r in records.items()},
+            "duplicate_rows_per_job": {n: r.get("n_duplicate_rows") for n, r in records.items()},
+            "shards_appended_per_job": {n: r.get("shards_appended") for n, r in records.items()},
+            "probe_repairs": {
+                n: r["probe_repair"] for n, r in records.items() if r.get("probe_repair")
+            },
+        },
+        "eval_paths": {
+            "per_job_records": [str(repair_done_path(args, n)) for n in sorted(records)],
+            "contexts_manifest": f"{args.hf_prefix}/contexts/stage_manifest.json",
+        },
+        "reproducibility_card": {
+            "model": manifest.get("model", "Qwen/Qwen2.5-7B-Instruct"),
+            "revision": _instruct_revision(),
+            "hf_dataset_repo": _dataset_repo(),
+            "hf_store_prefixes": [r["hf_store_prefix"] for r in records.values()],
+            "hf_text_prefixes": [r["hf_text_prefix"] for r in records.values()],
+            "repair_revision": args.repair_revision or "main (unpinned)",
+            "fingerprints": {n: r.get("fingerprint") for n, r in records.items()},
+            "wandb_project": None,
+            "wandb_run_names": [],
+            "note": (
+                "append-only capture REPAIR of the #2091 P2 resume-offset loss: missing "
+                "rows re-captured teacher-forced from the persisted packed rollout text — "
+                "no generation, no training, no judge calls; existing shards untouched"
+            ),
+        },
+        "wandb_url": "n/a (repair capture only — no training)",
+        "hf_hub_url": (
+            f"https://huggingface.co/datasets/{_dataset_repo()}/tree/main/{args.hf_prefix}"
+        ),
+        "worktree_path": str(REPO_ROOT),
+        "final_commit_sha": _git_commit(),
+        "gpu_hours_used": round(gpu_hours, 3),
+        "gpu_hours_budgeted": args.gpu_hours_budgeted,
+        "plan_deviations": [
+            (
+                "P2 capture repair round (crash-fix): the P0 pilot's 64-row partial shard00 "
+                "was resumed as a full 512-row shard, so rows 64..511 of every rung-job "
+                "(448/job, ~25% fleet-wide) were never captured; this run appends ONLY the "
+                "missing rows as new shards and reconciles realized-vs-expected row sets "
+                "fail-loud (duplicates from pilot overlap retained + counted)"
+            ),
+        ],
+    }
+
+
 def _instruct_revision() -> str:
     from explore_persona_space.experiments.issue_1739.generation import INSTRUCT_REVISION
 
@@ -991,6 +1319,8 @@ def _import_check() -> int:
     ``generation`` would make a later call to a module-level symbol of that name
     read an unbound local and crash AFTER generation had completed (#1739).
     """
+    from huggingface_hub import HfApi  # noqa: F401
+
     from explore_persona_space.analysis.representation_shift import (  # noqa: F401
         _reap_vllm_engine,
     )
@@ -1000,8 +1330,13 @@ def _import_check() -> int:
         generation,
     )
     from explore_persona_space.experiments.issue_1739.capture import (  # noqa: F401
+        assert_store_complete,
         capture_rollout_files,
         load_capture_model,
+        load_capture_rows,
+        read_shard_index,
+        repair_missing_rows,
+        store_shard_indices,
     )
     from explore_persona_space.experiments.issue_1739.constants import (  # noqa: F401
         HIDDEN_DIM,
@@ -1017,9 +1352,11 @@ def _import_check() -> int:
     from explore_persona_space.orchestrate.hub import (  # noqa: F401
         DEFAULT_DATASET_REPO,
         _upload,
+        list_hf_files_under_path,
+        stage_hub_file,
         stage_hub_prefix,
     )
-    from scripts.issue1739_pack import pack_raw_tree  # noqa: F401
+    from scripts.issue1739_pack import pack_raw_tree, unpack_shards  # noqa: F401
     from scripts.issue1739_wcrung_contexts import render_row_prompt  # noqa: F401
     from scripts.issue2091_stage_contexts import (  # noqa: F401
         RUNG_JOBS,
@@ -1061,6 +1398,19 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--only", default=None, help="comma-separated rung-job subset")
     ap.add_argument("--restage", action="store_true", help="re-download the contexts tree")
+    ap.add_argument(
+        "--repair",
+        action="store_true",
+        help="append-only capture REPAIR: re-capture ONLY the rows missing from each "
+        "job's existing greedy store (teacher-forced from the persisted packed text); "
+        "no generation, no store rewrites (#2091 P2 resume-offset loss)",
+    )
+    ap.add_argument(
+        "--repair-revision",
+        default=None,
+        help="--repair: data-repo revision for the packed-text + store-sidecar fetch "
+        "(default main; the contexts --dataset-revision pin PREDATES those uploads)",
+    )
     ap.add_argument("--force", action="store_true", help="ignore per-job done records")
     ap.add_argument("--skip-upload", action="store_true", help="SMOKE ONLY: no Hub writes")
     ap.add_argument("--skip-capture", action="store_true", help="generation only (staging probe)")
@@ -1080,10 +1430,18 @@ def main(argv: list[str] | None = None) -> int:
     if args.import_check:
         return _import_check()
 
+    if args.repair and args.limit is not None:
+        raise SystemExit(
+            "--repair is incompatible with --limit: the repair row set derives from the "
+            "persisted rollout tree, not the staged contexts, so a limit would not slice it"
+        )
+    if args.repair and args.skip_capture:
+        raise SystemExit("--repair is incompatible with --skip-capture (repair IS capture)")
+
     if args.mode == "job":
         if not args.rungjob:
             raise SystemExit("--mode job requires --rungjob")
-        run_job(args)
+        (repair_job if args.repair else run_job)(args)
         sys.stdout.flush()
         sys.stderr.flush()
         sys.exit(0)
@@ -1098,6 +1456,20 @@ def main(argv: list[str] | None = None) -> int:
 
     wall_h = (time.time() - t_start) / 3600.0
     gpu_hours = wall_h * n_gpus
+
+    if args.repair:
+        payload = build_repair_results_payload(args, manifest, records, gpu_hours)
+        write_sentinel("epm:results", payload, filename=REPAIR_RESULTS_SENTINEL)
+        print(
+            f"[phase=done] capture repair complete: jobs={len(records)} "
+            f"missing_captured={payload['eval_numbers']['n_missing_rows_captured']} "
+            f"gpu_hours={gpu_hours:.2f}",
+            flush=True,
+        )
+        sys.stdout.flush()
+        sys.stderr.flush()
+        sys.exit(0)
+
     payload = build_results_payload(args, manifest, records, gpu_hours)
 
     is_pilot = args.limit is not None
