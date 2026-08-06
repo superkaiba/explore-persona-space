@@ -8902,8 +8902,8 @@
     "2151": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2151",
-      "status": "proposed",
+      "path": "tasks/planning/2151",
+      "status": "planning",
       "title": "Give API-level stop_reason=refusal its own judge drop class (rules 9/24/18 + judge_dispatch.py:670-681)"
     },
     "2152": {
