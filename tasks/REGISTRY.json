@@ -8594,8 +8594,8 @@
     "2110": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2110",
-      "status": "approved",
+      "path": "tasks/running/2110",
+      "status": "running",
       "title": "daily-fix: AUTO_COMPACT_WINDOW not reaching spawned sessions"
     },
     "2111": {
