@@ -130,7 +130,12 @@ def test_fits_driver_cell_c_knobs_default_to_production_values():
     skip fires only on an explicitly EMPTY ISSUE2054_FITS_FORMS_B."""
     text = FITS_DRIVER.read_text(encoding="utf-8")
     assert 'FORMS_A="${ISSUE2054_FITS_FORMS_A:-attrib_quoted,chat}"' in text
-    assert 'FORMS_B="${ISSUE2054_FITS_FORMS_B:-bare_label,bare_text}"' in text
+    # Colon-LESS default for FORMS_B (unset -> default; set-but-empty -> empty):
+    # the ${VAR:-} form substitutes the default on set-but-empty too, making the
+    # documented empty-B skip dead code (caught live on the first cell_c
+    # dispatch, 2026-08-06). The colon-less spelling IS the docstring contract.
+    assert 'FORMS_B="${ISSUE2054_FITS_FORMS_B-bare_label,bare_text}"' in text
+    assert 'FORMS_B="${ISSUE2054_FITS_FORMS_B:-' not in text
     assert 'EXPECTED_NPZ="${ISSUE2054_FITS_EXPECTED_NPZ:-48}"' in text
     # Floor semantics (superset tolerated once cell_c npz land), not equality.
     assert "len(npz) < expected" in text

@@ -88,7 +88,12 @@ run_split() {
 # (a split resolving zero cells would rc-fail fits.py by design). Defaults
 # keep the a/b/d two-split fan-out byte-equivalent.
 FORMS_A="${ISSUE2054_FITS_FORMS_A:-attrib_quoted,chat}"
-FORMS_B="${ISSUE2054_FITS_FORMS_B:-bare_label,bare_text}"
+# colon-less default (unset -> default; set-but-EMPTY -> empty) so the
+# documented empty-B skip is actually reachable — ${VAR:-} substitutes the
+# default on set-but-empty too and made the skip branch dead code (caught
+# live on the first cell_c dispatch: forms_b=bare_label,bare_text despite
+# an explicit empty export).
+FORMS_B="${ISSUE2054_FITS_FORMS_B-bare_label,bare_text}"
 
 echo "[phase=fits_pod stage=fits] concurrent start forms_a=${FORMS_A} forms_b=${FORMS_B:-<skipped>} $(date -u +%FT%TZ)"
 run_split a "$FORMS_A" "$LOG_DIR/issue-2054-fits-a.log" &
