@@ -121,9 +121,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    `lora_dropout` / `target_modules` / `use_rslora` — grounded on the artifact's own
    `adapter_config.json`, NOT the producing issue's body Reproducibility row alone, which is
    human-written secondary documentation: on disagreement the config wins and the body row is
-   flagged for record-correction — incident #545: a runtime fitness assert encoded #503's erroneous
-   body row `r=16/α=32` where the artifacts read `r=32/α=256`, crashing all 7 reuse cells
-   mid-sweep); (b) valid measurement regime for the new question (for marker work specifically, NOT
+   flagged for record-correction — #545: a runtime fitness assert encoded an erroneous body row,
+   crashing all 7 reuse cells mid-sweep); (b) valid measurement regime for the new question (for
+   marker work specifically, NOT
    saturated — source `log P − base ∈ [5,12]` nat, bystanders below ceiling per
    `.claude/rules/marker-training-recipe.md`); (c) the required conditions / cells the new design
    needs are actually present in the artifact — for a multi-field tensor bundle, the REALIZED key
@@ -143,7 +143,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    classes are reused — with
    the read gauge stated in §4 (a recipe-identical parent committed at classic `α/r` application can
    be an unconditional repeater at the faithful `α/√r` a current vLLM+PEFT honors for `use_rslora:
-   true` — incident #601: all 20 of #472's reused adapters passed (a)–(f) yet HALTed Phase-0 as
+   true` — #601: all 20 reused adapters passed (a)–(f) yet HALTed Phase-0 as
    repeaters); (h) source resolution + consumer-exact path layout + target-backend fetchability +
    staged-layout consumer-open for
    reused TRAINING-INPUT / downstream-input artifacts — for a reused `train/*.jsonl` mix /
@@ -156,9 +156,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    target backend (the git-clone-only GCP/SLURM lanes stage no VM-local `data/`, so a
    parent-built-but-unuploaded mix is unreachable there; committed `eval_results/...` arrive with
    the clone), else the plan uploads / renames the mix to the consumer path first, adapts the
-   consumer, or carries a self-contained §4 regen phase (#734 round-4: a reused parent mix on
-   neither HF repo AND under a #474 naming convention the #664-style consumer dispatcher did not
-   assert crashed phase2 at the pre-train assert on the GCP lane after 3 review rounds), AND (iv)
+   consumer, or carries a self-contained §4 regen phase (#734: a reused parent mix on neither HF
+   repo, under a naming convention the consumer did not assert, crashed phase2 after 3 review
+   rounds), AND (iv)
    when the artifact is staged through a layout-mapping helper (incl. a verbatim prefix mirror)
    into a consumer-fixed local layout, the plan names the hub-rel → local-rel mapping and schedules
    a 1-file staging probe + consumer-open through the REAL staging path before production,
@@ -261,9 +261,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       the same idle-but-billing burn (#664: an 8×H200 pod held ~12h in a per-file raw-completions
       upload phase at 0% GPU, ~$530). This is deliberately narrow: it is NOT about cheaper variants
       of the science (still banned by The Bar) — it targets only an idle-but-billing pod the plan
-      never needed to hold (2026-06-09: pod-518 ran 1h+ of pure-CPU permutation/bootstrap scoring
-      with all 8 H100s at 0%, pod-523 ran a CPU-only metrics phase ~6h on idle GPUs — ~$48/hr of
-      idle burn).
+      never needed to hold (pod-518/pod-523: CPU-only scoring/metrics phases held 8 idle H100s
+      for 1-6h).
       Sequencing clause (b) ALSO runs as a DATA-SAFETY ordering, not only a
       billing one (and it fires for GPU fit phases too — the consuming
       phase's device does not narrow it): when a long (>~15-30 min)
@@ -294,9 +293,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       one per phase) AND the phase plausibly materializes large local data (activations, a full
       store, many eval JSONs / raw completions). Cleanup backstops (`clean_experiment_downloads.py
       --incremental` between phases, the `vm_disk_guard.py` cron) do NOT rescue a phase whose own
-      footprint exceeds the disk — the fix is placement, not cleanup. (2026-06-26: #658's Phase-1
-      analysis materialized a 139 GB activation store on the VM worktree on the shared 188 GB disk;
-      `/` hit 100% full and the whole fleet stalled.)
+      footprint exceeds the disk — the fix is placement, not cleanup. (#658: a 139 GB activation
+      store on the shared 188 GB disk filled `/` and stalled the whole fleet.)
       The RAM twin: ALSO REVISE when a VM-placed phase's projected peak RSS is
       ≥~16 GB (single phase, or SUMMED concurrent VM-resident phases crossing
       the same bar), or when a VM-placed phase that plausibly materializes a
@@ -344,9 +342,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       DIFFERENT phase (an API-bound judge phase, a CPU Gram-solve / fit, an off-pod analysis) does
       not justify narrow width for the shardable phase(s) kept narrow (e.g. generation/capture
       legs, a training fan-out) and is a REVISE exactly as if no justification were stated
-      (incident #1739: a plan kept its wall-dominant, declared-shardable vLLM generation + capture
-      legs at 1×, justified by Anthropic-API + CPU-fit bottlenecks in OTHER phases; leg-1 wall ran
-      ~2-3× longer than a wide dispatch). The width-aware auto lane (#1121) makes `--gpus N` wide
+      (#1739: wall-dominant shardable legs kept at 1×, justified by bottlenecks in OTHER phases;
+      leg-1 wall ran ~2-3× longer than a wide dispatch). The width-aware auto lane (#1121) makes `--gpus N` wide
       provisioning the encouraged default; "GCP only had 1× intents" is no longer a valid reason.
 
     Plan-time scheduling / routing only, never a mid-run cost or disk gate. Not a REVISE when the
@@ -395,10 +392,10 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     their respective band-entry checkpoints — matched dial position, unmatched step count). REVISE
     when the plan (i) grids in whole epochs or coarser than the cited transition window, or (ii)
     lacks the fallback read. Conclusion-changing because without these the run cannot fire its own
-    headline test when the arms fail to co-resolve — three consecutive runs (#529 epoch grid at
-    lr=1e-5, #533 lr drop to 5e-6, #546 rank drop to r=16) burned GPU without the anchor-gated test
-    ever firing, and "arms never co-resolve under this recipe" went undiagnosed each round instead
-    of being reported as the decidable outcome it is (per `.claude/rules/marker-training-recipe.md`
+    headline test when the arms fail to co-resolve — three consecutive runs (#529/#533/#546)
+    burned GPU without the anchor-gated test ever firing, and "arms never co-resolve under this
+    recipe" went undiagnosed each round instead of being reported as the decidable outcome it is
+    (per `.claude/rules/marker-training-recipe.md`
     § Multi-arm resolution-band designs). Not a REVISE when the headline test does not require
     multi-arm band simultaneity (single-arm band-stop designs are covered by the recipe default; the
     plan's §4 "N/A — no multi-arm band-simultaneity gate" satisfies this item).
@@ -762,10 +759,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    questions, or refusal with benign prompts, will read a floor regardless of whether the behavior
    installed, producing a false HARD-HALT. REVISE when the gate's probe surface has no
    demonstrated-expression citation and a canonical surface exists (e.g. EM expresses on #458's
-   first-plot probes with no system prompt, NOT on trivia-question PAIRS). Incident #521
-   (2026-06-09): an EM-rate gate on a trivia surface false-halted twice — surviving two critic
-   ensembles and two code-review rounds — before a runtime re-measure on the canonical rig showed EM
-   was installed all along.
+   first-plot probes with no system prompt, NOT on trivia-question PAIRS). (#521: an EM-rate gate
+   on a trivia surface false-halted twice, surviving two critic ensembles and two code-review
+   rounds, before a runtime re-measure on the canonical rig showed EM was installed all along.)
 7. **Statistical-input existence (registered corrections).** For every registered statistical
    correction / adjustment §6 relies on (attenuation / reliability factor, per-seed SEs, variance
    reconstruction, shrinkage prior — any statistic computed from a derived input rather than this
@@ -776,11 +772,10 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    REVISE when a registered statistic consumes an input that is neither verified-present nor
    scheduled-to-build. Conclusion-changing because the implementation inherits a phantom dependency:
    at run time the correction either crashes the production path or silently degrades into the
-   uncorrected statistic, and the headline ships without its registered adjustment (incident #509:
-   plan §6.1 registered attenuation-adjusted correlations whose per-seed SEs the cited CSV —
-   seed-averaged only — never carried; the reconstruction was never in-scope for any implementer
-   round, the production path crashed exactly as review prose predicted, and the result shipped on
-   `--smoke` with reliability pinned to 1.0). Not a REVISE when §6 registers no derived-input
+   uncorrected statistic, and the headline ships without its registered adjustment (#509:
+   registered attenuation-adjusted correlations consumed per-seed SEs the cited CSV never
+   carried; the production path crashed as review prose predicted and the result shipped with
+   reliability pinned to 1.0). Not a REVISE when §6 registers no derived-input
    corrections (raw DV + standard tests only — the plan's "N/A — no derived statistical inputs"
    satisfies this item).
 8. **Install-strength confound (cross-condition leakage comparisons).** If the plan's headline
@@ -925,8 +920,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     disjoint-baseline recount dropped prefix mean cosines 0.271→0.178 and
     context 0.362→0.272, sent one pair 0.23→−0.08 (fully artifactual; target
     split-half reliability 0.049), and pulled 6/28 prefix pairs below the
-    null p97.5 (0.043) — the "28/28 pairs clear the null" headline did not
-    survive, and the defect was caught only at interpretation-critique. Not a
+    null p97.5 — the "28/28 pairs clear the null" headline did not
+    survive. Not a
     REVISE when the baseline is deterministic/analytic (no sampling noise),
     the legs already use independent estimates, or the null already bears the
     shared-B̄ structure; a missing split-half reliability report on a sampled
@@ -989,7 +984,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     disclosure for every fitted representation map.** If the plan FITS a map between activation summaries
     (context→answer, prefix→context, cross-model / cross-framing reparameterization — any
     v_X→v_Y predictor), verify §6 registers BOTH standing reads alongside held-out R², per
-    the CLAUDE.md standing rule (2026-07-22): (a) the identity-family baseline including the
+    the CLAUDE.md standing rule: (a) the identity-family baseline including the
     learned-bias form x + b, b = train-fold mean of (y − x) — canonical helper
     `analysis/mapping_baselines.identity_bias_predict` — whenever input and output spaces
     share dimension (a dimension mismatch is STATED as inapplicable, never silently
@@ -997,8 +992,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     of the prediction) among the held-out candidate pool — canonical helper
     `analysis/mapping_baselines.knn_retrieval` (euclidean + cosine, k scaled to the pool,
     chance = k/n_pool stated; a constant predictor reads exactly chance). Conclusion-
-    changing because the two reads DISSOCIATE in both directions (first measurement
-    2026-07-22): identity+bias scored pooled-OOF R² −6.5 yet retrieval acc@1 0.84 vs the
+    changing because the two reads DISSOCIATE in both
+    directions: identity+bias scored pooled-OOF R² −6.5 yet retrieval acc@1 0.84 vs the
     LOFO ridge map's 0.04 on the #722 prefix-level battery map
     (`eval_results/issue_722/identity_bias_knn/`), while the #779 LMSYS single-context
     fitted ridge dominated retrieval (acc@1 0.72 vs 0.50 identity+bias, chance 0.001;
