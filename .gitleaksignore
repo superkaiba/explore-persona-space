@@ -90,3 +90,17 @@ tasks/completed/2091/events.jsonl:wandb-api-key:53
 tasks/completed/2091/events.jsonl:wandb-api-key:68
 tasks/blocked/2091/events.jsonl:wandb-api-key:53
 tasks/blocked/2091/events.jsonl:wandb-api-key:68
+#
+# Line 90 (generic-api-key): the epm:failure v3 note quotes the CONTEXT ID
+# wcrung-00452a0cd95a5716 — the missing-row key whose KeyError surfaced the
+# capture gap. Verified 2026-08-06: the only hex-ish token on that line is the
+# 16-char 00452a0cd95a5716, and no credential in .env is 16 chars (86/37/108/
+# 164/40/50). A context id, not a secret. Same status-path coverage as above.
+tasks/running/2091/events.jsonl:generic-api-key:90
+tasks/verifying/2091/events.jsonl:generic-api-key:90
+tasks/interpreting/2091/events.jsonl:generic-api-key:90
+tasks/reviewing/2091/events.jsonl:generic-api-key:90
+tasks/awaiting_promotion/2091/events.jsonl:generic-api-key:90
+tasks/followups_running/2091/events.jsonl:generic-api-key:90
+tasks/completed/2091/events.jsonl:generic-api-key:90
+tasks/blocked/2091/events.jsonl:generic-api-key:90
