@@ -1,11 +1,11 @@
 {
-  "commit": "70369cc3+dirty",
-  "git_commit": "70369cc3",
+  "commit": "0e6c455c+dirty",
+  "git_commit": "0e6c455c",
   "git_dirty": true,
   "git_dirty_paths": [
     "scripts/issue2091_analyzer_figures.py"
   ],
-  "created": "2026-08-06T13:11:08Z",
+  "created": "2026-08-06T14:23:05Z",
   "figsize": [
     12.6,
     4.6
@@ -513,13 +513,13 @@
       "_group": 10
     },
     {
-      "category": "Harmful compliance (helpful-harmless)",
+      "category": "Harmful compliance (helpful-harmless)\n(near-floor ceiling)",
       "share of that score's own noise ceiling": 0.28525219612590225,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "Harmful compliance (toxic chat)",
+      "category": "Harmful compliance (toxic chat)\n(70% of prompts at floor)",
       "share of that score's own noise ceiling": 0.2800118718783821,
       "_kind": "bar",
       "_group": 10
@@ -562,7 +562,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Raw agreement: the five-draw-average score ranks best",
+        "title_left": "Raw rank agreement with each regime's judged score",
         "ylabel": "rank agreement with the judged score (\u2191 better)",
         "legend_labels": [
           "Greedy (no randomness)",
@@ -594,14 +594,14 @@
         ]
       },
       {
-        "title_left": "After the noise-ceiling correction it mostly closes",
+        "title_left": "The same agreement as a share of each score's own ceiling",
         "ylabel": "share of that score's own noise ceiling",
         "xticklabels": [
           "Sycophancy (training)",
           "Sycophancy (advice forum)",
           "Harmful compliance (training)",
-          "Harmful compliance (helpful-harmless)",
-          "Harmful compliance (toxic chat)"
+          "Harmful compliance (helpful-harmless)\n(near-floor ceiling)",
+          "Harmful compliance (toxic chat)\n(70% of prompts at floor)"
         ],
         "yticklabels": [
           "0.0",
