@@ -8944,8 +8944,8 @@
     "2157": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2157",
-      "status": "planning",
+      "path": "tasks/approved/2157",
+      "status": "approved",
       "title": "workflow-fix: pods.md names a --boot-disk-gb flag pod.py provision lacks; cpu-bigmem defaults to 50GB not 240GB"
     },
     "2158": {
