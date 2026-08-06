@@ -63,12 +63,49 @@ echo "[setup] NGPU=$NGPU"
 echo "[setup] disk at start:"; df -h /workspace | tail -1
 
 # ---------------------------------------------------------------------------
+# MooseFS import-contention prevention (gotchas.md § MooseFS FUSE READ-wedge,
+# KNOWN TRIGGER #1689). An N-way parallel `uv run` fan-out storms the
+# MooseFS-backed /workspace mount with N concurrent venv resolutions. This
+# launcher hit it on its first run: all 8 workers sat at ~19 s CPU with
+# wchan=request_wait_answer, GPUs at 0 MiB, ~0 network, and 0-byte logs for
+# 10+ min.
+#
+# MEASURED DISTINCTION from the #779 hard wedge, which matters because the two
+# have opposite remedies: a re-probe on that same pod returned `uv run python -c
+# "print(1)"` rc=0 and a raw 300-byte venv read rc=0 INSTANTLY, while
+# `import transformers` timed out at 60 s (rc=124). So the mount was ANSWERING —
+# the failure was contention among 8 concurrent heavyweight imports, recoverable
+# in place, NOT the dead mount that requires a pod swap. Run both probes before
+# condemning a pod: the cheap one discriminates, and swapping an 8-GPU pod on a
+# misread is expensive.
+#
+# Two guards, belt and braces:
+#   1. UV_NO_SYNC=1 so no worker attempts a resolution at all.
+#   2. Workers invoke the venv interpreter DIRECTLY ($PYBIN) rather than through
+#      `uv run`, so the concurrent-resolution path is not merely suppressed but
+#      absent. The venv is resolved ONCE, serially, below.
+export UV_NO_SYNC=1
+PYBIN="$REPO/.venv/bin/python"
+[ -x "$PYBIN" ] || { echo "[fatal] no venv interpreter at $PYBIN"; exit 5; }
+
+echo "[setup] pre-resolving venv ONCE (serial) before any fan-out"
+if ! timeout 600 "$PYBIN" -c 'import vllm, transformers; print("[setup] venv import OK")'; then
+  echo "[fatal] serial venv import failed or timed out after 600 s."
+  echo "[fatal] DISCRIMINATE before condemning the pod (see the block above):"
+  echo "[fatal]   timeout 20 head -c 300 $PYBIN >/dev/null; echo rc=\$?"
+  echo "[fatal]   timeout 60 $PYBIN -c 'print(1)'; echo rc=\$?"
+  echo "[fatal] both rc=0 => mount alive, contention only: raise NATGEN_STAGGER_S and relaunch here."
+  echo "[fatal] either hangs   => hard MooseFS wedge: relaunching will NOT clear it, swap the pod."
+  exit 6
+fi
+
+# ---------------------------------------------------------------------------
 # CPU prep (model-free, FORMAT-BLIND — one pass covers both renders).
 # ---------------------------------------------------------------------------
 PREP_CSV=$(echo "$CORPORA" | tr ' ' ',')
 if [ ! -f "$LOGDIR/natgen_prep.done" ]; then
   echo "[prep] staging corpora: $PREP_CSV"
-  uv run python scripts/issue1336_gen_answers.py --prep --corpora "$PREP_CSV" \
+  "$PYBIN" scripts/issue1336_gen_answers.py --prep --corpora "$PREP_CSV" \
       >> "$JOBLOG/prep.log" 2>&1
   prc=$?
   echo "[prep] rc=$prc"
@@ -89,8 +126,8 @@ JOBS="$LOGDIR/natgen_jobs.tsv"
 : > "$JOBS"
 for m in $MODELS; do
   for c in $CORPORA; do
-    printf '%s__%s\tuv run python scripts/issue1336_gen_answers.py --model %s --corpora %s --gen-format naturalistic --upload\n' \
-      "$m" "$c" "$m" "$c" >> "$JOBS"
+    printf '%s__%s\t%s scripts/issue1336_gen_answers.py --model %s --corpora %s --gen-format naturalistic --upload\n' \
+      "$m" "$c" "$PYBIN" "$m" "$c" >> "$JOBS"
   done
 done
 NJOBS=$(wc -l < "$JOBS")
@@ -125,7 +162,10 @@ worker() {
       echo "[gpu$w] SKIP $name (done)"; continue
     fi
     echo "[gpu$w] START $name $(date -u +%FT%TZ)"
-    CUDA_VISIBLE_DEVICES=$w bash -c "$cmd" >> "$JOBLOG/${name}.log" 2>&1
+    # PYTHONUNBUFFERED so a stalled job shows its last progress line instead of an
+    # empty log (the first run's 0-byte job logs made the stall undiagnosable from
+    # the log alone and forced a wchan/CPU-time probe).
+    CUDA_VISIBLE_DEVICES=$w PYTHONUNBUFFERED=1 bash -c "$cmd" >> "$JOBLOG/${name}.log" 2>&1
     local rc=$?
     echo "[gpu$w] $name rc=$rc $(date -u +%FT%TZ)"
     [ "$rc" -eq 0 ] && touch "$DONE_DIR/natgen__${name}.done"
@@ -135,7 +175,17 @@ worker() {
 
 WIDTH=$NGPU
 [ "$NJOBS" -lt "$WIDTH" ] && WIDTH=$NJOBS
-for w in $(seq 0 $((WIDTH - 1))); do worker "$w" & done
+# Stagger worker starts. The serial pre-import above warms the page cache, but a
+# simultaneous 8-way heavyweight import off the MooseFS-backed venv still storms
+# the mount: the first run of this launcher had all 8 workers frozen on FUSE reads
+# (wchan=request_wait_answer) at ~19 s CPU with GPUs at 0 MiB and ~0 network for
+# 10+ min. The mount was NOT wedged — a serial `print(1)` and a raw venv read both
+# returned instantly — so the failure was contention, not a dead mount.
+STAGGER_S="${NATGEN_STAGGER_S:-15}"
+for w in $(seq 0 $((WIDTH - 1))); do
+  worker "$w" &
+  [ "$w" -lt $((WIDTH - 1)) ] && sleep "$STAGGER_S"
+done
 wait
 
 NDONE=$(ls -1 "$DONE_DIR" 2>/dev/null | wc -l)
