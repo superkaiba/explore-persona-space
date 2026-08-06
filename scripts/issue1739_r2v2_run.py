@@ -45,6 +45,11 @@ HF_OUT_PREFIX = "issue1739_r2v2_fits"
 OUT_ROOT = Path("eval_results/issue_1739/r2v2_fits")
 FACT_HF_OUT_PREFIX = "issue1739_r2v2_factorial"
 FACT_OUT_ROOT = Path("eval_results/issue_1739/r2v2_factorial")
+# λ grid-edge check (task #16): base-grid GCV pinned λ=1000 (the grid MAX) on
+# every hallucination fit — re-fit under a 3-decades-wider grid, own out root.
+WIDE_HF_OUT_PREFIX = "issue1739_r2v2_fits_widegrid"
+WIDE_OUT_ROOT = Path("eval_results/issue_1739/r2v2_fits_widegrid")
+WIDE_RIDGE_LAMBDAS = "0.01,0.1,1.0,10.0,100.0,1000.0,10000.0,100000.0,1000000.0"
 CTXMAP_PREFIX = "issue1739_ctxmap"
 BANK_PREFIX = f"{CTXMAP_PREFIX}/rb_fc_bank"
 HALLU_PR_FILE = f"{CTXMAP_PREFIX}/judge/hallucination/labeling_per_rollout.json"
@@ -184,7 +189,7 @@ def factorial_cmd(args, behavior: str) -> list[str]:
     return cmd
 
 
-def score_cmd(args, behavior: str) -> list[str]:
+def score_cmd(args, behavior: str, out_root: Path = OUT_ROOT) -> list[str]:
     cmd = [
         sys.executable,
         str(_REPO_ROOT / "scripts" / "issue1739_r2v2_score.py"),
@@ -201,7 +206,7 @@ def score_cmd(args, behavior: str) -> list[str]:
         "--tensors-root",
         str(args.tensors_root),
         "--out-root",
-        str(OUT_ROOT),
+        str(out_root),
         "--ood-store-root",
         str(args.ood_mirror_root / CTXMAP_PREFIX),
         "--device",
@@ -214,12 +219,34 @@ def score_cmd(args, behavior: str) -> list[str]:
     return cmd
 
 
+# leg -> (local out root, HF prefix); every leg the driver can run.
+LEG_DESTS = {
+    "fits": (OUT_ROOT, HF_OUT_PREFIX),
+    "factorial": (FACT_OUT_ROOT, FACT_HF_OUT_PREFIX),
+    "fits-widegrid": (WIDE_OUT_ROOT, WIDE_HF_OUT_PREFIX),
+}
+
+
+def leg_cmd_env(args, behavior: str, leg: str) -> tuple[list[str], dict[str, str]]:
+    """Compose one leg's subprocess argv + env overlay (explicit, never implicit)."""
+    if leg == "fits":
+        return score_cmd(args, behavior), {}
+    if leg == "fits-widegrid":
+        # identical fits, 3-decades-wider GCV grid, own (untracked) out root;
+        # the env var is read ONCE at constants import in the child process.
+        return (
+            score_cmd(args, behavior, out_root=WIDE_OUT_ROOT),
+            {"EPS_I1739_RIDGE_LAMBDAS": WIDE_RIDGE_LAMBDAS},
+        )
+    if leg == "factorial":
+        return factorial_cmd(args, behavior), {}
+    raise ValueError(f"unknown leg {leg!r}")
+
+
 def upload_behavior(args, behavior: str, leg: str = "fits") -> str:
     from explore_persona_space.orchestrate import hub
 
-    out_root, prefix = (
-        (OUT_ROOT, HF_OUT_PREFIX) if leg == "fits" else (FACT_OUT_ROOT, FACT_HF_OUT_PREFIX)
-    )
+    out_root, prefix = LEG_DESTS[leg]
     local = out_root / behavior
     if not local.exists():
         raise FileNotFoundError(f"nothing to upload: {local} absent")
@@ -270,7 +297,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--legs",
         nargs="+",
         default=["fits"],
-        choices=["fits", "factorial"],
+        choices=["fits", "factorial", "fits-widegrid"],
         help="which scoring legs to run per behavior (in the given order)",
     )
     ap.add_argument("--device", default="cpu")
@@ -306,8 +333,13 @@ def main(argv: list[str] | None = None) -> None:
         assert callable(hub.stage_hub_prefix)
         assert callable(hub.stage_hub_file)
         assert "force" in inspect.signature(stage_extraction).parameters
-        # bind the factorial argv this driver composes (arity/keyword pin)
+        # bind every composed leg argv (arity/keyword pin)
+        from scripts.issue1739_r2v2_score import parse_args as _score_parse_args
+
         _fact_parse_args(factorial_cmd(args, "hallucination")[2:])
+        wide_cmd, wide_env = leg_cmd_env(args, "evil", "fits-widegrid")
+        _score_parse_args(wide_cmd[2:])
+        assert wide_env["EPS_I1739_RIDGE_LAMBDAS"] == WIDE_RIDGE_LAMBDAS
         _log("import-check OK")
         sys.stdout.flush()
         sys.stderr.flush()
@@ -338,9 +370,11 @@ def main(argv: list[str] | None = None) -> None:
             continue
         leg_results: dict[str, dict] = {}
         for leg in args.legs:
-            cmd = score_cmd(args, behavior) if leg == "fits" else factorial_cmd(args, behavior)
-            _log(f"[phase=score {behavior} leg={leg}] {' '.join(cmd[1:])}")
-            proc = subprocess.run(cmd, cwd=str(_REPO_ROOT), check=False, env={**os.environ})
+            cmd, env_overlay = leg_cmd_env(args, behavior, leg)
+            _log(f"[phase=score {behavior} leg={leg}] {' '.join(cmd[1:])} env+={env_overlay}")
+            proc = subprocess.run(
+                cmd, cwd=str(_REPO_ROOT), check=False, env={**os.environ, **env_overlay}
+            )
             _log(f"[phase=score {behavior} leg={leg}] rc={proc.returncode}")
             url = None
             if proc.returncode == 0 and not args.skip_upload:
