@@ -7813,8 +7813,8 @@
     "2008": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2008",
-      "status": "running",
+      "path": "tasks/completed/2008",
+      "status": "completed",
       "title": "daily-fix: capture plans name pooling convention per vector"
     },
     "2009": {
