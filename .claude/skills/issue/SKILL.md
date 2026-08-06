@@ -6801,19 +6801,30 @@ VM-side phase (§ below) — run the mechanical enumerator:
 ```bash
 uv run python - <<'PY'
 from explore_persona_space.task_workflow import (
-    list_events, triage_candidates_since_last_dispatch)
-for e in triage_candidates_since_last_dispatch(list_events(<N>)):
+    list_events, triage_candidates_since_last_dispatch,
+    triage_enumeration_boundary)
+evs = list_events(<N>)
+for e in triage_candidates_since_last_dispatch(evs):
     # #1722: total form — an event whose note is "" / None / "\n" makes
     # the classic ("" or "").splitlines()[0] raise IndexError (three sessions
     # hit this shape on markers with empty notes).
     print(e["ts"], e["kind"], (((e.get("note") or "").splitlines()) or [""])[0][:140])
+print("boundary=" + triage_enumeration_boundary(evs))
 PY
 ```
 
 It returns every non-machine marker posted since the PREVIOUS DUTY-BOUND
 dispatch record — a compute-launch marker (`epm:run-launched` /
 `epm:cluster-launched`) or a record carrying the
-`external-markers triaged:` line; task start if none. A non-compute
+`external-markers triaged:` line; task start if none. When the most
+recent duty-bound record carries a `(boundary=<ts>)` token (#2105), the
+window reopens from that recorded enumeration point instead of the
+record's own post position — the enumerate-to-post seam (the #2054 v91
+directive, posted 53 s before the breadcrumb, is the incident) is
+re-enumerated at the next call. On the pod/backend-launch form the token
+rides the immediately-preceding adjacent `epm:progress` triage note (the
+existing note-then-launch ordering is UNCHANGED); the enumerator chains
+one step from a token-less launch marker to that note's token. A non-compute
 breadcrumb (review / analyzer / verifier stage) never closes the window —
 those dispatches have no triage duty, so an advisory posted before one
 still surfaces at the next compute dispatch — and an untriaged compute
@@ -6837,9 +6848,14 @@ Record the outcome as ONE line in the dispatch breadcrumb note — or, for
 pod/backend launches that post no breadcrumb, in an immediately-adjacent
 `epm:progress` note:
 
-    external-markers triaged: <N> applied / <M> deferred (<one-line reasons>)
+    external-markers triaged: <N> applied / <M> deferred (<one-line reasons>) (boundary=<ts>)
 
-or `external-markers triaged: none` when there are no external candidates.
+or `external-markers triaged: none (boundary=<ts>)` when there are no
+external candidates — `<ts>` verbatim from the snippet's `boundary=` output
+line (the FINAL enumerator run stamps it — the existing "RE-RUN the
+enumerator immediately before posting" instruction defines which run is
+final); omit the token only when the snippet printed an empty value (empty
+events list).
 This is NOT a gate: triage is apply-or-defer, decided by this session,
 auto-continue preserved — but deferring a marker that contradicts the
 dispatch (e.g. "do not launch as-is") must state WHY the launch is sound
@@ -6847,13 +6863,21 @@ anyway, and a dispatch note asserting a property an unapplied external
 audit contradicts (#779's "vectorized") without a triage line is the
 regression this rule closes. Triage is BOUNDED to the window; a marker
 already covered by a prior triage line is not re-enumerated (its
-disposition is on the record). Accepted residuals (named, not silent): a
-marker posted in the seconds between the final enumerator run and the
-breadcrumb post lands before the new boundary and is not re-enumerated;
-markers posted after a task's LAST compute dispatch are never enumerated
-(they can no longer avert a launch); a legacy launch marker
-(`epm:run-launched` / `epm:cluster-launched` posted pre-fix without triage)
-still closes the window. A watcher-side NON-GATING observer audits this
+disposition is on the record). Accepted residuals (named, not silent):
+(i) a marker sharing the same second as the stamped boundary event lands
+behind the `<=` boundary and is not re-enumerated (same-second residual —
+strictly narrower than the pre-#2105 whole enumerate-to-post seam, which
+the `(boundary=<ts>)` token now reopens); (ii) a legacy triage line
+WITHOUT the token keeps the old post-position boundary (fail-toward-today,
+never wider misses); (iii) a launch marker with NO paired triage note
+(untriaged launch — pre-fix sessions, crashed duty) keeps today's
+launch-position boundary UNLESS an immediately preceding token-bearing
+triage record from an earlier dispatch exists, in which case the one-step
+chain reopens from that older record's boundary — over-enumeration of
+never-triaged markers, fail-toward-triage, bounded by the previous duty
+record's enumeration point; and markers posted after a task's LAST compute
+dispatch are never enumerated (they can no longer avert a launch). A
+watcher-side NON-GATING observer audits this
 duty post-hoc (flags missing/'none' lines against a re-run of the
 enumerator's window; observe/alert only, never blocks — #967).
 

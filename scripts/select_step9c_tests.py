@@ -475,6 +475,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_terminal_landing_pin.py",
     # NEW (#1841) — Step 6d.2 tick-parse field-preservation pin
     "tests/test_issue_skill_tick_parse_preservation.py",
+    # NEW (#2105) — SKILL.md triage-record (boundary=<ts>) token pin: the
+    # enumerator snippet prints boundary= via triage_enumeration_boundary and
+    # both recorded-line format forms carry the token (enumerate-to-post seam)
+    "tests/test_issue_skill_triage_boundary_token.py",
     # NEW (#1587) — SKILL.md trigger-dense tag-adoption pin
     "tests/test_issue_skill_trigger_dense_tag_adoption.py",
     # NEW (#1616) — SKILL.md width-re-evaluation pin (test landed #1346; gap surfaced #1594)
