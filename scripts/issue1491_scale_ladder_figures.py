@@ -118,8 +118,19 @@ def _ridge_ci(digests, slug):
     return r2, r2 - lo, hi - r2
 
 
-def fig_hero(fits, digests, out, suffix=""):
-    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.0))
+def fig_hero(fits, digests, out, suffix="", show_ceiling=True):
+    # show_ceiling=False drops BOTH the ceiling series and the ceiling-normalized
+    # panel (the panel is R² ÷ ceiling, so it has no meaning without one) and
+    # renders a single raw-R² panel. Used by the greedy arm, where the two-draw
+    # ceiling sits at 0.97-1.00 by construction — greedy decoding is
+    # deterministic, so normalizing by it moves nothing and invites the reader
+    # to treat a near-constant divisor as a correction. The sampled arm keeps
+    # the two-panel default, where the ceiling measures real answer diversity.
+    fig, axes = (
+        plt.subplots(1, 2, figsize=(10.5, 4.0))
+        if show_ceiling
+        else plt.subplots(figsize=(7.0, 4.2))
+    )
     x = _x()
     ridge = np.array([fits[s]["predictors"]["ridge"]["test_r2"] for s in SLUGS])
     mlp = np.array([fits[s]["predictors"]["mlp_w32768"]["test_r2"] for s in SLUGS])
@@ -137,7 +148,7 @@ def fig_hero(fits, digests, out, suffix=""):
         else None
     )
 
-    ax = axes[0]
+    ax = axes[0] if show_ceiling else axes
     ax.errorbar(
         x,
         ridge,
@@ -151,12 +162,25 @@ def fig_hero(fits, digests, out, suffix=""):
     )
     ax.plot(x, mlp, color=COL["mlp"], marker="s", label="MLP, width 32768")
     ax.plot(x, krr, color=COL["krr"], marker="^", label="kernel ridge (Nyström)")
-    ax.plot(x, ceil, color=GRAY, linestyle="--", marker=".", label="two-draw reliability ceiling")
+    if show_ceiling:
+        ax.plot(
+            x, ceil, color=GRAY, linestyle="--", marker=".", label="two-draw reliability ceiling"
+        )
     ax.plot(x, null, color=GRAY, linestyle=":", marker=".", label="shuffled-pairing null")
     _xticks(ax)
     ax.set_ylabel("held-out test R² (variance-weighted)")
-    ax.set_title("raw predictability and its ceiling", loc="left")
-    ax.legend(fontsize=8, loc="center right")
+    ax.set_title(
+        "raw predictability and its ceiling" if show_ceiling else "raw predictability",
+        loc="left",
+    )
+    # Single-panel: the curves occupy the upper band and the null sits at ~0, so
+    # "lower right" collides with the null series; "center left" is the free area.
+    ax.legend(fontsize=8, loc="center right" if show_ceiling else "center left")
+
+    if not show_ceiling:
+        savefig_paper(fig, f"issue_1491/ladder_r2_raw{suffix}", dir=str(out))
+        plt.close(fig)
+        return
 
     ax = axes[1]
     ax.errorbar(
@@ -424,6 +448,11 @@ def main() -> int:
     # ladder) writes beside the sampled arm's figures instead of overwriting
     # them. Empty by default: the sampled arm's stems are unchanged.
     ap.add_argument("--stem-suffix", default="")
+    # Drops the two-draw ceiling series AND the ceiling-normalized panel from the
+    # hero figure, which then renders a single raw-R2 panel at stem
+    # ladder_r2_raw. For the greedy arm: greedy decoding is deterministic, so the
+    # ceiling sits at 0.97-1.00 and normalizing by it moves nothing.
+    ap.add_argument("--no-ceiling", action="store_true")
     args = ap.parse_args()
     percontext_dir = args.percontext_dir or (args.ladder_dir / "percontext")
     sfx = args.stem_suffix
@@ -434,7 +463,7 @@ def main() -> int:
     # figure whose inputs are absent is skipped and named at the end — never
     # rendered from a partial set, and never silently dropped.
     skipped: list[str] = []
-    fig_hero(fits, digests, args.out, suffix=sfx)
+    fig_hero(fits, digests, args.out, suffix=sfx, show_ceiling=not args.no_ceiling)
     if percontext is None:
         skipped.append("ladder_r2_raw_and_normalized_points (needs per-context CSVs)")
         skipped.append("depth_pair_fixed_width (needs per-context CSVs)")
