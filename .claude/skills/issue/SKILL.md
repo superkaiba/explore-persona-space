@@ -208,10 +208,9 @@ EXIT regardless of the auto-continuation rule.
 proceed"), FIRST sweep `tasks/` + HF Hub / WandB for the artifacts or
 prior results that resolve it — exactly the resourceful-before-asking
 posture of halt-criterion #1. Ask only once the investigation leaves a
-genuine factual gap only the user can fill. (Incident 2026-06-01: a
-reuse-vs-retrain ask got "look deeper at other issues first"; a
-title-options ask got "show me the body first" — both rejected for
-asking before exhausting the investigation.)
+genuine factual gap only the user can fill. (A reuse-vs-retrain ask and
+a title-options ask were both rejected for asking before exhausting the
+investigation.)
 
 ## The State Machine
 
@@ -355,7 +354,7 @@ alert fires too:
    record `paused_from` so resume restores the held status.
 3. End the turn. Do NOT leave status at an ACTIVE value with a prose
    hold note — the watcher's orphan-respawn pass cannot parse prose and
-   will respawn against the hold (incident #816, 2026-07-02).
+   will respawn against the hold (#816).
 
 Resume is user-greenlight ONLY: `task.py set-status <N> <paused_from>` (or
 `proposed` for a full re-triage), then `spawn_session.py spawn-issue
@@ -417,8 +416,7 @@ Capture that stdout and pass it verbatim to `mcp__happy__change_title` —
 a deferred MCP tool, NOT a skill: load it via
 `ToolSearch("select:mcp__happy__change_title")`, then call with
 `{"title": <captured string>}` (`title` is REQUIRED — an empty `{}` is an
-MCP -32602 error, and `Skill(happy:change_title)` is "Unknown skill";
-both misfires occurred 2026-07-27).
+MCP -32602 error, and `Skill(happy:change_title)` is "Unknown skill").
 The 5-minute `session_summarize.py` cron reads the self-report first and
 reuses its `text` as the cache `summary` (`source="self"`) when fresh,
 skipping the Haiku call entirely — so the dashboard's progress column is
@@ -515,14 +513,10 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     advancing status). "Decide and continue" means decide AND execute, in
     the same turn.
 
-  Real incident (tasks #503/#504/#505, 2026-06-05): three autonomous Happy
-  sessions all printed a plain-text "Option 1 vs Option 2 — which would you
-  prefer?" markdown menu and stopped the turn, leaving the orchestrator
-  blocked indefinitely on a user reply that the user did not even know was
-  pending. That is the exact banned behavior this section enforces. The
-  PreToolUse hook could not catch it because no tool call was ever made —
-  only the prose was emitted. The dominant failure mode is
-  text-menu-end-of-turn; only this section's prose prevents it.
+  The dominant failure mode is text-menu-end-of-turn: a plain-text option
+  menu ends the turn and blocks indefinitely on a user reply the user does
+  not even know is pending; no hook can intercept prose, so only this
+  section's prose prevents it (#503/#504/#505).
 
   Correct shape: at ANY fork that is not one of the two hard gates below
   or a hard halt-criterion — choosing among proposed follow-ups, "should I
@@ -640,10 +634,8 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   in autonomous mode is a factual gap the user UNIQUELY holds (an account
   credential, an external decision the user already promised to make, a fact
   only the user can supply) AND that is NOT itself a taste / scope / design
-  call. Real incident the candidate surfaced (2026-06-07, tasks
-  #503/#504/#506/#509): multiple `--auto` sessions parked overnight "awaiting
-  user decision on Phase 2 path forward" — exactly the banned regression this
-  clause closes.
+  call. (Banned regression: `--auto` sessions parked overnight "awaiting
+  user decision on the path forward" — #503/#504/#506/#509.)
 - **A debugging wall is a strategy-pivot, not a block.** If implementation /
   smoke-run / reviewer-loop work hits a wall the session cannot immediately crack,
   spawn `experiment-implementer` (or the analogous fixer) on a different angle,
@@ -698,8 +690,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   Measurement lens item 3 (decision-gate coherence) and `planner.md` §7
   gate-set minimality + joint-satisfiability self-check; this clause closes
   the loop on the execution side when a contradictory plan slips through
-  the planner + critic ensemble anyway. Post-mortem trigger: task #488
-  round 10 (2026-06-08).
+  the planner + critic ensemble anyway (#488).
 - **Never stop a pod to PARK / await a user in autonomous mode.** `pod.py stop`
   to avoid idle-burn is allowed ONLY while work continues toward the Goal in
   the same session (e.g. stopping pod-N while the analyzer reads JSON from
@@ -710,7 +701,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
 - **A FREE, no-data-loss path beats parking — take it and keep waiting.** When
   a free, no-data-loss continuation EXISTS, taking it is mandatory; parking to
   await the user or proposing a PAID rerun while that free path is available is
-  the banned regression. Canonical case (tasks #658/#663, 2026-06-24): an
+  the banned regression. Canonical case (#658/#663): an
   in-SLA Anthropic Message Batch (submitted, not yet expired) SELF-HARVESTS for
   free at `expires_at` — the result is recoverable by polling the batch's own
   deadline-bounded poller (`explore_persona_space.eval.batch_judge`, which
@@ -753,9 +744,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   decision (e.g. `directive cited ~$65/hr; live burn is $112.50/hr — acting
   on live value`). This is a sanity check on the input number, NOT a new
   cost gate (the rule above still holds — autonomous mode never adds a
-  mid-run cost gate or block). Incident #506: the session correctly
-  recomputed and caught a ~$47/hr stale figure on its own; encode that as
-  the rule rather than relying on it to happen.
+  mid-run cost gate or block) (#506).
 - **Push through bugs; do not block on recoverable failures.** Apply
   CLAUDE.md "Push through bugs in recovery mode" + the halt-criteria
   literally: preflight failures, TP/Ray/env-var hiccups, transient infra,
@@ -794,8 +783,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   are NOT screened: the user already decided to run them. See Step 9b
   "Follow-up value-critique".
 - **Auto-run cheap (`< 20` GPU-h) same-question follow-ups in BOTH
-  modes at Step 9b.** Standing directive (2026-06-13, raised 5→20 GPU-h
-  2026-06-24): a follow-up that
+  modes at Step 9b.** Standing directive: a follow-up that
   is `0` GPU-h or `< 20` GPU-h just runs and folds into the SAME issue,
   automatically, in interactive AND autonomous sessions — no human pick,
   no `headline_affecting` gate. The 0-GPU floor runs inline at Step
@@ -910,14 +898,11 @@ IMMEDIATELY, in the same turn:
    the spawn on a future marker / event the CURRENT session is
    responsible for producing — when this session dies, its background
    subagents are killed with it and the trigger never fires. Deferred
-   handoff is the banned pattern (incident #505 round 2, 2026-06-10: a
-   chat session driving the same-issue follow-up loop conditioned the
-   spawn on `epm:experiment-implementation v12`, which only its own —
-   soon killed — bg implementer could produce; the session was closed 20
-   min later, the marker never landed, no autonomous session was ever
-   spawned, and the task sat orphaned at `running` for 5+ hours with
-   uncommitted implementation files stranded in a worktree no marker
-   named).
+   handoff is the banned pattern (#505: a session conditioned the spawn
+   on a marker only its own — soon killed — bg implementer could
+   produce; the marker never landed, no autonomous session was spawned,
+   and the task sat orphaned at `running` with uncommitted files
+   stranded in a worktree no marker named).
 3. **Stop dispatching new work in this session.** In-flight bg subagents
    may finish and post their markers (harmless overlap — the spawned
    session's idempotent resume + the Step 9 entry guard's freshness
