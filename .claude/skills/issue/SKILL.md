@@ -5871,10 +5871,9 @@ sources contribute to `running`-phase progress:
   the `epm:results` marker from the local VM via `task.py post-marker`. The
   pod NEVER calls `task.py` directly — enforced by
   `tests/test_no_pod_side_task_py_shellout.py` and the CLAUDE.md
-  "Pod-side code NEVER shells out to scripts/task.py" rule. (#397
-  burned a launch on a pod-side `task.py find <N>` shellout that hit
-  the branch-guard refusal; the same failure class applies to
-  `task.py post-marker`, hence the sentinel-file pattern is canonical.)
+  "Pod-side code NEVER shells out to scripts/task.py" rule (#397; the
+  same failure class applies to `task.py post-marker`, hence the
+  sentinel-file pattern is canonical).
 
   Sentinel format (JSON object with these keys, all required):
   - `eval_numbers` (inline dict of final eval metrics)
@@ -7512,10 +7511,8 @@ triggering another auto-run chain within the same task. A further
 free-analysis follow-up STAYS listed in the body as a regular bullet,
 but the bullet is no longer the only surface: whenever the cap excludes
 a concrete unrun `cost_class: free-analysis` entry, post the § Cap-park
-surfacing note below (#1548; #958 — a top-ranked,
-follow-up-critic-screened `not-redundant` free-analysis follow-up sat
-unrun as a body bullet until the user found and kicked it
-himself). Across tasks the mechanism stays fresh (each task gets its
+surfacing note below (#1548; #958). Across tasks the mechanism stays
+fresh (each task gets its
 own one round).
 
 **Cap-park surfacing (#1548 — SURFACING only: the one-round cap above
@@ -8355,8 +8352,7 @@ spawned for v4. After the 9a-bis PASS the orchestrator:
    fail-softed). `<DOC_SHA>` is ALWAYS taken from command output —
    `DOC_SHA=$(git rev-parse HEAD)` right after the doc commit — never
    typed or hand-extended from a short SHA (the never-fabricate-SHAs
-   rule; #1738: a hand-extended short SHA 404'd the blob
-   URL and burned a verifier FAIL round).
+   rule; #1738).
 6. Posts `epm:methodology-doc-generated v1` (`doc_path` + `commit` +
    `gist_url`).
 
@@ -10011,8 +10007,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       victim", never "prevents kills".
    d. Classify failures against the known-red-on-main baseline ledger —
       mechanical (`scripts/step9c_baseline.py compare`), never prose
-      arithmetic (#1022: seven sessions each burned a round
-      re-proving red main was pre-existing). Runs AFTER the final pytest
+      arithmetic (#1022). Runs AFTER the final pytest
       invocation of step 1 (touched scope, or the 1c full-scope override —
       compare gates the junit of whichever actually ran) AND after 1b's
       foreground verdict read. Run compare as a BACKGROUND Bash invocation
@@ -10523,8 +10518,7 @@ moment `task.py new` returns a new id (here, or anywhere mid-session a
 child task is filed), immediately post ONE line in chat:
 `Filed #<N> '<title>' (child of #<parent>, status:<s>)`. A created task
 that stays invisible until the user asks "what is #<N>?" is a dropped
-handoff. (#461 was filed and worked on but never
-announced — the user lost track and had to ask.)
+handoff. (#461)
 
 ### Step 10c: Living-docs update hook (experiments only)
 

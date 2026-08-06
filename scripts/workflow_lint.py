@@ -12751,10 +12751,10 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 906,415 B post-t3b story->citation trim; the remaining mass is
+    # measured 897,435 B post-t3b story->citation trim; the remaining mass is
     # the judgment tranche (bash-block extraction to step10d_guards.sh-style
     # scripts, 9a-quater legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 909_400,
+    "issue/SKILL.md": 900_000,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
