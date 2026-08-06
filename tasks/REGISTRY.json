@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2123,
+  "highest_id": 2124,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8695,6 +8695,13 @@
       "path": "tasks/proposed/2123",
       "status": "proposed",
       "title": "daily-fix: four verifier gaps (lint + verify_plan)"
+    },
+    "2124": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2124",
+      "status": "proposed",
+      "title": "daily-fix: judge pilot sizing + classification rubrics"
     },
     "213": {
       "has_clean_result": false,
