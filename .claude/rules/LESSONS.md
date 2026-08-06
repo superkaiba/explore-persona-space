@@ -17,7 +17,9 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - background-automation.md — you touch/reason about the cron audits/session watcher/pod-GCP janitors.
 - clean-result-critic-lens-reference.md — a clean-result critic twin reviews a markdown body (pointer-loaded spec-text rubrics).
 - clean-result-paper-review.md — a clean-result critic twin reviews a `paper: true` task (P1-P7 lenses, verify_paper.py pre-pass).
+- code-reviewer-section-reference.md — the code-reviewer runs a Step 0.x gate (pointer-loaded span).
 - code-style.md — you write/edit any `*.py` or Hydra config (lint, vectorized torch, checkpoint-per-phase incl. the ~50-unit count trigger + per-unit progress line, no dollar caps).
+- codex-composer-common.md — a codex-* twin composes a prompt (shared composer contract).
 - compute-backend-failover.md — you touch the backend router/dispatch/poll, or reason about GCP↔RunPod failover.
 - contrastive-negatives.md — a plan implants a behavior (marker/fact/refusal/trait) into a persona (contrastive negatives by default).
 - crash-fix-rounds.md — retry/revision or post-code-fix relaunch (fix-engaged signal, stale-artifact + HF re-upload + sentinel wipe, ancestry+MooseFS, kill-relaunch, per-leg out-roots, symbol-rename grep, compute-character restate, mid-run push, shared-module propagate).
@@ -25,6 +27,8 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - data-realism.md — a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - diff-size-budget.md — reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
 - experiment-guidelines.md — you plan/implement a `workflow: v2` experiment (guideline index → full rules + v2 critic owners).
+- experiment-implementer-section-reference.md — implementer checklist detail (pointer-loaded).
+- experimenter-section-reference.md — experimenter gate/recovery detail (pointer-loaded).
 - gotchas.md — you write/debug training/eval/orchestration/analysis code or an Anthropic request-builder seam; launch GPU workers / multi-GPU/vLLM fan-outs, incl. via train_lora/merge_lora (CVD clobber, smoke width, smoke-gate slice arithmetic, pilot-gate shape+rc, EDQUOT/wedge, teardown+pid-namespace reap, handshake timeout); write subprocess-per-phase dispatchers (dynamic-id registries, full-panel fresh-child smoke, between-phase cache reaps, fenced-branch probes, chained smoke-then-full leg out-root residue); check cross-machine reads (off-pod, rsync-lane) against the consuming lane's staged set; diagnose silent deaths (exit-137, rc=134); parse JSONL; feed real corpora to vLLM; write real-corpus streaming filters / a corpus builder/sampler; or build/smoke a teacher-forced capture rig (BPE seams); write errorbar/CI figure code (xerr/yerr) or bootstrap-CI gating/verdict code (rank-space tail mass); stage VM-local data; or write \uXXXX/Unicode-sensitive literals via the Edit tool; or gate SAE fitness/eval against a published FVE/L0 reference (token-pool semantics); or count-keyed liveness gates; autocompact-thrash + sub-native `compact_boundary preTokens`
 - lens-coverage-map.md — you split, retire, or add a review lens (v2 lens→owner ledger; `--check-lens-coverage`).
 - llm-judging.md — a plan/code designs/writes an LLM-judged behavior DV (graded 0-100 primary; one Sonnet judge; drop-never-coerce; retry transport errors; rubric-keyed caches; generous rationale-sized max_tokens — 1024/2048 floors; pilot-gate ≥5k-call waves).

@@ -12358,7 +12358,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # reads), 99,000 — measured 98,126 B post-#1230 (Step 6 durability-pin
     # shipping duty), 97,000 — measured 96,072 B post-#1119, 95,000 —
     # measured 94,126 B post-#1115)
-    "code-reviewer.md": 140_300,
+    # measured 98,526 B post the 2026-08-05 compaction: Step 0.5-0.70
+    # gate-stack detail relocated to
+    # .claude/rules/code-reviewer-section-reference.md (#1159 mechanism);
+    # the spec keeps per-gate trigger + blocker-tag + lint-pinned tokens
+    # + § pointer lines. Cap = measured + ~1 KB.
+    "code-reviewer.md": 99_500,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -12368,7 +12373,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # 72,229 B post-#1056, 72,000 post-#1050 r2, 71,000 post-#1050 r1,
     # 60,554 B pre-#1050; 75,200 pre-description-rewrite — measured
     # 71,784 B after the 2026-08-05 frontmatter-description compaction)
-    "codex-clean-result-critic.md": 74_784,
+    # measured 49,241 B post the 2026-08-05 compaction: the 15 verdict-
+    # template lens slots slimmed to heading + findings-contract lines (the
+    # composed prompt already inlines the full lens reference verbatim via
+    # the {{INLINED ...}} placeholders). Cap = measured + ~1 KB.
+    # (48_400 post the composer-common hard-rule dedupe, measured 47,431 B.)
+    "codex-clean-result-critic.md": 48_400,
     # measured 61,503 B post-#1805 (Step 4 copy-list bullet extension:
     # round-new-script no-flags lint duty, no-uv static hub-verify
     # adaptation — plan-mandated growth; cap = measured + ~1.3 KB. Prior:
@@ -12381,7 +12391,13 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # inlined-rubric 4.6 slot + Blocker-tags 4.6-presence), 53,300 —
     # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
     # 47,930 B post-#881)
-    "codex-code-reviewer.md": 62_800,
+    # measured 49,270 B post the 2026-08-05 compaction: the Step 2 copy-list
+    # bullets deduped against the code-reviewer.md text the composer copies
+    # verbatim at compose time (each bullet keeps the section name, the
+    # lint/test-pinned tokens, and the Codex-specific adaptations only).
+    # Cap = measured + ~1 KB. (47_900 post the composer-common hard-rule
+    # dedupe, measured 46,904 B.)
+    "codex-code-reviewer.md": 47_900,
     # measured 84,278 B post-#2002 (Resume-matrix + real production
     # out-root unit smoke-contract requirements + matching marker
     # `notes:` sub-blocks; incident driver: #1947 P0/P4/P5 + #1315 r6 +
@@ -12402,7 +12418,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (per-arm-class smoke-coverage clause), 67,900 — measured
     # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
     # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 85_500,
+    # measured 64,480 B post the 2026-08-05 compaction: Before-writing-code
+    # item 5 (smoke/sweep parity) + After-implementation items 3 + 7 detail
+    # relocated to .claude/rules/experiment-implementer-section-reference.md
+    # (#1159 mechanism); pinned anchors/tokens stay in-spec. Cap = measured
+    # + ~1 KB.
+    "experiment-implementer.md": 65_500,
     # measured 79,611 B post-#1720 (§ Local runs pre-emptive NOT-RUN escape
     # for Step 9c-selected slow tests — mirrors implementer.md L174; ~500 B
     # growth; cap = measured + ~0.9 KB. Prior: 79_500 —
@@ -12424,7 +12445,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # pre-launch gate — the #1739 dispatch-time backstop, output-side
     # sibling of the item-4 input gate; plan-mandated growth; cap =
     # measured + ~0.87 KB — LANDING bytes, per #1753.)
-    "experimenter.md": 77_700,
+    # measured 65,619 B post the 2026-08-05 compaction: bootstrap probe, GCP
+    # salvage, Before-Running item-4 gate detail, and the vLLM hang triad
+    # relocated to .claude/rules/experimenter-section-reference.md (#1159
+    # mechanism); the crash-fix-relaunch paragraph + run-launched fence
+    # tokens stay in-spec verbatim. Cap = measured + ~1 KB.
+    "experimenter.md": 66_600,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
