@@ -66,6 +66,59 @@ def _resolve_aggregate() -> Path:
 AGG_PATH = _resolve_aggregate()
 AGG = json.load(open(AGG_PATH))
 ROWS = AGG["rows"]
+
+# The identity+bias baseline lives in the per-pair round-3 files, not in the
+# aggregate. Cache it as a small COMMITTED artifact so the figure reproduces
+# from git alone — the pair files sit under data/**/hf_dl/, a gitignored
+# re-downloadable cache that a fresh clone will not have.
+IDB_PATH = (
+    _REPO_ROOT
+    / "eval_results"
+    / "issue_1336"
+    / "metric_ladder_source_target"
+    / "identity_bias_within_l30.json"
+)
+
+
+def _rebuild_identity_bias() -> dict:
+    """Extract per-cell identity+bias(within) at layer 30 from the pair files.
+
+    Returns {"<pair>|<format>|<corpus>": r2}. Raises FileNotFoundError naming
+    the Hub prefix when neither the committed cache nor the staged pair files
+    are present, so a missing baseline never silently drops the series.
+    """
+    import glob as _glob
+    import re as _re
+
+    pat = str(_REPO_ROOT / "data" / "issue_1336" / "hf_dl" / "**" / "metric_ladder" / "pair_*.json")
+    out: dict[str, float] = {}
+    for f in sorted(_glob.glob(pat, recursive=True)):
+        m = _re.match(r"pair_(.+?)__(.+?)_(chat|naturalistic)_(.+)\.json", Path(f).name)
+        if not m:
+            continue
+        src, tgt, fmt, corpus = m.groups()
+        d = json.load(open(f))
+        val = (
+            d.get("per_layer", {})
+            .get("30", {})
+            .get("baselines", {})
+            .get("within", {})
+            .get("identity_bias_r2")
+        )
+        if val is not None:
+            out[f"{src}__{tgt}|{fmt}|{corpus}"] = float(val)
+    if not out:
+        raise FileNotFoundError(
+            f"identity+bias baseline unavailable: no committed cache at {IDB_PATH} and no "
+            "staged pair files under data/issue_1336/hf_dl/**/metric_ladder/. Re-stage them "
+            "from issue1336_rlvr_ladder/eval_results_mirror_v2/metric_ladder/ on the HF data repo."
+        )
+    IDB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    IDB_PATH.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n")
+    return out
+
+
+IDB = json.load(open(IDB_PATH)) if IDB_PATH.is_file() else _rebuild_identity_bias()
 BAND = 0.020709261538715756  # elicit_band_v2 from v2_bars
 
 # Ordering
@@ -531,14 +584,24 @@ def make_source_target_lines(
 
     Re-cut of the same held-out R² the tier grid plots, on the axis assignment
     that reads transfer as a function of how far along the ladder the target
-    sits. Colour encodes the SOURCE stage on an ordered (sequential) ramp —
+    sits. Colour encodes the LADDER STAGE on an ordered (sequential) ramp —
     deliberately distinct from the tier grid's categorical corpus palette, so a
-    colour never means two different factors across the pair of figures.
+    colour never means two different factors across the pair of figures. One
+    colour = one stage across BOTH series here: a line is drawn in its source
+    stage's colour, and a self point in its own stage's colour.
+
+    The self point at stage T is the source=T, target=T cell of the transfer
+    matrix — the source map IS the target map there — so it is a point ON T's
+    own line, drawn with a distinct marker but the same colour and connected.
     """
     sources = [s for s, _ in STAGE_ORDER if any(split_pair(p)[0] == s for p, _ in PAIR_ORDER)]
     cmap = matplotlib.colormaps["viridis"]
-    # sampled below the yellow end — the light tail is unreadable on white
-    src_color = {s: cmap(v) for s, v in zip(sources, np.linspace(0.10, 0.70, len(sources)))}
+    # sampled below the yellow end — the light tail is unreadable on white.
+    # Ramped over ALL ladder stages, not just the realized sources, so a stage
+    # that only ever appears as a target still owns a colour for its self point.
+    stage_color = {
+        s: cmap(v) for (s, _), v in zip(STAGE_ORDER, np.linspace(0.10, 0.70, len(STAGE_ORDER)))
+    }
 
     ncol = 4
     nrow = (len(CORPUS_ORDER) + ncol - 1) // ncol
@@ -555,73 +618,107 @@ def make_source_target_lines(
         # them (same prompt-id intersection, same seed-0 fold split), unlike the
         # standalone cells_v2 per-stage read, which sits 0.10-0.20 lower on
         # every cell and therefore must not share this axis.
-        self_r2 = {}
-        for src in sources:
-            xs, ys = [], []
-            for p, plabel in PAIR_ORDER:
-                s, t = split_pair(p)
-                if s != src:
-                    continue
-                r = get_row(p, fmt, cp, scale)
-                if r is None:
-                    raise RuntimeError(
-                        f"cell missing from {AGG_PATH}: pair={p} fmt={fmt} "
-                        f"corpus={cp} scale={scale}"
-                    )
-                xs.append(STAGE_IDX[t])
-                ys.append(r[f"{tier}_r2"])
-                self_r2.setdefault(t, []).append(r["within_r2"])
-                plotted.append(
-                    {
-                        "tier": tier,
-                        "scale": scale,
-                        "pair": p,
-                        "pair_label": plabel,
-                        "source": s,
-                        "target": t,
-                        "format": fmt,
-                        "corpus": cp,
-                        "corpus_label": clabel,
-                        "r2": r[f"{tier}_r2"],
-                        "within_r2": r["within_r2"],
-                        "n": r.get("n"),
-                    }
+        self_r2, idb_r2 = {}, {}
+        for p, plabel in PAIR_ORDER:
+            s, t = split_pair(p)
+            r = get_row(p, fmt, cp, scale)
+            if r is None:
+                raise RuntimeError(
+                    f"cell missing from {AGG_PATH}: pair={p} fmt={fmt} corpus={cp} scale={scale}"
                 )
-            if not xs:
+            idb = IDB.get(f"{p}|{fmt}|{cp}")
+            self_r2.setdefault(t, []).append(r["within_r2"])
+            if idb is not None:
+                idb_r2.setdefault(t, []).append(idb)
+            plotted.append(
+                {
+                    "tier": tier,
+                    "scale": scale,
+                    "pair": p,
+                    "pair_label": plabel,
+                    "source": s,
+                    "target": t,
+                    "format": fmt,
+                    "corpus": cp,
+                    "corpus_label": clabel,
+                    "r2": r[f"{tier}_r2"],
+                    "within_r2": r["within_r2"],
+                    "identity_bias_r2": idb,
+                    "n": r.get("n"),
+                }
+            )
+
+        # One line per SOURCE stage. The source=target cell is the line's own
+        # diagonal — the source map IS the target map there, so it is drawn in
+        # the same colour and connected, with a diamond marker to mark it as
+        # the self point. base owns no diagonal: it is never a target, so no
+        # MATCHED self-read exists for it (the standalone cells_v2 read sits
+        # 0.10-0.20 lower on every cell and cannot share this axis).
+        for src in sources:
+            pts = [
+                (STAGE_IDX[split_pair(p)[1]], get_row(p, fmt, cp, scale)[f"{tier}_r2"])
+                for p, _ in PAIR_ORDER
+                if split_pair(p)[0] == src
+            ]
+            if not pts:
                 continue
-            order = np.argsort(xs)
-            xs = [xs[i] for i in order]
-            ys = [ys[i] for i in order]
+            diag = (STAGE_IDX[src], float(np.mean(self_r2[src]))) if src in self_r2 else None
+            allpts = sorted(pts + ([diag] if diag else []))
             ax.plot(
-                xs,
-                ys,
+                [x for x, _ in allpts],
+                [y for _, y in allpts],
                 linestyle="-",
                 linewidth=1.4,
+                color=stage_color[src],
+                zorder=3,
+            )
+            ax.plot(
+                [x for x, _ in sorted(pts)],
+                [y for _, y in sorted(pts)],
+                linestyle="none",
                 marker="o",
                 markersize=5.0,
-                color=src_color[src],
+                color=stage_color[src],
                 markeredgewidth=0.6,
                 label=dict(STAGE_ORDER)[src],
                 zorder=3,
             )
 
-        # Self-transfer reference: one dot per x tick at that stage's R² with
-        # ITSELF. Averaged over the pairs reaching the target (max spread
-        # across contributing pairs 0.018 — negligible). The base tick carries
-        # no dot: base is never a target, so no matched self-read exists for
-        # it, and the standalone cells_v2 read is a different regime.
-        if self_r2:
-            sx = sorted(self_r2)
+        # Self points, coloured by their OWN stage. A stage that is a source
+        # (base excepted) gets its diamond connected into its line above; a
+        # target-only stage (RLVR, longer RLVR — never a source) gets a
+        # standalone diamond. Averaged over contributing pairs, max spread
+        # across them 0.018.
+        for t, vals in self_r2.items():
             ax.plot(
-                [STAGE_IDX[t] for t in sx],
-                [float(np.mean(self_r2[t])) for t in sx],
+                [STAGE_IDX[t]],
+                [float(np.mean(vals))],
                 linestyle="none",
                 marker="D",
+                markersize=6.0,
+                color=stage_color[t],
+                markeredgecolor="#333333",
+                markeredgewidth=0.7,
+                zorder=5,
+            )
+
+        # identity+bias floor: v̂ = x + b, b = train-fold mean of (y − x), the
+        # canonical analysis/mapping_baselines.identity_bias_predict read on
+        # the SAME x_t → y_t map class as the self diamond beside it. Neutral
+        # grey with its own marker, never stage-coloured — colour means stage.
+        if idb_r2:
+            sx = sorted(idb_r2)
+            ax.plot(
+                [STAGE_IDX[t] for t in sx],
+                [float(np.mean(idb_r2[t])) for t in sx],
+                linestyle=":",
+                linewidth=1.1,
+                marker="v",
                 markersize=5.0,
-                color="#4a4a4a",
+                color="#8a8a8a",
                 markeredgewidth=0,
-                label="self (R² with itself)",
-                zorder=4,
+                label="identity + bias baseline",
+                zorder=2,
             )
 
         ax.axhline(0, color="#888", linewidth=0.7, linestyle="--", zorder=0)
@@ -636,7 +733,7 @@ def make_source_target_lines(
         ax.set_visible(False)
 
     ylo, yhi = axes[0].get_ylim()
-    yticks = [v for v in (0.6, 0.4, 0.2, 0.0, -0.25, -0.5, -1, -2, -4) if ylo <= v <= yhi]
+    yticks = [v for v in (0.6, 0.4, 0.2, 0.0, -0.25, -0.5, -1, -2, -3, -4) if ylo <= v <= yhi]
     for ax in axes[: len(CORPUS_ORDER)]:
         ax.set_yticks(yticks)
         ax.set_yticklabels([f"{v:g}" for v in yticks])
@@ -646,48 +743,80 @@ def make_source_target_lines(
     for r in range(nrow):
         axes[r * ncol].set_ylabel(f"held-out R² ({scale_note})")
 
+    # Legend built explicitly: the per-stage self diamonds and the source lines
+    # are drawn many times per panel, and the self markers carry no label (their
+    # colour already means their stage). The self proxy is deliberately NEUTRAL
+    # grey — it stands for the MARKER SHAPE, not for any one stage.
     handles, labels = axes[0].get_legend_handles_labels()
-    seen, uh, ul = set(), [], []
-    for h, lb in zip(handles, labels):
-        if lb not in seen:
-            seen.add(lb)
-            # the self-dot carries its own label; only source lines get the prefix
-            uh.append(h)
-            ul.append(lb if lb.startswith("self ") else f"source: {lb}")
+    by_label = dict(zip(labels, handles))
+    uh, ul = [], []
+    for src in sources:
+        lb = dict(STAGE_ORDER)[src]
+        if lb in by_label:
+            uh.append(by_label[lb])
+            ul.append(f"source: {lb}")
+    uh.append(
+        plt.Line2D(
+            [],
+            [],
+            linestyle="none",
+            marker="D",
+            markersize=6.0,
+            color="#d9d9d9",
+            markeredgecolor="#333333",
+            markeredgewidth=0.7,
+        )
+    )
+    ul.append("self (target's own map; drawn in its stage colour)")
+    if "identity + bias baseline" in by_label:
+        uh.append(by_label["identity + bias baseline"])
+        ul.append("identity + bias baseline")
     fig.legend(
         uh,
         ul,
         loc="center",
-        ncol=5,
+        ncol=3,
         fontsize=9,
         frameon=False,
-        bbox_to_anchor=(0.5, 0.085),
+        bbox_to_anchor=(0.5, 0.145),
     )
-    data_min = min(rec["r2"] for rec in plotted)
+    # The plotted floor is set by the identity+bias baseline, not by the worst
+    # transfer point, so the symlog note quotes the value the reader can see.
+    idb_vals = [r["identity_bias_r2"] for r in plotted if r.get("identity_bias_r2") is not None]
+    plot_min = min([rec["r2"] for rec in plotted] + idb_vals)
     y_note = (
-        f"y is symlog below -1 (worst transfer {data_min:.2f})"
-        if data_min < -1
+        f"y is symlog below -1 (worst plotted value {plot_min:.2f})"
+        if plot_min < -1
         else "y is linear over the plotted range"
+    )
+    idb_note = (
+        f"{min(idb_vals):.2f} to {max(idb_vals):.2f}, median {float(np.median(idb_vals)):.2f}"
+        if idb_vals
+        else "not available"
     )
     fig.text(
         0.5,
-        0.020,
-        f"{TIER_LABELS[tier]}. Layer 30, Llama-3.1-8B Tulu ladder; {y_note}. Dark diamond = that "
-        "stage's R² with ITSELF, on the same rows and folds as the transfer points beside it "
-        "(mean over contributing pairs; max spread 0.018).\nOnly 7 of the 20 ordered stage pairs "
-        "exist: SFT→RLVR, SFT→longer RLVR and RLVR→longer RLVR were never run, and no pair "
-        "transfers INTO base, so all 10 backward pairs are unmeasured — the empty base column and "
-        "the short SFT/DPO lines are missing data, not zeros.\nbase therefore has no self-diamond "
-        "either (it is never a target); its own within-stage R² is measured separately, in a "
-        "regime that reads 0.10–0.20 lower on every cell, so it is not plotted on this axis. All "
-        "arms are on-policy — each stage answers in its own words — so every point mixes "
-        "representation change with answer-distribution change.",
+        0.018,
+        f"{TIER_LABELS[tier]}. Layer 30, Llama-3.1-8B Tulu ladder; {y_note}. All arms are "
+        "on-policy, so every point mixes representation change with answer-distribution change.\n"
+        "The diamond at stage T is the source=T, target=T cell — the source map IS the target map "
+        "there — so it is a point ON T's own line and is drawn connected to it (mean over "
+        "contributing pairs; max spread 0.018).\nGrey triangles = identity+bias (v̂ = x + b, "
+        f"b = train-fold mean of y − x) at each target, the floor a fitted map has to beat: "
+        f"{idb_note}.\nPlain identity (v̂ = x, no bias) is not a plotted series: it is computed "
+        "nowhere in the run and is strictly worse — recomputed at −15.44 on the one cell checked "
+        "(DPO, GSM8K test), against −3.11 identity+bias and 0.37 fitted.\nOnly 7 of the 20 "
+        "ordered stage pairs exist: SFT→RLVR, SFT→longer RLVR and RLVR→longer RLVR were never run "
+        "and nothing transfers INTO base, so 13 pairs are unmeasured — the empty base column and "
+        "the short lines are missing data, not zeros.\nbase therefore has no self diamond and no "
+        "baseline point — it is never a target; its own within-stage R² comes from a regime that "
+        "reads 0.10–0.20 lower on every cell and is not plotted on this axis.",
         ha="center",
         va="bottom",
         fontsize=8,
         color="#555555",
     )
-    fig.subplots_adjust(left=0.065, right=0.99, top=0.93, bottom=0.265, wspace=0.07, hspace=0.42)
+    fig.subplots_adjust(left=0.065, right=0.99, top=0.93, bottom=0.345, wspace=0.07, hspace=0.42)
     savefig_paper(fig, outname, dir=str(FIG_DIR), embed_data=True)
     plt.close(fig)
     return plotted

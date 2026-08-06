@@ -1,0 +1,14 @@
+{
+  "abs_delta": 0.0,
+  "cell": "base__dpo|chat|gsm8k_test1319",
+  "d": 4096,
+  "fit_seed": 0,
+  "identity_bias_r2_recomputed": -3.112847006780399,
+  "identity_bias_r2_stored": -3.112847006780399,
+  "identity_r2": -15.442971281070122,
+  "layer": 30,
+  "match_tol": 0.0001,
+  "n_folds": 5,
+  "n_rows": 1293,
+  "verdict": "confirmed"
+}
