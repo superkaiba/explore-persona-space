@@ -8,7 +8,7 @@ origin_prompt: autocompact is thrashing alot. Help me to reduce the amount of co
   loaded by each agent
 workflow: v1
 ---
-# Cut ~35K tokens/spawn from the always-on context load (autocompact thrash)
+# Cut ~24K tokens/spawn from the always-on context load (autocompact thrash)
 
 ## Provenance
 
@@ -46,48 +46,77 @@ Aug-5 sessions is an ops action, tracked separately.
 
 ## Change
 
-1. **CLAUDE.md 153,028 → 73,807 B** (−30,476 tok/spawn). Nine
-   orchestrator-only sections relocated to `.claude/rules/` behind
-   LESSONS.md triggers (the #829 relocate-to-rules pattern): pods,
-   inline-free-analysis, clean-result-format, context-hygiene,
-   compute-backends, after-every-experiment, auto-continuation,
-   codex-ensemble-review, disk-hygiene. Each leaves a load-bearing summary
-   + a READ-before-you-act pointer; rule files carry the prior text
-   verbatim. Anchor phrases preserved in the stubs so existing
-   `CLAUDE.md §` pointers still resolve.
+Landed in three commits: `40653b5dcf` (relocation), `d41f0f746a` (restore of
+test-pinned prose), `4c11599638` (the two spec splits).
+
+1. **CLAUDE.md 153,028 → 103,743 B.** Seven orchestrator-only sections
+   relocated to `.claude/rules/` behind LESSONS.md triggers (the #829
+   relocate-to-rules pattern): pods, context-hygiene, compute-backends,
+   after-every-experiment, auto-continuation, codex-ensemble-review,
+   disk-hygiene. Each leaves a load-bearing summary + a READ-before-you-act
+   pointer; rule files carry the prior text verbatim. Anchor phrases
+   preserved in the stubs so existing `CLAUDE.md §` pointers still resolve.
 2. **Agent `skills:` frontmatter inlines the whole SKILL.md per spawn**
-   (confirmed by the regression). Dropped preloads the bodies already
-   invoke lazily: `implementer` −76,485 B, `research-pm` −94,634 B,
-   `analyzer` −28,721 B.
-3. **Global personal files 33,531 → 19,444 B** (−5,419 tok/spawn),
-   following the 2026-06-12 MY_GOAT.md precedent: `USER.md` @-imported from
-   `~/my-goat/CLAUDE.md`; `SOUL.md` split into an always-on operating core
-   + `~/.claude/SOUL_DETAIL.md`. Nothing deleted.
-4. `_LESSONS_MAX_BYTES` 8000 → 9600 (index 9,335 B) — nine new rules need
-   nine rows; ~1.4 KB of index bought ~79 KB out of the always-on body.
-   Per-row and non-row caps unchanged.
+   (confirmed by regression: `implementer` and `experiment-implementer` have
+   identical toolsets, and their derived bases agree to 5.6K tok only when
+   skill bytes are counted). Dropped preloads the bodies already invoke
+   lazily via the Skill tool: `implementer` −76,485 B, `research-pm`
+   −94,634 B, `analyzer` −28,721 B.
+3. **Two oversized agent specs split behind section references** — the two
+   that had no section-reference partner: `methodology-writer` 48,962 →
+   14,643 B, `upload-verifier` 51,173 → 32,462 B. Both now under the 40 KB
+   FAIL cap, so both `AGENT_SPEC_SIZE_GRANDFATHER` entries were REMOVED (an
+   entry whose spec drops under the cap FAILs as STALE — it must be removed,
+   not lowered).
+4. **Global personal files 33,531 → 19,444 B**, following the 2026-06-12
+   MY_GOAT.md precedent: `USER.md` @-imported from `~/my-goat/CLAUDE.md`;
+   `SOUL.md` split into an always-on operating core + `~/.claude/SOUL_DETAIL.md`.
+   Nothing deleted; backups at `~/.claude/backups/20260806/`.
+5. `_LESSONS_MAX_BYTES` 8000 → 9600 (index 9,286 B) — the new rules need
+   index rows; ~1.3 KB of index bought ~49 KB out of the always-on body.
+   Per-row and non-row caps unchanged. `_LESSONS_WARN_BYTES` stays 7200: a
+   test pins it to the #992 latitude 7000–7400, so the index now carries a
+   standing advisory WARN, which is true and intended.
 
-## Result (projected per-spawn, measured baseline → after)
+## Result
 
-| agent | before | after | Δ |
-|---|---|---|---|
-| implementer | 163,251 | 98,465 | −39.7% |
-| analyzer | 141,541 | 95,130 | −32.8% |
-| code-reviewer | 137,588 | 102,226 | −25.7% |
-| critic | 110,197 | 74,835 | −32.1% |
-| follow-up-critic | 93,812 | 58,450 | −37.7% |
+**Always-on, every agent: −62,035 B ⇒ −23,865 tok/spawn** (CLAUDE.md −49,285,
+globals −14,087, LESSONS index +1,337).
 
-## Verification
+Additional per-agent, on top of that:
 
-`workflow_lint.py` PASS (WARNs only); 12/12 on the pinning tests for the
-touched surfaces (`test_workflow_lint`, `test_workflow_lint_agent_spec_size`,
-`test_guard_lessons_edit`, `test_workflow_yaml`, + 8 more).
+| agent | spec/skills Δ B | Δ tok/spawn |
+|---|---|---|
+| research-pm | −94,634 | −36,406 |
+| implementer | −76,485 | −29,424 |
+| methodology-writer | −34,319 | −13,203 |
+| analyzer | −28,721 | −11,049 |
+| upload-verifier | −18,711 | −7,198 |
 
-## Out of scope (next tranche)
+## What went wrong, and the rule it produced
 
-Five agent specs remain over the 40 KB FAIL threshold on grandfather caps —
-`code-reviewer` 98.5 KB, `experimenter` 65.6, `experiment-implementer` 64.0,
-`upload-verifier` 51.2, `methodology-writer` 49.0 (~326 KB total). These are
-safety-critical review/launch specs; each belongs in its own reviewed
-`kind: infra` task, not a freehand sweep. Trimming `code-reviewer` alone to
-the 40 KB cap is a further ~22.5K tok on the second-most-spawned agent.
+The first commit relocated prose that TESTS PIN to CLAUDE.md's always-on
+surface, and left `main` red on 8 tests for several minutes. `d41f0f746a`
+restored `## Experiment Report Structure` and the user-chat inline
+free-analysis bullet VERBATIM and deleted the two rule files that had
+absorbed them.
+
+**The pin is the point.** The repo deliberately pins hard-won duty clauses to
+the always-on surface via tests, because those duties get skipped otherwise.
+The correct response to a pin-check failure is to restore the clause, never
+to repoint the check at a rule file. That is why the two spec splits in
+`4c11599638` ran behind a pin census (literals drawn ONLY from source files
+referencing `<agent>.md`) plus a splitter that REFUSES to move any span
+containing a pinned literal.
+
+## Out of scope, and why relocation cannot fix it
+
+Three specs remain over the 40 KB cap: `code-reviewer` 98.5 KB,
+`experimenter` 65.6, `experiment-implementer` 64.0. Measured pin-free mass at
+H3 grain is **7,937 / 3,222 / 1,884 B** — relocating EVERY movable byte still
+leaves them at 89,761 / 60,351 / 63,343 B. All three already went through
+this relocation in the 2026-08-05/06 compaction (code-reviewer 139 → 98.5 KB
+into its section reference); the residue is gate rubric — step headings,
+blocker tags and verdict contracts that tests pin by name. Getting them under
+cap means changing WHAT THE GATES REQUIRE (merging or retiring checks), which
+is a review-strength judgment call, not a relocation task.
