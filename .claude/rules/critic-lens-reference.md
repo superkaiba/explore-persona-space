@@ -156,9 +156,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    target backend (the git-clone-only GCP/SLURM lanes stage no VM-local `data/`, so a
    parent-built-but-unuploaded mix is unreachable there; committed `eval_results/...` arrive with
    the clone), else the plan uploads / renames the mix to the consumer path first, adapts the
-   consumer, or carries a self-contained §4 regen phase (#734 round-4: a reused parent mix on
-   neither HF repo AND under a #474 naming convention the #664-style consumer dispatcher did not
-   assert crashed phase2 at the pre-train assert on the GCP lane after 3 review rounds), AND (iv)
+   consumer, or carries a self-contained §4 regen phase (#734: a reused parent mix on neither HF
+   repo, under a naming convention the consumer did not assert, crashed phase2 after 3 review
+   rounds), AND (iv)
    when the artifact is staged through a layout-mapping helper (incl. a verbatim prefix mirror)
    into a consumer-fixed local layout, the plan names the hub-rel → local-rel mapping and schedules
    a 1-file staging probe + consumer-open through the REAL staging path before production,
@@ -392,10 +392,10 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     their respective band-entry checkpoints — matched dial position, unmatched step count). REVISE
     when the plan (i) grids in whole epochs or coarser than the cited transition window, or (ii)
     lacks the fallback read. Conclusion-changing because without these the run cannot fire its own
-    headline test when the arms fail to co-resolve — three consecutive runs (#529 epoch grid at
-    lr=1e-5, #533 lr drop to 5e-6, #546 rank drop to r=16) burned GPU without the anchor-gated test
-    ever firing, and "arms never co-resolve under this recipe" went undiagnosed each round instead
-    of being reported as the decidable outcome it is (per `.claude/rules/marker-training-recipe.md`
+    headline test when the arms fail to co-resolve — three consecutive runs (#529/#533/#546)
+    burned GPU without the anchor-gated test ever firing, and "arms never co-resolve under this
+    recipe" went undiagnosed each round instead of being reported as the decidable outcome it is
+    (per `.claude/rules/marker-training-recipe.md`
     § Multi-arm resolution-band designs). Not a REVISE when the headline test does not require
     multi-arm band simultaneity (single-arm band-stop designs are covered by the recipe default; the
     plan's §4 "N/A — no multi-arm band-simultaneity gate" satisfies this item).
@@ -920,8 +920,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     disjoint-baseline recount dropped prefix mean cosines 0.271→0.178 and
     context 0.362→0.272, sent one pair 0.23→−0.08 (fully artifactual; target
     split-half reliability 0.049), and pulled 6/28 prefix pairs below the
-    null p97.5 (0.043) — the "28/28 pairs clear the null" headline did not
-    survive, and the defect was caught only at interpretation-critique. Not a
+    null p97.5 — the "28/28 pairs clear the null" headline did not
+    survive. Not a
     REVISE when the baseline is deterministic/analytic (no sampling noise),
     the legs already use independent estimates, or the null already bears the
     shared-B̄ structure; a missing split-half reliability report on a sampled
@@ -984,7 +984,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     disclosure for every fitted representation map.** If the plan FITS a map between activation summaries
     (context→answer, prefix→context, cross-model / cross-framing reparameterization — any
     v_X→v_Y predictor), verify §6 registers BOTH standing reads alongside held-out R², per
-    the CLAUDE.md standing rule (2026-07-22): (a) the identity-family baseline including the
+    the CLAUDE.md standing rule: (a) the identity-family baseline including the
     learned-bias form x + b, b = train-fold mean of (y − x) — canonical helper
     `analysis/mapping_baselines.identity_bias_predict` — whenever input and output spaces
     share dimension (a dimension mismatch is STATED as inapplicable, never silently
@@ -992,8 +992,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     of the prediction) among the held-out candidate pool — canonical helper
     `analysis/mapping_baselines.knn_retrieval` (euclidean + cosine, k scaled to the pool,
     chance = k/n_pool stated; a constant predictor reads exactly chance). Conclusion-
-    changing because the two reads DISSOCIATE in both directions (first measurement
-    2026-07-22): identity+bias scored pooled-OOF R² −6.5 yet retrieval acc@1 0.84 vs the
+    changing because the two reads DISSOCIATE in both
+    directions: identity+bias scored pooled-OOF R² −6.5 yet retrieval acc@1 0.84 vs the
     LOFO ridge map's 0.04 on the #722 prefix-level battery map
     (`eval_results/issue_722/identity_bias_knn/`), while the #779 LMSYS single-context
     fitted ridge dominated retrieval (acc@1 0.72 vs 0.50 identity+bias, chance 0.001;
