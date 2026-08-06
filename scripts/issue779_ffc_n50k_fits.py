@@ -125,7 +125,9 @@ N_N50K_NEW = 46600  # round-3 new contexts (plan-B correction 2026-07-14: 45000-
 # fair_comparison.json split params (n_train/n_val/n_test/seed) and cross-checked against these
 # constants, so a future split-param drift fails loud. These are byte-identical to the n10k
 # val/test by construction (n10k inherited the same fixed_split).
+# SHA_PIN_DOMAIN: INDEX
 ORIG_VAL_SHA256 = "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613"
+# SHA_PIN_DOMAIN: INDEX
 ORIG_TEST_SHA256 = "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d"
 
 DEFAULT_OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_779" / "fitter-fair-comparison-n50k"

@@ -44,7 +44,9 @@ import issue779_ffc_n50k_generate_capture as N50  # noqa: E402
 # domain of N50F._pinned_original_shas / n50k_fits.json "pinned_val/test_sha256").
 # NOT prompt-string digests: r1-r7 asserted N10._sha_prompts(prompts) against
 # these and could never pass (r8 crash fix, att-20260729 p1_contexts).
+# SHA_PIN_DOMAIN: INDEX
 TEST_1000_SHA = "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d"
+# SHA_PIN_DOMAIN: INDEX
 VAL_400_SHA = "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613"
 # Frozen round-1 PROMPT-membership sha (N10._sha_prompts over the 5,000 round-1
 # first-turns) = the #779 n1m sampling manifest's used_shas.round1
