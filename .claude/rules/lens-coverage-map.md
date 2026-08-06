@@ -157,6 +157,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | llm-judging | LESSONS.md | v2-owner: statistics-critic |
 | marker-leakage-measurement | LESSONS.md | v2-owner: statistics-critic |
 | marker-training-recipe | LESSONS.md | v2-owner: methodology-baselines-critic |
+| methodology-writer-section-reference | LESSONS.md | v2-owner: methodology-writer (REPORT MODE) + methodology-critic |
 | on-policy-completions | LESSONS.md | v2-owner: methodology-baselines-critic |
 | ood-generalization-folds | LESSONS.md | v2-owner: statistics-critic |
 | persona-distance-metrics | LESSONS.md | v2-owner: code-correctness-critic + methodology-baselines-critic |
@@ -172,6 +173,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | selection-symmetric-nulls | LESSONS.md | v2-owner: statistics-critic |
 | trigger-dense-review | LESSONS.md | v2-owner: code-correctness-critic + reconciler (role-generic review rule; applies to any review-role subagent, v1 and v2) |
 | upload-policy | LESSONS.md | v2-owner: upload-verifier + methodology-baselines-critic |
+| upload-verifier-section-reference | LESSONS.md | v2-owner: upload-verifier (v2 mode) |
 | vectorize-many-cell-fits | LESSONS.md | v2-owner: efficiency-critic |
 | workflow-fix-on-bug | LESSONS.md | v2-owner: orchestrator (all agents emit candidates; unchanged) |
 | agents-vs-skills | LESSONS.md | v2-owner: (authoring-time design rule — all workflow authors) |
