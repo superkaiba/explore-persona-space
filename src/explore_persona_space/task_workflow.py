@@ -2761,6 +2761,13 @@ TRIAGE_LAUNCH_KINDS = frozenset({"epm:run-launched", "epm:cluster-launched"})
 # a triage record is also excluded from candidates.
 TRIAGE_LINE_PREFIX = "external-markers triaged:"
 
+# The optional enumeration-boundary token a triage-record line may carry
+# (#2105): "external-markers triaged: ... (boundary=<ts>)". <ts> is the ts
+# of the LAST event the enumerating session read (see
+# triage_enumeration_boundary). Legacy lines without the token keep the
+# post-position boundary exactly (fail-toward-today).
+TRIAGE_BOUNDARY_TOKEN_RE = re.compile(r"\(boundary=([^\s)]+)\)")
+
 # #889 landed 2026-07-03T04:05Z (commit 34fd730192); records before this
 # epoch are legacy per the SKILL.md accepted-residuals clause and are never
 # flagged by the post-hoc observer (#967).
@@ -2804,6 +2811,33 @@ TRIAGE_NONCOMPUTE_STAGES = frozenset(
 TRIAGE_COMPUTE_STAGE_TOKENS = frozenset({"grid", "sweep", "battery", "fit", "fits", "relaunch"})
 
 
+def parse_triage_boundary_ts(note: str) -> datetime | None:
+    """Parse the optional ``(boundary=<ts>)`` token from a triage-record
+    note. ``None`` when the note is not a triage record, carries no token,
+    or the token's ts is unparseable (fail-soft — legacy behavior). The
+    search is anchored at the LAST occurrence of the triage line
+    (``note.rfind(TRIAGE_LINE_PREFIX)`` onward — the record's OWN line is
+    appended last per the format spec) so a note QUOTING a prior triage
+    line earlier in its body cannot bind a stale boundary (forensics notes
+    quote triage lines — the #2054 v98/v108 shape). A mis-bind would only
+    ever pick an OLDER quoted token -> wider window -> over-enumeration,
+    never under-enumeration."""
+    pos = note.rfind(TRIAGE_LINE_PREFIX)
+    if pos < 0:
+        return None
+    m = TRIAGE_BOUNDARY_TOKEN_RE.search(note, pos)
+    if m is None:
+        return None
+    return _parse_ts_str(m.group(1))
+
+
+def triage_enumeration_boundary(events: list[dict]) -> str:
+    """The ``boundary=`` value an enumerating session stamps into its triage
+    line: the ts of the LAST event in ``events`` at enumeration time (""
+    when the list is empty — composers omit the token then)."""
+    return (events[-1].get("ts", "") or "") if events else ""
+
+
 def triage_candidates_since_last_dispatch(
     events: list[dict],
     *,
@@ -2834,13 +2868,78 @@ def triage_candidates_since_last_dispatch(
     spawn_session / spawn_session-stop — is a trustworthy-positive EXTERNAL
     signal for that LLM-side read, but ``by`` defaults to "unknown", so
     absence proves nothing).
+
+    ENUMERATION-BOUNDARY TOKEN (#2105): a triage-record line MAY carry a
+    trailing ``(boundary=<ts>)`` token — the ts of the LAST event its
+    enumerator actually read (see :func:`triage_enumeration_boundary`).
+    When the most recent boundary record carries a parseable token, the
+    window REOPENS from that recorded enumeration point instead of the
+    record's own post position (highest index j < idx with parseable
+    ts <= recorded), so a marker landing in the enumerate-to-post seam is
+    still enumerated at the next call (the #2054 v91 incident: a user
+    directive landed 53 s before the breadcrumb post and was hidden
+    forever). Launch form (ONE-STEP CHAIN): the pod/backend-launch duty
+    posts its token-bearing triage ``epm:progress`` note immediately
+    BEFORE dispatch, so the later token-less launch marker would mask the
+    token — a launch-kind boundary record whose note carries NO triage
+    line chains EXACTLY ONE step to the immediately preceding
+    boundary-class record and honors its token when that record is a
+    triage record; an earlier launch marker or a token-less (legacy) note
+    stops the chain (today's launch-position boundary,
+    fail-toward-today). Fail-soft + never-shrink: a missing / unparseable
+    token keeps today's post-position boundary byte-identically, events
+    with unparseable ts inside the seam stay IN the window
+    (fail-toward-triage), and the reopen scan starts at idx - 1, so the
+    reopened window is always a superset of today's. Named residuals: a
+    marker sharing the same second as the stamped boundary event stays
+    behind the ``<=`` boundary; legacy token-less lines and untriaged
+    launches keep the old behavior.
     """
     boundary = -1
     for idx in range(len(events) - 1, -1, -1):
         event = events[idx]
         note = event.get("note", "") or ""
-        if event.get("kind", "") in launch_kinds or TRIAGE_LINE_PREFIX in note:
+        is_launch = event.get("kind", "") in launch_kinds
+        if is_launch or TRIAGE_LINE_PREFIX in note:
             boundary = idx
+            recorded = parse_triage_boundary_ts(note)
+            if recorded is None and is_launch and TRIAGE_LINE_PREFIX not in note:
+                # #2105 launch form: the duty posts its token-bearing
+                # triage note immediately BEFORE dispatch (SKILL.md Step
+                # 6b / 6d.1), so the launch marker lands AFTER it and
+                # would mask the token. Chain EXACTLY ONE step to the
+                # immediately preceding boundary-class record; honor its
+                # token when it is a triage record. An earlier launch
+                # marker, or a token-less (legacy) note, stops the chain
+                # -> today's launch-position boundary (fail-toward-today
+                # for untriaged / legacy launches).
+                for k in range(idx - 1, -1, -1):
+                    ev_k = events[k]
+                    note_k = ev_k.get("note", "") or ""
+                    if ev_k.get("kind", "") in launch_kinds or TRIAGE_LINE_PREFIX in note_k:
+                        if TRIAGE_LINE_PREFIX in note_k:
+                            recorded = parse_triage_boundary_ts(note_k)
+                        break
+            if recorded is not None:
+                # Reopen the enumerate-to-post seam — the window starts
+                # after the LAST event the record's enumerator actually
+                # read (highest j < idx with parseable ts <= recorded),
+                # not after the record's own post position. Events with
+                # unparseable ts stay IN the window (fail-toward-triage);
+                # no match -> whole list (over-enumeration is safe).
+                # Structurally never-shrink: the scan starts at idx - 1,
+                # so the reopened window is a superset of today's
+                # events[idx + 1:]. Reopening re-includes the session's
+                # OWN pre-launch bookkeeping notes (compute-character
+                # statements etc.) posted after enumeration — sanctioned
+                # over-enumeration, not a bug (they filter or re-triage
+                # trivially).
+                boundary = -1
+                for j in range(idx - 1, -1, -1):
+                    ts_j = _stage_event_ts(events[j])
+                    if ts_j is not None and ts_j <= recorded:
+                        boundary = j
+                        break
             break
     return _triage_window_candidates(
         events[boundary + 1 :], exempt_kinds=exempt_kinds, machine_by=machine_by
