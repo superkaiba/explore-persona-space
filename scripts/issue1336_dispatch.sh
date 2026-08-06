@@ -44,6 +44,10 @@
 #       sweep (same phases, same subprocess shape, tiny cells); the ONLY
 #       GPU-less-host stub is gen_v2's vLLM engine leg (fixture-faked at the
 #       engine boundary, recorded as a stub in the phase log).
+#   bash scripts/issue1336_dispatch.sh all_v3 [--smoke]        # plan v15 pooled on/off-policy
+#       stage-transfer round: c_pool -> g0v3 -> g2v2 -> extract_offpolicy ->
+#       fit_pool (Unit C appends ladder_pool -> ladder_cluster -> upload_v3);
+#       each phase also invocable standalone.
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"
@@ -2560,11 +2564,14 @@ for corpus, fmt in surfaces:
     fi
 }
 
-upload_preds_v2() { # $1 = cells|ladder — bulk upload_folder (one commit), fail loud
+upload_preds_v2() { # $1 = cells|pooled|ladder — bulk upload_folder (one commit), fail loud
     local which="$1" src dest
     if [ "$which" = "cells" ]; then
         src="data/issue_1336/preds_v2"
         dest="$HF_PREFIX/analysis_tensors/preds_v2"
+    elif [ "$which" = "pooled" ]; then
+        src="data/issue_1336/preds_pooled_v3"
+        dest="$HF_PREFIX/analysis_tensors/preds_pooled_v3"
     else
         src="data/issue_1336/metric_ladder_preds"
         dest="$HF_PREFIX/analysis_tensors/metric_ladder_preds"
@@ -2777,6 +2784,652 @@ print(f"[signal] wrote v2 results sentinel {os.environ['RES_OUT']} (halted={halt
 PY
 }
 
+# ---------------------------------------------------------------------------
+# Plan v15 (pooled-multidataset on/off-policy stage-transfer) — Unit B-iii
+# phases: the g0v3 + g2v2 gates, the extract_offpolicy capture fan-out, and
+# the fit_pool pooled-fit units. Consumer CLIs (committed, NOT re-implemented
+# here): scripts/issue1336_extract_turnstore.py --text-source (Unit B-i) and
+# scripts/issue1336_fit_cells.py --v3-pooled/--g0v3/--g1v3-check (Unit B-ii).
+# Unit C appends ladder_pool -> ladder_cluster -> upload_v3.
+# ---------------------------------------------------------------------------
+MATCHED_N_POOLED_V3=15000   # plan v15 §6 pooled matched-n companion — NO cm registry
+                            # constant exists BY DESIGN; the Unit B-ii driver hard-asserts
+                            # an explicit --matched-n-size (never a silent default).
+EXT_OFF_PLANNED_WALL_H=3.8  # plan v15 §9 EXT_off row (booked; 1-cell pilot re-projects)
+FIT_POOL_PLANNED_WALL_H=1.8 # plan v15 §9 FIT_pool row (booked ~2x naive; G1'v3 unit = pilot)
+
+pooled_manifest_v3() { # c_pool output (plan §4 Phase C_pool; smoke-suffixed root)
+    if [ "$SMOKE" -eq 1 ]; then
+        echo "data/issue_1336/pooled_split_v3_smoke/split_manifest.json"
+    else
+        echo "data/issue_1336/pooled_split_v3/split_manifest.json"
+    fi
+}
+
+ensure_offpolicy_stage() { # off-diagonal TEXT staging (Unit B-i helper; done-keyed, idempotent)
+    local mode="--full" key="full"
+    if [ "$SMOKE" -eq 1 ]; then
+        mode="--smoke"
+        key="smoke"
+    fi
+    if [ ! -f "$DONE_DIR/offpol_stage__${key}.done" ]; then
+        uv run python scripts/issue1336_stage_offpolicy.py "$mode" \
+            >> "$JOB_LOG_DIR/offpol_stage.log" 2>&1
+        touch "$DONE_DIR/offpol_stage__${key}.done"
+        grep -h '\[offpol\]' "$JOB_LOG_DIR/offpol_stage.log" | tail -n 2 || true
+    fi
+}
+
+ensure_diag_cell_v3() { # $1=model $2=corpus — diagonal v2 capture present locally (production)
+    # The extractor's per-cell done-marker + HF-resume contract fetches the
+    # round-3 upload instead of re-extracting on GPU (plan §10 reuse row);
+    # an already-local cell skips instantly on its done marker.
+    local m="$1" c="$2"
+    [ "$SMOKE" -eq 1 ] && return 0
+    if [ "$NGPU" -gt 0 ]; then
+        CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1336_extract_turnstore.py \
+            --v2 --model "$m" --corpus "$c" --format chat --upload \
+            >> "$JOB_LOG_DIR/diag_resume__${m}_${c}.log" 2>&1
+    else
+        uv run python scripts/issue1336_extract_turnstore.py \
+            --v2 --model "$m" --corpus "$c" --format chat --upload \
+            >> "$JOB_LOG_DIR/diag_resume__${m}_${c}.log" 2>&1
+    fi
+}
+
+phase_g0v3() {
+    # G0v3 (plan v15 §6/§7): pooled-split reproducibility gate — refit the
+    # round-3 RLVR x lmsys23k-chat cell UNDER THE POOLED SPLIT and assert
+    # |R2_pooled_slice - R2_round3| <= 0.05 x ex_v2 at the headline layer.
+    # Driver: issue1336_fit_cells.py --g0v3 (Unit B-ii; rc=3 on an enforced
+    # FAIL; informational under --smoke per the #1345 gate-calibration rule).
+    # Inputs: gates_v2/v2_bars.json + cells_v2/cells_rlvr_chat_lmsys23k.json
+    # (committed round-3 outputs under $OUT_DIR), the c_pool manifest, and
+    # the rlvr lmsys23k turnstores (v2 extension stem HF-resumed below; the
+    # wave-1 concat half is c_stage's staging, asserted here).
+    echo "[phase=g0v3]"
+    local rc=0
+    if [ "$SMOKE" -eq 0 ]; then
+        [ -d "$WAVE1_TS_DIR" ] || {
+            emit_signal "epm:failure" "g0v3" "failure_class: data — $WAVE1_TS_DIR missing: G0v3's lmsys23k concat bundle reads the staged wave-1 turnstores (run the c_stage phase first; plan v15 reuses the round-3 staging verbatim)"
+            echo "[g0v3] FATAL: missing $WAVE1_TS_DIR (run c_stage first)" >&2
+            exit 78
+        }
+        ensure_diag_cell_v3 rlvr lmsys23k
+    fi
+    # shellcheck disable=SC2086
+    uv run python scripts/issue1336_fit_cells.py --g0v3 --out-dir "$OUT_DIR" $SMOKE_FLAG \
+        >> "$JOB_LOG_DIR/g0v3__gate.log" 2>&1 || rc=$?
+    tail -n 3 "$JOB_LOG_DIR/g0v3__gate.log" || true
+    emit_signal "epm:progress" "g0v3" "issue1336 G0v3 pooled-split reproducibility gate rc=$rc (smoke=$SMOKE): see $OUT_DIR/gates_v3/g0v3.json"
+    if [ "$rc" -ne 0 ]; then
+        emit_signal "epm:failure" "g0v3" "failure_class: code — G0v3 pooled-split reproducibility gate FAILED (rc=$rc): the pooled 5-fold lmsys23k slice did not reproduce the round-3 per-corpus fit within 0.05*ex_v2; halting (plan v15 §7 — report as the group-aware split's own health finding); see $OUT_DIR/gates_v3/g0v3.json"
+        echo "[phase=g0v3_failed] G0v3 gate failed rc=$rc" >&2
+        exit "$rc"
+    fi
+}
+
+phase_g2v2() {
+    # G2v2 (plan v15 §7 — the v14 G2 capture-parity contract ported to the
+    # Phase EXT_off --text-source rig): recapture ~100 rows of the
+    # (dpo x rlvr-text) lmsys23k-chat off-diagonal cell with TODAY's
+    # extractor and compare the PROMPT-SIDE reads against the on-policy
+    # DIAGONAL capture at the SAME activation checkpoint (dpo). Prompt-side
+    # only is the comparable object: the (prefix, context) slot vectors and
+    # the user-turn profile all precede the answer, so under causal masking
+    # they are text-source-independent; the answer-turn profile legitimately
+    # differs with the text source and is reported informationally, never
+    # gated.
+    echo "[phase=g2v2]"
+    local gdir="$OUT_DIR/gates_v3" n_rows="${G2V2_N_ROWS:-100}"
+    local ckpt="dpo" src="rlvr" corpus="lmsys23k"
+    local diag_dir="data/issue_1336/turnstore_v2" tiny_flag="" genv2_flag=""
+    mkdir -p "$gdir"
+    if [ "$SMOKE" -eq 1 ]; then
+        n_rows=4
+        diag_dir="$gdir/g2v2_diag_smoke"
+        # cmd_gen_v2 writes the v2 SMOKE text under gen_smoke (NOT
+        # gen_v2_smoke), so the off-policy read gets an explicit root.
+        genv2_flag="--gen-v2-root data/issue_1336/gen_smoke"
+        uv run python scripts/issue1336_smoke_fixtures.py tiny-model \
+            --out "$OUT_DIR/tiny_model" >> "$JOB_LOG_DIR/g2v2__fixtures.log" 2>&1
+        uv run python scripts/issue1336_smoke_fixtures.py gen \
+            >> "$JOB_LOG_DIR/g2v2__fixtures.log" 2>&1
+        uv run python scripts/issue1336_smoke_fixtures.py gen-v2 \
+            >> "$JOB_LOG_DIR/g2v2__fixtures.log" 2>&1
+        tiny_flag="--tiny-model-dir $OUT_DIR/tiny_model"
+        rm -rf "$diag_dir"
+    else
+        ensure_offpolicy_stage # off-diagonal TEXT staging (extract_offpolicy re-checks)
+        ensure_diag_cell_v3 "$ckpt" "$corpus"
+    fi
+    rm -rf "$gdir/g2v2_recapture"
+    # 1. Row allowlist: the first n extension rows present in BOTH the
+    #    diagonal capture and the text source's kept off-policy rows.
+    ALW_OUT="$gdir/g2v2_row_allowlist.json" ALW_N="$n_rows" ALW_SMOKE="$SMOKE" \
+        ALW_CKPT="$ckpt" ALW_SRC="$src" ALW_CORPUS="$corpus" ALW_DIAG="$diag_dir" \
+        uv run python - <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("scripts").resolve()))
+import issue1336_extract_turnstore as xt
+
+smoke = os.environ["ALW_SMOKE"] == "1"
+ckpt, src, corpus = os.environ["ALW_CKPT"], os.environ["ALW_SRC"], os.environ["ALW_CORPUS"]
+data_root = Path("data/issue_1336")
+gen_root = data_root / ("gen_smoke" if smoke else "gen")
+# cmd_gen_v2 writes the v2 smoke text under gen_smoke (fixture contract).
+gen_v2_root = data_root / ("gen_smoke" if smoke else "gen_v2")
+rows = xt.read_offpolicy_rows(gen_root, gen_v2_root, src, corpus)
+off_ids = {f"s{r['prompt_idx']}" for r in rows if r.get("kept")}
+boundary = xt.CONCAT_BOUNDARY[corpus]
+if smoke:
+    # No stored round-3 capture in the smoke scratch: the diagonal side is
+    # captured fresh below on this SAME allowlist, so the candidate set is
+    # the checkpoint's own kept extension rows (the diagonal --v2 branch's
+    # extension filter, mirrored).
+    drows = xt._read_jsonl(gen_root / ckpt / corpus / "answers.jsonl")
+    diag_ids = {
+        f"s{r['prompt_idx']}"
+        for r in drows
+        if r.get("kept") and int(r["prompt_idx"]) >= boundary
+    }
+else:
+    diag_ids = set()
+    for sc in sorted(Path(os.environ["ALW_DIAG"]).glob(f"{ckpt}_chat_{corpus}_shard*.json")):
+        diag_ids.update(json.loads(sc.read_text())["conv_ids"])
+common_ids = sorted(off_ids & diag_ids, key=lambda cid: int(cid[1:]))
+n = int(os.environ["ALW_N"])
+assert len(common_ids) >= n, (
+    f"only {len(common_ids)} rows shared by the {ckpt} diagonal capture and "
+    f"{src}'s kept off-policy rows < requested {n}"
+)
+ids = common_ids[:n]
+Path(os.environ["ALW_OUT"]).write_text(json.dumps(ids) + "\n")
+print(f"[g2v2] allowlist: {len(ids)} rows -> {os.environ['ALW_OUT']}")
+PY
+    # 2. Off-policy recapture with TODAY's extractor (the Unit B-i
+    #    --text-source path; fresh out-dir so no stale done marker).
+    local xtr_base
+    xtr_base="uv run python scripts/issue1336_extract_turnstore.py --v2 --format chat --corpus $corpus --row-allowlist $gdir/g2v2_row_allowlist.json $tiny_flag $SMOKE_FLAG"
+    if [ "$NGPU" -gt 0 ]; then
+        # shellcheck disable=SC2086
+        CUDA_VISIBLE_DEVICES=0 $xtr_base --model "$ckpt" --text-source "$src" $genv2_flag \
+            --out-dir "$gdir/g2v2_recapture" >> "$JOB_LOG_DIR/g2v2__recapture.log" 2>&1
+    else
+        # shellcheck disable=SC2086
+        $xtr_base --model "$ckpt" --text-source "$src" $genv2_flag \
+            --out-dir "$gdir/g2v2_recapture" >> "$JOB_LOG_DIR/g2v2__recapture.log" 2>&1
+    fi
+    if [ "$SMOKE" -eq 1 ]; then
+        # 3. Smoke only: fresh tiny-model DIAGONAL capture as the reference
+        #    side (prompt-side determinism => cos == 1.0). NO --gen-v2-root:
+        #    the diagonal branch refuses off-policy-only flags.
+        # shellcheck disable=SC2086
+        $xtr_base --model "$ckpt" --out-dir "$diag_dir" \
+            >> "$JOB_LOG_DIR/g2v2__recapture.log" 2>&1
+    fi
+    # 4. Prompt-side per-layer cosine vs the diagonal capture (plan §7 bar:
+    #    >= 0.999) -> gates_v3/g2v2_offpolicy_parity.json.
+    local rc=0
+    PAR_GDIR="$gdir" PAR_DIAG="$diag_dir" PAR_STEM="${ckpt}_chat_${corpus}" \
+        PAR_CKPT="$ckpt" PAR_SRC="$src" PAR_CORPUS="$corpus" uv run python - <<'PY' || rc=$?
+import json
+import os
+import time
+from pathlib import Path
+
+import torch
+
+gdir = Path(os.environ["PAR_GDIR"])
+diag_dir = Path(os.environ["PAR_DIAG"])
+stem = os.environ["PAR_STEM"]
+allow = set(json.loads((gdir / "g2v2_row_allowlist.json").read_text()))
+# Plan §7 registered bar; the env override exists ONLY for degenerate smoke
+# probes of the FAIL branch (never a production loosening lever).
+THRESH = float(os.environ.get("EPM_1336_G2V2_COS_THRESH", "0.999"))
+
+
+def load_rows(d: Path) -> dict:
+    rows = {}
+    for pt in sorted(d.glob(f"{stem}_shard*.pt")):
+        payload = torch.load(pt, map_location="cpu")
+        for cid, slots, profiles in zip(
+            payload["conv_ids"], payload["slots"], payload["profiles"], strict=True
+        ):
+            if cid in allow:
+                assert slots.shape[0] == 2 and profiles.shape[0] == 2, (
+                    f"{cid}: expected 2 slots (prefix, context) + 2 turn profiles, "
+                    f"got {tuple(slots.shape)} / {tuple(profiles.shape)}"
+                )
+                rows[cid] = (slots.float(), profiles.float())
+    assert rows, f"no allowlist rows found under {d}"
+    return rows
+
+
+def compare(a: dict, b: dict) -> dict:
+    common = sorted(set(a) & set(b))
+    assert common, "no common rows to compare"
+    n_layers = a[common[0]][0].shape[1]
+    out = {"n_rows": len(common)}
+    kinds = (
+        ("slots", 0, None),  # (prefix, context) slot vectors — prompt-side, GATED
+        ("user_profile", 1, 0),  # turn-0 span profile — prompt-side, GATED
+        ("answer_profile", 1, 1),  # turn-1 span profile — text-source-dependent, informational
+    )
+    for kind, idx, sub in kinds:
+        cos_by_layer, mad_by_layer = [], []
+        for li in range(n_layers):
+            cs, md = [], []
+            for cid in common:
+                x = a[cid][idx][:, li, :] if sub is None else a[cid][idx][sub : sub + 1, li, :]
+                y = b[cid][idx][:, li, :] if sub is None else b[cid][idx][sub : sub + 1, li, :]
+                num = (x * y).sum(dim=-1)
+                den = (x.norm(dim=-1) * y.norm(dim=-1)).clamp_min(1e-12)
+                cs.extend((num / den).tolist())
+                md.append(float((x - y).abs().max()))
+            cos_by_layer.append(sum(cs) / len(cs))
+            mad_by_layer.append(max(md))
+        out[kind] = {
+            "mean_cosine_per_layer": cos_by_layer,
+            "max_abs_diff_per_layer": mad_by_layer,
+            "min_mean_cosine": min(cos_by_layer),
+            "max_abs_diff": max(mad_by_layer),
+        }
+    return out
+
+
+off = load_rows(gdir / "g2v2_recapture")
+diag = load_rows(diag_dir)
+cmp_block = compare(off, diag)
+min_cos = min(cmp_block["slots"]["min_mean_cosine"], cmp_block["user_profile"]["min_mean_cosine"])
+ok = min_cos >= THRESH
+from explore_persona_space.experiments.issue_1336.common import resolve_code_sha
+
+payload = {
+    "metadata": {
+        "git_commit": resolve_code_sha(),
+        "ts_unix": time.time(),
+        "n_allowlist": len(allow),
+    },
+    "gate": "G2v2",
+    "pair": {
+        "activation_checkpoint": os.environ["PAR_CKPT"],
+        "text_source": os.environ["PAR_SRC"],
+        "corpus": os.environ["PAR_CORPUS"],
+    },
+    "threshold_min_mean_cosine": THRESH,
+    "gated_reads": ["slots", "user_profile"],
+    "min_mean_cosine": min_cos,
+    "offpolicy_vs_diagonal": cmp_block,
+    "pass": bool(ok),
+    "note": (
+        "prompt-side reads only: the (prefix, context) slots and the user-turn "
+        "profile precede the answer, so the diagonal capture at the same "
+        "activation checkpoint is the deterministic reference under causal "
+        "masking; answer_profile differs with the text source (informational)"
+    ),
+}
+out_path = gdir / "g2v2_offpolicy_parity.json"
+out_path.write_text(json.dumps(payload, indent=2) + "\n")
+print(
+    f"[g2v2] prompt-side min mean cosine {min_cos:.6f} vs {THRESH} -> "
+    f"{'PASS' if ok else 'FAIL'} ({out_path})"
+)
+raise SystemExit(0 if ok else 3)
+PY
+    if [ "$rc" -eq 3 ]; then
+        emit_signal "epm:failure" "g2v2" "failure_class: code — G2v2 off-policy capture-parity gate FAILED (prompt-side min mean cosine below the plan §7 bar): the --text-source rig does not reproduce the diagonal capture's prompt-side reads; halting BEFORE the 20-cell EXT_off spend; see $OUT_DIR/gates_v3/g2v2_offpolicy_parity.json"
+        echo "[phase=g2v2_failed] G2v2 gate failed (parity below bar)" >&2
+        exit 3
+    elif [ "$rc" -ne 0 ]; then
+        echo "[g2v2] compare failed rc=$rc" >&2
+        exit "$rc"
+    fi
+    emit_signal "epm:progress" "g2v2" "issue1336 G2v2 off-policy capture-parity gate PASS (smoke=$SMOKE): the --text-source rig reproduces the diagonal prompt-side reads; see $OUT_DIR/gates_v3/g2v2_offpolicy_parity.json"
+}
+
+_extract_one_offpol_v3() { # $1=ckpt $2=text-source $3=corpus — timed §9 pilot cell on GPU 0
+    local i="$1" j="$2" c="$3" name done_f jlog rc=0
+    name="off_${i}_${j}_${c}"
+    done_f="$DONE_DIR/extract_offpolicy__${name}.done"
+    [ -f "$done_f" ] && {
+        echo "[extract_offpolicy] skip $name (pilot cell already complete)"
+        return 0
+    }
+    jlog="$JOB_LOG_DIR/extract_offpolicy__${name}.log"
+    if [ "$NGPU" -gt 0 ]; then
+        CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1336_extract_turnstore.py \
+            --v2 --model "$i" --text-source "$j" --corpus "$c" --format chat \
+            --split-manifest "$(pooled_manifest_v3)" --upload >> "$jlog" 2>&1 || rc=$?
+    else
+        uv run python scripts/issue1336_extract_turnstore.py \
+            --v2 --model "$i" --text-source "$j" --corpus "$c" --format chat \
+            --split-manifest "$(pooled_manifest_v3)" --upload >> "$jlog" 2>&1 || rc=$?
+    fi
+    if [ "$rc" -ne 0 ]; then
+        echo "[extract_offpolicy] FAILED $name rc=$rc (log: $jlog)" >&2
+        tail -25 "$jlog" >&2 || true
+        return "$rc"
+    fi
+    touch "$done_f"
+}
+
+phase_extract_offpolicy() {
+    # Phase EXT_off (plan v15 §4): teacher-forced capture of the 20
+    # off-diagonal (activation-checkpoint i x text-source j) cells on the
+    # pooled 20/80 union — one job per (pair, corpus), work-conserving over
+    # $NGPU GPUs; NO generation. Output dirs:
+    # data/issue_1336/turnstore_offpolicy_<i>_chat_<j>[_smoke] (per-cell
+    # --upload mirrors them to the Hub prefix).
+    echo "[phase=extract_offpolicy]"
+    local tiny_flag="" man
+    man=$(pooled_manifest_v3)
+    [ -f "$man" ] || {
+        emit_signal "epm:failure" "extract_offpolicy" "failure_class: data — pooled split manifest missing at $man: run the c_pool phase first (driver-enforced ordering)"
+        echo "[extract_offpolicy] FATAL: missing $man (run c_pool first)" >&2
+        exit 78
+    }
+    if [ "$SMOKE" -eq 1 ]; then
+        if [ "$NGPU" -eq 0 ]; then
+            uv run python scripts/issue1336_smoke_fixtures.py tiny-model \
+                --out "$OUT_DIR/tiny_model" \
+                >> "$JOB_LOG_DIR/extract_offpolicy__fixtures.log" 2>&1
+            tiny_flag="--tiny-model-dir $OUT_DIR/tiny_model"
+        fi
+        # Smoke text: the gen/gen-v2 fixtures write BOTH concat halves under
+        # gen_smoke (hence the explicit --gen-v2-root on the jobs); the Unit
+        # B-i staging helper's own --smoke leg exercises the HF layout
+        # mirror end-to-end (single (dpo, rlvr) pair).
+        uv run python scripts/issue1336_smoke_fixtures.py gen \
+            >> "$JOB_LOG_DIR/extract_offpolicy__fixtures.log" 2>&1
+        uv run python scripts/issue1336_smoke_fixtures.py gen-v2 \
+            >> "$JOB_LOG_DIR/extract_offpolicy__fixtures.log" 2>&1
+    fi
+    ensure_offpolicy_stage
+    _headroom_v2 extract_offpolicy 30 # plan §9: ~700 MB x 20 off-diagonal turnstores + staged text + margin
+    if [ "$SMOKE" -eq 0 ]; then
+        # §9 pilot (MEASURED 1-cell basis at production shape): time the
+        # largest cell — the G2v2 pair on lmsys23k — then re-project the
+        # queue against the plan's booked EXT_off wall.
+        local t0 t1 pilot_wall
+        t0=$(date +%s)
+        _extract_one_offpol_v3 dpo rlvr lmsys23k
+        t1=$(date +%s)
+        pilot_wall=$((t1 - t0))
+        PILOT_WALL="$pilot_wall" NGPU_ENV="$NGPU" PLANNED="$EXT_OFF_PLANNED_WALL_H" \
+            OUT_ENV="$OUT_DIR" DONE_ENV="$DONE_DIR" registry_lines_v2 '
+import json
+from pathlib import Path
+
+wall = float(os.environ["PILOT_WALL"])
+ngpu = max(int(os.environ["NGPU_ENV"]), 1)
+planned = float(os.environ["PLANNED"])
+done_dir = Path(os.environ.get("DONE_ENV", "data/issue_1336/done"))
+cells3 = [
+    (p["model"], p["text_source"], c)
+    for p in cm.cells_v3_for()
+    if p["arm"] == "off"
+    for c in cm.V2_CORPORA
+]
+pend = [
+    t
+    for t in cells3
+    if not (done_dir / f"extract_offpolicy__off_{t[0]}_{t[1]}_{t[2]}.done").exists()
+]
+projected = wall * len(pend) / ngpu / 3600.0
+ratio = projected / planned if planned else float("inf")
+print(
+    f"[extract_offpolicy] pilot: cell wall={wall:.0f}s pending={len(pend)} "
+    f"projected={projected:.2f}h vs planned {planned}h (x{ratio:.2f})"
+)
+flag = Path(os.environ["OUT_ENV"]) / "gates_v3" / "ext_off_pilot.json"
+flag.parent.mkdir(parents=True, exist_ok=True)
+flag.write_text(
+    json.dumps(
+        {
+            "component": "EXT_off (20 off-diagonal capture cells x 7 corpora)",
+            "pilot_cell_wall_s": wall,
+            "n_pending": len(pend),
+            "ngpu": ngpu,
+            "projected_wall_h": round(projected, 3),
+            "planned_wall_h": planned,
+            "ratio": round(ratio, 3),
+            "basis": (
+                "measured 1-cell pilot (dpo x rlvr-text on lmsys23k, the largest "
+                "corpus — projection over smaller corpora is conservative) through "
+                "the production entrypoint"
+            ),
+        },
+        indent=2,
+    )
+    + "\n"
+)
+if ratio > 2.0:
+    print(f"[extract_offpolicy] DEVIATION over 2x: projected {projected:.2f}h vs planned {planned}h")
+'
+        local ratio_line
+        ratio_line=$(uv run python -c "import json;d=json.load(open('$OUT_DIR/gates_v3/ext_off_pilot.json'));print('OVER' if d['ratio']>2.0 else 'OK', d['planned_wall_h'], d['projected_wall_h'], d['ratio'])")
+        if [ "${ratio_line%% *}" = "OVER" ]; then
+            set -- $ratio_line
+            emit_signal "epm:compute-deviation" "extract_offpolicy" "component: EXT_off (20 off-diagonal capture cells)
+planned_wall_h: $2
+projected_wall_h: $3
+ratio: $4
+basis: measured 1-cell pilot (dpo x rlvr-text lmsys23k) through the production entrypoint at production shape"
+        fi
+    fi
+    # Full queue (per-cell done keys extract_offpolicy__off_<i>_<j>_<c>; the
+    # pilot cell skips). Work list derives from cm.cells_v3_for — the
+    # CONSUMED registry — so a smoke subset threads through (PASS_UNIFIED).
+    local jobs="$DONE_DIR/jobs_extract_offpolicy.tsv"
+    EXTRACT_TINY_FLAG="$tiny_flag" OFF_MAN="$man" registry_lines_v2 '
+tiny = os.environ.get("EXTRACT_TINY_FLAG", "")
+man = os.environ["OFF_MAN"]
+flags = (
+    f"--smoke --gen-v2-root data/issue_1336/gen_smoke {tiny}".strip() if smoke else "--upload"
+)
+if smoke:
+    pairs3 = list(cm.SMOKE_OFFDIAG_PAIRS_V3)
+    corpora3 = list(cm.SMOKE_CORPORA_V2)
+else:
+    pairs3 = [(p["model"], p["text_source"]) for p in cm.cells_v3_for() if p["arm"] == "off"]
+    corpora3 = list(cm.V2_CORPORA)
+ordered = sorted(
+    ((i, j, c) for (i, j) in pairs3 for c in corpora3),
+    key=lambda t: 0 if t == ("dpo", "rlvr", "lmsys23k") else 1,
+)
+for i, j, c in ordered:
+    print(
+        f"off_{i}_{j}_{c}\tuv run python scripts/issue1336_extract_turnstore.py "
+        f"--v2 --model {i} --text-source {j} --corpus {c} --format chat "
+        f"--split-manifest {man} {flags}"
+    )
+' > "$jobs"
+    run_queue extract_offpolicy "$jobs"
+}
+
+_fit_one_unit_v3() { # $1=pooled unit id — direct G1'v3 fit on GPU 0 (queue-compatible done key)
+    local unit="$1" done_f jlog rc=0 extra
+    done_f="$DONE_DIR/fit_pool__${unit}.done"
+    [ -f "$done_f" ] && {
+        echo "[fit_pool] skip $unit (G1'v3 fit already complete)"
+        return 0
+    }
+    jlog="$JOB_LOG_DIR/fit_pool__${unit}.log"
+    # --matched-n-size is MANDATORY on the pooled path (plan v15 §6 names
+    # n=15,000; the Unit B-ii driver hard-asserts an explicit size).
+    extra="--matched-n --matched-n-size $MATCHED_N_POOLED_V3 --wave1-turnstore-dir $WAVE1_TS_DIR"
+    [ "$SMOKE" -eq 1 ] && extra="--smoke"
+    if [ "$NGPU" -gt 0 ]; then
+        # shellcheck disable=SC2086
+        CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1336_fit_cells.py --v3-pooled \
+            --cells "$unit" --out-dir "$OUT_DIR" $extra >> "$jlog" 2>&1 || rc=$?
+    else
+        # shellcheck disable=SC2086
+        uv run python scripts/issue1336_fit_cells.py --v3-pooled \
+            --cells "$unit" --out-dir "$OUT_DIR" $extra >> "$jlog" 2>&1 || rc=$?
+    fi
+    if [ "$rc" -ne 0 ]; then
+        echo "[fit_pool] FAILED $unit rc=$rc (log: $jlog)" >&2
+        tail -25 "$jlog" >&2 || true
+        return "$rc"
+    fi
+    touch "$done_f"
+}
+
+g1v3_halt() { # $1=verdict summary string
+    echo "[g1v3] KILL verdict — halting remaining v3 phases, persisting artifacts"
+    emit_signal "epm:progress" "g1v3" "issue1336 G1'v3 pooled rig-health kill gate fired: $1 — halting the pooled fits/ladder; artifacts persisted; see $OUT_DIR/gates_v3/g1v3_gate.json"
+    if declare -F phase_upload_v3 > /dev/null; then
+        phase_upload_v3 halted
+    elif [ "$SMOKE" -eq 0 ]; then
+        # Unit C's upload_v3 phase is not landed yet: persist the pooled
+        # preds here (per-cell turnstores already uploaded via --upload).
+        upload_preds_v2 pooled || echo "[upload] WARNING: pooled preds upload failed rc=$? on the G1'v3 halt path" >&2
+    fi
+    write_results_sentinel_v2 true
+    echo "[phase=done]"
+    exit 0
+}
+
+phase_fit_pool() {
+    # Phase FIT_pool (plan v15 §4): the 10 pooled (checkpoint x arm) ridge
+    # fit units via issue1336_fit_cells.py --v3-pooled (Unit B-ii). The
+    # G1'v3 rig-health kill gate is evaluated on the FIRST unit (RLVR
+    # on-policy) BEFORE the pooled-wide fit spend; that timed unit doubles
+    # as the §9 pilot (MEASURED 1-unit basis at production shape).
+    echo "[phase=fit_pool]"
+    ensure_recal_cal # _recal_block companion rides every pooled unit (plan §4)
+    _headroom_v2 fit_pool 20
+    [ -f "$V2_BARS" ] || {
+        emit_signal "epm:failure" "fit_pool" "failure_class: code — $V2_BARS missing: the G0'/G0v3 gates must run before any pooled fit (driver-enforced ordering)"
+        echo "[fit_pool] FATAL: missing $V2_BARS" >&2
+        exit 78
+    }
+    local g1unit="pooled_rlvr_arm_on" rc=0 t0 t1 g1_wall
+    t0=$(date +%s)
+    _fit_one_unit_v3 "$g1unit"
+    t1=$(date +%s)
+    g1_wall=$((t1 - t0))
+    uv run python scripts/issue1336_fit_cells.py --g1v3-check --out-dir "$OUT_DIR" || rc=$?
+    if [ "$rc" -eq 3 ]; then
+        if [ "$SMOKE" -eq 1 ] && [ "${EPM_1336_FORCE_G1V3_HALT:-0}" != "1" ]; then
+            # Smoke slices cannot carry the R2 bar — record the verdict, keep
+            # exercising the chain (#1345 gate-calibration rule); the halt
+            # BRANCH is exercised via EPM_1336_FORCE_G1V3_HALT=1.
+            echo "[g1v3] smoke: kill verdict recorded ($OUT_DIR/gates_v3/g1v3_gate.json); halt not enforced on the smoke slice"
+        else
+            g1v3_halt "pooled RLVR on-policy best held-out R2 below bar_v2 on BOTH the raw and recalibrated scales"
+        fi
+    elif [ "$rc" -ne 0 ]; then
+        echo "[fit_pool] g1v3-check failed rc=$rc" >&2
+        exit "$rc"
+    fi
+    # Pilot re-projection (plan §9 FIT_pool row is pilot-gated; measured
+    # 1-unit basis — the on-arm G1'v3 unit; off-arm units carry ~4x the rows,
+    # so the projection is a floor, not a ceiling).
+    if [ "$SMOKE" -eq 0 ]; then
+        G1_WALL="$g1_wall" NGPU_ENV="$NGPU" PLANNED="$FIT_POOL_PLANNED_WALL_H" \
+            OUT_ENV="$OUT_DIR" DONE_ENV="$DONE_DIR" registry_lines_v2 '
+import json
+from pathlib import Path
+
+wall = float(os.environ["G1_WALL"])
+ngpu = max(int(os.environ["NGPU_ENV"]), 1)
+planned = float(os.environ["PLANNED"])
+done_dir = Path(os.environ.get("DONE_ENV", "data/issue_1336/done"))
+seen = []
+for p in cm.cells_v3_for():
+    u = (p["model"], p["arm"])
+    if u not in seen:
+        seen.append(u)
+pend = [
+    (m, a) for m, a in seen if not (done_dir / f"fit_pool__pooled_{m}_arm_{a}.done").exists()
+]
+projected = wall * len(pend) / ngpu / 3600.0
+ratio = projected / planned if planned else float("inf")
+print(
+    f"[fit_pool] pilot: g1v3-unit wall={wall:.0f}s pending={len(pend)} "
+    f"projected={projected:.2f}h vs planned {planned}h (x{ratio:.2f})"
+)
+flag = Path(os.environ["OUT_ENV"]) / "gates_v3" / "fit_pool_pilot.json"
+flag.parent.mkdir(parents=True, exist_ok=True)
+flag.write_text(
+    json.dumps(
+        {
+            "component": "FIT_pool (10 pooled fit units)",
+            "pilot_unit_wall_s": wall,
+            "n_pending": len(pend),
+            "ngpu": ngpu,
+            "projected_wall_h": round(projected, 3),
+            "planned_wall_h": planned,
+            "ratio": round(ratio, 3),
+            "basis": (
+                "measured 1-unit pilot (G1v3 RLVR on-policy unit) through the "
+                "production entrypoint; off-arm units carry ~4x the rows"
+            ),
+        },
+        indent=2,
+    )
+    + "\n"
+)
+if ratio > 2.0:
+    print(f"[fit_pool] DEVIATION over 2x: projected {projected:.2f}h vs planned {planned}h")
+'
+        local ratio_line
+        ratio_line=$(uv run python -c "import json;d=json.load(open('$OUT_DIR/gates_v3/fit_pool_pilot.json'));print('OVER' if d['ratio']>2.0 else 'OK', d['planned_wall_h'], d['projected_wall_h'], d['ratio'])")
+        if [ "${ratio_line%% *}" = "OVER" ]; then
+            set -- $ratio_line
+            emit_signal "epm:compute-deviation" "fit_pool" "component: FIT_pool (10 pooled fit units)
+planned_wall_h: $2
+projected_wall_h: $3
+ratio: $4
+basis: measured 1-unit pilot (G1'v3 unit) through the production entrypoint at production shape"
+        fi
+    fi
+    if [ "$SMOKE" -eq 1 ]; then
+        # Smoke queue: the registered smoke unit set (one diagonal on-policy
+        # + one off-policy unit per cm.SMOKE_OFFDIAG_PAIRS_V3 pair) via ONE
+        # --cells smoke invocation — tiny units, no fan-out needed.
+        if [ ! -f "$DONE_DIR/fit_pool__smoke_units.done" ]; then
+            uv run python scripts/issue1336_fit_cells.py --v3-pooled --cells smoke \
+                --out-dir "$OUT_DIR" --smoke >> "$JOB_LOG_DIR/fit_pool__smoke_units.log" 2>&1
+            touch "$DONE_DIR/fit_pool__smoke_units.done"
+        fi
+        return 0
+    fi
+    # Full queue (per-unit done keys fit_pool__pooled_<m>_arm_<arm>; the
+    # G1'v3 unit skips).
+    local jobs="$DONE_DIR/jobs_fit_pool.tsv"
+    OUT_ENV="$OUT_DIR" W1_ENV="$WAVE1_TS_DIR" MATCHED_ENV="$MATCHED_N_POOLED_V3" registry_lines_v2 '
+out = os.environ["OUT_ENV"]
+extra = (
+    "--matched-n --matched-n-size "
+    + os.environ["MATCHED_ENV"]
+    + " --wave1-turnstore-dir "
+    + os.environ["W1_ENV"]
+)
+seen = []
+for p in cm.cells_v3_for():
+    u = (p["model"], p["arm"])
+    if u not in seen:
+        seen.append(u)
+units = sorted(seen, key=lambda u: 0 if u == ("rlvr", "on") else 1)
+for m, arm in units:
+    uid = f"pooled_{m}_arm_{arm}"
+    print(
+        f"{uid}\tuv run python scripts/issue1336_fit_cells.py --v3-pooled "
+        f"--cells {uid} --out-dir {out} {extra}"
+    )
+' > "$jobs"
+    run_queue fit_pool "$jobs"
+    upload_preds_v2 pooled || echo "[upload] WARNING: incremental preds_pooled_v3 upload failed rc=$? — Unit C's terminal upload_v3 retries fail-loud" >&2
+}
+
 run_phase() { # $1 = phase name
     if phase_done "$1"; then
         echo "[dispatch1336] phase $1 already complete — skipping"
@@ -2824,16 +3477,26 @@ c_stage | g0v2 | g2_parity | gen_v2 | gen_v2_nat | extract_v2 | fit_v2 | ladder 
     ;;
 all_v3)
     # Plan v15 chain (pooled-multidataset on-off-policy stage-transfer). This
-    # composite is INCREMENTAL against all_v2: it prepends c_pool (pooled
-    # split_manifest builder consumed by later v3 phases). Subsequent Unit B/C
-    # v3 phases (g0v3, extract_offpolicy, fit_pool, ladder_pool, ladder_cluster,
-    # upload_v3) will be added in later units; the c_pool block is the Unit A
-    # deliverable and can be exercised standalone via `c_pool`.
+    # composite is INCREMENTAL against all_v2: c_pool builds the pooled
+    # split_manifest (Unit A), the G0v3 + G2v2 gates are driver-enforced IN
+    # ORDER before the capture/fit spend, extract_offpolicy captures the 20
+    # off-diagonal cells teacher-forced on the pooled 20/80 union, and
+    # fit_pool runs the 10 pooled (checkpoint x arm) fit units behind the
+    # G1'v3 rig-health kill gate (Unit B). Unit C appends ladder_pool ->
+    # ladder_cluster -> upload_v3 (until then the results sentinel below
+    # stays halted=false interim). Reused round-3 inputs — wave-1 staging
+    # (c_stage), the committed gates_v2/cells_v2 outputs, the diagonal
+    # turnstores (extractor HF-resume) — are prerequisites asserted by the
+    # phases, not re-derived here.
     run_phase c_pool
+    run_phase g0v3
+    run_phase g2v2
+    run_phase extract_offpolicy
+    run_phase fit_pool
     write_results_sentinel_v2 false
     echo "[phase=done]"
     ;;
-c_pool)
+c_pool | g0v3 | g2v2 | extract_offpolicy | fit_pool)
     run_phase "$PHASE_ARG"
     echo "[dispatch1336] single-phase invocation of $PHASE_ARG complete (no terminal done line)"
     ;;
@@ -2878,7 +3541,7 @@ __phase_key)
     exit 0
     ;;
 *)
-    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit|all_v2|c_stage|g0v2|g2_parity|gen_v2|gen_v2_nat|extract_v2|fit_v2|ladder|upload_v2|all_v3|c_pool [--smoke]" >&2
+    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit|all_v2|c_stage|g0v2|g2_parity|gen_v2|gen_v2_nat|extract_v2|fit_v2|ladder|upload_v2|all_v3|c_pool|g0v3|g2v2|extract_offpolicy|fit_pool [--smoke]" >&2
     exit 2
     ;;
 esac
