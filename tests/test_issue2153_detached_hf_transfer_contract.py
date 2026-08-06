@@ -465,6 +465,38 @@ def test_timeout_unset_or_empty_is_off(tmp_path, monkeypatch):
     assert hub.stage_hub_prefix("org/data", "pfx", dest) == [dest / "pfx/a.json"]
 
 
+@pytest.mark.parametrize("value", ["0", "0.0", "-1"])
+def test_timeout_non_positive_is_off_not_instant_expiry(tmp_path, monkeypatch, value):
+    """A non-positive env value reads as OFF — never as a 0 s fence that
+    hard-exits every call. '0' is how a caller spells 'disabled' (#2153 code
+    review, Minor 1); armed-at-zero would rc-87 the whole staging path."""
+    import time as _time
+
+    def fake_exit(rc):  # pragma: no cover - must never run
+        raise AssertionError(f"os._exit({rc}) reached with the timeout set to {value!r}")
+
+    def slow_stage(
+        repo_id,
+        path_in_repo,
+        target,
+        *,
+        repo_type="dataset",
+        revision=None,
+        token=None,
+        overwrite=False,
+    ):
+        _time.sleep(0.05)
+        return Path(target)
+
+    monkeypatch.setattr("huggingface_hub.HfApi", _FakeApi)
+    monkeypatch.setattr(hub, "list_hf_files_under_path", lambda *a, **k: ["pfx/a.json"])
+    monkeypatch.setattr(hub, "stage_hub_file", slow_stage)
+    monkeypatch.setattr(hub.os, "_exit", fake_exit)
+    monkeypatch.setenv("EPM_HF_STAGE_TIMEOUT_S", value)
+    dest = tmp_path / "dest"
+    assert hub.stage_hub_prefix("org/data", "pfx", dest) == [dest / "pfx/a.json"]
+
+
 def test_per_file_failure_propagates_never_hard_exits(tmp_path, monkeypatch):
     """A failed file PROPAGATES (the existing fail-loud contract) even with
     the timeout armed — the hard-exit path fires ONLY on the iterator's

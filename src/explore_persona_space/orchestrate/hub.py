@@ -2312,8 +2312,9 @@ def stage_hub_prefix(
       would reproduce the #1739 0-byte-log signature for up to ~30 min. An
       N-files line follows the listing, then one flushed progress line per
       completed file (the ``[<phase>] unit k/N <key> elapsed=<s>s`` shape).
-    - ``EPM_HF_STAGE_TIMEOUT_S`` (unset/empty = OFF — no existing caller changes
-      behavior) arms a WHOLE-CALL wall budget over the download pool. On expiry
+    - ``EPM_HF_STAGE_TIMEOUT_S`` (unset/empty/non-positive = OFF — no existing
+      caller changes behavior; ``0`` is how a caller spells "disabled", never a
+      0 s fence) arms a WHOLE-CALL wall budget over the download pool. On expiry
       the helper flushes a stalled-file diagnostic and HARD-EXITS via
       ``os._exit(STAGE_HUB_PREFIX_TIMEOUT_RC)`` — see the constant's comment for
       why a raise cannot produce an rc when a worker is parked in native
@@ -2324,6 +2325,10 @@ def stage_hub_prefix(
 
     timeout_env = os.environ.get("EPM_HF_STAGE_TIMEOUT_S", "").strip()
     stage_timeout = float(timeout_env) if timeout_env else None
+    if stage_timeout is not None and stage_timeout <= 0:
+        # Non-positive reads as OFF, never as an instant-expiry budget: "0" is how a
+        # caller spells "disabled", and a 0 s fence would hard-exit every staging call.
+        stage_timeout = None
     t0 = time.monotonic()
     # Entry line BEFORE any network call (#2153) — see docstring.
     print(
