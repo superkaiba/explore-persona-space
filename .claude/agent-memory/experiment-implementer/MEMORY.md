@@ -15,6 +15,7 @@
 - [GCV lambda interpolation degeneracy](feedback_gcv_lambda_interpolation_degeneracy.md) — n_tr ≲ D: GCV → grid-min λ, R² −2..−46 (#1335, #1345)
 - [rule-24 surgical re-judge recipe](feedback_rule24_surgical_rejudge_recipe.md) — recover 529 draws from judge_raw via (#1315)
 - [Hub transport-retry family (read + upload)](feedback_hub_queue_full_429_and_localentrynotfound_mask.md) — 429 HEAD masks as LocalEntryNotFoundError; upload-retry sibling in entry (#1345 #1335 #1315 #542)
+- [revision=None splits paired hub files across snapshot dirs](feedback_hf_revision_none_paired_file_snapshot_split.md) — pin main→sha ONCE per run + fetch-seam adjacency guard; multi-path smoke covers each grain (#2061)
 - [free-helper caller-binding leak vs drain-waits](feedback_free_helper_caller_binding_drain_wait.md) — `del` in a callee frees nothing; rebind `x = (#1333)
 - [Hub-fenced-branch scratch-prefix live probe](feedback_hub_fenced_branch_scratch_prefix_probe.md) — execute fenced upload/verify/stage branches (#1769)
 - [Smoke coverage parity (width, class×regime, branches)](feedback_smoke_ft_zero3_width_parity.md) — production width; ≥1 cell per class×regime; drive production ternary branches (#1315 #1090 #825 #1586)
