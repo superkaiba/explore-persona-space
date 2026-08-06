@@ -993,6 +993,7 @@ def _aligned_donor_raw(
     the returned payload share ONE computation per candidate donor.
     """
     assert vec_type == "A", vec_type
+    assert payload_kind in ("delta", "state"), payload_kind
     raw_delta, raw_state, _ = _pair_payload(bank, donor, slot, vec_type)
     raw = raw_state if payload_kind == "state" else raw_delta
     return align_right(raw, recipient.shape[0])
