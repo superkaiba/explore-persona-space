@@ -7806,8 +7806,8 @@
     "2007": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2007",
-      "status": "reviewing",
+      "path": "tasks/completed/2007",
+      "status": "completed",
       "title": "daily-fix: worktree_audit gc-wedge tier (git prune + gc.log)"
     },
     "2008": {
