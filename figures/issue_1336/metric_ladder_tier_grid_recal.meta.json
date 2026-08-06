@@ -1,0 +1,1523 @@
+{
+  "commit": "f02bb56eb9",
+  "created": "2026-08-06T16:19:37Z",
+  "figsize": [
+    13.5,
+    6.4
+  ],
+  "points": [
+    {
+      "x": -0.29750000000000004,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.3644707452066198,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.7024999999999999,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.370392671679057,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.7025,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.3636652326425658,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.7025,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.3844425306553887,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.7025,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.3722382747271664,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.7025,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.3660271418521682,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.7025,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.3864395748603382,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": -0.29750000000000004,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.04825189779568462,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.7024999999999999,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.03468192502766665,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.7025,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.02873804487807352,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.7025,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.04141061665688939,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.7025,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.28813109558229955,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.7025,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.36306638371280797,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.7025,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.33999346850609813,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": -0.21250000000000002,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.48723390117936805,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.7875,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.48486149794808886,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.7875,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.4770342874321356,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.7875,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5031175387211061,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.7875,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.48568698682658595,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.7875,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.47926459095793394,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.7875,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5046216431408863,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.21250000000000002,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.10908451725819046,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.7875,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.09061516851175422,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.7875,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.08136196251899208,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.7875,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.0963745485964077,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.7875,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.39054259799773217,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.7875,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.47228842713214114,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.7875,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.4511239777451891,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.48821684815778865,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.8725,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5606371645159582,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.8725,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5472575129138101,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.8725,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.561890230612681,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.8725,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5599542688525675,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.8725,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5477013991180297,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.8725,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5618227833203464,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.0948957470402132,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.8725,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.05979832113665662,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.8725,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.047835692262416574,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.8725,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.0597832732615905,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.8725,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.39537613399103055,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.8725,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5220853240722324,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.8725,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5161054005979161,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5725062377046581,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.9575,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.6054580826495377,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.9575,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5513671260663252,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.9575,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5825672976883101,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.9575,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.6235714469796514,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.9575,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5545659683744815,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.9575,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5850718669736508,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.17628546525380262,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.9575,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.1423861477682452,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.9575,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.1261797818545457,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.9575,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.10232982852913164,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.9575,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5389583025661799,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.9575,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5232596738143404,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.9575,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.38348387062962197,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5464030269543635,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.564970403680918,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5633715070260739,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5764535306055742,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5769585011255549,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5716670390693055,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5835948746454931,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.31610410130055344,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.27110229443042744,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.259208419593539,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.25885586396935145,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5227318505460504,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5653311810845234,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0425,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5180258694112356,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5874675379268435,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5882823197433953,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5969367874871678,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5903896538149982,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5917648849939857,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5975486213006879,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5944669497899933,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.33823917508298773,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.30298739689336107,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.306004709287792,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.317029233026907,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.549790175582886,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5926111309833804,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.1275,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5727792809677232,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.21250000000000002,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5767800598035847,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.2125,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.6054721444726592,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.2125,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.6103507984483492,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.2125,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.6042513203311417,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.2125,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.6066865051794007,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.2125,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.6093633689007846,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.2125,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.6026497186004414,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.21250000000000002,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.34983808445139686,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.2125,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.3067261586025736,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.2125,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.3031697409548877,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.2125,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.3202747871767625,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.2125,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5544527970429403,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.2125,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.6038684095164552,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.2125,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5823923575063878,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.29750000000000004,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5436351903931946,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.2975,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.57920019977563,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.2975,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5852924500301196,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.2975,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5849686962474128,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.2975,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5813097477804781,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.2975,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5840011725789946,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.2975,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5841747609915913,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.29750000000000004,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.2985920361776091,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.2975,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.26375364161694814,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.2975,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.26191114300975904,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.2975,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.28312404662992907,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.2975,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5244757177856243,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.2975,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.57795672319695,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.2975,
+      "held-out R\u00b2 on target pairs (per-dim recalibrated)": 0.5614847260400724,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": -0.29750000000000004,
+      "y": 0.3644707452066198,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.7024999999999999,
+      "y": 0.370392671679057,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.7025,
+      "y": 0.3636652326425658,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.7025,
+      "y": 0.3844425306553887,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.7025,
+      "y": 0.3722382747271664,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.7025,
+      "y": 0.3660271418521682,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.7025,
+      "y": 0.3864395748603382,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": -0.29750000000000004,
+      "y": 0.10162006228200549,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.7024999999999999,
+      "y": 0.09713908887726241,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.7025,
+      "y": 0.09605837730586808,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.7025,
+      "y": 0.10145686399674869,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.7025,
+      "y": 0.2922116302902963,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.7025,
+      "y": 0.36457324103056055,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.7025,
+      "y": 0.3507473116756006,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": -0.21250000000000002,
+      "y": 0.48723390117936805,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.7875,
+      "y": 0.48486149794808886,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.7875,
+      "y": 0.4770342874321356,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.7875,
+      "y": 0.5031175387211061,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.7875,
+      "y": 0.48568698682658595,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.7875,
+      "y": 0.47926459095793394,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.7875,
+      "y": 0.5046216431408863,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": -0.21250000000000002,
+      "y": 0.15633204028618597,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.7875,
+      "y": 0.14611554672003613,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.7875,
+      "y": 0.13880791507701729,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.7875,
+      "y": 0.1572623784865429,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.7875,
+      "y": 0.39455878972101843,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.7875,
+      "y": 0.47364830491334664,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.7875,
+      "y": 0.4610832205309937,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": -0.1275,
+      "y": 0.48821684815778865,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.8725,
+      "y": 0.5606371645159582,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.8725,
+      "y": 0.5472575129138101,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.8725,
+      "y": 0.561890230612681,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.8725,
+      "y": 0.5599542688525675,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.8725,
+      "y": 0.5477013991180297,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5.8725,
+      "y": 0.5618227833203464,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": -0.1275,
+      "y": 0.10888815360028725,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.8725,
+      "y": 0.10620011090881365,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.8725,
+      "y": 0.10017685395773135,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.8725,
+      "y": 0.10066020044945911,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.8725,
+      "y": 0.389844553553616,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.8725,
+      "y": 0.5311356526251287,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.8725,
+      "y": 0.5307330209761096,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": -0.0425,
+      "y": 0.5725062377046581,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.9575,
+      "y": 0.6054580826495377,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.9575,
+      "y": 0.5513671260663252,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.9575,
+      "y": 0.5825672976883101,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.9575,
+      "y": 0.6235714469796514,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.9575,
+      "y": 0.5545659683744815,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.9575,
+      "y": 0.5850718669736508,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": -0.0425,
+      "y": 0.15184854190047015,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.9575,
+      "y": 0.12232924608115758,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.9575,
+      "y": 0.10644742142861996,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.9575,
+      "y": 0.08471415414495098,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.9575,
+      "y": 0.5187521219475792,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.9575,
+      "y": 0.5101590065994495,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 5.9575,
+      "y": 0.3462422803326064,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0425,
+      "y": 0.5464030269543635,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0425,
+      "y": 0.564970403680918,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0425,
+      "y": 0.5633715070260739,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0425,
+      "y": 0.5764535306055742,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0425,
+      "y": 0.5769585011255549,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 5.0425,
+      "y": 0.5716670390693055,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 6.0425,
+      "y": 0.5835948746454931,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.0425,
+      "y": 0.2297375769337403,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0425,
+      "y": 0.19992699159146898,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0425,
+      "y": 0.19379198004377962,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0425,
+      "y": 0.20045842151877458,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0425,
+      "y": 0.5028858833388146,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 5.0425,
+      "y": 0.5574634502441942,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 6.0425,
+      "y": 0.5083308252124684,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.1275,
+      "y": 0.5874675379268435,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.1275,
+      "y": 0.5882823197433953,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.1275,
+      "y": 0.5969367874871678,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.1275,
+      "y": 0.5903896538149982,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.1275,
+      "y": 0.5917648849939857,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 5.1275,
+      "y": 0.5975486213006879,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 6.1275,
+      "y": 0.5944669497899933,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.1275,
+      "y": 0.2548470056996184,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.1275,
+      "y": 0.23516508866902786,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.1275,
+      "y": 0.23755849898088433,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.1275,
+      "y": 0.25379665928386497,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.1275,
+      "y": 0.5368509326492054,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 5.1275,
+      "y": 0.5904672914759572,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 6.1275,
+      "y": 0.5768827466514279,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.21250000000000002,
+      "y": 0.5767800598035847,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.2125,
+      "y": 0.6054721444726592,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.2125,
+      "y": 0.6103507984483492,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.2125,
+      "y": 0.6042513203311417,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.2125,
+      "y": 0.6066865051794007,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 5.2125,
+      "y": 0.6093633689007846,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 6.2125,
+      "y": 0.6026497186004414,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.21250000000000002,
+      "y": 0.2833731930668667,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.2125,
+      "y": 0.2622896243901701,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.2125,
+      "y": 0.26178954584901437,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.2125,
+      "y": 0.27874388464532607,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.2125,
+      "y": 0.5422323023875093,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 5.2125,
+      "y": 0.6043094648512815,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 6.2125,
+      "y": 0.5839645907712789,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 0.29750000000000004,
+      "y": 0.5436351903931946,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.2975,
+      "y": 0.57920019977563,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.2975,
+      "y": 0.5852924500301196,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.2975,
+      "y": 0.5849686962474128,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.2975,
+      "y": 0.5813097477804781,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 5.2975,
+      "y": 0.5840011725789946,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 6.2975,
+      "y": 0.5841747609915913,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 0.29750000000000004,
+      "y": 0.2741974664251914,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1.2975,
+      "y": 0.2529911474543408,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.2975,
+      "y": 0.2524214858247128,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 3.2975,
+      "y": 0.2717434913444934,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.2975,
+      "y": 0.5231225266514727,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 5.2975,
+      "y": 0.5795273537597089,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 6.2975,
+      "y": 0.5645740419896191,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    }
+  ],
+  "n_series": 32,
+  "total_points": 224,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Layer 30, Llama-3.1-8B Tulu ladder. One point per corpus; y is linear over the plotted range. Hollow marker = GSM8K test, the n<d companion cell.\nAll arms are on-policy \u2014 each stage answers in its own words \u2014 so every point mixes representation change with answer-distribution change."
+    ],
+    "axes": [
+      {
+        "title_left": "Tier 0 \u2014 direct transfer (no correction)",
+        "ylabel": "held-out R\u00b2 on target pairs (per-dim recalibrated)",
+        "annotations": [
+          "apply stage i's map to stage j's contexts unchanged"
+        ],
+        "xticklabels": [
+          "base \u2192 SFT",
+          "base \u2192 DPO",
+          "base \u2192 RLVR",
+          "base \u2192 longer RLVR",
+          "SFT \u2192 DPO",
+          "DPO \u2192 RLVR",
+          "DPO \u2192 longer RLVR"
+        ],
+        "yticklabels": [
+          "0.6",
+          "0.4",
+          "0.2",
+          "0"
+        ]
+      },
+      {
+        "title_left": "Tier 6 \u2014 linear reparameterization of contexts",
+        "annotations": [
+          "refit contexts through a learned linear map A, then apply stage i's map: \u0177 = W_i(A x)"
+        ],
+        "xticklabels": [
+          "base \u2192 SFT",
+          "base \u2192 DPO",
+          "base \u2192 RLVR",
+          "base \u2192 longer RLVR",
+          "SFT \u2192 DPO",
+          "DPO \u2192 RLVR",
+          "DPO \u2192 longer RLVR"
+        ]
+      }
+    ],
+    "series": [
+      "GSM8K test",
+      "GSM8K train",
+      "MATH",
+      "IF-constraints",
+      "UltraFeedback",
+      "Tulu-SFT mix",
+      "LMSYS chat",
+      "LMSYS natural."
+    ]
+  }
+}

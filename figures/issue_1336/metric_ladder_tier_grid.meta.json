@@ -1,0 +1,1528 @@
+{
+  "commit": "f02bb56eb9",
+  "created": "2026-08-06T16:19:35Z",
+  "figsize": [
+    13.5,
+    6.4
+  ],
+  "points": [
+    {
+      "x": -0.29750000000000004,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.36674285771555526,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.7024999999999999,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.37283911258757707,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.7025,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.3664291102026641,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.7025,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.3867412070191215,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.7025,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.37474563808953587,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.7025,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.3684552707536515,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.7025,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.3887283737361473,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": -0.29750000000000004,
+      "held-out R\u00b2 on target pairs (raw pooled)": -1.9032912315958845,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.7024999999999999,
+      "held-out R\u00b2 on target pairs (raw pooled)": -3.1407855815559076,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.7025,
+      "held-out R\u00b2 on target pairs (raw pooled)": -3.5632381589259152,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.7025,
+      "held-out R\u00b2 on target pairs (raw pooled)": -2.7949553486640673,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.7025,
+      "held-out R\u00b2 on target pairs (raw pooled)": -0.09324316623912043,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.7025,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.3430700168878096,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.7025,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.1829103198112525,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": -0.21250000000000002,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.48751519892239736,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.7875,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.48509141656834565,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.7875,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.4773106702704819,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.7875,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5033216410446997,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.7875,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.4859167283921315,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.7875,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.4795436555896746,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.7875,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5047930103073692,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.21250000000000002,
+      "held-out R\u00b2 on target pairs (raw pooled)": -2.322214394985986,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.7875,
+      "held-out R\u00b2 on target pairs (raw pooled)": -3.7807615797515783,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.7875,
+      "held-out R\u00b2 on target pairs (raw pooled)": -4.1575663445628415,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.7875,
+      "held-out R\u00b2 on target pairs (raw pooled)": -3.210849885786848,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.7875,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.0438531580328515,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.7875,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.4508807456572239,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.7875,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.3215220854980291,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.4885350267509556,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.8725,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5609068166051785,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.8725,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5476107572536445,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.8725,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5622132095100953,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.8725,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5602814796416865,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.8725,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5480116376428715,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.8725,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5621704775897569,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": -0.7257492795996803,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.8725,
+      "held-out R\u00b2 on target pairs (raw pooled)": -3.574532701427337,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.8725,
+      "held-out R\u00b2 on target pairs (raw pooled)": -4.561656594091229,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.8725,
+      "held-out R\u00b2 on target pairs (raw pooled)": -3.581508710355605,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.8725,
+      "held-out R\u00b2 on target pairs (raw pooled)": -0.1810582785990067,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.8725,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.45914774185010543,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.8725,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.39958731061258534,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5719443203880382,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.9575,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.6046372717816131,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.9575,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5513692355604354,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.9575,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5824176876508448,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.9575,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.6229732401726675,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.9575,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5546743223912128,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.9575,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5849858632436125,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": -0.022341970138937794,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.9575,
+      "held-out R\u00b2 on target pairs (raw pooled)": -0.32951414284452407,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.9575,
+      "held-out R\u00b2 on target pairs (raw pooled)": -0.40953461397453883,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.9575,
+      "held-out R\u00b2 on target pairs (raw pooled)": -0.21942325624576564,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.9575,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.4790812743025711,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.9575,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5118941611884572,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.9575,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.32916715736111435,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5467537849163495,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5652653274153661,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.56367381553628,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5767494243101213,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.577169540249886,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5718333438108746,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5838308637689109,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.22118481132597645,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.04111935496168451,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.0169044867170145,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.04987424566872245,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.46681742855040975,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5627237647025923,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0425,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.4996946156668648,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5877445796935119,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5885639062500374,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5971944837148677,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5906744901985771,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5920278799138807,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5977952226084347,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5947505502483937,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.227908100485542,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.06089355271993324,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.04974217234279832,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.09136311105336437,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.4967725096583766,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5901986559311156,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.1275,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5546798006542296,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.21250000000000002,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5768163166372693,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.2125,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.6055901074012833,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.2125,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.6104564893051007,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.2125,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.6044010961573183,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.2125,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.6067726609064066,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.2125,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.6094302835079232,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.2125,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.6027677996841987,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.21250000000000002,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.23262723901354943,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.2125,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.015618311101788573,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.2125,
+      "held-out R\u00b2 on target pairs (raw pooled)": -0.0037818043163662107,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.2125,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.0442394792660622,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.2125,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.4971418655757155,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.2125,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.6014261209741116,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.2125,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5681008909935035,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.29750000000000004,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5434958865307488,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.2975,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5792232500063627,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.2975,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5852972293550394,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.2975,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5850756492923336,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.2975,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5812844177333317,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.2975,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5839366625650287,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.2975,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5842311123415107,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.29750000000000004,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.16391865098677116,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.2975,
+      "held-out R\u00b2 on target pairs (raw pooled)": -0.08392651785722927,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.2975,
+      "held-out R\u00b2 on target pairs (raw pooled)": -0.10250561305574202,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.2975,
+      "held-out R\u00b2 on target pairs (raw pooled)": -0.03987041515060419,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.2975,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.4467940977284126,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.2975,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5752939269368496,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.2975,
+      "held-out R\u00b2 on target pairs (raw pooled)": 0.5464919702670245,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": -0.29750000000000004,
+      "y": 0.36674285771555526,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.7024999999999999,
+      "y": 0.37283911258757707,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.7025,
+      "y": 0.3664291102026641,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.7025,
+      "y": 0.3867412070191215,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.7025,
+      "y": 0.37474563808953587,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.7025,
+      "y": 0.3684552707536515,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.7025,
+      "y": 0.3887283737361473,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": -0.29750000000000004,
+      "y": 0.06882943563134336,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.7024999999999999,
+      "y": 0.0527061487531455,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.7025,
+      "y": 0.05510096246892826,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.7025,
+      "y": 0.04813797794961583,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.7025,
+      "y": 0.2673944830530087,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.7025,
+      "y": 0.3661863209803998,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.7025,
+      "y": 0.3509589410643634,
+      "series": "GSM8K test",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": -0.21250000000000002,
+      "y": 0.48751519892239736,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.7875,
+      "y": 0.48509141656834565,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.7875,
+      "y": 0.4773106702704819,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.7875,
+      "y": 0.5033216410446997,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.7875,
+      "y": 0.4859167283921315,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.7875,
+      "y": 0.4795436555896746,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.7875,
+      "y": 0.5047930103073692,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": -0.21250000000000002,
+      "y": 0.1010040161736172,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.7875,
+      "y": 0.049051434490750334,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.7875,
+      "y": 0.029157647397659914,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.7875,
+      "y": 0.07101281673586424,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.7875,
+      "y": 0.3597765406197527,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.7875,
+      "y": 0.4733015498634662,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.7875,
+      "y": 0.4591512840149595,
+      "series": "GSM8K train",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": -0.1275,
+      "y": 0.4885350267509556,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.8725,
+      "y": 0.5609068166051785,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.8725,
+      "y": 0.5476107572536445,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.8725,
+      "y": 0.5622132095100953,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.8725,
+      "y": 0.5602814796416865,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.8725,
+      "y": 0.5480116376428715,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5.8725,
+      "y": 0.5621704775897569,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": -0.1275,
+      "y": 0.021052388367134856,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.8725,
+      "y": -0.1222240329747395,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.8725,
+      "y": -0.184951830866388,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.8725,
+      "y": -0.12855907502257757,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.8725,
+      "y": 0.2245446198461457,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.8725,
+      "y": 0.5255357776683545,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.8725,
+      "y": 0.5296365762058811,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": -0.0425,
+      "y": 0.5719443203880382,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.9575,
+      "y": 0.6046372717816131,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.9575,
+      "y": 0.5513692355604354,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.9575,
+      "y": 0.5824176876508448,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.9575,
+      "y": 0.6229732401726675,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.9575,
+      "y": 0.5546743223912128,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.9575,
+      "y": 0.5849858632436125,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": -0.0425,
+      "y": 0.11734520399660331,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.9575,
+      "y": 0.04152243324170313,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.9575,
+      "y": 0.01747128612419102,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.9575,
+      "y": 0.023120495448011202,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.9575,
+      "y": 0.5034110074496612,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.9575,
+      "y": 0.5091334605875796,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 5.9575,
+      "y": 0.3416012938526457,
+      "series": "IF-constraints",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0425,
+      "y": 0.5467537849163495,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0425,
+      "y": 0.5652653274153661,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0425,
+      "y": 0.56367381553628,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0425,
+      "y": 0.5767494243101213,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0425,
+      "y": 0.577169540249886,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 5.0425,
+      "y": 0.5718333438108746,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 6.0425,
+      "y": 0.5838308637689109,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.0425,
+      "y": 0.20826840052324314,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0425,
+      "y": 0.14570421078867535,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0425,
+      "y": 0.13771645870479687,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0425,
+      "y": 0.15445219281317935,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0425,
+      "y": 0.4847917904128509,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 5.0425,
+      "y": 0.557555874589158,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 6.0425,
+      "y": 0.5074335220434089,
+      "series": "UltraFeedback",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.1275,
+      "y": 0.5877445796935119,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.1275,
+      "y": 0.5885639062500374,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.1275,
+      "y": 0.5971944837148677,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.1275,
+      "y": 0.5906744901985771,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.1275,
+      "y": 0.5920278799138807,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 5.1275,
+      "y": 0.5977952226084347,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 6.1275,
+      "y": 0.5947505502483937,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.1275,
+      "y": 0.22867757296921132,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.1275,
+      "y": 0.17377284936785742,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.1275,
+      "y": 0.1722385064448193,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.1275,
+      "y": 0.19732313892789122,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.1275,
+      "y": 0.5177357841290442,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 5.1275,
+      "y": 0.590535750277041,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 6.1275,
+      "y": 0.5760749176607721,
+      "series": "Tulu-SFT mix",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.21250000000000002,
+      "y": 0.5768163166372693,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.2125,
+      "y": 0.6055901074012833,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.2125,
+      "y": 0.6104564893051007,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.2125,
+      "y": 0.6044010961573183,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.2125,
+      "y": 0.6067726609064066,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 5.2125,
+      "y": 0.6094302835079232,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 6.2125,
+      "y": 0.6027677996841987,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.21250000000000002,
+      "y": 0.24408913912659003,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.2125,
+      "y": 0.17219936147171178,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.2125,
+      "y": 0.16922717336784754,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.2125,
+      "y": 0.2067555362841783,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.2125,
+      "y": 0.5182287824102375,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 5.2125,
+      "y": 0.6042676846557707,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 6.2125,
+      "y": 0.5832107929209709,
+      "series": "LMSYS chat",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 0.29750000000000004,
+      "y": 0.5434958865307488,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.2975,
+      "y": 0.5792232500063627,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.2975,
+      "y": 0.5852972293550394,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.2975,
+      "y": 0.5850756492923336,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.2975,
+      "y": 0.5812844177333317,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 5.2975,
+      "y": 0.5839366625650287,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 6.2975,
+      "y": 0.5842311123415107,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 0.29750000000000004,
+      "y": 0.247124529844157,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1.2975,
+      "y": 0.1895114588931791,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.2975,
+      "y": 0.1870460465797973,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 3.2975,
+      "y": 0.22426445112692006,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.2975,
+      "y": 0.5017956069629945,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 5.2975,
+      "y": 0.5794302867751534,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 6.2975,
+      "y": 0.5637281973593284,
+      "series": "LMSYS natural.",
+      "_kind": "line",
+      "_group": 31
+    }
+  ],
+  "n_series": 32,
+  "total_points": 224,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Layer 30, Llama-3.1-8B Tulu ladder. One point per corpus; y is symlog below -1 (worst transfer -4.56). Hollow marker = GSM8K test, the n<d companion cell.\nAll arms are on-policy \u2014 each stage answers in its own words \u2014 so every point mixes representation change with answer-distribution change."
+    ],
+    "axes": [
+      {
+        "title_left": "Tier 0 \u2014 direct transfer (no correction)",
+        "ylabel": "held-out R\u00b2 on target pairs (raw pooled)",
+        "annotations": [
+          "apply stage i's map to stage j's contexts unchanged"
+        ],
+        "xticklabels": [
+          "base \u2192 SFT",
+          "base \u2192 DPO",
+          "base \u2192 RLVR",
+          "base \u2192 longer RLVR",
+          "SFT \u2192 DPO",
+          "DPO \u2192 RLVR",
+          "DPO \u2192 longer RLVR"
+        ],
+        "yticklabels": [
+          "0.6",
+          "0.4",
+          "0.2",
+          "0",
+          "-0.25",
+          "-0.5",
+          "-1",
+          "-2",
+          "-4"
+        ]
+      },
+      {
+        "title_left": "Tier 6 \u2014 linear reparameterization of contexts",
+        "annotations": [
+          "refit contexts through a learned linear map A, then apply stage i's map: \u0177 = W_i(A x)"
+        ],
+        "xticklabels": [
+          "base \u2192 SFT",
+          "base \u2192 DPO",
+          "base \u2192 RLVR",
+          "base \u2192 longer RLVR",
+          "SFT \u2192 DPO",
+          "DPO \u2192 RLVR",
+          "DPO \u2192 longer RLVR"
+        ]
+      }
+    ],
+    "series": [
+      "GSM8K test",
+      "GSM8K train",
+      "MATH",
+      "IF-constraints",
+      "UltraFeedback",
+      "Tulu-SFT mix",
+      "LMSYS chat",
+      "LMSYS natural."
+    ]
+  }
+}
