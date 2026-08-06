@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:af9dd26d8299
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-08-02T07:14:26Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-08-01 problem sweep (route 2): The bare-python-pipe PreToolUse
