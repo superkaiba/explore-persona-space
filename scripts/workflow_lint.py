@@ -587,8 +587,39 @@ Behaviours:
   outside ANY file lint (this check covers the committed-code subclass);
   unscoped ``list_repo_files_complete`` / ``list_repo_tree(recursive=True)``
   calls without ``path_in_repo`` (kwarg-presence analysis = high-FP);
-  ``snapshot_download``; ``getattr`` evasion; ``.sh`` heredocs;
-  ``HfFileSystem.ls()``.
+  ``getattr`` evasion; ``.sh`` heredocs; ``HfFileSystem.ls()``. (Data-repo
+  ``snapshot_download(allow_patterns=...)`` — formerly a named residual
+  here — is covered by ``--check-snapshot-download-allow-patterns``, #2153.)
+* ``--check-snapshot-download-allow-patterns`` (also bundled into the
+  no-flags default run): AST-walk every ``*.py`` under ``scripts/`` and
+  ``src/explore_persona_space/`` and FAIL on any ``snapshot_download`` CALL
+  carrying an ``allow_patterns=`` kwarg AND targeting the data repo — a
+  ``repo_type="dataset"`` str constant, or a ``repo_id`` str constant
+  containing :data:`SNAPSHOT_DATA_REPO_SUBSTRING`
+  (:func:`_snapshot_download_data_repo_hits`; asname-aware imported-Name +
+  any-receiver Attribute call legs). ``allow_patterns`` filters CLIENT-side
+  AFTER fetching the manifest for the ENTIRE repo (hub 0.36.2), so against
+  the ~1M-file data repo the enumeration is effectively unbounded (#833
+  r7a: 40+ min, zero files) and presents as the #1739 silent-hang
+  signature (0-byte log, empty target, near-zero CPU; two detached jobs,
+  ~90 min lost). Prose alone failed — #1739 reached for it at BOTH hang
+  sites — and the sibling ``--check-bare-list-repo-files`` residual list
+  had already written this gap down; this check mechanizes it. Fix:
+  ``hub.stage_hub_prefix`` (scoped listing + per-file staging, #1402) or
+  ``api.list_repo_tree(path_in_repo=<prefix>)`` + per-file
+  ``hf_hub_download``. A genuinely-correct SMALL-dataset-repo pull waives
+  with ``# SNAPSHOT_ALLOW_PATTERNS_EXEMPT: <reason>`` (reason >=
+  :data:`SNAPSHOT_ALLOW_PATTERNS_WAIVER_MIN_REASON_CHARS` chars).
+  Historical files frozen at #2153 implement time are snapshot-exempt
+  (:data:`SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT`; regenerate with
+  ``--regen-snapshot-allow-patterns-snapshot``, the #1568 idiom). Named
+  residuals NOT covered: a repo_id VARIABLE resolving to the data repo at
+  runtime (constant-propagation = high-FP); a ``**kwargs`` splat carrying
+  ``allow_patterns``; bare ``snapshot_download`` without ``allow_patterns``
+  (explicit whole-repo intent — the #833 prose governs); ``getattr``
+  evasion; never-committed ad-hoc ``python -c`` one-liners (structurally
+  outside ANY file lint — committed code, inline-round payloads included,
+  gains the durable backstop).
 * ``--check-no-literal-round-marker-versions`` (also bundled into the no-flags
   default run): FAIL on a literal ``v1`` posting instruction for a
   round-versioned marker kind (``epm:experiment-implementation`` /
@@ -9123,8 +9154,10 @@ def check_bare_list_repo_files(*, repo_root: Path | None = None) -> list[str]:
     ``list_repo_files_complete(...)`` / ``list_repo_tree(recursive=True)``
     calls without ``path_in_repo`` (kwarg-presence analysis on the helpers =
     high-FP; their own docstrings + the #833 gotcha govern);
-    ``snapshot_download``; ``getattr(api, "list_repo_files")`` evasion;
-    ``.sh`` heredocs; ``HfFileSystem.ls()``.
+    ``getattr(api, "list_repo_files")`` evasion; ``.sh`` heredocs;
+    ``HfFileSystem.ls()``. Data-repo ``snapshot_download(allow_patterns=...)``
+    — formerly a residual here — is covered by
+    :func:`check_snapshot_download_allow_patterns` (#2153).
 
     ``repo_root`` is a unit-test override hook; production callers pass
     None. Bundled into the no-flags default run. Snapshot staleness (the
@@ -9165,6 +9198,251 @@ def regen_list_repo_files_snapshot(*, repo_root: Path | None = None) -> int:
     sys.stdout.write("    }\n)\n")
     added = sorted(set(offenders) - LIST_REPO_FILES_FROZEN_SNAPSHOT)
     removed = sorted(LIST_REPO_FILES_FROZEN_SNAPSHOT - set(offenders))
+    sys.stderr.write(
+        f"# regen vs compiled-in constant: +{len(added)} added, -{len(removed)} removed\n"
+    )
+    for rel in added:
+        sys.stderr.write(f"# + {rel}  (NEW offender — scope/waive it if this round created it)\n")
+    for rel in removed:
+        sys.stderr.write(f"# - {rel}  (no longer flags: deleted, scoped, or waived)\n")
+    return 0
+
+
+# --- `--check-snapshot-download-allow-patterns` (#2153): data-repo manifest wedge ---
+# `snapshot_download(allow_patterns=...)` filters CLIENT-side AFTER fetching
+# the manifest for the ENTIRE repo (hub 0.36.2): against the ~1M-file data
+# repo the enumeration is effectively unbounded (#833 r7a: 40+ min, zero
+# files landed) and the read itself presents as the #1739 silent-hang
+# signature (0-byte log, empty target, near-zero CPU — indistinguishable
+# from a healthy transfer). Prose alone (the #833 gotcha, which bars this
+# outright) demonstrably failed — #1739 reached for snapshot_download at
+# BOTH hang sites — and check_bare_list_repo_files's own residual list
+# named `snapshot_download` as NOT covered; this check closes that
+# written-down residual. Scoped recipe: hub.stage_hub_prefix (scoped
+# list_hf_files_under_path + per-file stage_hub_file, #1402), or
+# api.list_repo_tree(path_in_repo=<prefix>) + per-file hf_hub_download.
+# Predicate (AST, CALL-grain — comments/docstrings/help strings are
+# structurally unmatchable): a `snapshot_download` call carrying an
+# `allow_patterns=` kwarg AND targeting the data repo — a
+# repo_type="dataset" str constant, or a repo_id str constant containing
+# SNAPSHOT_DATA_REPO_SUBSTRING (kwarg or first positional). Deliberately
+# NARROW: keying on allow_patterns alone would flag ~32 sites repo-wide,
+# most of them legitimate small-MODEL-repo pulls (measured 2026-08-06:
+# 34 calls, 12 data-repo offenders). Named residuals NOT covered
+# (documented, not detector legs): a repo_id VARIABLE that resolves to the
+# data repo at runtime (constant-propagation = high-FP; the kill-criterion
+# scope of the #2153 plan); a **kwargs-splat carrying allow_patterns;
+# bare `snapshot_download` without allow_patterns (an explicit whole-repo
+# pull is the caller's stated intent — the #833 prose governs);
+# `getattr` evasion; never-committed ad-hoc `python -c` one-liners
+# (structurally outside ANY file lint — the same residual the sibling
+# check discloses).
+SNAPSHOT_ALLOW_PATTERNS_WAIVER_RE = re.compile(
+    r"#\s*SNAPSHOT_ALLOW_PATTERNS_EXEMPT\s*:\s*(.+?)\s*$"
+)
+SNAPSHOT_ALLOW_PATTERNS_WAIVER_MIN_REASON_CHARS = 10
+SNAPSHOT_DATA_REPO_SUBSTRING = "explore-persona-space-data"
+# SNAPSHOT allowlist of files with >=1 predicate hit at #2153 implement time
+# (2026-08-06; regen: --regen-snapshot-allow-patterns-snapshot). File-grain
+# membership exempts the WHOLE file (the #1547/#1624 accepted trade-off; the
+# scoping requirement re-attaches at REUSE time via artifact-reuse check
+# (i)); migrating a file onto hub.stage_hub_prefix -> DROP its entry. This
+# constant is a source-frozen artifact — the #1568 STALENESS RACE recipe on
+# LIST_REPO_FILES_FROZEN_SNAPSHOT applies verbatim (regen on a main-synced
+# tree as the LAST pre-gate step; review stderr `+` lines; never hand-merge
+# a regen-paste conflict; keep the FAIL-message text stable while an
+# offender exists on main).
+SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT: frozenset[str] = frozenset(
+    {
+        "scripts/i488_figures_round2.py",
+        "scripts/i488_runaway_figure.py",
+        "scripts/issue651_depth_robustness.py",
+        "scripts/issue651_read_layer_grid.py",
+        "scripts/issue667_alllayer_analysis.py",
+        "scripts/issue667_context_answer_figures.py",
+        "scripts/issue667_deltac_probe.py",
+        "scripts/issue667_pertoken_figures.py",
+        "scripts/issue810_adhoc_var_vs_skill.py",
+        "scripts/issue811_stage_phase0.py",
+        "scripts/issue825_turn_depth_map.py",
+        "src/explore_persona_space/experiments/issue_823/run_823.py",
+    }
+)
+
+
+def _snapshot_allow_patterns_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """``# SNAPSHOT_ALLOW_PATTERNS_EXEMPT: <reason>`` waiver (reason >=
+    :data:`SNAPSHOT_ALLOW_PATTERNS_WAIVER_MIN_REASON_CHARS` chars) on the
+    call's first physical line or the immediately preceding non-blank line —
+    the HUB_VERIFY convention (delegates to the parametrized
+    :func:`_hub_verify_waiver_present`)."""
+    return _hub_verify_waiver_present(
+        lines,
+        call_lineno,
+        waiver_re=SNAPSHOT_ALLOW_PATTERNS_WAIVER_RE,
+        min_reason_chars=SNAPSHOT_ALLOW_PATTERNS_WAIVER_MIN_REASON_CHARS,
+    )
+
+
+def _snapshot_download_bound_names(tree: ast.Module) -> set[str]:
+    """Names bound by ``from huggingface_hub import snapshot_download [as
+    alias]`` (asname-aware; mirrors :func:`_hub_verify_bare_hits`'s Name
+    leg)."""
+    bound: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("huggingface_hub"):
+            for a in node.names:
+                if a.name == "snapshot_download":
+                    bound.add(a.asname or a.name)
+    return bound
+
+
+def _snapshot_call_flagged(node: ast.Call) -> bool:
+    """True when a ``snapshot_download``-named Call carries an
+    ``allow_patterns=`` kwarg AND targets the data repo. Data-repo legs
+    (either suffices): a ``repo_type="dataset"`` str-constant kwarg, or a
+    ``repo_id`` str constant (kwarg or first positional) containing
+    :data:`SNAPSHOT_DATA_REPO_SUBSTRING`."""
+    kwargs = {k.arg: k.value for k in node.keywords if k.arg is not None}
+    if "allow_patterns" not in kwargs:
+        return False
+    repo_type = kwargs.get("repo_type")
+    if isinstance(repo_type, ast.Constant) and repo_type.value == "dataset":
+        return True
+    repo_id = kwargs.get("repo_id")
+    if repo_id is None and node.args:
+        repo_id = node.args[0]
+    return (
+        isinstance(repo_id, ast.Constant)
+        and isinstance(repo_id.value, str)
+        and SNAPSHOT_DATA_REPO_SUBSTRING in repo_id.value
+    )
+
+
+def _snapshot_download_data_repo_hits(tree: ast.Module) -> list[int]:
+    """Line numbers of ``snapshot_download(...)`` CALLS that carry an
+    ``allow_patterns=`` kwarg AND target the data repo.
+
+    Call name legs (mirrors :func:`_hub_verify_bare_hits`, call-grain): an
+    ``ast.Attribute`` func whose attr is ``snapshot_download`` under ANY
+    receiver, or an ``ast.Name`` func bound per
+    :func:`_snapshot_download_bound_names`. The flagged-call predicate
+    (``allow_patterns`` + data-repo) is :func:`_snapshot_call_flagged`. A
+    call in a docstring / comment / f-string can never match (AST
+    predicate); Store/Del contexts are irrelevant at call grain (a Call
+    func is always Load-ctx).
+    """
+    bound = _snapshot_download_bound_names(tree)
+    hits: list[int] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if isinstance(func, ast.Attribute):
+            if func.attr != "snapshot_download":
+                continue
+        elif isinstance(func, ast.Name):
+            if func.id not in bound:
+                continue
+        else:
+            continue
+        if _snapshot_call_flagged(node):
+            hits.append(node.lineno)
+    return hits
+
+
+def _snapshot_allow_patterns_file_errors(py: Path, rel: str) -> list[str]:
+    """Snapshot-BLIND per-file scan body shared by
+    :func:`check_snapshot_download_allow_patterns` (verdict) and
+    :func:`regen_snapshot_allow_patterns_snapshot` (offender enumeration) —
+    the #1568 idiom. One error line per un-waived predicate hit, deduped by
+    line."""
+    text = py.read_text(encoding="utf-8")
+    tree = _cached_parse(py, text)
+    if tree is None:
+        # A non-parsing file is its own separate problem; stay silent.
+        return []
+    lines = text.splitlines()
+    errors: list[str] = []
+    seen: set[int] = set()
+    for lineno in _snapshot_download_data_repo_hits(tree):
+        if lineno in seen:
+            continue
+        seen.add(lineno)
+        if _snapshot_allow_patterns_waiver_present(lines, lineno):
+            continue
+        # Message-edit hazard: the Step 10d merge gate compares normalized
+        # message LINES (baseline vs gated legs) — see the STALENESS RACE
+        # comment on LIST_REPO_FILES_FROZEN_SNAPSHOT before editing (#1568).
+        errors.append(
+            f"[snapshot-download-allow-patterns] {rel}:{lineno}: "
+            f"snapshot_download(allow_patterns=...) against the data repo — "
+            f"allow_patterns filters CLIENT-side AFTER fetching the ENTIRE "
+            f"~1M-file repo manifest (hub 0.36.2), which wedges indefinitely "
+            f"and presents as the #1739 silent-hang signature (0-byte log, "
+            f"empty target, no error; #833). Use hub.stage_hub_prefix "
+            f"(scoped listing + per-file staging, #1402) or "
+            f"api.list_repo_tree(path_in_repo=<prefix>) + per-file "
+            f"hf_hub_download. A genuinely-correct SMALL-dataset-repo pull "
+            f"waives with '# SNAPSHOT_ALLOW_PATTERNS_EXEMPT: <reason>' "
+            f"(reason >= {SNAPSHOT_ALLOW_PATTERNS_WAIVER_MIN_REASON_CHARS} "
+            f"chars) on the call's line or the previous non-blank line. "
+            f"Pre-existing file this round never touched? Snapshot "
+            f"staleness — regen on a main-synced tree: `workflow_lint.py "
+            f"--regen-snapshot-allow-patterns-snapshot` (#2153)."
+        )
+    return errors
+
+
+def check_snapshot_download_allow_patterns(*, repo_root: Path | None = None) -> list[str]:
+    """AST-walk ``scripts/**/*.py`` + ``src/explore_persona_space/**/*.py``
+    (:data:`HF_ROUTING_SCOPE_ROOTS` via :func:`_list_repo_files_scan_files`)
+    and FAIL on any ``snapshot_download(allow_patterns=..., <data repo>)``
+    call outside :data:`SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT` and
+    un-waived (#2153).
+
+    Detection + named residuals: :func:`_snapshot_download_data_repo_hits`
+    and the block comment above it. ``tests/`` is out of scope (mocks
+    legitimately spell the name). ``repo_root`` is a unit-test override
+    hook; production callers pass None. Bundled into the no-flags default
+    run. Snapshot staleness (the check fires on a pre-existing file the
+    round never touched): regenerate on a main-synced tree via
+    ``--regen-snapshot-allow-patterns-snapshot`` (#1568 recipe).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for py, rel in _list_repo_files_scan_files(root):
+        if rel in SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT:
+            continue
+        errors.extend(_snapshot_allow_patterns_file_errors(py, rel))
+    return errors
+
+
+def regen_snapshot_allow_patterns_snapshot(*, repo_root: Path | None = None) -> int:
+    """MAINTENANCE (#2153): print the ready-to-paste
+    ``SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT`` literal for the CURRENT
+    tree — every scanned file carrying >=1 un-waived predicate hit,
+    re-derived snapshot-blind — plus a +/- diff summary vs the compiled-in
+    constant on stderr (the :func:`regen_list_repo_files_snapshot` idiom,
+    #1568). Run on a MAIN-SYNCED tree; REVIEW the stderr ``+`` lines before
+    pasting — a file YOUR round created must be scoped through
+    ``hub.stage_hub_prefix`` (or waived), never grandfathered. Not part of
+    the no-flags bundle; early-dispatched in ``main()``. Returns 0.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    offenders = sorted(
+        rel
+        for py, rel in _list_repo_files_scan_files(root)
+        if _snapshot_allow_patterns_file_errors(py, rel)
+    )
+    sys.stdout.write(
+        "SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT: frozenset[str] = frozenset(\n    {\n"
+    )
+    for rel in offenders:
+        sys.stdout.write(f'        "{rel}",\n')
+    sys.stdout.write("    }\n)\n")
+    added = sorted(set(offenders) - SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT)
+    removed = sorted(SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT - set(offenders))
     sys.stderr.write(
         f"# regen vs compiled-in constant: +{len(added)} added, -{len(removed)} removed\n"
     )
@@ -14401,6 +14679,37 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-snapshot-download-allow-patterns",
+        action="store_true",
+        help="AST-walk scripts/**/*.py + src/explore_persona_space/**/*.py and "
+        "FAIL on any snapshot_download CALL carrying allow_patterns= AND "
+        "targeting the data repo (repo_type='dataset' constant, or a repo_id "
+        "str constant containing 'explore-persona-space-data'). "
+        "allow_patterns filters CLIENT-side AFTER fetching the ENTIRE repo "
+        "manifest — on the ~1M-file data repo that enumeration is unbounded "
+        "(#833) and presents as the #1739 silent-hang signature (0-byte log, "
+        "empty target). Fix with hub.stage_hub_prefix or "
+        "api.list_repo_tree(path_in_repo=...) + per-file hf_hub_download; a "
+        "genuinely-correct small-dataset-repo pull waives with "
+        "'# SNAPSHOT_ALLOW_PATTERNS_EXEMPT: <reason>'. Historical files are "
+        "snapshot-exempt (SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT; stale "
+        "snapshot? see --regen-snapshot-allow-patterns-snapshot); NEW files "
+        "are scanned. Bundled into the no-flags default run (#2153).",
+    )
+    parser.add_argument(
+        "--regen-snapshot-allow-patterns-snapshot",
+        action="store_true",
+        help="MAINTENANCE (#2153, not a check; runs alone and early-returns — "
+        "combining it with check flags is unsupported, regen wins): print "
+        "the ready-to-paste SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT literal "
+        "for the current tree (stdout) + a +/- diff summary vs the "
+        "compiled-in constant (stderr). Run on a main-synced tree when the "
+        "snapshot-download-allow-patterns check fires on a file your round "
+        "never touched (the #1547/#1568 staleness race). Review added "
+        "entries before pasting; never bundled into the no-flags default "
+        "run.",
+    )
+    parser.add_argument(
         "--check-no-literal-round-marker-versions",
         action="store_true",
         help="FAIL on a literal 'v1' posting instruction for a round-versioned "
@@ -14644,6 +14953,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         # bundle (combining with check flags is unsupported — regen wins).
         return regen_list_repo_files_snapshot()
 
+    if args.regen_snapshot_allow_patterns_snapshot:
+        # Maintenance flag (#2153, the #1568 idiom): print-and-exit; never
+        # runs checks, never loads workflow.yaml, never enters the no-flags
+        # bundle (combining with check flags is unsupported — regen wins).
+        return regen_snapshot_allow_patterns_snapshot()
+
     path = Path(args.file) if args.file else None
     try:
         workflow = load_workflow_yaml(path)
@@ -14706,6 +15021,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_judge_model_pins
         or args.check_live_hf_retry_routing
         or args.check_bare_list_repo_files
+        or args.check_snapshot_download_allow_patterns
         or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
         or args.check_agent_memory_index_size
@@ -14859,6 +15175,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_live_hf_retry_routing())
     if args.check_bare_list_repo_files or no_flags:
         errors.extend(check_bare_list_repo_files())
+    if args.check_snapshot_download_allow_patterns or no_flags:
+        errors.extend(check_snapshot_download_allow_patterns())
     if args.check_no_literal_round_marker_versions or no_flags:
         errors.extend(check_no_literal_round_marker_versions())
     if args.check_api_dispatch_routing or no_flags:
