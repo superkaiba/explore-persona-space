@@ -8468,8 +8468,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, test whether interventions (activation patching and steering) at single context positions \u2014 the context-end and prefix-end vectors, with last-3-token / query-span / full-context controls \u2014 causally move BOTH the answer state and behavior toward a target context, across three settings from one crossed context bank (matched query; matched prefix; cross), measured by one unified fraction-of-swap metric F at both levels (F_act signed projection with disjoint baseline halves; F_beh dual-judge contrast normalized between unpatched floor and generate-under-B ceiling), plus map-transport cosines against banked ridge maps only (context-end #779 963k L14/L19; prefix-end #1738 L14/L19/L26 \u2014 no new map training), an on-experiment linearity fit L (held out by pair; direction-aware vs banked M and the #1776 Jacobian J), coherence-gated reporting (judge > 60, coherent-only, <50%-coherent cells marked), and a fragility map vs the norm-matched shuffled-donor null.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/2094",
-      "status": "verifying",
+      "path": "tasks/running/2094",
+      "status": "running",
       "title": "Single-position context/prefix interventions: fraction-of-swap (F) at activation and behavior levels across matched-query / matched-prefix / cross settings"
     },
     "2095": {
