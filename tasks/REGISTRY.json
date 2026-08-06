@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2103,
+  "highest_id": 2104,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8548,6 +8548,13 @@
       "path": "tasks/running/2103",
       "status": "running",
       "title": "workflow-fix: verify pinned one-off installs resolve + dist-name != import-name"
+    },
+    "2104": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2104",
+      "status": "proposed",
+      "title": "workflow-fix: reconcile tests/test_workload_cmd_env_lint.py's mock-backend"
     },
     "212": {
       "has_clean_result": true,
