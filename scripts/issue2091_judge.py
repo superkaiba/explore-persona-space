@@ -46,6 +46,10 @@ Pilot gate first (rule 26): ``eval.judge_pilot.judge_pilot_gate`` per rubric
 wave (~200 draws total across all rubrics x arms) at the EXACT production
 instrument, fresh pilot cache dirs; a gate FAIL exits rc=7 (a DESIGNED
 artifact-routed halt, never an anonymous crash — gotchas.md pilot-gate entry).
+Two (wave, arm) cells carry a recorded PARSE-FAIL waiver
+(``PILOT_WAIVE_PARSE_FAIL_ARMS`` — rule 26(b)'s explained-content-drop
+escape; analysis: epm:progress v35 on #2091); truncation and the
+effective-draws floor stay unwaivable, and every other arm still gates.
 
 Outputs: ``eval_results/issue_2091/greedy_dv/<behavior>.json`` in the
 labeling.json row schema (``build_labeling_dv`` / ``build_three_way_dv``).
@@ -134,6 +138,31 @@ WAVES: tuple[Wave, ...] = (
     Wave("hallucination_abstain", "hallucination", "abstain", "hallucination", nonalias_only=True),
 )
 WAVES_BY_NAME = {w.name: w for w in WAVES}
+
+# ── G2 pilot-gate parse-fail waivers (rule 26(b) explained-content-drop escape) ─
+# Root-cause analysis + decision record: epm:progress v35 on #2091. The judge
+# scores CORRECTLY; ``parse_judge_json`` recovers a trailing JSON object after
+# reasoning prose but NOT a trailing bare integer, so real scores are dropped
+# (zero truncation, zero refusals, every draw stop_reason=end_turn). The banked
+# #1739 K=5 comparison arm carries the SAME censoring class (8.30% on the same
+# wildchat/hallucination cell; 28.27% on the evil trait rungs) and CANNOT be
+# re-parsed (its caches store only the 13-byte parsed result), so fixing the
+# parser for the greedy arm alone would split the instrument across the two
+# arms of the headline Δ — the parser gap is filed separately as #2109 and is
+# deliberately NOT fixed here (instrument parity with the banked arm).
+# The waiver covers PARSE-FAIL ONLY (``judge_pilot_gate`` semantics): a
+# truncation signature or an under-floor effective-draw count on these arms
+# still FAILs, every arm not listed here still gates at the 2% bar, and an
+# unknown/renamed arm name here raises ``ValueError`` at gate time (fail-loud).
+PILOT_WAIVE_PARSE_FAIL_ARMS: dict[str, tuple[str, ...]] = {
+    # 28.0% parse-fail at n=50 (14/50 draws dropped — a real rate, not a
+    # small-n threshold artifact; epm:progress v35 on #2091).
+    "hallucination_trait": ("wildchat",),
+    # 6.25% = 1/16 — at 16 draws/arm the smallest observable non-zero rate IS
+    # 6.25%, so the cell is underpowered against the 2% bar; the banked
+    # same-cell rate is 2.28% (epm:progress v35 on #2091).
+    "sycophancy_trait": ("wildchat",),
+}
 
 
 # ── deferred imports (resolved by _import_check; #606/#1739 discipline) ──────
@@ -711,6 +740,11 @@ def run_pilot(
         arms: dict[str, list[tuple[str, str, str]]] = {}
         for item in wv.items:
             arms.setdefault(wv.arm_by_item[item[0]], []).append(item)
+        # Recorded parse-fail waivers (PILOT_WAIVE_PARSE_FAIL_ARMS above) —
+        # PARSE-FAIL only; an unknown arm name raises ValueError (fail-loud,
+        # deliberately NOT suppressed: a typo'd/renamed arm must never
+        # silently waive nothing).
+        waived_arms = PILOT_WAIVE_PARSE_FAIL_ARMS.get(wave.name, ())
         report = judge_pilot_gate(
             arms,
             rubrics[wave.name],
@@ -720,9 +754,19 @@ def run_pilot(
             target_total_draws=args.pilot_draws_per_wave,
             judge_model=JUDGE_MODEL,
             temperature=JUDGE_TEMPERATURE,
+            waive_parse_fail_arms=waived_arms,
             report_path=pilot_dir / f"{wave.name}_gate.json",
             seed=SEED,
         )
+        for arm in waived_arms:
+            logger.warning(
+                "[pilot] wave=%s arm=%s parse-fail %.2f%% WAIVED "
+                "(waive_parse_fail_arms; recorded analysis: epm:progress v35 on #2091; "
+                "parser gap filed as #2109 — truncation stays unwaivable)",
+                wave.name,
+                arm,
+                100.0 * report.arms[arm].parse_fail_rate,
+            )
         combined[wave.name] = report.to_json()
         all_pass = all_pass and report.passed
         logger.info(
