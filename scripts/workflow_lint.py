@@ -12390,7 +12390,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # inlined-rubric 4.6 slot + Blocker-tags 4.6-presence), 53,300 —
     # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
     # 47,930 B post-#881)
-    "codex-code-reviewer.md": 62_800,
+    # measured 49,270 B post the 2026-08-05 compaction: the Step 2 copy-list
+    # bullets deduped against the code-reviewer.md text the composer copies
+    # verbatim at compose time (each bullet keeps the section name, the
+    # lint/test-pinned tokens, and the Codex-specific adaptations only).
+    # Cap = measured + ~1 KB.
+    "codex-code-reviewer.md": 50_200,
     # measured 84,278 B post-#2002 (Resume-matrix + real production
     # out-root unit smoke-contract requirements + matching marker
     # `notes:` sub-blocks; incident driver: #1947 P0/P4/P5 + #1315 r6 +

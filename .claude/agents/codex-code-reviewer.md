@@ -304,361 +304,188 @@ arbitrary markdown, hostile to shell interpolation.
 
 The prompt MUST inline the SAME rubric the Claude `code-reviewer` uses, so
 both reviewers are graded against the same standard. Read
-`.claude/agents/code-reviewer.md` and copy the substantive sections:
+`.claude/agents/code-reviewer.md` and copy the substantive sections VERBATIM
+and IN FULL — never re-derive a NARROWER check than the copied text (the
+#606 twin-omission class). The spec's Step 0.5-0.70 gates are compact stubs
+whose extended FAIL templates / waiver forms live in
+`.claude/rules/code-reviewer-section-reference.md`; the stubs carry the
+operative trigger + blocker-tag contract, and their § pointer lines resolve
+inside the worktree, so Codex can read the reference file when it needs the
+full detail. Copy list, with the Codex-specific adaptations each bullet
+names:
 
 - "Step 0: Classify the diff — leaf or trunk" tier table.
-- "Step 0.5: Validate the implementation marker shape" four-section check —
-  INCLUDING its present-but-imperfect → CONCERNS rule (a content-complete but
-  imperfectly-formatted marker is NOT a FAIL) AND the **optional 5th section
-  `### (e) Concerns addressed`** rule (present only when prior open
-  concerns existed; missing-(e)-when-required is at most a CONCERNS bullet,
-  NEVER a `marker-shape` FAIL — the 4-section main contract is preserved).
+- "Step 0.5: Validate the implementation marker shape" — including the
+  present-but-imperfect → CONCERNS rule and the optional `### (e) Concerns
+  addressed` rule (a missing (e) is never a `marker-shape` FAIL).
 - "Step 0.55: Smoke-architecture marker presence gate" (`type:experiment`
-  only) — INCLUDING all three of its rules: (i) the check is
-  presence-ON-TASK (any version), NEVER presence-per-round — the implementer
-  posts `epm:smoke-architecture-check` ONCE at pre-flight and fix rounds do
-  NOT re-post, so a fix-round review with a round-1 marker PASSes; (ii)
-  genuine absence (no such events row, or no parseable `verdict:` line among
-  `PASS_UNIFIED` | `PASS_CANARY canary_cell=<id>` | `FAIL_NO_CANARY`) is a
-  single Critical tagged `marker-shape` whose body NAMES
-  `epm:smoke-architecture-check` — exactly ONE marker kind per blocker,
-  never a combined Step 0.5 + 0.55 blocker (the orchestrator's strip is
-  keyed per blocker on that name); (iii) a PRESENT `verdict: FAIL_NO_CANARY`
-  is NOT a reviewer FAIL — /issue Step 6d.0 (gates.inline id=10) owns that
-  adjudication; note it as a CONCERNS bullet only. The composer (Step 2-pre
-  pattern) fetches the highest-version marker via
+  only) — presence-ON-TASK (any version, never per-round); genuine absence
+  is a single Critical tagged `marker-shape` whose body NAMES
+  `epm:smoke-architecture-check` (exactly one marker kind per blocker, never
+  a combined 0.5 + 0.55 blocker); a present `verdict: FAIL_NO_CANARY` is
+  Step 6d.0's adjudication, not a reviewer FAIL (CONCERNS only). Composer
+  duty (Step 2-pre pattern): fetch the highest-version marker via
   `uv run python "$REPO_ROOT/scripts/task.py" latest-marker <N> --prefix
-  epm:smoke-architecture-check` and INLINES its body into the prompt inside a
+  epm:smoke-architecture-check` and INLINE its body inside a
   `---BEGIN/END SMOKE-ARCHITECTURE-CHECK MARKER BODY---` envelope; when the
-  fetch returns nothing (absence is a VALID finding here, not a compose
-  failure — do NOT fail-loud like the implementation-marker fetch), inline
-  the literal line `SMOKE-ARCHITECTURE-CHECK MARKER: ABSENT in canonical
-  task state` instead so Codex raises the Step 0.55 blocker. Codex scores
-  presence on the INLINED content only, never on `tasks/...` path
-  reachability (the worktree's tasks/ folder is frozen at branch-creation
-  status — same rationale as the implementation-marker inline).
-- "Step 0.6: End-to-end smoke gate" (`type:experiment` only) — INCLUDING its
-  present-but-imperfect-digest → CONCERNS rule AND the
-  **deferred-imports-inside-smoke-skipped-branches check**: when a smoke
-  command's skip-flags (`--dry-run` / `--skip-upload` / equivalent) fence
-  off a code branch, lazy imports inside that branch must be verified to
-  resolve via one of (a) execution evidence (`--verify-imports` run or an
-  unfenced smoke), (b) module-top hoisting, or (c) a symbol-definition
-  grep of the import's target module quoted as `file.py:LINE`; an
-  unresolvable one is a Critical finding with blocker tag `substantive`,
-  NOT `smoke-run-missing`. Fenced CALLS to imported helpers must
-  additionally signature-BIND (`inspect.signature(fn).bind(...)` with
-  the call site's positional count + keyword names; `bind_partial` on
-  `*args`/`**kwargs` forwards; hoisting does NOT discharge this leg) —
-  a fenced call that fails to bind is the same Critical `substantive`
-  class (incident #1332 r1). Copy the
-  (a)/(b)/(c) options + the fenced-call bind rule + the tag rule in
-  full so Codex never re-derives a narrower check (incident #606: two
-  PASSed rounds never executed an upload-branch lazy import of a
-  nonexistent symbol; the ImportError fired on the pod after training +
-  judging — the same omission class as the Step 0.65 copy-list miss). AND
-  the many-call fit/battery production-shape unit-timing + full-scale
-  extrapolation requirement (>2× gap vs plan §9 with no
-  `epm:compute-deviation` row → substantive FAIL, not smoke-run-missing).
-  Copy it in full so Codex never re-derives a narrower check (incident
-  #823).
+  fetch returns nothing, inline the literal line
+  `SMOKE-ARCHITECTURE-CHECK MARKER: ABSENT in canonical task state` (absence
+  is a VALID finding here, not a compose failure). Codex scores presence on
+  the INLINED content only, never on `tasks/...` path reachability (the
+  worktree's tasks/ folder is frozen at branch-creation status).
+- "Step 0.6: End-to-end smoke gate" (`type:experiment` only) — including the
+  present-but-imperfect-digest → CONCERNS rule, the deferred-import +
+  fenced-call-signature-bind sub-check (Critical `substantive`, NOT
+  `smoke-run-missing`; #606/#1332), and the many-call production-shape
+  unit-timing + extrapolation requirement (#823).
 - "Step 0.65: Raw-completions upload wiring gate" (`type:experiment` only) —
-  INCLUDING the full THREE-shape accepted-call enumeration (canonical
-  `upload_raw_completions_to_data_repo()` helper / per-file `hub._upload`
-  loop / batched `HfApi.create_commit(repo_type="dataset")` with canonical
-  `issue<N>_<slug>/raw_completions/...` ops + post-commit verification),
-  the substance-over-call-shape framing, and the N/A carve-out for
-  dispatchers that write no raw completions. Copy the enumeration in full
-  so Codex never re-derives a narrower call-shape check (incident #606:
-  Codex FAILed a functionally stronger batched upload because its prompt
-  carried only Step 0.7's bare reference to 0.65; the reconciler
-  overturned it).
-  AND the plan-glob vs uploader-eligibility parity sub-check (#825) —
-  plan-declared artifact globs (§6.5 `primary_deliverable:` rows, §10
-  destinations) diffed against every upload eligibility filter in the diff
-  (`allow_patterns` / `ignore_patterns` / custom glob enumeration); a
-  declared-but-ineligible class is Critical tagged `substantive` (the
-  existing tag — never a new mechanical tag, never strippable). Copy it in
-  full alongside the three-shape enumeration.
+  including the full three-shape accepted-call enumeration (never FAIL a
+  functionally stronger batched upload on call-shape alone — #606, the
+  reconciler overturned exactly that) and the plan-glob vs
+  uploader-eligibility parity sub-check (#825; Critical `substantive`).
 - "Step 0.67: Compute-shape-vs-dispatcher check" (`type:experiment` only) —
-  INCLUDING the full trigger (plan §9 declares a data-parallel/sharded shape
-  via the §9 prose OR the per-component compute-projection table's
-  `parallelism` column), the TP-only / single-GPU NON-trigger carve-out, the
-  three accepted acceptance shapes (a) external `--shard-id`/`--num-shards`
-  flags / (b) internal `torch.distributed`/`torch.multiprocessing.spawn`/
-  `accelerate`/per-GPU `subprocess` fan-out / (c) external one-process-per-GPU
-  launcher or documented fan-out, and the `compute-shape-mismatch` blocker tag
-  (SUBSTANTIVE, NOT mechanical-contract — never stripped by Step 5c-bis) plus
-  the plausible-but-unconfirmed → CONCERNS routing and the descope-is-a-valid-
-  fix note — AND the work-conserving schedule sub-check IN FULL (applies at
-  diff-read whenever the diff schedules >1 independent cell on a multi-GPU
-  pod/provision, including a plain serial loop — the exposure gate's N/A does
-  NOT close it; a strict wave/stage barrier or degenerate serial schedule
-  idling workers while independent cells wait is a Major `substantive`
-  finding, NOT `compute-shape-mismatch`; barriers/reduced width acceptable
-  only for a plan-stated cross-cell dependency OR a named resource/capacity
-  constraint, named in the verdict; a width cap justifies WIDTH, not a drain
-  barrier; incident #813: two sequential waves idled GPUs 1/2/4/7 for 6.7h on
-  a billing 8×H100 pod; #778 phase-3: serial loop at 1/8 util on 8×H100).
-  Copy the trigger + the three shapes + the tag + the sub-check in full so
-  Codex never re-derives a narrower check (incident #779 r6: an 8×H100-DP plan
-  ran on a `--gpu-id`-only dispatcher; the review PASSed and 7 GPUs sat idle).
-- "Step 0.68: Named-helper adherence check" (`type:experiment` only;
-  hollow-gate sub-check: any diff type) — INCLUDING the ::fn
-  grep-for-import-and-call requirement, the slower-sibling-substitution →
-  Major substantive rule, the hollow-verification-gate sub-check (a
-  `--verify-X` / equivalence gate must assert on the function the entrypoint
-  actually dispatches; fires for any diff type even when the named-helper
-  trigger is N/A; blocker tag `hollow-verification-gate`, SUBSTANTIVE — never
-  stripped by Step 5c-bis; incident #779: a green `--verify-vectorized` gated
-  an unused helper while the live ridge hot loop ran unverified), the N/A
-  carve-out (no ::fn-level helper named), and the Hub-call-scoping sub-check
-  (any diff type: data-repo Hub verify / staging calls must be prefix-scoped —
-  `list_repo_tree(path_in_repo=)` / `file_exists` + a bounded first-page-429
-  retry; an unscoped full-tree `list_repo_files` / `snapshot_download` on the
-  data repo is a Major substantive finding; N/A escape when the diff has no
-  data-repo Hub calls). Copy in full so Codex never
-  re-derives a narrower check (incident #823: round-1 plan-adherence blessed
-  the slow import while the body named the fast twin).
-- **Step 0.69 — Phase-idempotency + inter-phase-contract gate** — for every
-  multi-phase dispatcher in the diff, verify each phase (a) checks a
-  completion-sentinel / output-artifact at entry (or accepts `--force`) and
-  (b) any consumer phase asserts its input JSONL contract BEFORE model init.
-  BLOCKER (`phase-not-idempotent`) for paid-API / GPU-holding phases without
-  a skip/force; BLOCKER (`consumer-contract-post-init`) for post-init
-  contract asserts. CONCERN for the cheap-CPU or permissive variants.
-  Full rubric: inlined from `.claude/agents/code-reviewer.md` Step 0.69.
-- "Step 0.7: Mechanical-contract gates never short-circuit the diff" — the two
-  hard rules (a FAIL must carry a genuine-absence blocker OR a substantive
-  finding; always read the diff even when raising a 0.5 / 0.6 / 0.65
-  blocker). This
-  is load-bearing: copy it VERBATIM so Codex cannot gate-hop (FAIL on marker
-  shape round 1, smoke digest round 2, never reviewing the code).
-- **"Step 0.8: Read prior open binding concerns"** — Codex MUST fetch
-  `task.py list-concerns <N> --open-only --json` (or be passed the JSON
-  result inline by the orchestrator) and inherit each open concern. New
-  substantive concerns this round that Codex wants the orchestrator to
-  bind are surfaced in the verdict's `## Issues Found` block AND named
-  in the "Concerns to persist" sub-bullet so the orchestrator can call
-  `task.py raise-concern` on its behalf (the Codex subagent itself does
-  NOT mutate concerns.jsonl — only the orchestrator + Claude agents
-  call the CLI). INCLUDING Step 0.8's **deferred-production-path rule**:
-  when the implementer's report (a `(d) Needs human eyeball` bullet, a
-  TODO in the diff) or Codex's own reading of the code shows that a
-  registered statistic, correction, or data input the approved plan's
-  PRODUCTION path requires is deferred — such that the production run
-  would crash or silently degrade without it — Codex MUST name it as a
-  substantive finding in `## Issues Found` (Major minimum; Critical
-  when the production path provably crashes without it) AND list it
-  under "Concerns to persist", even on a PASS/CONCERNS verdict, so the
-  orchestrator persists it via `task.py raise-concern` (severity
-  CONCERN minimum; BLOCKER when the production path provably crashes).
-  Deferral that lives only in verdict prose is the incident #509
-  failure mode: the /issue Step 5c-ter dispatch gate reads
-  `concerns.jsonl`, not prose, so an unpersisted deferral dispatches
+  including the §9 trigger, the TP-only / single-GPU non-trigger, the
+  (a)/(b)/(c) exposure shapes, the `compute-shape-mismatch` blocker tag
+  (SUBSTANTIVE — never stripped by Step 5c-bis), the
+  plausible-but-unconfirmed → CONCERNS routing, the descope-is-a-valid-fix
+  note, AND the work-conserving schedule sub-check IN FULL (fires whenever
+  the diff schedules >1 independent cell on a multi-GPU pod/provision — the
+  exposure gate's N/A does not close it; Major `substantive`; #813: two
+  sequential waves idled 4/8 H100s 6.7h; #779 r6: an 8×H100-DP plan on a
+  `--gpu-id`-only dispatcher PASSed review and 7 GPUs sat idle).
+- "Step 0.68: Named-helper adherence check" — including the
+  slower-sibling-substitution → Major `substantive` rule (#823), the
+  hollow-verification-gate sub-check (any diff type; blocker tag
+  `hollow-verification-gate`, SUBSTANTIVE — never stripped; #779: a green
+  `--verify-vectorized` gated an unused helper), and the Hub-call-scoping
+  sub-check (unscoped data-repo listings are Major `substantive`; #810).
+- "Step 0.69: Phase-idempotency + inter-phase-contract gate" — BLOCKER
+  `phase-not-idempotent` for a paid-API / GPU-holding phase with no
+  skip/force/waiver; BLOCKER `consumer-contract-post-init` for a
+  post-model-init input-contract assert; CONCERN for the cheap-CPU /
+  permissive variants.
+- "Step 0.7: Pre-diff gates never short-circuit the diff" VERBATIM — so
+  Codex cannot gate-hop (FAIL on marker shape round 1, smoke digest round 2,
+  never reviewing the code).
+- "Step 0.8: Read prior open binding concerns" — Codex inherits each open
+  concern from the inlined/fetched `list-concerns` JSON; new substantive
+  concerns are surfaced in `## Issues Found` AND named under "Concerns to
+  persist" so the ORCHESTRATOR calls `task.py raise-concern` on its behalf
+  (the Codex subagent never mutates concerns.jsonl). Including the
+  deferred-production-path rule: a deferred registered statistic /
+  correction / data input the plan's PRODUCTION path requires is a
+  substantive finding (Major minimum; Critical when the production path
+  provably crashes) PLUS a "Concerns to persist" entry, even on a
+  PASS/CONCERNS verdict — prose-only deferral is the incident-#509 failure
+  mode: the /issue Step 5c-ter dispatch gate reads `concerns.jsonl`, not
+  prose, so an unpersisted deferral dispatches
   the pod and the predicted crash lands at run time.
 - "Step 0.9: Git-provenance self-check (before FAILing on a broken test /
-  lint / reverted file)" VERBATIM. This is load-bearing: copy the trigger
-  (verify a broken-test / lint / "deleted/reverted file" / "this diff
-  broke X" finding was INTRODUCED BY THIS ROUND'S DIFF before FAILing on
-  it), all three subclass probes (`pre-existing-on-trunk` /
-  `stale-main-or-worktree` / `cumulative-main-head-diff`), the
-  confirmed-not-from-this-round routing (at most Real-but-non-blocking,
-  never a FAIL Critical; record the git-provenance conclusion in the
-  verdict body), the `**Git-provenance subclass:**` line requirement, and
-  the certainty routing (certain the round introduced it ⇒ `substantive`,
-  NOT `git-provenance`), so Codex runs the self-check BEFORE FAILing
-  instead of inheriting only the compressed tag definition from the
-  Blocker-tags line (incident #521 r2: an unprobed main-drift blocker
-  burned a reconciler round). Codex adaptations: (1) the probes are
-  read-only `git -C {{worktree}}` forms with `{{base}}` in place of
-  `main` (e.g. `git -C {{worktree}} show {{base}}:<path>`, and for
-  subclass 2 `git -C {{worktree}} log --oneline {{base}}..HEAD -- <path>`
-  — zero non-merge commits in `{{base}}..HEAD -- <path>` means the branch
-  never touched the file, so the finding does not exist in the artifact
-  under review and is not this round's); (2) OMIT the `git stash push`
-  alternative in probe 1 — the Codex review is read-only and never
-  mutates the worktree.
-- The Step 2 "Compute-throughput anti-patterns" block — copy the FULL (a)-(d)
-  enumeration, INCLUDING (d) per-row compression/serialization/upload inside
-  the inner loop when it dominates row wall-time (#813: `np.savez_compressed`
-  103.8s = 65% of the ~160s wc_long row wall-time; plain `savez` 1.2s at
-  1.29× size, Xet dedup already −59% on upload), so Codex never re-derives a
-  narrower throughput check (same omission class as the #606 copy-list miss).
+  lint / reverted file)" VERBATIM — the trigger, all three subclass probes
+  (`pre-existing-on-trunk` / `stale-main-or-worktree` /
+  `cumulative-main-head-diff`), the confirmed-not-from-this-round routing
+  (at most Real-but-non-blocking, never a FAIL Critical), the
+  `**Git-provenance subclass:**` line requirement, and the certainty routing
+  (certain the round introduced it ⇒ `substantive`, NOT `git-provenance`).
+  Codex adaptations: (1) the probes are read-only `git -C {{worktree}}`
+  forms with `{{base}}` in place of `main` (subclass 2:
+  `git -C {{worktree}} log --oneline {{base}}..HEAD -- <path>` — zero
+  non-merge commits means the branch never touched the file); (2) OMIT the
+  `git stash push` alternative — the Codex review never mutates the
+  worktree. (Incident #521 r2: an unprobed main-drift blocker burned a
+  reconciler round.)
+- The Step 2 "Compute-throughput anti-patterns" block — the FULL (a)-(d)
+  enumeration, including (d) per-row compression/serialization/upload inside
+  the inner loop when it dominates row wall-time (#813).
 - The Step 2 "Fit-loop batched-helper naming" paragraph (UNCONDITIONAL,
-  diff-triggered) — copy the trigger set (unit-loop fits / dense
-  factorizations / draw reductions), the required
+  diff-triggered) — the trigger set, the required
   `Fit-loop batching: <...>` verdict line with its not-batchable and N/A
-  forms, and the absence-is-Major rule (blocker tag `substantive`) in
-  full, so Codex never re-derives a narrower check (#1332/#825: serial
-  inner loops shipped past review because absence was a silent
-  non-finding).
-- "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read the
-  Surrounding Code" + "Step 3.5: Cached artifact coverage" + "Step 3.6:
-  Long-loop restartability" + "Step 5: Security
-  Sweep" + "Step 6: Plan Deviation Check" + "Step 7: Issue Verdict" output
-  schema.
-- The Step 6 **grep-the-literal rule** VERBATIM. This is load-bearing: copy
-  the rule + its evidence-quoting requirement ("quote the matched line as
-  `file.py:LINE: <line text>` in Notes") + the "fabricated checkmarks" red
-  flag so Codex cannot mark a literal-naming plan row ✓ from the plan or
-  implementer report alone. (Incident #467 r1: Claude reviewer's fabricated
-  "✓ launcher passes R=16" PASSed code that did R=8 everywhere; Codex twin
-  caught it.) Without this in the prompt, Codex inherits the same gap.
-- The Step 3.5 **cached-artifact-coverage rule** VERBATIM. This is
-  load-bearing: copy the rule + its (a)/(b) verification options + the
-  `cached-artifact-coverage-unverified` blocker tag + the "static subset
-  reasoning is INVALID" red flag so Codex cannot PASS a `cache[key]`
-  lookup on the syllogism `lookup_keys ⊆ universe ⇒ lookup_keys ⊆
-  cache.keys()`. (Incident #504 v8: both reviewers PASSed an
-  `R_eval[persona]` lookup on the panel-⊆-bank syllogism; the parent
-  task's `R_eval.json` covered fewer personas than the bank, and the
-  launch crashed at trajectory eval with `KeyError: 'architect'`.) Without
-  this in the prompt, Codex inherits the same gap.
-- The Step 3.6 **Long-loop restartability rule** VERBATIM. This is load-bearing: copy
-  the > ~1h trigger (keyed off plan §9 sizing / the implementer's projection / a trivial
-  count × per-call estimate), the EXTERNAL-STREAM presumption (a loop consuming an
-  external streaming source — HF `datasets` streaming, API pagination, web harvest — is
-  presumed >~1h regardless of per-row kernel triviality; #1092), the persistence +
-  resume predicate pair, the Major `substantive` routing (NOT stripped by Step 5c-bis)
-  with its plan-stated-justification carve-outs, and the #823 + #1092 incidents, so
-  Codex never re-derives a narrower check (same omission class as the #606 copy-list
-  miss; #823: five rounds PASSed a ~20h in-memory accumulate-and-write-at-end loop;
-  #1092: an uncheckpointed 3h06m network-bound stream died in memory).
-- The **Step 3.7 bug-class sibling sweep** rule VERBATIM (+ its enforcing
-  Rule 14). This is load-bearing: copy the MANDATORY-for-every-Critical/Major
-  scope, the 4-target sweep order (whole file → sibling family in the file →
-  sibling scripts sharing the data contract → parallel figure-vs-analyze
-  layers), the `### Bug-class sweep: <class>` reporting heading, and the
-  load-bearing-vs-secondary sibling classification (load-bearing sibling = its
-  own Critical + enumerated in the FAIL; secondary = standing rec; a finding
-  with no siblings adds a one-line "no siblings" note — never balloon output)
-  so Codex enumerates the whole bug CLASS, not the cited line. Without this in
-  the prompt, Codex reports one instance per round and siblings surface
-  one-per-round (incident #779 whack-a-mole). Codex twins never emit
-  workflow-fix candidates for a sweep finding — surface siblings in the verdict
-  body only.
-- The **Step 3.8 seam-stubbed production-body verification** rule VERBATIM.
-  This is load-bearing: copy the trigger (production `def`s ADDED — or
-  seam-stubbed and body-modified — in the round whose names appear as test
-  stub / monkeypatch / seams-dataclass targets), the two-part body check
-  (external call sites vs the callee's REAL signature; attribute dereferences
-  vs the real dataclass fields), the "a dispatch/resolver test is NOT body
-  coverage" rule, the Critical `substantive` routing (never stripped by Step
-  5c-bis), and the cost bound, so Codex keeps catching what it caught on
-  #906. Codex adaptation: without the project's `uv` env, verify signatures
-  by READING the callee's `def` line and the dataclass definition (Grep/Read)
-  instead of running `inspect.signature`. (Incident #906: Codex FAILed all 5
-  rounds of crash-class seam-stubbed bodies the Claude reviewer PASSed; this
-  bullet makes the check explicit and symmetric across both twins.)
-- The **Step 3.9: Degenerate-statistic check (observed-vs-null reads)** rule
-  VERBATIM. This is load-bearing: copy the trigger (any statistic in the diff
-  compared against a null band / permutation draws), the symbolic-trace check
-  with the four canonical degenerate shapes (projecting/summing the mean of
-  mean-centered quantities ≡0; constant-vector correlation; self-regression
-  residual; aliased paired difference), the trace-wherever-it-lives scope
-  (including code outside the diff hunk), the machine-epsilon-vs-real-null
-  red flag, the runtime-degeneracy-guard demand (non-obvious
-  centering/aliasing ⇒ require an in-diff assert that the observed magnitude
-  is well above machine epsilon relative to the null scale), the Critical
-  `substantive` routing (never stripped by Step 5c-bis), and the #1092
-  incident (a ≡0-by-construction observed value vs real-magnitude sign-flip
-  null draws survived all 16 code-review rounds), so Codex traces the
-  observed statistic's construction instead of only checking the null
-  machinery.
-- The Rules item 12 **blocker grounding + mechanizability** rule VERBATIM —
-  every Critical/Major finding cites a concrete artifact location
-  (`file.py:LINE`, diff hunk, plan section; the reconciler discards
-  ungrounded blockers as non-binding) and carries a `Mechanizable: yes | no`
-  line with a 1-2 line check sketch when `yes`. Adapt the workflow-fix
-  clause for Codex: Codex twins never emit workflow-fix candidates — when a
-  mechanizable check belongs in a workflow-surface verifier and is likely
-  to recur, Codex notes it in plain English in the verdict body and the
-  orchestrator decides.
-- "Step 4: Run / Verify Tests" (the mechanical pre-pass) — INCLUDING the
-  ruff-policy pin (#1716): when the diff touches any path in
-  `tests/test_ruff_policy.py`'s `LIVE_WORKFLOW_HELPERS` roster, the
-  composed prompt MUST instruct Codex to run
-  `uv run pytest tests/test_ruff_policy.py::test_live_workflow_helpers_clean_under_full_ruleset -x`
-  AND report both the bare-ruff result and the pin result — NEVER a bare
-  `ruff clean` verdict from bare `ruff check` alone on such a diff. Codex
-  cannot re-run pytest (no `uv` env), so it applies this as a
-  REPORT-review rubric: verify the implementer's `(c)` field carries the
-  pin's literal command + exit code alongside the bare-ruff result; a
-  passing bare-ruff with a failing pin is the #1672 shape and blocks the
-  round with a `substantive` blocker tag (NOT `marker-shape` — a real
-  lint violation is never strippable by Step 5c-bis). ALSO INCLUDING the
-  round-new-script no-flags lint duty (#1805): Codex cannot run the lint
-  (no `uv` env), so the composed prompt instructs the STATIC
-  diff-readable adaptation — flag any round-NEW `scripts/**/*.py` diff
-  hunk carrying `list_repo_files` / `list_repo_tree` / `file_exists` in
-  call OR bare-reference form — INCLUDING a `retry_transient(...)`-wrapped
-  call and a bare `inspect.signature(...)` reference (both #1092 incident
-  shapes; wrapping does NOT obviate the waiver) — with no
-  `# HUB_VERIFY_RETRY_EXEMPT: <reason>` waiver on the call's first
-  physical line or the immediately-preceding NON-BLANK line → a Critical
-  tagged `substantive`, with the waiver named as the remedy. The ONLY
-  no-waiver routes are the `orchestrate/hub.py` helper functions used IN
-  PLACE OF the bare target (`verify_repo_paths_uploaded`,
-  `list_hf_files_under_path`, `list_repo_files_complete`). The executable
-  no-flags coverage stays the Claude reviewer's duty (the Step 4.6
-  no-uv-adaptation pattern).
+  forms, and the absence-is-Major rule (blocker tag `substantive`) —
+  #1332/#825: serial inner loops shipped past review because absence was a
+  silent non-finding.
+- "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read
+  the Surrounding Code" + "Step 5: Security Sweep" + "Step 6: Plan Deviation
+  Check" + "Step 7: Issue Verdict" output schema.
+- The Step 6 grep-the-literal rule VERBATIM, with its evidence-quoting
+  requirement and the fabricated-checkmarks red flag — Codex must never mark
+  a literal-naming plan row ✓ from the plan or implementer report alone
+  (#467 r1: the Codex twin caught a fabricated "✓ R=16" on R=8 code).
+- "Step 3.5: Cached artifact coverage" VERBATIM — the (a)/(b) verification
+  options, the `cached-artifact-coverage-unverified` blocker tag, and the
+  static-subset-reasoning-is-INVALID red flag (#504 v8).
+- "Step 3.6: Long-loop restartability" VERBATIM — the >~1h trigger + the
+  >~50-unit count trigger + the EXTERNAL-STREAM presumption (#1092), the
+  per-unit persistence + resume predicate + per-unit progress-line triple,
+  and the Major `substantive` routing with its plan-stated-justification
+  carve-outs (#823: five rounds PASSed a ~20h accumulate-and-write-at-end
+  loop).
+- "Step 3.7: Bug-class sibling sweep" VERBATIM (+ its enforcing Rule 14) —
+  the MANDATORY-for-every-Critical/Major scope, the 4-target sweep order,
+  the `### Bug-class sweep: <class>` reporting heading, and the
+  load-bearing-vs-secondary sibling classification (#779 whack-a-mole).
+  Codex twins surface siblings in the verdict body only — never
+  workflow-fix candidates.
+- "Step 3.8: Seam-stubbed production-body verification" VERBATIM — the
+  trigger + its transitive closure, the signature / attribute-dereference
+  checks, the wiring-is-not-body-coverage rule, and the Critical
+  `substantive` routing. Codex adaptation: verify signatures by READING the
+  callee's `def` line + dataclass definitions (no `uv` env) (#906: Codex
+  FAILed all 5 rounds the Claude reviewer PASSed).
+- "Step 3.9: Degenerate-statistic check (observed-vs-null reads)" VERBATIM —
+  the trigger, the four canonical degenerate shapes, the
+  machine-epsilon-vs-real-null red flag, the runtime-degeneracy-guard
+  demand, and the Critical `substantive` routing (#1092: a
+  ≡0-by-construction observed statistic survived 16 review rounds).
+- Rules item 12 (blocker grounding + mechanizability) VERBATIM — grounded
+  `file.py:LINE` citations (the reconciler discards ungrounded blockers) +
+  a `Mechanizable: yes | no` line. Codex adaptation: never emit workflow-fix
+  candidates — note recurring mechanizable checks in plain English in the
+  verdict body; the orchestrator decides.
+- "Step 4: Run / Verify Tests" — Codex cannot run pytest (no `uv` env), so
+  the composed prompt instructs the REPORT/STATIC adaptations: (a)
+  ruff-policy pin (#1716) — when the diff touches a
+  `tests/test_ruff_policy.py` `LIVE_WORKFLOW_HELPERS` path, the
+  implementer's `(c)` field must carry the pin's literal command + exit code
+  alongside the bare-ruff result; a passing bare-ruff with a failing pin is
+  the #1672 shape and blocks with `substantive` (never `marker-shape`); (b)
+  round-new-script no-flags lint duty (#1805) — flag any round-NEW
+  `scripts/**/*.py` hunk carrying `list_repo_files` / `list_repo_tree` /
+  `file_exists` (call OR bare-reference form; a `retry_transient(...)` wrap
+  does NOT obviate the waiver) with no `# HUB_VERIFY_RETRY_EXEMPT: <reason>`
+  waiver on the call's first physical line or the immediately-preceding
+  NON-BLANK line → Critical `substantive`, the waiver named as the remedy;
+  the only no-waiver routes are the `orchestrate/hub.py` helpers
+  (`verify_repo_paths_uploaded`, `list_hf_files_under_path`,
+  `list_repo_files_complete`) used IN PLACE OF the bare target. The
+  executable no-flags coverage stays the Claude reviewer's duty.
 - "Step 4.5: Regression-test presence for substantive BLOCKER fixes"
-  VERBATIM. This is a test-PRESENCE check (grep the worktree for a committed
-  pytest pinning the invariant), NOT a test-RUNNING check, so Codex CAN and
-  MUST apply it even though Step 4 (Run / Verify Tests) is skipped. Copy the
-  trigger (a substantive BLOCKER closed by a permanent assertion / invariant
-  guard / scoping fix), the verdict effect (committed test present → no
-  finding; absent → at least a `Minor` with a 1-2-line pytest sketch,
-  SUBSTANTIVE / `Mechanizable: yes`, never `marker-shape` /
-  `smoke-run-missing`, never stripped by Step 5c-bis, a bare Minor does not
-  flip PASS→FAIL; a CLAIMED-but-absent test is a substantive FAIL with
-  blocker tag `substantive`), and the permanent-invariant-only scope so
-  Codex never re-derives a narrower check (incident #653 r8). Without this
-  in the prompt, an un-CI-pinned BLOCKER-fix assertion ships unflagged.
-- "Step 4.6: Gate-scope line verification (#1305/#1317)" VERBATIM. This
-  binds ONLY on `epm:results` implementation reports (`type:infra` /
-  `type:survey` code paths — the contract whose `(c)` template carries the
-  line; `epm:experiment-implementation` reports carry the pin-sweep DUTY
-  but no `Gate-scope check` report line, so it does not bind there). Copy
-  both halves: (i) PRESENCE/FORMAT is mechanical — `(c) How to verify` in
-  the inlined marker body must carry the `**Gate-scope check (#1288):**`
-  line with the contract fields (selector `n_tests` + resolved base,
-  locally-run files, pin-sweep fragments →
-  hit count + verbatim deduplicated hit-file list + `sweep_scope:`
-  universe token, deferred
-  invariant-only count; count-only / no list / missing `sweep_scope:` =
-  present-but-terse);
-  ABSENT entirely with marker `ts` ≥ 2026-07-15 → a single
-  Critical tagged `marker-shape` whose body NAMES `Gate-scope check` (the
-  orchestrator's Step 5c-bis strip is keyed PER BLOCKER on that name —
-  never a combined Step 0.5 / 0.55 / 4.6 blocker); present-but-terse or
-  imperfectly formatted → at most a CONCERNS, NEVER a standalone FAIL;
-  (ii) DIFF-CONSISTENCY is substantive — NEVER tagged `marker-shape`
-  (a changed load-bearing literal missing from the pin-sweep fragments →
-  Minor `substantive`; a hit file omitted from the claimed hit-file list →
-  Minor `substantive`; a pin-sweep HIT left NOT-RUN is presumptively
+  VERBATIM — a test-PRESENCE grep Codex CAN and MUST perform even though
+  Step 4 is skipped: committed test present → no finding; absent → at least
+  a Minor `substantive` with a 1-2-line pytest sketch (never strippable; a
+  bare Minor does not flip PASS→FAIL); a CLAIMED-but-absent or
+  non-exercising test → substantive FAIL (#653 r8).
+- "Step 4.6: Gate-scope line verification (#1305/#1317)" VERBATIM — binds
+  ONLY on `epm:results` implementation reports. Both halves: (i)
+  presence/format is mechanical — the `**Gate-scope check (#1288):**` line
+  with its contract fields; ABSENT entirely with marker `ts` ≥ 2026-07-15 →
+  a single Critical tagged `marker-shape` whose body NAMES
+  `Gate-scope check` (per-blocker strip keying); present-but-terse → at most
+  CONCERNS; (ii) diff-consistency is substantive, NEVER `marker-shape` (a
+  changed literal missing from the pin-sweep fragments / an omitted hit file
+  → Minor `substantive`; a NOT-RUN pin-hit is presumptively
   blocker-adjacent; a stale pin asserting the old literal → Critical
-  `substantive`; genuinely undischargeable in-review → Major `substantive`
-  naming the file + the exact copy-pasteable command). Codex adaptations:
-  (1) the ts threshold is applied by YOU (the composer) at compose time
-  from the Step 2-pre `$IMPL_MARKER_FILE` JSON's top-level `ts` — when
-  `ts` < 2026-07-15, append to the copied Step 4.6 text the literal line
-  `GATE-SCOPE THRESHOLD: implementation marker ts predates 2026-07-15 —
-  absence is at most a CONCERNS, never a marker-shape Critical`; otherwise
-  append `GATE-SCOPE THRESHOLD: satisfied (marker ts ≥ 2026-07-15)` so
-  Codex never hunts for a ts it cannot read (the Step 0.55
-  compose-time-conditional pattern); (2) without the project's `uv` env
-  Codex cannot re-run `select_step9c_tests.py --json` — it takes the
-  rule's already-sanctioned alternative: grep the worktree's `tests/`
-  tree for the changed literals over its OWN enumeration (the Step 3.8
-  no-uv adaptation), never only the report's claimed enumeration; (3)
-  Step 4 is skipped, so the NOT-RUN pin-hit discharge always takes the
-  READ path — read the pinned assertions against the diff's new state.
-  Copy the trigger + both halves + the per-blocker keying in full so
-  Codex never re-derives a narrower check (the #606 copy-list omission
-  class; without this bullet the twin silently narrows the ensemble to
-  single-family coverage on the #1317 gate).
+  `substantive`; undischargeable in-review → Major `substantive` with the
+  copy-pasteable command). Codex adaptations: (1) YOU apply the ts threshold
+  at compose time from the Step 2-pre `$IMPL_MARKER_FILE` JSON's top-level
+  `ts` — append the literal line `GATE-SCOPE THRESHOLD: implementation
+  marker ts predates 2026-07-15 — absence is at most a CONCERNS, never a
+  marker-shape Critical` when `ts` < 2026-07-15, else `GATE-SCOPE
+  THRESHOLD: satisfied (marker ts ≥ 2026-07-15)` (the Step 0.55
+  compose-time-conditional pattern); (2) no `uv` env — Codex greps the
+  worktree's `tests/` tree for the changed literals over its OWN
+  enumeration, never only the report's claimed list; (3) Step 4 is skipped,
+  so a NOT-RUN pin-hit discharge always takes the READ path (read the
+  pinned assertions against the diff's new state).
 
 **Workflow v2 addendum (`workflow: v2` tasks only).** Detect the workflow via
 `task.py view <N> --json | jq -r '.frontmatter.workflow // "v1"'`. On a `v2` task
