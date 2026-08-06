@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2147,
+  "highest_id": 2148,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8870,6 +8870,13 @@
       "path": "tasks/proposed/2147",
       "status": "proposed",
       "title": "workflow-fix: reclaim tier for ~/.eps-slurm-src terminal-issue staging (112 GB unreaped)"
+    },
+    "2148": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2148",
+      "status": "proposed",
+      "title": "workflow-fix: upload-verifier reconciles self-reported row counts, not realized store contents (passed a 25% shortfall)"
     },
     "215": {
       "has_clean_result": true,
