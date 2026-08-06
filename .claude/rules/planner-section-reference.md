@@ -153,9 +153,7 @@ evaluation | nulls | statistic — §3 here is the natural home) carries "paired
 plus registration vocabulary or an enumerated pair count ("7 pairs").
 `scripts/verify_plan.py` check 18 (`check_paired_contrast_source_coverage`)
 then REQUIRES a per-arm row-coverage declaration — FAIL for `kind: experiment`
-(WARN `analysis`) at Phase 1.5.0 and on every critic re-verify (incidents:
-#810 v13 — 2 of 9 registered rows missing from the named full side; #1112
-amendment drafts v4 AND v7 — one mechanical bounce each, same omission).
+(WARN `analysis`) at Phase 1.5.0 and on every critic re-verify (#810, #1112).
 Every `plans/v{K}.md` is verified STANDALONE: an amendment / delta /
 follow-up draft that registers or carries forward a paired contrast
 RE-declares Row-coverage in its own text — the parent version's declaration
@@ -238,7 +236,7 @@ This mirrors the marker line's behavioral-primary + continuous-secondary recipe,
 
 **Required: Install-strength control (cross-condition leakage comparisons).** If the plan's headline compares LEAKAGE across training conditions (contrastive vs positive-only, LoRA vs full fine-tuning, data-construction variants), raw bystander leakage is dose-confounded: install strength is condition-dependent — not even in a fixed direction across behaviors (#601: contrastive negatives strengthened the marker implant; #608: positive-only sycophancy installed at least as strongly) — so "X leaks more than Y" read off raw leakage conflates lower selectivity with plain stronger implantation. §6 must register at least one install-controlled read: (a) a matched-install comparison (conditions compared at checkpoints with matched source gain, findable from the per-step trajectory / band-stop logging), and/or (b) leakage as a fraction of install per (source → bystander) cell, computed in the non-saturating EOS-margin logit space `Δ(z_marker − z_eos)` — NEVER raw `log P`, whose softmax compression shrinks a saturated source's denominator and inflates the fraction exactly in the strongest-implant conditions; plus (c) leakage-vs-install dose curves from the per-step trajectories where they exist (preferred — subsumes the single fraction and catches nonlinear leakage onset). Never correlate the fraction back against install itself (shared-noisy-denominator artifact, same family as the #383 X-vs-(X−Y) caveat). The primary DV definition is unchanged (on-policy `log P(marker)` trained − base stays primary). Full recipe: `.claude/rules/marker-leakage-measurement.md` § Install-strength confound. Plans whose headline makes no cross-condition leakage comparison write "N/A — no cross-condition leakage comparison" and move on.
 
-**Required: Statistical-input existence (derived inputs for registered corrections).** Every registered statistical correction / adjustment §6 relies on — attenuation / reliability factors, per-seed SEs, variance reconstructions, shrinkage priors, any statistic computed FROM a derived input rather than directly from this run's raw eval output — must name the data dependency it consumes AND verify that dependency actually EXISTS in the cited artifact (the column is present in the CSV, the per-seed files resolve on HF, the field is in the JSON schema — check the actual file, not the producing plan's prose), OR explicitly schedule its construction as in-scope implementation work in §4 / the file-level diff list. This is the plan-time analogue of the step-5 Hub-existence check, extended to derived statistical inputs: an input that is "derivable in principle" but neither verified-present nor scheduled-to-build is a phantom dependency (incident #509: plan §6.1 registered attenuation-adjusted correlations for the fact arm whose per-seed SEs existed nowhere — the cited CSV stored only seed-averaged rates — and reconstruction was never scheduled as in-scope work; the production scoring path crashed exactly as predicted in review prose and the result shipped on `--smoke` with the reliability correction pinned to 1.0). Plans with no registered derived-input corrections (raw DV + standard tests only) write "N/A — no derived statistical inputs" and move on.
+**Required: Statistical-input existence (derived inputs for registered corrections).** Every registered statistical correction / adjustment §6 relies on — attenuation / reliability factors, per-seed SEs, variance reconstructions, shrinkage priors, any statistic computed FROM a derived input rather than directly from this run's raw eval output — must name the data dependency it consumes AND verify that dependency actually EXISTS in the cited artifact (the column is present in the CSV, the per-seed files resolve on HF, the field is in the JSON schema — check the actual file, not the producing plan's prose), OR explicitly schedule its construction as in-scope implementation work in §4 / the file-level diff list. This is the plan-time analogue of the step-5 Hub-existence check, extended to derived statistical inputs: an input that is "derivable in principle" but neither verified-present nor scheduled-to-build is a phantom dependency (#509: registered attenuation-adjusted correlations consumed per-seed SEs that existed nowhere; the production path crashed as predicted and the result shipped with the correction pinned to 1.0). Plans with no registered derived-input corrections (raw DV + standard tests only) write "N/A — no derived statistical inputs" and move on.
 
 **Required: Selection-symmetric nulls (max-over-axis headlines).** If the
 plan's headline statistic is chosen by `max` / `argmax` / best-of /
@@ -388,7 +386,7 @@ map are covered by the same "N/A — no representation map fitted" line.
 
 ## 6.5 Primary deliverable (the upstream completeness-vs-plan gate)
 
-Name, per dependent variable, the **artifact path or glob the upload-verifier can enumerate on the pod** to confirm the run actually produced the Goal's primary measurement. This is the upstream complement to the downstream planned-vs-actual reporting discipline (`verify_task_body.py` check 11b + `clean-result-critic` Lens 13): catching a wholly-missing primary deliverable BEFORE the pod is terminated keeps the cheap-fix window (pod + per-step checkpoints still alive) open. Without it, a run whose headline phases silently no-op'd (missing input flags, an `if args.X and args.Y` guard fell through, a phase crashed mid-loop) passes Step 8 upload-verification — because every artifact that *was* produced has a URL — and is only caught at the clean-result write-up after the cheap-fix window has closed (incident #519: headline activation-shift / SVD / steering phases were silently skipped at launch, the manifest recorded `skipped_phases: []`, the pod was terminated, and per-step checkpoints were lost).
+Name, per dependent variable, the **artifact path or glob the upload-verifier can enumerate on the pod** to confirm the run actually produced the Goal's primary measurement. This is the upstream complement to the downstream planned-vs-actual reporting discipline (`verify_task_body.py` check 11b + `clean-result-critic` Lens 13): catching a wholly-missing primary deliverable BEFORE the pod is terminated keeps the cheap-fix window (pod + per-step checkpoints still alive) open. Without it, a run whose headline phases silently no-op'd (missing input flags, an `if args.X and args.Y` guard fell through, a phase crashed mid-loop) passes Step 8 upload-verification — because every artifact that *was* produced has a URL — and is only caught at the clean-result write-up after the cheap-fix window has closed (#519: headline phases silently skipped at launch, the manifest recorded `skipped_phases: []`, the pod was terminated, and per-step checkpoints were lost).
 
 Render as a fenced YAML block the upload-verifier and the orchestrator can both parse:
 
@@ -648,17 +646,13 @@ the #734/#1434 class), and the #1469 carry-over gate glob-skips
 phase-output globs, so no mechanical gate covers that seam. Pod-free
 plans and single-machine runs OMIT this block
 entirely — no boilerplate, no escape line needed. Three incidents it closes:
-#1482 (the off-pod P5 judge died at VM launch loading pod-only
-`scratch/{split_indices.npz,row_ci.npy,prov.npy}` never in the P4 upload
-set — the pod was already terminated; recovery needed a sha-anchored
-reconstruction), #1426 (a planned VM-side phase FAILed the verifier's
-initial r1 BY CONSTRUCTION — the verifier expected its outputs on the pod;
-the follow-up round's verifier then IMPROVISED "DEFERRED + gap-listed" rows
-for the same phase — live precedent for the deferral grammar this block
-mechanizes), and #1773 (the inverse direction: Pass B on GCE crashed
-`FileNotFoundError` loading Pass A's VM-produced selection outputs — never
-HF-uploaded, no launcher staging step; one 4×A100 GCE provision+boot cycle
-burned, att-20260729-010419). This is the plan-time mechanization of the
+#1482 (an off-pod judge died at VM launch loading pod-only scratch files
+never in the upload set — the pod was already terminated), #1426 (a planned
+VM-side phase FAILed the verifier BY CONSTRUCTION — outputs expected on the
+pod; the follow-up round improvised the "DEFERRED + gap-listed" rows this
+block mechanizes), and #1773 (the inverse direction: a GCE pass crashed
+loading VM-produced outputs never HF-uploaded — one provision+boot cycle
+burned). This is the plan-time mechanization of the
 `gotchas.md` cross-machine upload-set bullet (#1526, rules (i)-(iv)).
 
 Render as a fenced YAML block, one entry per phase that reads another
@@ -906,10 +900,9 @@ under a different loss shape: marker-only loss has no countervailing loss
 term, so a recipe that was safe for the parent saturates the marker. Name the
 parity break in §12 Assumptions as a measurement-validity deviation; comparison
 parity with the parent lives on the DV / eval side, not the training-stop side.
-(Incident #480, 2026-06-03/10: the plan grounded lr=1e-5 in "#411 parity" and
-explicitly rejected lr=5e-6 as "breaks #411 parity"; all 6 marker adapters
-saturated — 14/23 software-engineer bystander cells pinned at a fake log-prob
-floor — and the fix was a full band-stopped retrain.)
+(#480: the plan grounded lr=1e-5 in "#411 parity" and explicitly rejected
+lr=5e-6 as "breaks #411 parity"; all 6 marker adapters saturated and the fix
+was a full band-stopped retrain.)
 
 NOTE — large sweeps: the contract is one `Source:` per *unique* hyperparameter
 value, NOT per condition. Group conditions that share a recipe, e.g. "All
