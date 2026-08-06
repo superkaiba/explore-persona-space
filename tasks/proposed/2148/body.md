@@ -61,10 +61,6 @@ Worth noting the same error was made independently by the orchestrator during #2
 
 ## Provenance
 
-Diagnosed on #2091, 2026-08-06. Full evidence in `epm:failure` v3 on task #2091.
-
-## Provenance
-
 - workflow_fix_target: .claude/agents/upload-verifier.md
 - fingerprint: 8f3c1d20ae74
 
