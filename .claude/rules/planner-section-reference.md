@@ -153,9 +153,7 @@ evaluation | nulls | statistic — §3 here is the natural home) carries "paired
 plus registration vocabulary or an enumerated pair count ("7 pairs").
 `scripts/verify_plan.py` check 18 (`check_paired_contrast_source_coverage`)
 then REQUIRES a per-arm row-coverage declaration — FAIL for `kind: experiment`
-(WARN `analysis`) at Phase 1.5.0 and on every critic re-verify (incidents:
-#810 v13 — 2 of 9 registered rows missing from the named full side; #1112
-amendment drafts v4 AND v7 — one mechanical bounce each, same omission).
+(WARN `analysis`) at Phase 1.5.0 and on every critic re-verify (#810, #1112).
 Every `plans/v{K}.md` is verified STANDALONE: an amendment / delta /
 follow-up draft that registers or carries forward a paired contrast
 RE-declares Row-coverage in its own text — the parent version's declaration
@@ -648,17 +646,13 @@ the #734/#1434 class), and the #1469 carry-over gate glob-skips
 phase-output globs, so no mechanical gate covers that seam. Pod-free
 plans and single-machine runs OMIT this block
 entirely — no boilerplate, no escape line needed. Three incidents it closes:
-#1482 (the off-pod P5 judge died at VM launch loading pod-only
-`scratch/{split_indices.npz,row_ci.npy,prov.npy}` never in the P4 upload
-set — the pod was already terminated; recovery needed a sha-anchored
-reconstruction), #1426 (a planned VM-side phase FAILed the verifier's
-initial r1 BY CONSTRUCTION — the verifier expected its outputs on the pod;
-the follow-up round's verifier then IMPROVISED "DEFERRED + gap-listed" rows
-for the same phase — live precedent for the deferral grammar this block
-mechanizes), and #1773 (the inverse direction: Pass B on GCE crashed
-`FileNotFoundError` loading Pass A's VM-produced selection outputs — never
-HF-uploaded, no launcher staging step; one 4×A100 GCE provision+boot cycle
-burned, att-20260729-010419). This is the plan-time mechanization of the
+#1482 (an off-pod judge died at VM launch loading pod-only scratch files
+never in the upload set — the pod was already terminated), #1426 (a planned
+VM-side phase FAILed the verifier BY CONSTRUCTION — outputs expected on the
+pod; the follow-up round improvised the "DEFERRED + gap-listed" rows this
+block mechanizes), and #1773 (the inverse direction: a GCE pass crashed
+loading VM-produced outputs never HF-uploaded — one provision+boot cycle
+burned). This is the plan-time mechanization of the
 `gotchas.md` cross-machine upload-set bullet (#1526, rules (i)-(iv)).
 
 Render as a fenced YAML block, one entry per phase that reads another
