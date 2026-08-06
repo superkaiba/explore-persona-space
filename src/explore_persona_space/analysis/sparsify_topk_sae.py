@@ -9,8 +9,26 @@ Verified format at layers.29/sae.safetensors:
   b_dec           (d_in,)       float32
 Config from cfg.json: expansion_factor=64, k=32, d_in=4096, normalize_decoder=True.
 
+Encode/decode conventions ported from eai-sparsify 1.3.3 (the release's own
+inference path; verified against the installed source):
+  1. `SparseCoder.encode` PRE-SUBTRACTS `b_dec` from the input when
+     `cfg.transcode` is falsy (sparse_coder.py L191-192); this release's
+     cfg.json carries no `transcode` key, and the config default is False,
+     so the subtraction ALWAYS applies here. `decode` adds `b_dec` back.
+  2. `fused_encoder` applies ReLU to the pre-activations BEFORE top-k
+     selection (fused_encoder.py L29), so selected values are never negative.
+  3. `normalize_decoder=True` acts at init/training time only —
+     `load_from_disk` overwrites `W_dec` with the released (already-folded)
+     weights and applies NO renormalization; the loader needs none.
+  4. `multi_topk=True` affects only the training-loss diagnostics in
+     `SparseCoder.forward`; `encode`/`decode` ignore it.
+Omitting (1)-(2) was the #2061 loader-parity gate failure (FVE 0.1157 ported
+vs 0.3296 reference on 1000 pooled answer states, |Δ| 0.2139 vs the 0.05 bar).
+
 Plan #2061 §Design "Loader adapter" — Option A (ported ~30-line encode).
-Contract validated by the loader-parity FVE smoke gate at P1 preamble.
+Contract validated by the loader-parity FVE smoke gate at P1 preamble and
+offline (synthetic weights vs the real `SparseCoder`) in
+tests/test_sparsify_topk_sae.py.
 
 Two encode entrypoints share ONE pre-activation path (review round-2 M1):
 `topk_encode` returns the dense (n, d_sae) feature matrix (P4 fitness /
@@ -63,10 +81,20 @@ def load_sae_weights(
 
 
 def _pre_acts(x: torch.Tensor, weights: dict[str, torch.Tensor]) -> torch.Tensor:
-    """(n, d_sae) encoder pre-activations: x @ W_enc.T + b_enc."""
+    """(n, d_sae) encoder pre-activations: relu((x - b_dec) @ W_enc.T + b_enc).
+
+    Matches eai-sparsify 1.3.3 `SparseCoder.encode` for `cfg.transcode` falsy
+    (this release's cfg.json has no `transcode` key; config default False):
+    the input is shifted by -b_dec BEFORE the encoder (sparse_coder.py
+    L191-192; `topk_reconstruct` adds b_dec back, mirroring `decode`), and
+    pre-activations are ReLU'd BEFORE top-k selection (fused_encoder.py L29),
+    so a row with fewer than k positive pre-activations scatters exact zeros
+    for the deficit rather than negative values.
+    """
     W_enc = weights["encoder.weight"]  # (d_sae, d_in)
     b_enc = weights["encoder.bias"]  # (d_sae,)
-    return x @ W_enc.T + b_enc
+    b_dec = weights["b_dec"]  # (d_in,)
+    return torch.relu((x - b_dec) @ W_enc.T + b_enc)
 
 
 def topk_encode(
@@ -82,7 +110,9 @@ def topk_encode(
         k: TopK parameter (32 for the 64x SAE per cfg.json).
 
     Returns:
-        (n, d_sae) sparse feature vector. Non-top-k entries are exact zero.
+        (n, d_sae) sparse feature vector. Non-top-k entries are exact zero;
+        kept values are ReLU'd pre-activations (never negative), matching
+        the sparsify reference (see `_pre_acts`).
     """
     pre_acts = _pre_acts(x, weights)  # (n, d_sae)
     topk_vals, topk_idx = torch.topk(pre_acts, k=k, dim=-1)
