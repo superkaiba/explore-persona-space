@@ -462,6 +462,7 @@ def _stage_draw_jsonl(staging_root: Path) -> Path:
     manifest_in_repo = f"{SCAFFOLDS_PREFIX}/shared_question_draw.manifest.json"
     api = _api()
     has_manifest = retry_transient(
+        # HUB_VERIFY_RETRY_EXEMPT: single-path probe wrapped in hub.retry_transient at call site
         lambda: api.file_exists(pa.HF_DATA_REPO, manifest_in_repo, repo_type="dataset"),
         what=f"file_exists({manifest_in_repo})",
     )
