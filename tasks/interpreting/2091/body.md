@@ -5,7 +5,7 @@ kind: experiment
 tags:
 - trigger-dense
 created_at: '2026-08-05T19:42:24Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1073
 origin_prompt: 'user chat 2026-08-05: ''We''ve been using stochastic vs deterministic
   decoding for different experiments. I wanted to do a principled comparison.'' (full
