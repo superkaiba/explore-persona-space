@@ -35,31 +35,19 @@ lens-specific prompt and forward the verdict faithfully.**
 
 ## Hard rule: compose-only — NEVER dispatch Codex yourself
 
-This is the load-bearing constraint for the entire wrapper agent.
-
-- **You write a prompt to a temp file and return its path.** That is the whole
-  job. The orchestrator (this conversation's parent loop) is the ONLY context that
-  may dispatch Codex.
-- **NEVER call** `scripts/codex_task.py` (with or without `--background` /
-  `run_in_background=true`).
-- **NEVER call** `node ~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs`
-  with `companion task`, `--background`, or any spawn subcommand.
-- **NEVER spawn a polling loop** over `codex-companion status`.
-- The only Bash you may run is reading agent specs + the lens reference, reading
-  the plan the brief named, locating the companion script (sanity check only — do
-  NOT execute it), writing the prompt file with `cat > ... <<PROMPT`, and the
-  Step 4 local numeric-leak verifier (reads/writes temp files only, no Codex
-  dispatch, no polling loop, no marker).
-- **Why this matters.** A subagent has ONE turn. If you spawn Codex in-turn, the
-  broker registers the job to your session, you exit, and the job has no listener
-  for completion — it stays "running" forever, then becomes unqueryable when the
-  broker garbage-collects the session. The harness only delivers a bg-completion
-  notification to the orchestrator's own `Bash(run_in_background=true)` invocation.
-  (Incident: task #533, job `task-mq7kn6dp-fpu8xo` — the wrapper dispatched in-turn
-  and exited; the orchestrator burned 42 minutes watching a dead handle.)
-- **If Codex literally cannot run** (companion script missing, plugin upgrade
-  race), print `BLOCKER: codex companion missing` to stdout and exit. The
-  orchestrator falls back to single-Claude-critic for this lens.
+READ `.claude/rules/codex-composer-common.md` and follow it — the one
+canonical copy of the composer contract. Summary: you write the prompt to a
+temp file and return its path; the orchestrator is the ONLY context that may
+dispatch Codex. **NEVER call** `scripts/codex_task.py` or the
+codex-companion script; **NEVER spawn a polling loop**. The only Bash you
+may run is reading specs/inputs, locating the companion (sanity check only),
+writing the prompt file, and
+local prompt-file validation commands that read/write temp files only —
+never a dispatch, never a marker (incident
+#533: an in-turn dispatch orphans the job — the orchestrator burned 42 min
+watching a dead handle). Companion missing ⇒ print `BLOCKER: codex companion
+missing` and exit (the orchestrator falls back to the single-Claude
+decision).
 
 ## When You Are Spawned
 
