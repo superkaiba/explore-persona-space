@@ -12358,7 +12358,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # reads), 99,000 — measured 98,126 B post-#1230 (Step 6 durability-pin
     # shipping duty), 97,000 — measured 96,072 B post-#1119, 95,000 —
     # measured 94,126 B post-#1115)
-    "code-reviewer.md": 140_300,
+    # measured 98,526 B post the 2026-08-05 compaction: Step 0.5-0.70
+    # gate-stack detail relocated to
+    # .claude/rules/code-reviewer-section-reference.md (#1159 mechanism);
+    # the spec keeps per-gate trigger + blocker-tag + lint-pinned tokens
+    # + § pointer lines. Cap = measured + ~1 KB.
+    "code-reviewer.md": 99_500,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -12368,7 +12373,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # 72,229 B post-#1056, 72,000 post-#1050 r2, 71,000 post-#1050 r1,
     # 60,554 B pre-#1050; 75,200 pre-description-rewrite — measured
     # 71,784 B after the 2026-08-05 frontmatter-description compaction)
-    "codex-clean-result-critic.md": 74_784,
+    # measured 49,241 B post the 2026-08-05 compaction: the 15 verdict-
+    # template lens slots slimmed to heading + findings-contract lines (the
+    # composed prompt already inlines the full lens reference verbatim via
+    # the {{INLINED ...}} placeholders). Cap = measured + ~1 KB.
+    # (48_400 post the composer-common hard-rule dedupe, measured 47,431 B.)
+    "codex-clean-result-critic.md": 48_400,
     # measured 61,503 B post-#1805 (Step 4 copy-list bullet extension:
     # round-new-script no-flags lint duty, no-uv static hub-verify
     # adaptation — plan-mandated growth; cap = measured + ~1.3 KB. Prior:
@@ -12381,7 +12391,13 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # inlined-rubric 4.6 slot + Blocker-tags 4.6-presence), 53,300 —
     # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
     # 47,930 B post-#881)
-    "codex-code-reviewer.md": 62_800,
+    # measured 49,270 B post the 2026-08-05 compaction: the Step 2 copy-list
+    # bullets deduped against the code-reviewer.md text the composer copies
+    # verbatim at compose time (each bullet keeps the section name, the
+    # lint/test-pinned tokens, and the Codex-specific adaptations only).
+    # Cap = measured + ~1 KB. (47_900 post the composer-common hard-rule
+    # dedupe, measured 46,904 B.)
+    "codex-code-reviewer.md": 47_900,
     # measured 84,278 B post-#2002 (Resume-matrix + real production
     # out-root unit smoke-contract requirements + matching marker
     # `notes:` sub-blocks; incident driver: #1947 P0/P4/P5 + #1315 r6 +
@@ -12402,7 +12418,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (per-arm-class smoke-coverage clause), 67,900 — measured
     # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
     # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 85_500,
+    # measured 64,480 B post the 2026-08-05 compaction: Before-writing-code
+    # item 5 (smoke/sweep parity) + After-implementation items 3 + 7 detail
+    # relocated to .claude/rules/experiment-implementer-section-reference.md
+    # (#1159 mechanism); pinned anchors/tokens stay in-spec. Cap = measured
+    # + ~1 KB.
+    "experiment-implementer.md": 65_500,
     # measured 79,611 B post-#1720 (§ Local runs pre-emptive NOT-RUN escape
     # for Step 9c-selected slow tests — mirrors implementer.md L174; ~500 B
     # growth; cap = measured + ~0.9 KB. Prior: 79_500 —
@@ -12424,7 +12445,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # pre-launch gate — the #1739 dispatch-time backstop, output-side
     # sibling of the item-4 input gate; plan-mandated growth; cap =
     # measured + ~0.87 KB — LANDING bytes, per #1753.)
-    "experimenter.md": 77_700,
+    # measured 65,619 B post the 2026-08-05 compaction: bootstrap probe, GCP
+    # salvage, Before-Running item-4 gate detail, and the vLLM hang triad
+    # relocated to .claude/rules/experimenter-section-reference.md (#1159
+    # mechanism); the crash-fix-relaunch paragraph + run-launched fence
+    # tokens stay in-spec verbatim. Cap = measured + ~1 KB.
+    "experimenter.md": 66_600,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
@@ -12579,6 +12605,18 @@ def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale
 AGENT_MEMORY_INDEX_WARN_BYTES = 20_000
 AGENT_MEMORY_INDEX_FAIL_BYTES = 24_000
 
+# gotchas.md size budget (2026-08-05 compaction): `.claude/rules/gotchas.md` is
+# machine-APPENDED by scripts/consolidate_lessons.py (failure-lesson promotion),
+# so it regrows without bound between hand trims — it reached 324 KB before the
+# 2026-08-05 trim to ~199 KB. The cap is the backstop that forces a periodic
+# re-trim (per entry: keep the operative rule + diagnostic signature + fix +
+# bare #N citations; drop dates, session ids, wall-times, fix-status
+# archaeology). Thresholds STRICTLY-GREATER (exactly-at passes); NO grandfather
+# table — the file was trimmed under WARN in the same change that introduced
+# the check.
+GOTCHAS_SIZE_WARN_BYTES = 200_000
+GOTCHAS_SIZE_FAIL_BYTES = 250_000
+
 _AGENT_MEMORY_CURATION_RECIPE = (
     "curate it: trim each index hook to ~1 line (<=~150 chars), move the "
     "detail into the pointed-to per-entry file, and merge duplicate/sibling "
@@ -12642,6 +12680,250 @@ def check_agent_memory_index_size(
                 f"budget (FAIL above {AGENT_MEMORY_INDEX_FAIL_BYTES}; the "
                 f"loader truncates at ~25,000 bytes) — "
                 f"{_AGENT_MEMORY_CURATION_RECIPE}."
+            )
+
+    return errors
+
+
+def check_gotchas_size(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """WARN/FAIL `.claude/rules/gotchas.md` over the regrowth size budget.
+
+    gotchas.md is machine-appended by ``scripts/consolidate_lessons.py``
+    (failure-lesson promotion), so it regrows without bound between hand
+    trims; this check is the backstop that forces a periodic re-trim.
+    Semantics (both thresholds STRICTLY-GREATER): size >
+    ``GOTCHAS_SIZE_FAIL_BYTES`` FAILs with the trim recipe; size >
+    ``GOTCHAS_SIZE_WARN_BYTES`` WARNs. No grandfather table. A missing
+    gotchas.md FAILs (parity with ``check_agent_spec_size``'s missing-dir
+    behavior — the file is a load-bearing rules surface). WARNs go to
+    ``warn_sink`` when provided (unit-test hook), else stderr with a
+    ``WARN: `` prefix; WARNs never enter the returned FAIL list.
+    ``repo_root`` is a unit-test override; production callers pass None.
+    Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    path = root / ".claude" / "rules" / "gotchas.md"
+    errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    if not path.is_file():
+        errors.append(
+            f"{path}: missing — .claude/rules/gotchas.md must exist for the "
+            f"gotchas size-budget check."
+        )
+        return errors
+
+    size = path.stat().st_size
+    trim_recipe = (
+        "re-trim per the entry editorial policy: keep the operative rule + "
+        "diagnostic signature + fix + bare #N citations; drop dates, session "
+        "ids, wall-times, and fix-status archaeology (resolve to current "
+        "state); collapse superseded/FIXED entries to one line"
+    )
+    if size > GOTCHAS_SIZE_FAIL_BYTES:
+        errors.append(
+            f".claude/rules/gotchas.md: {size} bytes exceeds the "
+            f"{GOTCHAS_SIZE_FAIL_BYTES}-byte gotchas FAIL threshold (the file "
+            f"is machine-appended and must be periodically re-trimmed) — "
+            f"{trim_recipe}."
+        )
+    elif size > GOTCHAS_SIZE_WARN_BYTES:
+        _warn(
+            f".claude/rules/gotchas.md: {size} bytes exceeds the "
+            f"{GOTCHAS_SIZE_WARN_BYTES}-byte gotchas WARN budget (FAIL above "
+            f"{GOTCHAS_SIZE_FAIL_BYTES}) — {trim_recipe}."
+        )
+
+    return errors
+
+
+# Skill-doc size budget (2026-08-05 compaction, the t3b guardrail): every
+# `.claude/skills/**/*.md` (SKILL.md + support docs) is loaded whole into the
+# invoking agent's context on Skill invocation, and skills had NO size cap —
+# which is how issue/SKILL.md reached 916 KB before the 2026-08-05 trim.
+# Semantics mirror the agent-spec ratchet (thresholds STRICTLY-GREATER;
+# grandfather cap = measured + <= 3 KB headroom, FAIL above the cap, remove
+# the entry once the file drops to <= the FAIL threshold). Two exemption
+# classes (never sized): GENERATED files, whose bytes are owned by their
+# generator (`issue/markers.md` is emitted from workflow.yaml via
+# `--emit-tables` — the compaction lever is workflow.yaml prose, and
+# hand-trimming the derived table is prohibited); and DATA-not-instructions
+# directories (exemplars / templates / lw-post-examples) — reference corpora
+# read selectively, not playbooks loaded to be followed.
+SKILL_DOC_WARN_BYTES = 40_000
+SKILL_DOC_FAIL_BYTES = 60_000
+SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
+
+# Paths relative to .claude/skills/ (POSIX separators).
+SKILL_DOC_GENERATED_EXEMPT: frozenset[str] = frozenset({"issue/markers.md"})
+
+# Any doc with one of these path SEGMENTS under .claude/skills/ is exempt.
+SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
+    {"exemplars", "templates", "lw-post-examples"}
+)
+
+# Grandfather-ratchet caps for skill docs still above SKILL_DOC_FAIL_BYTES,
+# keyed by path relative to .claude/skills/. Each cap = measured size at the
+# 2026-08-05 introduction + <= 3 KB margin; a grandfathered file FAILs above
+# its cap (regrowth ratchet) and FAILs as stale once it drops to
+# <= SKILL_DOC_FAIL_BYTES ("remove the entry"). Ratchet DOWN when trimmed
+# (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
+# change). Each entry names its trim direction; none is licensed to grow.
+SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 897,435 B post-t3b story->citation trim; the remaining mass is
+    # the judgment tranche (bash-block extraction to step10d_guards.sh-style
+    # scripts, 9a-quater legacy-path stub, GCP rollback-prose relocation).
+    "issue/SKILL.md": 900_000,
+    # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
+    # the v3 body drain.
+    "clean-results/SPEC.md": 106_900,
+    # measured 87,195 B; problem-sweep prose + living-docs passes are the
+    # trim direction.
+    "daily/SKILL.md": 90_000,
+    # measured 68,032 B; Phase 1 planner-prompt restatement of planner.md is
+    # the trim direction.
+    "adversarial-planner/SKILL.md": 70_900,
+}
+
+
+def check_skill_doc_size(  # noqa: C901 -- flat per-entry hygiene ladder, mirroring check_agent_spec_size
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """WARN/FAIL skill docs (`.claude/skills/**/*.md`) over the size budget.
+
+    A skill doc is loaded whole on invocation, so bytes here are a
+    per-invocation token cost — and skills had no cap (the 916 KB
+    issue/SKILL.md is the founding incident). Semantics (all thresholds
+    STRICTLY-GREATER): size > ``SKILL_DOC_FAIL_BYTES`` FAILs unless the file
+    is grandfathered in ``SKILL_DOC_SIZE_GRANDFATHER`` (then it WARNs while
+    under its per-file cap and FAILs above it — the regrowth ratchet); size >
+    ``SKILL_DOC_WARN_BYTES`` WARNs. Exempt: ``SKILL_DOC_GENERATED_EXEMPT``
+    paths (regenerate-don't-edit derived tables) and docs under a
+    ``SKILL_DOC_EXEMPT_DIR_SEGMENTS`` directory (data, not instructions).
+    Grandfather hygiene FAILs a stale entry (file missing), an entry whose
+    file dropped to <= the FAIL threshold (remove the entry — ratchet down),
+    an entry whose cap sits more than
+    ``SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES`` above the live file size
+    (loose/stale cap — lower it), and a config self-check FAILs any cap <=
+    the FAIL threshold or a grandfather/exempt contradiction. WARNs go to
+    ``warn_sink`` when provided (unit-test hook), else stderr with a
+    ``WARN: `` prefix; WARNs never enter the returned FAIL list.
+    ``repo_root`` is a unit-test override; production callers pass None.
+    Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    skills_dir = root / ".claude" / "skills"
+    errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    if not skills_dir.is_dir():
+        errors.append(
+            f"{skills_dir}: missing — the skills dir must exist for the "
+            f"skill-doc size-budget check."
+        )
+        return errors
+
+    def _exempt(rel: str) -> bool:
+        if rel in SKILL_DOC_GENERATED_EXEMPT:
+            return True
+        return any(seg in SKILL_DOC_EXEMPT_DIR_SEGMENTS for seg in rel.split("/")[:-1])
+
+    # Config self-check FIRST: a cap at/below the FAIL threshold is
+    # meaningless, and a grandfathered-but-exempt path is a contradiction.
+    for gf_rel, cap in sorted(SKILL_DOC_SIZE_GRANDFATHER.items()):
+        if cap <= SKILL_DOC_FAIL_BYTES:
+            errors.append(
+                f"SKILL_DOC_SIZE_GRANDFATHER['{gf_rel}']: cap {cap} — cap "
+                f"must exceed SKILL_DOC_FAIL_BYTES ({SKILL_DOC_FAIL_BYTES}); "
+                f"raise the cap or remove the entry."
+            )
+        if _exempt(gf_rel):
+            errors.append(
+                f"SKILL_DOC_SIZE_GRANDFATHER['{gf_rel}']: path is exempt "
+                f"(generated / data dir) — an exempt doc is never sized; "
+                f"remove the entry."
+            )
+
+    for path in sorted(skills_dir.rglob("*.md")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(skills_dir).as_posix()
+        if _exempt(rel):
+            continue
+        size = path.stat().st_size
+        if size > SKILL_DOC_FAIL_BYTES:
+            cap = SKILL_DOC_SIZE_GRANDFATHER.get(rel)
+            if cap is not None:
+                if size > cap:
+                    errors.append(
+                        f".claude/skills/{rel}: {size} bytes exceeds its "
+                        f"grandfather ratchet cap ({cap} bytes) — the doc "
+                        f"regrew past its recorded post-trim size; trim it "
+                        f"back (story->citation compression, relocate "
+                        f"reference material to .claude/rules/)."
+                    )
+                else:
+                    _warn(
+                        f".claude/skills/{rel}: {size} bytes — grandfathered; "
+                        f"{cap - size} bytes under its cap ({cap})."
+                    )
+            else:
+                errors.append(
+                    f".claude/skills/{rel}: {size} bytes exceeds the "
+                    f"{SKILL_DOC_FAIL_BYTES}-byte skill-doc FAIL threshold — "
+                    f"trim it (story->citation compression, relocate "
+                    f"reference material to .claude/rules/), or add a "
+                    f"measured+<=3KB grandfather entry with a named trim "
+                    f"direction."
+                )
+        elif size > SKILL_DOC_WARN_BYTES:
+            _warn(
+                f".claude/skills/{rel}: {size} bytes exceeds the "
+                f"{SKILL_DOC_WARN_BYTES}-byte skill-doc WARN budget "
+                f"(FAIL above {SKILL_DOC_FAIL_BYTES})."
+            )
+
+    # Grandfather-entry hygiene (mirrors the agent-spec ratchet, #986).
+    for gf_rel, cap in sorted(SKILL_DOC_SIZE_GRANDFATHER.items()):
+        gf_path = skills_dir / gf_rel
+        if not gf_path.is_file():
+            errors.append(
+                f"SKILL_DOC_SIZE_GRANDFATHER['{gf_rel}']: stale grandfather "
+                f"entry — .claude/skills/{gf_rel} does not exist; remove the "
+                f"entry."
+            )
+            continue
+        if _exempt(gf_rel):
+            continue  # already reported by the config self-check above
+        gf_size = gf_path.stat().st_size
+        if gf_size <= SKILL_DOC_FAIL_BYTES:
+            errors.append(
+                f"SKILL_DOC_SIZE_GRANDFATHER['{gf_rel}']: "
+                f".claude/skills/{gf_rel} is {gf_size} bytes "
+                f"(<= {SKILL_DOC_FAIL_BYTES}) and no longer needs "
+                f"grandfathering — remove the entry (ratchet down)."
+            )
+        elif cap - gf_size > SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES:
+            errors.append(
+                f"SKILL_DOC_SIZE_GRANDFATHER['{gf_rel}']: cap {cap} sits "
+                f"{cap - gf_size} bytes above .claude/skills/{gf_rel} "
+                f"({gf_size} bytes) — max headroom is "
+                f"{SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES} bytes (cap = "
+                f"measured + <=3 KB); lower the cap to <= "
+                f"{gf_size + SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES}, or "
+                f"remove the entry if the file no longer needs grandfathering."
             )
 
     return errors
@@ -14132,6 +14414,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "loader at ~25 KB, silently dropping the newest lessons — #1891)",
     )
     parser.add_argument(
+        "--check-gotchas-size",
+        action="store_true",
+        help="gotchas.md regrowth size budget: WARN >200,000 B, FAIL >250,000 B "
+        "(the file is machine-appended by consolidate_lessons.py; the cap forces "
+        "periodic re-trims)",
+    )
+    parser.add_argument(
+        "--check-skill-doc-size",
+        action="store_true",
+        help="skill-doc size budget over .claude/skills/**/*.md: WARN >40 KB, "
+        "FAIL >60 KB (grandfather-ratchet; generated tables + "
+        "exemplars/templates dirs exempt)",
+    )
+    parser.add_argument(
         "--check-api-dispatch-routing",
         action="store_true",
         help="FAIL on a NEW direct-Anthropic call site (anthropic.Anthropic(...) / "
@@ -14401,6 +14697,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
         or args.check_agent_memory_index_size
+        or args.check_gotchas_size
+        or args.check_skill_doc_size
         or args.check_api_dispatch_routing
         or args.check_lens_coverage
         or args.check_section_reference_pointers
@@ -14519,6 +14817,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_agent_spec_size())
     if args.check_agent_memory_index_size or no_flags:
         errors.extend(check_agent_memory_index_size())
+    if args.check_gotchas_size or no_flags:
+        errors.extend(check_gotchas_size())
+    if args.check_skill_doc_size or no_flags:
+        errors.extend(check_skill_doc_size())
     if args.check_compute_shape_review_lens or no_flags:
         errors.extend(check_compute_shape_review_lens())
     if args.check_long_loop_restartability_review_lens or no_flags:
