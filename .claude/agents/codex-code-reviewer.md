@@ -423,11 +423,16 @@ names:
   Step 4 is skipped: committed test present → no finding; absent → at least
   a Minor `substantive` with a 1-2-line pytest sketch (never strippable; a
   bare Minor does not flip PASS→FAIL); a CLAIMED-but-absent or
-  non-exercising test → substantive FAIL (#653 r8).
+  non-exercising test → substantive FAIL (#653 r8). Without this in the
+  prompt, an un-CI-pinned BLOCKER-fix assertion ships unflagged.
 - "Step 4.6: Gate-scope line verification (#1305/#1317)" VERBATIM — binds
   ONLY on `epm:results` implementation reports. Both halves: (i)
   presence/format is mechanical — the `**Gate-scope check (#1288):**` line
-  with its contract fields; ABSENT entirely with marker `ts` ≥ 2026-07-15 →
+  with the contract fields (selector `n_tests` + resolved base, locally-run
+  files, pin-sweep fragments → hit count + verbatim deduplicated
+  hit-file list + `sweep_scope:` universe token, deferred invariant-only
+  count; count-only / no list / missing `sweep_scope:` =
+  present-but-terse); ABSENT entirely with marker `ts` ≥ 2026-07-15 →
   a single Critical tagged `marker-shape` whose body NAMES
   `Gate-scope check` (per-blocker strip keying); present-but-terse → at most
   CONCERNS; (ii) diff-consistency is substantive, NEVER `marker-shape` (a
