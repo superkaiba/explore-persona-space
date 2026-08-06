@@ -5,6 +5,17 @@ description: End-of-day Explore Persona Space brief — what happened today, plu
 
 # Daily Brief
 
+> **RETIRED 2026-08-06 — DO NOT RUN.** Crons disabled; removed from the
+> workflow per Thomas: *"remove daily from the workflow"*. `/mygoat-daily` was <!-- lint: historical-ref -->
+> retired in the same pass; no daily cron of any kind remains active.
+>
+> Full record — rationale, the three disabled crontab lines, the
+> fail-toward-silence lanes this leaves unbacked, the helper scripts that MUST
+> NOT be deleted, and the restore recipe — lives in
+> `.claude/rules/background-automation.md` § "RETIRED 2026-08-06".
+>
+> Everything below is preserved verbatim and unmodified.
+
 Use `tasks/` as the only workflow state source. Do not read or mutate queue,
 status, promotion, or approval state through any external tracker.
 

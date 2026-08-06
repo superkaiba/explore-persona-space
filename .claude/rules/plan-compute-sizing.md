@@ -559,6 +559,30 @@ the fleet's earlyoom headroom; the watcher + earlyoom telemetry remain the
 runtime backstop. Plan-time placement, not a mid-run gate.
 
 
+**DOWNLOAD routing — a phase that downloads a lot of data runs on a POD,
+even when it is CPU-only (standing rule, Thomas 2026-08-06).** Verbatim
+directive: *"anything that needs to download a lot of data should run on a
+pod even if it's CPU only"*. STRICTER than the >50 GB disk carve-out and
+evaluated BEFORE it. Trigger: any phase pulling a large dataset / model /
+artifact set to local disk — HF `snapshot_download`, a `hf_dl` / `*_dl`
+staging pull, an `hf_hub_download` loop, a bulk tree-fetch, an rsync of
+results off a pod — at a threshold of **~10 GB**, deliberately far below the
+50 GB gate. Rationale: the 50 GB gate has repeatedly failed to fire on
+downloads that still broke the fleet — #1393 was a **14 GB** inline HF pull
+that filled `/` with ENOSPC while passing the 50 GB check. Unknown size
+counts as OVER: size it first (`list_repo_tree` sums bytes without
+fetching) or route to a pod. Binds inline / user-chat rounds and subagent
+dispatches identically to plan §9 phases — the constraint is DISK, not
+FLOPs, so "it's only CPU work" and "it's just a download" are both
+non-reasons. Forced-VM exception (a consumer that genuinely cannot run
+pod-side): the dispatch note names the staging path, the resolved
+filesystem (`df -P`), and free headroom ≥ ~1.5× projected bytes, staging to
+`/mnt/eps-data` — never `/`, `/tmp/`, or a fresh root-owned top-level dir.
+Context making this hard as of 2026-08-06: `/` sits at 98% used / 23 GiB
+free (237 GiB worktrees + 208 GiB `data/`), because the #681 bind-migration
+is still pending (task **#2132**) — there is no slack to absorb even a
+modest pull.
+
 **CPU-phase THROUGHPUT routing — the shared VM is ~6× slower per unit
 than a dedicated RunPod CPU pod; route CPU-only work to a pod by DEFAULT
 (#2054).** The >50 GB disk carve-out and the ≥16 GB RSS gate above are

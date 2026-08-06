@@ -15,6 +15,58 @@ paths:
 
 # Background cron automations
 
+## RETIRED 2026-08-06: `/daily` and `/mygoat-daily` (read this first) <!-- lint: historical-ref -->
+
+<!-- /mygoat-daily is a user-global skill (~/.claude/skills/), never a project
+     skill, and it is now retired — every mention below is a historical
+     citation of a removed automation, not a live dispatch target. -->
+
+
+Thomas's directive 2026-08-06 (*"remove daily from the workflow"*, then
+*"remove mygoat-daily too"*). Both crons are `#DISABLED` in the crontab;
+backups under `~/.eps-autonomous/crontab-backups/`. **No daily cron of any
+kind is active.** Retired lines:
+
+- `27 23 * * *` — nightly `claude -p /daily`
+- `0 6 * * *` — `cron_daily_healthcheck.sh` (alerted when a `/daily` file
+  failed to land; left armed it would page every morning forever)
+- `45 23 * * *` — nightly `claude -p "/mygoat-daily"`
+
+**Why:** `/daily` was the dominant source of the `proposed` backlog — 86 of
+135 `proposed` tasks (64%) at retirement, emitting ~20-25 `kind: infra`
+tasks/night against a drain of ~15-20/day at concurrency cap 3.
+
+### CONSEQUENCE — fail-toward-silence lanes are now UNBACKED
+
+Several passes were deliberately specced to fail toward silence *because*
+`/daily` was the backstop behind them. That backstop is gone; these now fail
+silently with nothing catching the residue:
+
+| Site | What it relied on `/daily` for |
+|---|---|
+| `autonomous_session_watch.py:601` | completed-unmerged respawn v1 bounds — "fail-toward-silence; /daily stays the backstop" |
+| `autonomous_session_watch.py:614` | unmerged `origin/main` otherwise waits ~24h for the nightly Step C sweep |
+| `autonomous_session_watch.py:6958` | abandoned-session phrase detection — "the /daily sweep owns" |
+| `autonomous_session_watch.py:8144` | "each fails toward SILENCE by design; the /daily sweep stays the backstop for all four" |
+| `autonomous_session_watch.py:9945` | Step 9c known-red ledger refresh |
+| `.claude/workflow.yaml:2222` | living-docs backstop for parked proposals |
+| this file, §833/§872 | completed-unmerged v1 bounds; Step 9c gate ledger |
+
+Closing these needs either explicit escalation in each lane or a narrower
+replacement sweep. Do NOT re-add `/daily` to close them without addressing
+the backlog-growth problem that caused the retirement (see the still-parked
+**#1737** "should /daily cap its nightly route-2 filing volume" and **#2070**
+"61-deep auto-dispatchable infra queue").
+
+**Kept deliberately:** `scripts/daily_drive_filings.py`,
+`scripts/file_infra_task.py`, `scripts/sweep_parked_wf_candidates.py` — used
+by the workflow-fix-on-bug protocol independently of the retired skills.
+The PM digest line is fail-safe by spec (omitted silently when the dated file
+is absent), so it simply stops appearing; the `Held by /daily` enumeration
+stays valid because those 28 `daily-held` tasks still exist.
+
+---
+
 CLAUDE.md § Pods carries the always-on one-paragraph summary; this file is
 the predicate spec. The `autonomous_session_watch.py` module docstring is
 the lint-pinned canonical pass enumeration
