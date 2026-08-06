@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2125,
+  "highest_id": 2126,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8709,6 +8709,13 @@
       "path": "tasks/proposed/2125",
       "status": "proposed",
       "title": "daily-fix: pod-side liveness probe before LAUNCH FAILED"
+    },
+    "2126": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2126",
+      "status": "proposed",
+      "title": "daily-fix: five gate-recipe defects (Step 9c/10d)"
     },
     "213": {
       "has_clean_result": false,
