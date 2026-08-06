@@ -406,15 +406,23 @@ def assert_render_parity(tokenizer, rows: list[dict], render_fn) -> dict:
     return digest
 
 
-def reap_generation_engine(drain_timeout_s: int = 180, floor_mib: int = 2048) -> None:
-    """Reap the module-cached vLLM engine and DRAIN-WAIT the GPU below a floor.
+def reap_generation_engine(
+    gpu_id: int | str, drain_timeout_s: int = 180, floor_mib: int = 2048
+) -> None:
+    """Reap the module-cached vLLM engine and DRAIN-WAIT this unit's OWN GPU.
 
     vLLM and the HF capture model must NEVER co-reside: the engine reserves
     ``gpu_memory_utilization`` of HBM, so a resident 7B bf16 HF model makes the
     engine init raise (and the reverse starves the capture load). The drain
     verdict reads DEVICE-level ``memory.used`` — never compute-apps rows alone,
     which are pid-visibility-dependent inside a container and read EMPTY for a
-    holder this process cannot resolve (#825/#1333).
+    holder this process cannot resolve (#825/#1333) — and is SCOPED to this
+    unit's own physical device ``gpu_id``: ``nvidia-smi --query-gpu`` does NOT
+    honor ``CUDA_VISIBLE_DEVICES`` (it always enumerates the whole node,
+    gotchas.md), so in the concurrent fan-out an all-device max verdict is
+    unsatisfiable-by-construction whenever a sibling rung-job legitimately
+    holds its own engine — the #1333 class; the unscoped verdict falsely
+    killed hal_nqopen/hal_simpleqa (own devices at 0 MiB) at rc=1.
     """
     from explore_persona_space.experiments.issue_1739 import generation as _gen
 
@@ -426,7 +434,25 @@ def reap_generation_engine(drain_timeout_s: int = 180, floor_mib: int = 2048) ->
 
     _reap_vllm_engine(llm)
     del llm
+    _drain_wait_own_gpu(gpu_id, drain_timeout_s=drain_timeout_s, floor_mib=floor_mib)
 
+
+def _drain_wait_own_gpu(gpu_id: int | str, drain_timeout_s: int, floor_mib: int) -> None:
+    """DRAIN-WAIT until this unit's OWN GPU reads memory.used <= ``floor_mib``.
+
+    Only the own-device row drives the verdict; the full per-GPU list rides
+    every log/error line as diagnostics. Fail-loud semantics are preserved:
+    a genuine leak on the OWN device still raises at ``drain_timeout_s``, and
+    a poll that returns rows but NONE matching ``gpu_id`` raises immediately —
+    a missing row must never read as drained. An EMPTY parse (transient
+    nvidia-smi hiccup) keeps the pre-existing retry-until-deadline tolerance.
+    """
+    try:
+        own_idx = int(str(gpu_id).strip())
+    except ValueError as exc:
+        raise RuntimeError(
+            f"drain check needs an integer physical GPU index, got gpu_id={gpu_id!r}"
+        ) from exc
     deadline = time.time() + drain_timeout_s
     while True:
         proc = subprocess.run(
@@ -441,14 +467,28 @@ def reap_generation_engine(drain_timeout_s: int = 180, floor_mib: int = 2048) ->
             parts = [p.strip() for p in line.split(",")]
             if len(parts) == 2 and parts[1].isdigit():
                 used.append((int(parts[0]), int(parts[1])))
-        worst = max((m for _, m in used), default=0)
-        if used and worst <= floor_mib:
-            print(f"[phase=p2_reap] GPU drained: max_used={worst} MiB", flush=True)
+        own = [m for idx, m in used if idx == own_idx]
+        if used and not own:
+            # nvidia-smi enumerated devices but none matches this unit's own
+            # index — a shape change / parse miss. NEVER read that as drained.
+            raise RuntimeError(
+                "vLLM teardown drain check: nvidia-smi returned rows for GPU indices "
+                f"{[idx for idx, _ in used]} but none for this unit's own gpu_id={own_idx} "
+                f"(per-GPU used MiB: {used}) — refusing to treat a missing row as drained"
+            )
+        if own and own[0] <= floor_mib:
+            print(
+                f"[phase=p2_reap] GPU drained: gpu={own_idx} max_used={own[0]} MiB "
+                f"(verdict scoped to own device; per-GPU used MiB: {used})",
+                flush=True,
+            )
             return
         if time.time() >= deadline:
             raise RuntimeError(
                 f"vLLM teardown did not drain below {floor_mib} MiB within "
-                f"{drain_timeout_s}s (per-GPU used MiB: {used})"
+                f"{drain_timeout_s}s on this unit's own gpu_id={own_idx} "
+                f"(own used MiB: {own[0] if own else 'no row parsed'}; "
+                f"per-GPU used MiB: {used})"
             )
         time.sleep(5)
 
@@ -528,8 +568,9 @@ def run_job(args: argparse.Namespace) -> dict:
     if args.skip_capture:
         print(f"[phase=p2_capture job={name}] SKIPPED (--skip-capture)", flush=True)
     else:
-        # Engine reaped + GPU drained BEFORE the HF capture model loads.
-        reap_generation_engine()
+        # Engine reaped + OWN GPU drained BEFORE the HF capture model loads
+        # (verdict scoped to args.gpu_id — sibling jobs hold their own GPUs).
+        reap_generation_engine(args.gpu_id)
         model = capture_mod.load_capture_model(device=args.device)
 
         rollout_dir = out_root / "labeling" / job.gen_behavior
