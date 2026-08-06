@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2118,
+  "highest_id": 2119,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8653,6 +8653,13 @@
       "path": "tasks/proposed/2118",
       "status": "proposed",
       "title": "daily-fix: test-order polluter test_issue1482_densesae"
+    },
+    "2119": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2119",
+      "status": "proposed",
+      "title": "daily-fix: manifest-first staging for sharded artifacts"
     },
     "212": {
       "has_clean_result": true,
