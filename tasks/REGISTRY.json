@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2139,
+  "highest_id": 2140,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8814,6 +8814,13 @@
       "path": "tasks/proposed/2139",
       "status": "proposed",
       "title": "daily-fix: tick_triage counts compact rows as human"
+    },
+    "2140": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2140",
+      "status": "proposed",
+      "title": "daily-fix: watcher daemon-liveness pass (3h17m outage)"
     },
     "215": {
       "has_clean_result": true,
