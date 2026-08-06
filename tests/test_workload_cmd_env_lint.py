@@ -233,6 +233,9 @@ def test_launch_auto_flagged_cmd_warns_flags_marker_and_proceeds(
     warning naming the var + BOTH lane-portable alternatives (critic 8), and
     ``extra.workload_cmd_lane_env_risk`` on the posted marker."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    # #2054 made runpod the FIRST auto lane; pin nibi so this lint test's
+    # launch target is lane-order-stable (#2104).
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "nibi")
     nibi = _MockBackend(kind="nibi")
     marker_posts: list[dict] = []
     factory = _build_mock_factory(
@@ -329,6 +332,9 @@ def test_launch_auto_defaulted_form_no_warning_no_flag(monkeypatch, tmp_path, ca
     """Plan test 13: the ``${WORKLOAD_ROOT:-$PWD}`` form passes untouched —
     existing GCP-lane dispatches stay unbroken."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    # #2054 made runpod the FIRST auto lane; pin nibi so this lint test's
+    # launch target is lane-order-stable (#2104).
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "nibi")
     nibi = _MockBackend(kind="nibi")
     marker_posts: list[dict] = []
     factory = _build_mock_factory(
@@ -381,6 +387,9 @@ def test_launch_strict_with_clean_cmd_proceeds(monkeypatch, tmp_path, caplog) ->
     """Critic addition (7): --strict-workload-cmd-env + a CLEAN cmd → exit 0,
     launch proceeds (the strict flag only bites on a flagged cmd)."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    # #2054 made runpod the FIRST auto lane; pin nibi so this lint test's
+    # launch target is lane-order-stable (#2104).
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "nibi")
     nibi = _MockBackend(kind="nibi")
     factory = _build_mock_factory(runpod=_MockBackend(kind="runpod"), nibi=nibi)
 
@@ -744,6 +753,9 @@ def test_launch_inline_c_body_warns_flags_marker_and_proceeds(
     loud warning naming the anti-pattern + #1482 + the fix, and
     ``extra.workload_cmd_inline_interpreter`` on the posted marker."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    # #2054 made runpod the FIRST auto lane; pin nibi so this lint test's
+    # launch target is lane-order-stable (#2104).
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "nibi")
     nibi = _MockBackend(kind="nibi")
     marker_posts: list[dict] = []
     factory = _build_mock_factory(
@@ -780,6 +792,9 @@ def test_launch_sentinel_append_committed_script_no_inline_warning(
     """Acceptance 2 at launch level: committed script + sanctioned sentinel
     append → no inline warning, no inline extra key, exit 0."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    # #2054 made runpod the FIRST auto lane; pin nibi so this lint test's
+    # launch target is lane-order-stable (#2104).
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "nibi")
     nibi = _MockBackend(kind="nibi")
     marker_posts: list[dict] = []
     factory = _build_mock_factory(
@@ -815,6 +830,9 @@ def test_launch_strict_flag_does_not_upgrade_inline_arm(monkeypatch, tmp_path, c
     WARN-only inline warning still fires — the strict flag stays
     lane-env-scoped and never upgrades this arm to a refusal."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    # #2054 made runpod the FIRST auto lane; pin nibi so this lint test's
+    # launch target is lane-order-stable (#2104).
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "nibi")
     nibi = _MockBackend(kind="nibi")
     factory = _build_mock_factory(runpod=_MockBackend(kind="runpod"), nibi=nibi)
 
@@ -845,6 +863,9 @@ def test_kill_switch_env_skips_inline_lint(monkeypatch, tmp_path, caplog) -> Non
     exit 0, no warning, no inline extra key, and one info line naming the
     silenced hit (operator symmetry with the family gate)."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    # #2054 made runpod the FIRST auto lane; pin nibi so this lint test's
+    # launch target is lane-order-stable (#2104).
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "nibi")
     monkeypatch.setenv("EPM_SKIP_WORKLOAD_CMD_ENV_LINT", "1")
     caplog.set_level(logging.INFO, logger="dispatch_issue")
     nibi = _MockBackend(kind="nibi")
