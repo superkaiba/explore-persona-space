@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2129,
+  "highest_id": 2130,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8744,6 +8744,13 @@
       "path": "tasks/completed/213",
       "status": "completed",
       "title": "Predict conditional misalignment from persona geometry (JS divergence + cosine) + expanded cue sweep (follow-up #203)"
+    },
+    "2130": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2130",
+      "status": "proposed",
+      "title": "daily-fix: issue1491 ceiling must assert n_pairs"
     },
     "215": {
       "has_clean_result": true,
