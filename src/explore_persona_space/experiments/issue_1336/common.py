@@ -477,10 +477,14 @@ V2_CORPORA: dict[str, dict] = {
 # caveat). Same turnstore bundle as the context arm; only X = prefix slot.
 V2_PREFIX_ARM = (("lmsys23k", "naturalistic"),)
 
-# Naturalistic GENERATION-ONLY extension (user directive: "run naturalistic on
-# everything (but only the full context arm)"). Consulted SOLELY by the gen
-# path (`issue1336_gen_answers._formats_for`), which uses it to ACCEPT a
-# `--gen-format naturalistic` run on the six chat-only corpora above. The
+# Naturalistic GENERATION + ON-POLICY-CAPTURE extension (user directive: "run
+# naturalistic on everything (but only the full context arm)"). Consulted by
+# exactly TWO seams: (1) the gen path (`issue1336_gen_answers._formats_for`)
+# ACCEPTS a `--gen-format naturalistic` run on the six chat-only corpora
+# above; (2) the extractor's on-policy licensing
+# (`issue1336_extract_turnstore.extraction_licensed`) ACCEPTS
+# `--v2 --format F --gen-format F` pairs for a gen-licensed F (fmt ==
+# gen_format ONLY — cross-format matched-text pairs stay fit-side-gated). The
 # FIT-side grid (`V2_CORPORA[...]["formats"]`, `v2_surfaces`, `v2_surface_index`,
 # `cells_v2_for`, `CELLS_V2`) is deliberately UNCHANGED until the naturalistic
 # stores exist: widening `V2_CORPORA` formats would (a) shift `v2_surface_index`

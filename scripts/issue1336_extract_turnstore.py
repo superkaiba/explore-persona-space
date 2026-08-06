@@ -973,6 +973,38 @@ def _try_hf_resume(
     return done
 
 
+def extraction_licensed(corpus: str, fmt: str, gen_format: str, *, v2: bool) -> bool:
+    """Round-5c licensing for the extractor's TWO format axes.
+
+    ``--format`` (fmt) is the RENDER of the text being captured;
+    ``--gen-format`` selects which generation pool is read. The axes do NOT
+    move together — they are licensed by two acceptance branches:
+
+    (a) BASE — both axes registered in the fit-side registry
+        (``cm.V2_CORPORA[...]["formats"]`` under --v2, ``cm.FORMATS_BY_CORPUS``
+        otherwise). Byte-identical to every prior round: on lmsys23k this
+        covers all four (fmt, gen_format) combos, including the committed
+        matched-text cells (naturalistic render of chat-generated answers).
+    (b) ON-POLICY extension (--v2 only) — ``fmt == gen_format`` and the format
+        is generation-licensed (``cm.V2_GEN_FORMATS``): a licensed generation
+        arm may be captured under its OWN render, producing gen-keyed stems
+        (``cell_id(slug, fmt, corpus + "__gen_" + fmt)``) that no fit-side
+        consumer reads until ``V2_CORPORA`` is widened.
+
+    Cross-format (matched-text) pairs are deliberately NOT extension-licensed:
+    re-rendering one arm's answers under the other render creates a fit
+    SURFACE, which is a ``V2_CORPORA["formats"]`` decision — frozen while
+    round 4 runs (widening shifts ``v2_surface_index`` boot seeds and adds
+    storeless cells; see the registry comment in common.py). Pool EXISTENCE
+    is not checked here — a licensed-but-ungenerated pool still fail-louds
+    at the answers.jsonl read in ``main``.
+    """
+    fmts = cm.V2_CORPORA[corpus]["formats"] if v2 else cm.FORMATS_BY_CORPUS[corpus]
+    if fmt in fmts and gen_format in fmts:
+        return True
+    return v2 and fmt == gen_format and gen_format in cm.V2_GEN_FORMATS.get(corpus, ())
+
+
 def main() -> None:
     args = parse_args()
     slug, fmt, corpus = args.model, args.format, args.corpus
@@ -983,10 +1015,13 @@ def main() -> None:
     else:
         assert corpus in cm.CORPORA, f"corpus {corpus!r} is v2-only — pass --v2"
         fmts = cm.FORMATS_BY_CORPUS[corpus]
-    assert fmt in fmts, f"format {fmt} not registered for {corpus}"
     gen_format = args.gen_format
-    assert gen_format in fmts, (
-        f"gen format {gen_format} not registered for {corpus} (formats: {fmts})"
+    assert extraction_licensed(corpus, fmt, gen_format, v2=v2), (
+        f"(format={fmt!r}, gen_format={gen_format!r}) not licensed for {corpus}: "
+        f"fit-side formats {fmts}, gen-licensed "
+        f"{cm.V2_GEN_FORMATS.get(corpus, ()) if v2 else ()}; the on-policy extension "
+        "licenses only --v2 format == gen-format pairs — a cross-format "
+        "(matched-text) pair requires fit-side registration (cm.V2_CORPORA formats)"
     )
     # Format-keyed generation cell (round 5): chat resolves to the bare corpus
     # (matched-text regime — byte-identical dirs + stems to every prior

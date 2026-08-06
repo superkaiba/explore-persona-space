@@ -385,3 +385,93 @@ def test_dispatch_all_v2_chain_does_not_run_the_naturalistic_arm():
     assert "gen_v2_nat" not in m.group(1)  # separate invocation by design
     # ... but the single-phase case DOES accept it.
     assert re.search(r"^c_stage \| .*\| gen_v2_nat \|", text, re.M)
+
+
+# ---------------------------------------------------------------------------
+# 7. extraction licensing (round 5c) — the two-axis on-policy gate
+# ---------------------------------------------------------------------------
+# `--format` is the RENDER of the captured text; `--gen-format` is which
+# generation pool is read. `extraction_licensed` accepts (a) BASE pairs (both
+# axes in the fit-side registry — byte-identical to every prior round) and
+# (b) the --v2 ON-POLICY extension (fmt == gen_format, gen-licensed via
+# cm.V2_GEN_FORMATS). Importing the extract script is established test
+# practice (tests/test_issue1336_dispatch_v2.py imports it at module top).
+
+
+def _extract_mod():
+    import issue1336_extract_turnstore as et
+
+    return et
+
+
+def test_extract_base_licensing_unchanged_from_fit_registry():
+    et = _extract_mod()
+    for corpus, spec in cm.V2_CORPORA.items():
+        fmts = spec["formats"]
+        for fmt in ("chat", "naturalistic"):
+            for gen in ("chat", "naturalistic"):
+                if fmt in fmts and gen in fmts:
+                    # BASE pairs stay licensed — on lmsys23k this is all four
+                    # combos, incl. the committed matched-text cells.
+                    assert et.extraction_licensed(corpus, fmt, gen, v2=True), (corpus, fmt, gen)
+
+
+def test_extract_onpolicy_naturalistic_licensed_on_all_seven_v2_corpora():
+    et = _extract_mod()
+    for corpus in cm.V2_CORPORA:
+        assert et.extraction_licensed(corpus, "naturalistic", "naturalistic", v2=True), corpus
+
+
+def test_extract_cross_format_pairs_refused_on_chat_only_corpora():
+    et = _extract_mod()
+    chat_only = [c for c, s in cm.V2_CORPORA.items() if s["formats"] == ("chat",)]
+    assert len(chat_only) == 6  # every v2 corpus except lmsys23k
+    for corpus in chat_only:
+        # Matched-text pairs create a fit SURFACE — fit-side-registry gated.
+        assert not et.extraction_licensed(corpus, "naturalistic", "chat", v2=True), corpus
+        assert not et.extraction_licensed(corpus, "chat", "naturalistic", v2=True), corpus
+        # The chat path is untouched.
+        assert et.extraction_licensed(corpus, "chat", "chat", v2=True), corpus
+
+
+def test_extract_onpolicy_extension_is_v2_only_v1_registry_governs_otherwise():
+    et = _extract_mod()
+    # gsm8k_test1319 is dual-registered: v2 mode gets the extension, v1 mode
+    # stays governed by FORMATS_BY_CORPUS = ("chat",).
+    assert et.extraction_licensed("gsm8k_test1319", "naturalistic", "naturalistic", v2=True)
+    assert not et.extraction_licensed("gsm8k_test1319", "naturalistic", "naturalistic", v2=False)
+    # v1 lmsys5k keeps its BASE licensing (registry has naturalistic).
+    assert et.extraction_licensed("lmsys5k", "naturalistic", "chat", v2=False)
+    assert et.extraction_licensed("lmsys5k", "naturalistic", "naturalistic", v2=False)
+    # v1 gsm8k_train5k stays chat-only (closing caveat 1 would widen
+    # FORMATS_BY_CORPUS — an explicit decision, not this extension).
+    assert not et.extraction_licensed("gsm8k_train5k", "naturalistic", "naturalistic", v2=False)
+
+
+def test_extract_main_gate_calls_extraction_licensed():
+    import inspect
+
+    et = _extract_mod()
+    src = inspect.getsource(et.main)
+    # The licensing helper must be the gate main() actually runs (no hollow
+    # gate: code-style.md "Verification gates test the live dispatched path").
+    assert "extraction_licensed(" in src
+    assert "not registered for" not in src  # old independent-axis asserts gone
+
+
+def test_extract_onpolicy_stems_collide_with_no_existing_registry_stem():
+    et = _extract_mod()
+    assert et  # stems derive from cm; import pins the consumer exists
+    existing = {
+        cm.cell_id(m, f, c)
+        for m in cm.MODELS
+        for c, spec in cm.V2_CORPORA.items()
+        for f in spec["formats"]
+    }
+    onpolicy = {
+        cm.cell_id(m, "naturalistic", cm.gen_cell_key(c, "naturalistic"))
+        for m in cm.MODELS
+        for c in cm.V2_CORPORA
+    }
+    assert len(onpolicy) == len(cm.MODELS) * len(cm.V2_CORPORA)
+    assert existing.isdisjoint(onpolicy)
