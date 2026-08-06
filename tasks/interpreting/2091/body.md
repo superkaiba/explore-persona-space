@@ -159,7 +159,7 @@ greedy answer (54 words, first 6): 'KEVIN Most popular types of porn'
 
 ## Results
 
-Verifier note: the total-prose budget WARN and any per-block word-count WARNs are acknowledged — six results are reported, each within the per-result FAIL cap.
+Verifier note: the total-prose budget WARN and any per-block word-count or figure-caption WARNs are acknowledged — six results are reported, each within the per-result FAIL cap.
 
 ### Answer variability is behavior-specific and not explained by answer length
 
@@ -185,17 +185,21 @@ Six trait rungs are credibly positive (+0.0024 to +0.0069), the sycophancy advic
 
 Aggregate adequacy is not per-prompt safety: 21-53% of prompts move the other way, and the severe-adverse rate reaches 8.6%. The negative rung reads as a tie, since its size matches the capture residual.
 
+Greedy-to-mean agreement points the same way: it stays within 0.006 of the approximately-noise-matched disjoint-half reference at every dispersion quintile, crosses above it at the top quintile on four trait rungs, and the everyday shortfall grows only to 0.004 — nothing approaching the clear high-dispersion drop that would mark genuine greedy bias.
+
 ### Averaged targets are easier to predict; the fitted map itself barely changes
 
-Left: the grid's matched-regime diagonal — held-out variance explained when a map is fit and scored on one regime. Right: the averaging gain split by scored versus fitted target.
+Left: the grid's matched-regime diagonal — held-out variance explained fitting and scoring on one regime. Right: the averaging gain split by scored versus fitted target.
 
 ![Matched-regime variance explained beside the averaging-gain decomposition](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4fcb3802c09dfdf45e586f98a5029f100f4a98a7/figures/issue_2091/map_quality_grid_and_decomposition.png)
 
 > **Figure.** *Nearly all of the averaging gain comes from averaging the target, not from fitting on averaged targets.* Held-out variance explained, layer 19, grouped splits, 4,000 pool prompts and 336-2,979 held-out per family. Right: mean gain over each grid's greedy row and column.
 
-Matched averaged fits beat matched greedy fits by 0.059 to 0.101, near the 0.046-0.078 the parent everyday-prompt experiment reported under a different fold scheme (an expectation band, not like-for-like). Averaging the scored target is worth 0.050 to 0.095; refitting on averaged targets, only 0.009 to 0.026.
+Matched averaged fits beat matched greedy fits by 0.059 to 0.101, near the 0.046-0.078 the parent everyday-prompt experiment reported under a different fold scheme, not like-for-like. Averaging the scored target is worth 0.050 to 0.095; refitting on averaged targets, only 0.009 to 0.026.
 
-A greedy-fit map scored on averaged targets recovers within 0.015-0.056 of the matched averaged fit. Identity-plus-bias baselines stay negative (−0.75 to −2.96) while retrieval accuracy reaches 0.22-0.83 against chance 0.0003-0.003, so the maps discriminate well but are poorly scaled. One caveat: the harmful-compliance training diagonal may interpolate questions — its grouped split is prefix-only, and the same questions recur across prefixes on both sides; this is also the one cell where the deliberately-unrun prefix-side mapping arm would genuinely differ (every map here is context-based).
+A greedy-fit map scored on averaged targets recovers within 0.015-0.056 of the matched averaged fit. Identity-plus-bias baselines stay negative (−0.75 to −2.96) while retrieval accuracy reaches 0.22-0.83 against chance 0.0003-0.003, so the maps discriminate well but are poorly scaled. One caveat: the harmful-compliance training diagonal may interpolate questions, since its grouped split is prefix-only and the same questions recur across prefixes.
+
+The matched all-everyday-pool control shows admixture matters: the everyday fit re-applied to each rung's held-out prompts reads 0.14-0.48 against the admixed pools' 0.37-0.62 on the eight greedy diagonals. Both panels are family-level aggregates; per-prompt fitted reads are not persisted.
 
 ### The averaged score's prediction edge is mostly measurement noise, and it nominally reverses on harmful compliance
 
@@ -203,11 +207,11 @@ The first panel gives raw rank agreement between the supervised prompt-side read
 
 ![Raw rank agreement beside ceiling-normalized rank agreement](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4fcb3802c09dfdf45e586f98a5029f100f4a98a7/figures/issue_2091/behavior_prediction_raw_and_ceiling_normalized.png)
 
-> **Figure.** *Normalizing by each judged score's own noise ceiling closes most of the averaging advantage.* Rank agreement of the supervised prompt-side read against the judged behavior score, layer 19, 2,000 clustered resamples. Right: shares of each score's ceiling; flagged cells fail differently: helpful-harmless divides by a near-floor ceiling (0.25/0.49); toxic chat has 70% of prompts at the score floor.
+> **Figure.** *Normalizing by each judged score's noise ceiling closes most of the averaging advantage.* Rank agreement of the supervised prompt-side read against the judged score, layer 19, 2,000 clustered resamples; hallucination single-draw bars omitted (supervised-read cells unmeasured). Right: shares of each score's ceiling; helpful-harmless divides by a near-floor ceiling (0.25/0.49); toxic chat has 70% of prompts at the floor.
 
 The averaged score beats greedy everywhere measured (0.71-0.74 against 0.60-0.64 on sycophancy rungs), but the single draw beats it on toxic chat (0.31 against 0.28, 256 prompts, wide intervals). Ceilings differ by construction: 0.86-0.94 for greedy (three judge draws), 0.96-0.99 for the five-answer mean, collapsing to 0.25 and 0.49 on helpful-harmless.
 
-Normalizing shrinks the sycophancy advantage to 0.03-0.05 and nominally reverses it on harmful-compliance training prompts (greedy 0.739 against averaged 0.708 on judged subsets of 681 and 829 prompts); the single draw is nominally best on both everyday graded cells. A follow-up data-join repair filled the hallucination single-sample column: fabricated rates 0.31, 0.57 and 0.80 per rung (999-1,000 of 1,000); its supervised-read comparison stays unmeasured (fitted scores not persisted). Raw cross-regime gaps inherit the drift asymmetry quantified under Evaluation: drifted sampled pools, clean greedy pool.
+Normalizing shrinks the sycophancy advantage to 0.03-0.05 and nominally reverses it on harmful-compliance training prompts (greedy 0.739 against averaged 0.708 on judged subsets of 681 and 829 prompts); the single draw is nominally best on both everyday graded cells. A follow-up data-join repair filled the hallucination single-sample column: fabricated rates 0.31, 0.57 and 0.80 per rung (999-1,000 of 1,000); its supervised-read comparison stays unmeasured (fitted scores not persisted). Per-prompt fitted reads are not persisted: these are cell-level aggregates, with no drift-excluded recount.
 
 ### Neither sampling variability nor behavioral spread explains prediction error
 
@@ -219,7 +223,7 @@ Left: how much score variance the two moderators — answer dispersion and behav
 
 Both jointly explain under 0.05 of score variance in every plotted cell, and in 27 of 40 overall. On the plotted cells, dispersion's unique share is near zero for supervised and predicted-answer arms (median 0.0004) and larger only for label-free projection arms (median 0.006).
 
-Nineteen of 25 per-arm contrasts cover zero; the remaining six favour behavioral spread. Three of those six sit on the everyday-hallucination family (439 prompts), where the parser gap censored 26% of judge draws — censoring correlated with judge-confusing content is an unexcluded alternative there. The excluded harmful-compliance cells — both transfer rungs and the everyday rung — reach 0.24-0.46, but on only 9 to 27 prompts: too small to trust, so sampling variability is still not a usable failure flag.
+Nineteen of 25 per-arm contrasts cover zero; the remaining six favour behavioral spread. Three of those six sit on the everyday-hallucination family (439 prompts), where the parser gap censored 26% of judge draws — censoring correlated with judge-confusing content is an unexcluded alternative there. The excluded harmful-compliance cells reach 0.24-0.46, but on only 9 to 27 prompts: too small to trust, so sampling variability is still not a usable failure flag. Per-prompt fitted reads are not persisted; these shares are aggregate-only.
 
 ### Middling sycophancy prompts give middling samples; harmful compliance sits at the boundary
 
@@ -240,4 +244,4 @@ Harmful-compliance training prompts land at the even split (middling share 0.498
 - Reused the graded-judge instrument from [#1739](https://eps.superkaiba.com/tasks/1739): `eval_results/issue_2091/greedy_dv/rubric_parity.json` @ `c8821bc6e5202fb2dc56cd4adacee3706b7b31c2` — fit: rubric parity verified for the sycophancy, harmful-compliance and hallucination-abstention waves; the hallucination trait rubric has no on-disk reference and is recorded unverified.
 - Reused the batched ridge cores and penalty-selection discipline from [#825](https://eps.superkaiba.com/tasks/825): `scripts/issue2091_fits.py` @ `c8821bc6e5202fb2dc56cd4adacee3706b7b31c2` — fit: parity-tested wrapper over the same cores, same penalty grid and degrees-of-freedom cap.
 
-**Context:** Origin prompt, verbatim — user chat 2026-08-05: "We've been using stochastic vs deterministic decoding for different experiments. I wanted to do a principled comparison." (full five-result body drafted interactively across the session; closing dispatch: "run in background with happy coder and setup periodic monitor"). Parent task [#1073](https://eps.superkaiba.com/tasks/1073); relates to the context-as-vector line. Created 2026-08-05; greedy generation and capture ran 2026-08-06 (pilot 03:11Z, production 04:03Z, recovery 04:48Z, capture repair 10:26Z); judging completed 07:49Z; analysis completed 12:32Z. Round 1, revised once after interpretation critique (line pointers corrected to 1-based; floor-share, held-out-count and ceiling ranges corrected; language-intrusion audit added). A zero-GPU follow-up analysis round on 2026-08-06 repaired the packed-answer join and folded the recovered hallucination single-sample column into the fourth result.
+**Context:** Origin prompt, verbatim — user chat 2026-08-05: 'We've been using stochastic vs deterministic decoding for different experiments. I wanted to do a principled comparison.' (full 5-result body drafted interactively across the session; closing dispatch: 'run in background with happy coder and setup periodic monitor'). Parent task [#1073](https://eps.superkaiba.com/tasks/1073); relates to the context-as-vector line. Created 2026-08-05; greedy generation and capture ran 2026-08-06 (pilot 03:11Z, production 04:03Z, recovery 04:48Z, capture repair 10:26Z); judging completed 07:49Z; analysis completed 12:32Z. Round 1, revised once after interpretation critique (line pointers corrected to 1-based; floor-share, held-out-count and ceiling ranges corrected; language-intrusion audit added). A zero-GPU follow-up analysis round on 2026-08-06 repaired the packed-answer join and folded the recovered hallucination single-sample column into the fourth result.
