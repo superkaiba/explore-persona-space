@@ -20,108 +20,84 @@ sweep code.
 
 **HF Hub uploads are accelerated by DEFAULT (#745).** Two orthogonal env vars
 are on by default in every experiment-upload environment:
-`HF_XET_HIGH_PERFORMANCE=1` (the PRIMARY accelerator — both project repos route
-through the Xet storage backend, verified, so the Xet high-performance path is
-the lever that matters) and `HF_HUB_ENABLE_HF_TRANSFER=1` (the orthogonal
-LFS-multipart accelerator, future-proofing for any non-Xet repo; `hf_transfer`
-is a hard `pyproject` dep so the LFS flag never enables a missing-package
-fault). They are set at SHELL level in `bootstrap_pod.sh` (pod), the GCE startup
-prelude (`backends/gcp.py`), and the SLURM sbatch env block (`backends/slurm.py`)
-— the load-bearing placement, because `huggingface_hub.constants` freezes
-`HF_HUB_ENABLE_HF_TRANSFER` at import time — plus an `orchestrate/env.py`
-`setdefault` belt-and-suspenders for local-dev. Override per-launch with `=0` /
-`HF_HUB_DISABLE_XET=1`: the two accelerator defaults are `setdefault` /
-`${VAR:-1}` so an explicit launch-time `=0` always wins, and the GCP / SLURM
-passthrough allowlists forward a dispatch-process `=0` for those two vars
-AND `HF_HUB_DISABLE_XET=1` (the real kill switch — forwarded as of #1195;
-`HF_XET_DISABLE` stays in the allowlists only as a legacy no-op alias), so
-a dispatch-time xet disable now reaches GCP/SLURM workers on a fresh
-dispatch. RunPod is NOT part of that claim — pods have no dispatch-env
-passthrough (the launcher / bootstrap shell env is the channel there), so
-on a pod the kill switch is still set in the WORKER shell. The effective
-xet kill switch is
+`HF_XET_HIGH_PERFORMANCE=1` (the PRIMARY accelerator — both project repos are
+Xet-backed) and `HF_HUB_ENABLE_HF_TRANSFER=1` (the orthogonal LFS-multipart
+accelerator; `hf_transfer` is a hard `pyproject` dep). They are set at SHELL
+level in `bootstrap_pod.sh` (pod), the GCE startup prelude (`backends/gcp.py`),
+and the SLURM sbatch env block (`backends/slurm.py`) — the load-bearing
+placement, because `huggingface_hub.constants` freezes env at import time —
+plus an `orchestrate/env.py` `setdefault` for local-dev. Override per-launch
+with `=0` / `HF_HUB_DISABLE_XET=1`: the defaults are `setdefault` / `${VAR:-1}`
+so an explicit launch-time `=0` always wins, and the GCP/SLURM passthrough
+allowlists forward the two `=0`s AND `HF_HUB_DISABLE_XET=1` (#1195). RunPod is
+NOT part of that claim — pods have no dispatch-env passthrough, so on a pod the
+kill switch is set in the WORKER shell. The effective xet kill switch is
 `HF_HUB_DISABLE_XET=1` — it flips `is_xet_available()` False
-(`huggingface_hub` 0.36.2, the uv.lock pin; `constants.py` reads
-`HF_HUB_DISABLE_XET`), which gates the upload branch (`_commit_api.py:380`);
-download-side coverage has a reported gap on this pin (hub GH issue #3266),
-so treat it as upload-verified. The historically-documented
-`HF_XET_DISABLE=1` (the #515 xet-CDN DOWNLOAD workaround; retained in the
-lane allowlists only as an annotated legacy alias, #1195) is a VERIFIED NO-OP on this stack — consumed by
-neither `huggingface_hub` nor the `hf_xet` Rust binary (strings-checked;
-live-tested 2026-07-05) — so a recipe leaning on it likely never left the
-xet path; #931's first two wedge replays did exactly this. Upload sitting at
-~0 TX? Run the wedge escalation ladder in the next block. A NEW
-direct-upload script must use the project
-`explore_persona_space.orchestrate.env.load_dotenv` wrapper, NOT the bare
-`from dotenv import load_dotenv` (enforced by
+(`huggingface_hub` 0.36.2, the uv.lock pin), gating the upload branch;
+download-side coverage has a reported gap on this pin (hub GH issue #3266), so
+treat it as upload-verified. `HF_XET_DISABLE=1` (the #515 download workaround;
+retained in the lane allowlists only as an annotated legacy alias, #1195) is a
+VERIFIED NO-OP on this stack — consumed by neither `huggingface_hub` nor the
+`hf_xet` Rust binary — so a recipe leaning on it never left the xet path
+(#931's first two wedge replays did exactly this). Upload sitting at ~0 TX?
+Run the wedge escalation ladder in the next block. A NEW direct-upload script
+must use the project `explore_persona_space.orchestrate.env.load_dotenv`
+wrapper, NOT the bare `from dotenv import load_dotenv` (enforced by
 `scripts/workflow_lint.py --check-dotenv-before-hf-import`).
 
 **Pod→HF upload WEDGE — recognize it, then run the three-rung escalation
-ladder (#931).** This is the UPLOAD sibling of the #515 download workaround
-above. (The DOWNLOAD-side native `xet_get` hang — zero TCP connections,
-per-file retry wrappers never fire, vs this ladder's one FROZEN ESTAB socket
-— has its own kill-and-replay entry in `.claude/rules/gotchas.md`; #1345.)
-Signature: the upload process looks healthy (no traceback) while
-transfer bytes stop — interface TX delta ~0 across two samples ≥5 min
-apart (`cat /sys/class/net/eth0/statistics/tx_bytes`, sample twice), and/or
-one ESTAB socket to the CDN (port 443) whose counters are frozen in
-`ss -tinp` (`bytes_acked` / send-q not advancing; `apt-get install -y
-iproute2` if `ss` is absent on the pod). High sustained CPU with ~0 TX can
-be legitimate local pre-processing (xet chunking / sha256 of multi-GB
-files) — the frozen-ESTAB-socket check is the discriminator. #931
-(2026-07-04, an org-wide HF-429 day) sat ~30 min at ~0 TX before the first
-kill — once the signature is confirmed on a re-sample, escalate immediately.
-Three preconditions: (a) the upload path is replay-idempotent (per-cell /
-per-folder skip-if-complete — the #664 per-cell contract; #931's completed
-folder commits skipped idempotently on replay), (b) each rung is
+ladder (#931).** (The DOWNLOAD-side native `xet_get` hang — zero TCP
+connections, vs this ladder's one FROZEN ESTAB socket — has its own
+kill-and-replay entry in `.claude/rules/gotchas.md`; #1345.) Signature: the
+upload process looks healthy (no traceback) while transfer bytes stop —
+interface TX delta ~0 across two samples ≥5 min apart
+(`cat /sys/class/net/eth0/statistics/tx_bytes`), and/or one ESTAB socket to
+the CDN (port 443) whose counters are frozen in `ss -tinp` (`bytes_acked` /
+send-q not advancing; `apt-get install -y iproute2` if `ss` is absent). High
+sustained CPU with ~0 TX can be legitimate local pre-processing (xet
+chunking / sha256 of multi-GB files) — the frozen-ESTAB-socket check is the
+discriminator; once the signature confirms on a re-sample, escalate
+immediately (#931 sat ~30 min at ~0 TX before the first kill). Three
+preconditions: (a) the upload path is replay-idempotent (per-cell /
+per-folder skip-if-complete — the #664 per-cell contract), (b) each rung is
 KILL-hung-process → REPLAY-with-env — never export on top of a live process
 (`huggingface_hub.constants` freezes env at import), (c) for a LIVE wedged
-process the rung env must still be set IN THE WORKER's shell and the
-process relaunched there (SSH into the pod/worker — the import freeze means
-an orchestrator-side export can never reach a running process, and on
-RunPod there is no dispatch-env passthrough at all); a full FRESH
+process the rung env must be set IN THE WORKER's shell and the process
+relaunched there (an orchestrator-side export can never reach a running
+process; RunPod has no dispatch-env passthrough at all); a full FRESH
 re-dispatch with `HF_HUB_DISABLE_XET=1` in the dispatch env DOES forward to
-GCP/SLURM workers as of #1195. Do not wait for a rung
-to self-heal: hf_transfer retries fire only on ERRORING parts
-(`max_retries=5` threaded by `lfs.py::_upload_parts_hf_transfer`), the
-pure-python `http_backoff` path retries only raised errors
-(Timeout/ConnectionError/5xx) and its PUTs pass no `timeout=`, and the xet
-client's timeout knobs did not rescue #931's 30-min hang — a silently hung
-ESTAB read never becomes an error, so detection + kill is always manual.
+GCP/SLURM workers (#1195). Do not wait for a rung to self-heal: every retry
+layer (hf_transfer part retries, `http_backoff`, the xet timeout knobs)
+fires only on RAISED errors — a silently hung ESTAB read never becomes an
+error, so detection + kill is always manual.
 
 1. **Rung 1 — kill + replay with `HF_HUB_DISABLE_XET=1`** (the REAL switch —
-   NOT the no-op `HF_XET_DISABLE`, see the clause above). Targets a
-   xet-client-specific stall (hung CAS read, finalization hang — #825 r2's
-   class); the upload falls back to the LFS multipart path,
-   hf_transfer-accelerated since `HF_HUB_ENABLE_HF_TRANSFER=1` is default.
+   NOT the no-op `HF_XET_DISABLE`). Targets a xet-client-specific stall
+   (hung CAS read, finalization hang — #825 r2's class); the upload falls
+   back to the LFS multipart path, hf_transfer-accelerated.
 2. **Rung 2 — wedged identically? kill + replay with `HF_HUB_DISABLE_XET=1
    HF_HUB_ENABLE_HF_TRANSFER=0`** — the pure-python requests path. Rung 2
-   without rung 1's var is a placebo on the project's xet-backed repos: while
-   xet is available the upload never reaches the LFS path where hf_transfer
-   lives.
+   without rung 1's var is a placebo on the project's xet-backed repos:
+   while xet is available the upload never reaches the LFS path where
+   hf_transfer lives.
 3. **Rung 3 — still wedged? The on-pod upload path is dead for this run;
    reroute around it.** rsync the artifact dirs pod→VM (rsync IS on
-   bootstrapped pods — `bootstrap_pod.sh` Step 2 installs it, commit
-   `22e1a882a1` 2026-06-12; the RunPod image ships without it, so a
-   `--no-bootstrap` pod needs the tar-over-ssh form in the #541 recovery
-   below), verify the VM→HF route with a small probe upload, run the VM-side
-   `upload_folder` to the SAME `path_in_repo`, then a pod-side local-only
-   sentinel replay so `epm:results` lands via the normal poller drain. #931
-   moved ~9.9 GB this way in ≈24 min after three wedged on-pod attempts
-   (≈37 min first-kill → results, ≈60 min upload-phase-start → results,
-   derived from the 06:13Z/06:36Z/06:49Z/07:13Z markers); the same-day
-   `epm:upload-fix` round reused the VM route directly. If the VM→HF probe
-   ALSO wedges (an HF-side incident — #931's day was an org-wide 429 day),
-   the pod→VM rsync has already made the data durable: stop/terminate the
-   pod rather than idling it, and retry the VM→HF upload when the incident
-   clears.
+   bootstrapped pods — `bootstrap_pod.sh` Step 2; a `--no-bootstrap` pod
+   needs the tar-over-ssh form in the #541 recovery below), verify the
+   VM→HF route with a small probe upload, run the VM-side `upload_folder`
+   to the SAME `path_in_repo`, then a pod-side local-only sentinel replay
+   so `epm:results` lands via the normal poller drain (#931 moved ~9.9 GB
+   this way in ≈24 min after three wedged on-pod attempts). If the VM→HF
+   probe ALSO wedges (an HF-side incident), the pod→VM rsync has already
+   made the data durable: stop/terminate the pod rather than idling it, and
+   retry the VM→HF upload when the incident clears.
 
-Honesty caveat: #931's rung-1/2 replays set the no-op `HF_XET_DISABLE`, so
-all three on-pod attempts likely ran the SAME xet client — rung-1/2 value is
-derived from the 0.36.2 code paths + HF's documented legacy-LFS fallback
-(docs/hub/en/xet/legacy-git-lfs), not yet proven in anger; the route-level
-rung-3 reroute is the proven recovery. On a known org-wide 429/CDN-incident
-day, consider going straight from one confirmed rung-1 wedge to rung 3.
+Honesty caveat: #931's rung-1/2 replays set the no-op alias, so all three
+on-pod attempts likely ran the SAME xet client — rung-1/2 value is derived
+from the 0.36.2 code paths + HF's documented legacy-LFS fallback, not yet
+proven in anger; the route-level rung-3 reroute is the proven recovery. On a
+known org-wide 429/CDN-incident day, consider going straight from one
+confirmed rung-1 wedge to rung 3.
 
 **The reader-back of the `issue<N>_partial/` crash-persist path is
 `autonomous_session_watch.partial_bundle_pass` (#1704, motivating incident
@@ -140,12 +116,10 @@ activations, decomposition / SVD inputs — uploads to the HF data repo under
 `issueN_<slug>/analysis_tensors/` BEFORE the pod is terminated, exactly like
 raw completions. These files are typically tiny (KB-MB) next to the
 checkpoints they derive from, which makes them easy to dismiss as scratch —
-but losing them makes the plan's remaining controls permanently unrunnable.
-(Incident #521: ~200 KB per-cell Δv `.pt` files required by two planned
-negative controls — the leave-one-out SVD spectrum check and the EM
-mean-over-response read — were never uploaded; a 3-round upload-verification
-loop still ended PASS, the pod was terminated, and both controls became
-permanently unrunnable.) Enforcement: `upload-verifier` Step 1 classifies
+but losing them makes the plan's remaining controls permanently unrunnable
+(#521: ~200 KB per-cell Δv `.pt` files required by two planned negative
+controls were never uploaded; upload-verification still PASSed, the pod was
+terminated, both controls became unrunnable). Enforcement: `upload-verifier` Step 1 classifies
 `*.pt` / `*.npy` as analysis tensors bound for the HF data repo, and its
 Step 2.8 cross-references the plan's analysis / control sections and FAILs on
 any plan-named input without a permanent URL.
@@ -171,10 +145,9 @@ discard whether undeclared (`generation-discarded-undeclared`) or invalidly
 declared via a text-naming entry (`generation-discard-declared-invalid`) — its
 Step 3 generation-discard gate. Stream-reduce memory-safety (RunningMean /
 `_HfStreamSpanSource`) is UNCHANGED — it persists the rollout text it reduced;
-it does not re-materialize the whole activation grid (#666/#772). Driving
-incident: #779's extraction driver (`issue779_extract_rb.py`) reduced kept
-rollouts to `r_B` and dropped the rollout text (wrote it only as judge input,
-not under `raw_completions/`), so a sibling arm had to regenerate.
+it does not re-materialize the whole activation grid (#666/#772). (Driving
+incident: #779's extraction driver reduced kept rollouts to `r_B` and dropped
+the rollout text, so a sibling arm had to regenerate.)
 
 **Uploader eligibility filters must cover every plan-declared artifact class
 (#825).** An upload helper that enumerates files through an eligibility
@@ -190,16 +163,14 @@ destination (`raw_completions/<stage>/`, `analysis_tensors/`, eval JSONs) —
 with plan §10 `discarded_artifacts:` entries as the ONLY
 declared-not-uploaded exemption. When a run writes a NEW file kind beside
 existing ones (a `row_index*.jsonl` beside `*.npy` payloads), extend the
-filter in the same change that adds the writer. (Incident #825,
-upload-verification v14, 2026-07-16: `scripts/issue825_turndyn_upload.py
---mode tensors` allowed only `**/*.npy` + `**/*.json`, so all 404
-`row_index*.jsonl` files (48.9 MB) declared in plan v24 §6.5 were never
-upload-ELIGIBLE; remediation succeeded only because the GCE instance was
-still alive — on the ephemeral `--instance-termination-action=DELETE`
-lanes a crash loses the class outright.) This is the UPLOAD-side sibling
-of the download-side `snapshot_download(allow_patterns=...)` gotcha
-(`.claude/rules/gotchas.md`) — same keyword, opposite direction, different
-failure. Enforcement: author-side self-check in
+filter in the same change that adds the writer. (#825: an allowlist of
+`**/*.npy` + `**/*.json` left all 404 plan-declared `row_index*.jsonl`
+files never upload-ELIGIBLE; remediation succeeded only because the GCE
+instance was still alive — on the ephemeral
+`--instance-termination-action=DELETE` lanes a crash loses the class
+outright.) This is the UPLOAD-side sibling of the download-side
+`snapshot_download(allow_patterns=...)` gotcha
+(`.claude/rules/gotchas.md`). Enforcement: author-side self-check in
 `experiment-implementer.md` § After implementation step 7; review-side
 parity sub-check in `code-reviewer.md` Step 0.65 (Critical, tagged
 `substantive`); the upload-verifier at Step 8 stays the last-line safety
@@ -210,11 +181,10 @@ a regeneration note (#922/#779).** Re-uploading / reconstructing an
 already-published artifact at the SAME path can silently invalidate every
 capture another task made under the original bytes — activations,
 teacher-forced reads, judge outputs, adapters trained on the mix. Each pair
-member still
-resolves and sha-verifies individually, so only the consumer-side pairwise
-provenance-coherence check (`.claude/rules/artifact-reuse.md` item (j))
-detects the incoherence — after the fact, at the cost of a wasted run.
-Producer duty, one of two forms:
+member still resolves and sha-verifies individually, so only the
+consumer-side pairwise provenance-coherence check
+(`.claude/rules/artifact-reuse.md` item (j)) detects the incoherence — after
+the fact, at the cost of a wasted run. Producer duty, one of two forms:
 
 1. **Version-bump the path** — publish the regenerated artifact at a NEW path
    (`issueN_<slug>/v2/...`, or a new filename), so the original path keeps
@@ -232,10 +202,9 @@ Producer duty, one of two forms:
    pre-regeneration revision. This form is the floor when the path must stay
    stable (a canonical bucket consumers resolve by convention).
 
-(Incident: #779 regenerated published question artifacts in place — HF commit
-`9578892ef4`, 2026-07-02 — AFTER #922's dependent `cx.pt` activation capture,
-`a8060198a4`, 2026-07-01; every per-member check passed and the run crashed at
-a parity assert after a full GCE cycle.)
+(Incident: #779 regenerated published question artifacts in place AFTER
+#922's dependent activation capture; every per-member check passed and the
+run crashed at a parity assert after a full GCE cycle.)
 
 **Resume-critical pipeline INPUTS — and the run's RESUME STATE — must
 upload before any deliberate `pod.py stop` that expects a later resume: a
@@ -246,19 +215,15 @@ that the plan's later phases consume. RunPod `resume` is HOST-PINNED —
 a SUPPLY_CONSTRAINT on the former host can lock the volume away for
 days, and a fresh pod cannot substitute when the inputs exist only on
 that volume. Push them to the HF data repo (`issueN_<slug>/inputs/` or
-the relevant bucket) BEFORE stopping; they are usually MB-scale.
-(Incident #488, 2026-06-10: ~18 resume attempts hit SUPPLY_CONSTRAINT
-while `data/issue_488/R_train_new.json` + Phase 0/1 outputs + diagnostic
-adapters lived only on the stopped pod's volume — the implementer's
-pod-side smoke shipped as 'INFRA BLOCKED, local evidence only'.)
+the relevant bucket) BEFORE stopping; they are usually MB-scale (#488:
+~18 resume attempts hit SUPPLY_CONSTRAINT while the training rows +
+phase outputs + diagnostic adapters lived only on the stopped volume).
 Resume STATE means done-JSONs, phase/resume sentinels, partial eval JSONs,
 progress manifests — anything a resume reads to know where to restart.
 Host-pinning is not the only threat: RunPod destroyed a stopped pod
-outright — capacity reclaim or billing-side cleanup, the mechanism is not
-derivable — despite the `keep-running` tag and well inside the 7-day idle
-window (incident #1112, 2026-07-21: stopped 07:25Z with volume preserved;
-live API `{"data": {"pod": null}}` ~22h later — done-JSONs lost, full
-re-run forced). Apply whenever the park may outlast ~1 hour; on resume,
+outright despite the `keep-running` tag and well inside the 7-day idle
+window (#1112: done-JSONs lost, full re-run forced). Apply whenever the
+park may outlast ~1 hour; on resume,
 prefer the off-pod copies. Decision-point recipes:
 `.claude/skills/issue/SKILL.md` § User pause affordance step 1 +
 § Step 8-bis; canonical rule: `.claude/rules/pod-config.md` § "Stopped pod
@@ -273,15 +238,13 @@ repo-files` only exposes `delete`, not `list`. Use:
 ~1M-file data repo times out (>90 s, #833); gotchas.md)
 (the `set -a && source .env` prefix is part of the canonical snippet — without
 it the check dies on `HF_TOKEN missing`, and the obvious in-heredoc fix, a bare
-`load_dotenv()`, crashes from stdin; 4+ sessions on 2026-06-10 each burned 2-3
-retries re-deriving this)
+`load_dotenv()`, crashes from stdin)
 (the prefix is VM-scoped — repo root, where `.env` always exists; a pod/GCE
 workload script must source conditionally instead — `if [ -f ./.env ]; then
 set -a; . ./.env; set +a; fi` — because the GCE lane exports tokens via its
-startup script and has NO `.env` file; see the conditional-sourcing entry in
-`.claude/rules/gotchas.md`, incident #923)
-(#458 post-mortem nearly drew a wrong "checkpoints don't exist" conclusion from
-the silent CLI "0").
+startup script and has NO `.env` file; gotchas.md, #923)
+(#458 nearly drew a wrong "checkpoints don't exist" conclusion from the
+silent CLI "0").
 
 Consumers of this snippet beyond post-experiment upload verification:
 `follow-up-proposer` runs it as a hard gate to verify reuse premises before
@@ -297,45 +260,40 @@ would corrupt their checks identically. Keep the snippet (repo, `repo_type`,
 **Verify-path Hub calls ride `retry_transient` + ONE prefix-scoped listing per
 destination repo (#1335 r5).** A post-upload verify is still part of the run:
 a transport error there (429 / 5xx / timeout / connection) is retried, never
-fatal — in #1335 r5 an UN-retried per-shard `api.file_exists` HEAD probe (the
-exact-file fallback inside `hub.list_hf_files_under_path`) let one transient
-HF 429 ("maximum queue size reached") crash a healthy GCP run 2.8 h in, AFTER
-every upload had succeeded (attempt att-20260715-134136). Two rules for any
-upload/verify path in workload code: (a) wrap every FRESH Hub call in
-`hub.retry_transient` (`orchestrate/hub.py` — the public alias of
-`_retry_upload`: Retry-After-aware, wall-clock-budgeted via
+fatal (#1335 r5: an UN-retried per-shard `api.file_exists` HEAD probe let one
+transient HF 429 crash a healthy GCP run 2.8 h in, AFTER every upload had
+succeeded). Two rules for any upload/verify path in workload code: (a) wrap
+every FRESH Hub call in `hub.retry_transient` (`orchestrate/hub.py` — the
+public alias of `_retry_upload`: Retry-After-aware, wall-clock-budgeted via
 `EPM_HF_RETRY_BUDGET_S`; storage-quota-403 and other non-transient errors
 still re-raise immediately); (b) verify a SHARDED upload with ONE
 prefix-scoped listing per destination repo — collect the shard paths and
 check the SET via `hub.verify_repo_paths_uploaded(...)` — never a per-shard
 `file_exists` / exact-file probe loop (N per-file probes multiply transport
-exposure N-fold and duplicate the listing cost). The canonical sharded
-implementation is `upload_sharded._batched_verify` (#1335), superseding the
-per-shard `_verify_present` probe loop — the documented anti-pattern. Pin new
-verify code with a 429-then-success retry test and a ≤2-listings batching
-test (`tests/test_upload_sharded.py`, #1335).
+exposure N-fold). The canonical sharded implementation is
+`upload_sharded._batched_verify` (#1335), superseding the per-shard
+`_verify_present` probe loop. Pin new verify code with a 429-then-success
+retry test and a ≤2-listings batching test (`tests/test_upload_sharded.py`).
 
 **Staging-DOWNLOAD legs use the canonical helpers `hub.stage_hub_file` /
 `hub.stage_hub_prefix` (#1402) — never a hand-rolled retry + tempdir move.**
 The download-side sibling of the verify-path rule above: both helpers ride
-`retry_transient`, which as of #1402 classifies `LocalEntryNotFoundError`
-transient BY CLASS, checked first (ported from #1092's `_hub_retry_cause`
-— a 429 storm on `hf_hub_download`'s HEAD surfaces 404-shaped through that
-response-less error, the rf01 crash class; a genuinely-missing file still
+`retry_transient`, which classifies `LocalEntryNotFoundError` transient BY
+CLASS, checked first (a 429 storm on `hf_hub_download`'s HEAD surfaces
+404-shaped through that response-less error; a genuinely-missing file still
 fail-fasts via its response-bearing 404 `EntryNotFoundError`).
-`stage_hub_file` is atomic (tempdir INSIDE the dest parent + `os.replace`
-— the #1335 EXDEV gotcha) and fail-loud; `stage_hub_prefix` is the #833
+`stage_hub_file` is atomic (tempdir INSIDE the dest parent + `os.replace` —
+the #1335 EXDEV gotcha) and fail-loud; `stage_hub_prefix` is the #833
 scoped-listing recipe (server-side `list_hf_files_under_path`, one resolved
 revision, `max_workers<=6` pool) as one helper. Two scope notes: (a) the
 retry absorbs RAISED transients only — the hf-xet HANG class (no exception,
-zero TCP) stays on the kill+replay ladder (gotchas.md hf-xet download-wedge
-entry), and flaky-egress accelerator handling stays the per-launch
-`HF_HUB_DISABLE_XET=1` kill-switch replay, never a default flip; (b) the
-verbatim prefix mirror is a staged LAYOUT — a consumer with a fixed local
-layout still owes the staged-layout consumer-open probe at reuse time, once
-per (source-family × staged consumer) pair
-(`.claude/rules/artifact-reuse.md` check (h)(iv), #928, #1481); "canonical
-helper" does not mean "layout-mapping solved".
+zero TCP) stays on the kill+replay ladder (gotchas.md), and flaky-egress
+accelerator handling stays the per-launch `HF_HUB_DISABLE_XET=1` kill-switch
+replay, never a default flip; (b) the verbatim prefix mirror is a staged
+LAYOUT — a consumer with a fixed local layout still owes the staged-layout
+consumer-open probe at reuse time, once per (source-family × staged
+consumer) pair (`.claude/rules/artifact-reuse.md` check (h)(iv), #928,
+#1481); "canonical helper" does not mean "layout-mapping solved".
 
 **Fail-loud uploads.** `upload_dataset_directory` (`orchestrate/hub.py`) exits
 non-zero on failure (`--no-upload` only for dry-runs).
@@ -344,9 +302,8 @@ non-zero on failure (`--no-upload` only for dry-runs).
 Hub commit per cell/fraction WILL hit `429: You have exceeded the rate limit for
 repository commits (256 per hour)` mid-sweep, and a per-cell wrapper that only
 logs "upload returned no path" as a WARNING turns the throttle into silent
-artifact loss (incident #488, 2026-06-09: 41/324 adapter uploads silently
-missing after rc=0 cells; caught only by a pre-phase spot-check, backfilled with
-a single bulk commit in 43s). Rules: (a) sweeps producing >~200 per-cell
+artifact loss (#488: 41/324 adapter uploads silently missing after rc=0 cells).
+Rules: (a) sweeps producing >~200 per-cell
 commits/hr batch their uploads into ONE bulk `upload_folder` commit per sweep
 (or chunked commits well under the cap); (b) "upload returned no path" is a
 TRACKED GAP recorded in the sweep's failure list and reconciled before the next
@@ -356,67 +313,52 @@ no-path return (correct — (b) bans warning-and-continue) must first RETRY the
 no-path return with bounded jittered backoff, then raise the SAME fail-loud
 `upload returned no path` error on exhaustion. Layering: `_upload` already
 wraps each upload call in the inner `_retry_upload` envelope (6 attempts /
-~1800 s budget, Retry-After-aware, 429/408/5xx — the `retry_transient` entry
-above), catches what survives, logs "Upload failed: …", and returns `""`
-(`orchestrate/hub.py::_upload`) — so a no-path return means the inner budget
-EXHAUSTED or the failure classed non-transient (quota-403 and the
-0-files-verify path land here). The demonstrated #1315 no-path case was the
-then-UN-retried `api.file_exists` verify fallback inside
-`list_hf_files_under_path` — its "429 Client Error: Too Many Requests"
-matched the transient class all along (#1315 `epm:failure` v7; v8 recurrence);
-the bare probe just never entered the inner envelope. Fixed fleet-wide by
-#1360 (merge `289ad17572`): the fallback now rides `_retry_upload`, and the
-response-less Xet "queue size reached" body text classifies transient in
-`_is_transient_upload_error`. The seam retry remains the cheap bounded OUTER
+~1800 s budget, Retry-After-aware, 429/408/5xx), catches what survives, logs
+"Upload failed: …", and returns `""` — so a no-path return means the inner
+budget EXHAUSTED or the failure classed non-transient (quota-403 and the
+0-files-verify path land here; #1360 routed the previously-bare
+`api.file_exists` verify fallback through `_retry_upload` and classified the
+response-less Xet "queue size reached" body text transient in
+`_is_transient_upload_error`). The seam retry is the cheap bounded OUTER
 envelope — each attempt re-enters the full inner envelope after a 30-120 s
-pause — no longer the only retry for the Xet queue class. A persistent
-content-class failure (e.g. 403)
-costs one bounded outer cycle (~3.5-4.5 min) before the same raise; errors the
-seam's own guards RAISE propagate un-retried. Retries are free: uploads are
-idempotent (already-landed files verify + skip Hub-side). Validated constants:
-3 retries, (30, 60, 120) s backoff + 0-25% jitter, one log line per retry as
-the fix-engaged signal — worked example `_upload_with_transport_retry()` in
-`scripts/issue1315_dispatch.py` @ `c3c600541f` (#1315 r8: two p11 kills
-~35 min apart). IN-PROCESS complement of the #931 wedge ladder above, never a
-substitute: the seam retry fires when the upload RETURNS failed; the ladder
-fires when it HANGS (~0 TX, never returns).
+pause; errors the seam's own guards RAISE propagate un-retried. Retries are
+free: uploads are idempotent (already-landed files verify + skip Hub-side).
+Validated constants: 3 retries, (30, 60, 120) s backoff + 0-25% jitter, one
+log line per retry as the fix-engaged signal (worked example
+`_upload_with_transport_retry()` in `scripts/issue1315_dispatch.py`).
+IN-PROCESS complement of the #931 wedge ladder above, never a substitute: the
+seam retry fires when the upload RETURNS failed; the ladder fires when it
+HANGS (~0 TX, never returns).
 
 **Fleet-shared commit budget (#1547).** The 256-commits/hr rate limit is
 enforced against the SHARED repos (`superkaiba1/explore-persona-space` +
 `-data`), not per run — N concurrent upload-heavy runs share ONE budget, so
-per-run batching under the cap (rules (a)-(c) above) is necessary but NOT
-sufficient on a busy fleet day (2026-07-18: three independent HF-429 kills the
-same day at un-routed call sites). Rules: (a) size per-run commit cadence
-fleet-aware — per-cell `upload_folder` commits (the #664 rule below) with a
-soft per-run budget of ~≤60 commits/hr whenever other upload-heavy runs are
-live (≈256 / 4 concurrent); (b) the shared back-off mechanism IS
-`retry_transient`'s Retry-After-honoring envelope — when the shared budget
-saturates, every ROUTED caller self-throttles on the server hint instead of
-hammering (multiplicative server-driven back-off, additive resume), which
-works only to the extent call sites are actually routed; (c) therefore every
-NEW direct `hf_hub_download` / `upload_file` / `upload_folder` /
-`create_commit` / `push_to_hub` call in LIVE code — anything under
-`src/explore_persona_space/**` or `scripts/**` that is not in the frozen
-snapshot below, including newly-written per-issue drivers — rides
-`hub.retry_transient` (a 2-line lambda wrap at authoring time) or carries a
-`# NO_RETRY: <reason>` waiver; mechanically enforced by
+per-run batching under the cap is necessary but NOT sufficient on a busy
+fleet day (three independent HF-429 kills in one day at un-routed call
+sites). Rules: (a) size per-run commit cadence fleet-aware — per-cell
+`upload_folder` commits (the #664 rule below) with a soft per-run budget of
+~≤60 commits/hr whenever other upload-heavy runs are live (≈256 / 4
+concurrent); (b) the shared back-off mechanism IS `retry_transient`'s
+Retry-After-honoring envelope — when the shared budget saturates, every
+ROUTED caller self-throttles on the server hint, which works only to the
+extent call sites are actually routed; (c) therefore every NEW direct
+`hf_hub_download` / `upload_file` / `upload_folder` / `create_commit` /
+`push_to_hub` call in LIVE code — anything under
+`src/explore_persona_space/**` or `scripts/**` not in the frozen snapshot,
+including newly-written per-issue drivers — rides `hub.retry_transient` (a
+2-line lambda wrap at authoring time) or carries a `# NO_RETRY: <reason>`
+waiver; mechanically enforced by
 `workflow_lint.py --check-live-hf-retry-routing` (bundled into the no-flags
-default run); (d) during an observed fleet-wide 429 storm (multiple concurrent
-tasks logging HF 429s), do NOT launch additional big upload phases
-(`upload_dir_sharded` stores, checkpoint sweeps) — sequence them behind the
-storm; the in-flight envelopes will drain first. FROZEN per-issue
-drivers/modules present at #1547 implement time (the
-`HF_ROUTING_FROZEN_SNAPSHOT` allowlist in `workflow_lint.py`, ~297 files —
-`scripts/issue*` / `i<N>_*` / per-issue-named drivers,
-`src/**/experiments/**`, `analysis/issue*`) are historical reproducibility
-artifacts, exempt from retro-fitting: THIS clause is what creates that
-frozen-set policy; at REUSE time the routing requirement is picked back up by
-the existing artifact-reuse throughput check (i)
-(`.claude/rules/artifact-reuse.md` — "fix the SOURCE module, then reuse", the
-#1335/#1426 fix shape). Scope boundary (deliberate): bare `snapshot_download`
-/ `list_repo_files` sites are OUT of the lint's predicate — a 429 there is
-NOT a `--check-live-hf-retry-routing` failure; those call classes are
-governed by the scoped-listing + `retry_transient` recipes in
+default run); (d) during an observed fleet-wide 429 storm, do NOT launch
+additional big upload phases — sequence them behind the storm; the in-flight
+envelopes drain first. FROZEN per-issue drivers/modules present at #1547
+implement time (the `HF_ROUTING_FROZEN_SNAPSHOT` allowlist in
+`workflow_lint.py`) are historical reproducibility artifacts, exempt from
+retro-fitting; at REUSE time the routing requirement is picked back up by
+the artifact-reuse throughput check (i) ("fix the SOURCE module, then
+reuse"). Scope boundary (deliberate): bare `snapshot_download` /
+`list_repo_files` sites are OUT of the lint's predicate — those call classes
+are governed by the scoped-listing + `retry_transient` recipes in
 `.claude/rules/gotchas.md` (#833) and the `--check-hub-verify-retry` lint.
 
 **Multi-cell pod sweeps upload per-cell, never one terminal batch (#664).** A
@@ -425,25 +367,23 @@ completions) across N cells MUST persist each cell's artifacts the moment that
 cell completes — one `upload_folder` commit per cell-dir per artifact-kind
 (well under the 256-commits/hr cap above) — NOT accumulate them for one
 terminal P3 batch. A mid-sweep pod death (the #664 RUNNING-but-no-port host
-wedge — see `compute-backend-failover.md` Part C) with write-at-end upload
+wedge — `compute-backend-failover.md` Part C) with write-at-end upload
 strands EVERY not-yet-uploaded cell (#664 lost ~16 cells / ~3-4h compute);
-per-cell upload strands at most one in-flight cell. This is the artifact-I/O
-instance of `code-style.md` § "Checkpoint per phase; never accumulate-in-memory
-and write-at-end". Idempotency + completeness use an EXACT expected-file-set
-check on a fresh `list_repo_files` listing (NOT prefix-presence / count-only —
-a mid-`upload_folder` crash leaves a partial cell that prefix-presence would
-wrongly read as complete); the canonical implementation is
-`hub.verify_repo_paths_uploaded(...)` (server-side scoped + retried, returns
-the missing set; #997). The per-cell resume predicate is `local-done OR
-HF-complete`, so a fresh pod after a wedge auto-migrate SKIPS HF-complete cells
-instead of re-running them, and the terminal P3 sweep becomes an idempotent
-safety pass (skip cells already complete on the Hub; treat all-on-HF as
-success) + the authoritative before-teardown EXACT-set verify (every helper,
-store tensors included — the M2 fresh-listing verify `_upload_store_tensors`
-had been missing). Per-cell upload is ALSO the data-safety precondition for the
-autonomous RunPod-wedge auto-terminate (`compute-backend-failover.md` Part C):
-terminate fires only when the per-cell three-state gate finds zero partial
-cells. Reference impl: `scripts/issue664_dispatch.py` `_upload_cell_artifacts` /
+per-cell upload strands at most one in-flight cell — the artifact-I/O
+instance of `code-style.md` § "Checkpoint per phase". Idempotency +
+completeness use an EXACT expected-file-set check on a fresh listing (NOT
+prefix-presence / count-only — a mid-`upload_folder` crash leaves a partial
+cell that prefix-presence wrongly reads as complete); canonical
+implementation `hub.verify_repo_paths_uploaded(...)` (server-side scoped +
+retried, returns the missing set; #997). The per-cell resume predicate is
+`local-done OR HF-complete`, so a fresh pod after a wedge auto-migrate SKIPS
+HF-complete cells, and the terminal P3 sweep becomes an idempotent safety
+pass + the authoritative before-teardown EXACT-set verify (every helper,
+store tensors included). Per-cell upload is ALSO the data-safety
+precondition for the autonomous RunPod-wedge auto-terminate
+(`compute-backend-failover.md` Part C): terminate fires only when the
+per-cell three-state gate finds zero partial cells. Reference impl:
+`scripts/issue664_dispatch.py` `_upload_cell_artifacts` /
 `_classify_cell_hub_state` / `_cell_done_anywhere`.
 
 **Expensive stores upload BEFORE — or detached-concurrent with — any long
@@ -462,18 +402,14 @@ expected file set, BEFORE the fit's result is consumed; a fire-and-forget
 launch (never confirmed landed) does NOT satisfy this rule — a silently
 wedged upload plus a hung fit strands the store exactly as #825 did (the
 #931 wedge ladder above is the hung-upload remedy; this clause is what
-makes the ladder reachable before the pod is gone). The default
-order `extract → fit → upload` parks the entire fit's hang/crash/OOM-kill
-risk between the expensive artifact's creation and its persistence: #825
-Track-S run 2 hung in a serial CPU MLP fit before `[phase=upload]`,
-stranding the turnstore off HF — recovery cost a full fresh GPU
-re-extraction. This is the INTRA-RUN sibling of the two #664 sequencing
-rules: per-cell upload (bullet above) persists each sweep cell the moment
-it completes; pod-release before the final bulk upload (v2 § below) frees
-the GPU — this bullet orders store-persist ahead of long fits WITHIN one
-run's phase sequence. Plan-side mirror: `planner.md` §9 (the phase sequence
-names the upload point of every regeneration-costly intermediate relative
-to long fit phases); review enforcement: Methodology lens item 10(i)
+makes the ladder reachable before the pod is gone). The default order
+`extract → fit → upload` parks the entire fit's hang/crash/OOM-kill risk
+between the expensive artifact's creation and its persistence (#825: a hung
+serial CPU fit before `[phase=upload]` stranded the turnstore off HF;
+recovery cost a full fresh GPU re-extraction). This is the INTRA-RUN
+sibling of the two #664 sequencing rules (per-cell upload above;
+pod-release before the final bulk upload, v2 § below). Plan-side mirror:
+`planner.md` §9; review enforcement: Methodology lens item 10(i)
 data-safety sequencing clause (`.claude/rules/critic-lens-reference.md`).
 
 **Inline-upload fence `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD`.** `_finalize_phase`
@@ -489,40 +425,33 @@ canonical artifact.** `merged_upload_enabled()` (`orchestrate/hub.py`) gates
 (`TRAINING_STATE_IGNORE_PATTERNS`, `orchestrate/hub.py`) is ALWAYS excluded
 from every HF folder upload — no opt-out. Distributed FULL fine-tunes are
 exempt: no adapter exists, so the full checkpoint stays the canonical upload.
-Two semantics worth knowing (code-review notes, 2026-06-10): (a) `upload_to:
-"none"` does NOT suppress the default adapter upload — `_finalize_phase` has no
-view of `upload_to`, so flows that own their uploads must set the
-`EPM_SKIP_INLINE_CHECKPOINT_UPLOAD` fence (same precedent as the WandB
-checkpoint upload); (b) the local adapter is reaped only after a VERIFIED
-upload (or under the fence) — when uploads fail-soft (e.g. quota 403), adapters
-accumulate on the pod's ~130GB MooseFS quota instead of being deleted, by
-design (upload-before-delete invariant).
+Two semantics: (a) `upload_to: "none"` does NOT suppress the default adapter
+upload — `_finalize_phase` has no view of `upload_to`, so flows that own
+their uploads must set the `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD` fence; (b)
+the local adapter is reaped only after a VERIFIED upload (or under the
+fence) — when uploads fail-soft (e.g. quota 403), adapters accumulate on the
+pod's ~130GB MooseFS quota instead of being deleted, by design
+(upload-before-delete invariant).
 
 **`WANDB_LOG_MODEL` is a HuggingFace/WandB env var — NOT one of ours — and
 must stay unset (or `false`) in every training environment.** Distinct from
-the three project-owned WandB checkpoint-upload sites above — all gated by
-`EPM_UPLOAD_MODEL_WANDB=1` (default OFF; landed commit `b4474042b7`):
-`orchestrate/hub.py:1462` (`upload_model_wandb`),
-`train/trainer.py:477` (`_maybe_upload_checkpoint_to_wandb`), and its
-`train/sft.py:1526` call site — HF `Trainer` installs a built-in
+the three project-owned WandB checkpoint-upload sites (all gated by
+`EPM_UPLOAD_MODEL_WANDB=1`, default OFF: `orchestrate/hub.py`
+`upload_model_wandb`, `train/trainer.py` `_maybe_upload_checkpoint_to_wandb`
++ its `train/sft.py` call site): HF `Trainer` installs a built-in
 `WandbCallback` whenever `report_to="wandb"` (which every project training
-run with a WandB run name sets — `train/trainer.py:943`/`:1309`). That
-callback reads `WANDB_LOG_MODEL` from the environment at init: `end` uploads
-the final saved model artifact to WandB Artifacts at end of training
-(`WandbCallback.on_train_end` saves the model into a temp dir and logs
-THAT — not an existing checkpoint dir), `checkpoint` uploads the actual
-checkpoint dir every `save_steps` via `on_save` (older Transformers also
-accepted the deprecated boolean alias `true` ≈ `end`), and the default
-`false`/unset uploads nothing. This path is INDEPENDENT of our `_maybe_upload_*` code — so
-`EPM_UPLOAD_MODEL_WANDB=1` does NOT gate it and setting `WANDB_LOG_MODEL`
-re-opens the ~15 GB-safetensors-to-WandB leak regardless of our guard.
-Therefore `WANDB_LOG_MODEL` must never be set (or must be explicitly
-`false`/`0`) in any environment where training runs — `bootstrap_pod.sh`,
-the GCE startup prelude, the SLURM sbatch env block, `.env`, and launch
-shells (it is currently unset in all of them; keep it that way). This is
-the surface that let ~784 GB of checkpoints accumulate on WandB before the
-`EPM_UPLOAD_MODEL_WANDB` guard landed on 2026-06-29 (the 2026-06-30 4TB
-cleanup; only-on-WandB orphans were archived to the private
+run with a WandB run name sets). That callback reads `WANDB_LOG_MODEL` from
+the environment at init — `end` uploads the final saved model to WandB
+Artifacts, `checkpoint` uploads every `save_steps` checkpoint dir, default
+`false`/unset uploads nothing. This path is INDEPENDENT of our
+`_maybe_upload_*` code — `EPM_UPLOAD_MODEL_WANDB=1` does NOT gate it, and
+setting `WANDB_LOG_MODEL` re-opens the ~15 GB-safetensors-to-WandB leak
+regardless of our guard. It must never be set (or must be explicitly
+`false`/`0`) in `bootstrap_pod.sh`, the GCE startup prelude, the SLURM
+sbatch env block, `.env`, and launch shells (currently unset in all of
+them; keep it that way). This surface let ~784 GB of checkpoints accumulate
+on WandB before the guard landed (the 2026-06-30 4TB cleanup; only-on-WandB
+orphans archived to the private
 `superkaiba1/explore-persona-space-wandb-archive` repo before deletion).
 
 **Delete-after-eval sweeps MUST persist the ADAPTER first (never the merged dir).**
@@ -546,16 +475,14 @@ Signature: `403 Forbidden: You have exceeded your public storage space` on
 256/hr commit throttle above, this is the ACCOUNT-WIDE public-storage quota: it
 is not transient, it hits every running task at once, and retrying changes
 nothing until quota is freed. **The quota gate fires ONLY on the LFS endpoint**
-(validated #541, 2026-06-10): regular (non-LFS) git-blob commits to public
-repos still succeed while over quota, and PRIVATE-repo LFS uploads still
-succeed too (private storage is a separate quota with headroom on PRO). A file
-routes to LFS when its extension is LFS-matched in the repo's `.gitattributes`
+(validated #541/#552): regular (non-LFS) git-blob commits to public repos
+still succeed while over quota, and PRIVATE-repo LFS uploads still succeed too
+(private storage is a separate quota with headroom on PRO). A file routes to
+LFS when its extension is LFS-matched in the repo's `.gitattributes`
 (`*.safetensors`, `*.bin`, `*.gz`, ... — `*.json` / `*.jsonl` / `*.txt` are
 NOT matched in the data repo) OR when `upload_file` / `upload_folder`
-force-routes it at >10MB — which explains the #552 canary results from the
-same day (small text/JSON and ~10MB files to the dataset repo PASS; ≥~30MB
-LFS uploads — adapters, safetensors, merged dirs — FAIL on BOTH the model and
-dataset repos). Recovery ordering:
+force-routes it at >10MB — so small text/JSON keeps flowing while adapters /
+safetensors / merged dirs fail on BOTH repos. Recovery ordering:
 (1) NEVER delete the local copy — the fail-loud persist guard above is correct;
 let it halt the cell rather than papering over the 403. (2) Keep small-artifact
 uploads (eval JSONs, raw completions, analysis tensors) flowing to the dataset
@@ -568,152 +495,122 @@ overflow repo `superkaiba1/explore-persona-space-overflow` under the same
 `issueN_<slug>/...` subfolder layout, record a plan-deviation entry + the
 overflow URLs in the run's results sentinel, and migrate to the canonical repo
 after quota is freed. As a second durable replica (or if the private path also
-fails), pull the adapters off the pod to the VM
-(rsync — installed on bootstrapped pods by `bootstrap_pod.sh` Step 2 since
-2026-06-12, commit `22e1a882a1`; on a `--no-bootstrap` pod use tar-over-ssh:
-`ssh <pod> 'tar -C /workspace -cf - <adapter-dir>' | tar -xf -`) into a local
-staging dir
-`eval_results/issue_<N>/adapter_backup/<cell>/` (local staging only —
-`*.safetensors` is gitignored; the "eval_results/ is JSON/text only" rule
-governs what gets committed) AND log a WandB Artifact (`type="model"`) copy.
+fails), pull the adapters off the pod to the VM (rsync; on a `--no-bootstrap`
+pod tar-over-ssh: `ssh <pod> 'tar -C /workspace -cf - <adapter-dir>' | tar -xf -`)
+into a local staging dir `eval_results/issue_<N>/adapter_backup/<cell>/`
+(local staging only — `*.safetensors` is gitignored) AND log a WandB Artifact
+(`type="model"`) copy.
 (4) Retry the canonical HF model-repo upload only after quota is freed.
 Freeing quota means deleting existing HF artifacts — that is USER-ONLY:
 surface the situation to the user, never auto-delete from HF. Two corollaries
-of the LFS-only gate above (both bit on 2026-07-22, #1586): (a) an
-"unblocked?" probe MUST exercise an LFS-SCALE upload (>10 MB, LFS-matched
-extension) — a passing small-file/text upload is NOT evidence the block
-lifted (small files ride the always-open non-LFS path; a small-file probe
-minted a premature billing-resolved marker and cost an extra crash round);
-(b) a user-action escalation (enable auto-recharge, free quota) names the
-EXACT click path AND what the configured end-state looks like on the page —
-"fix billing at settings/billing" alone drew two user follow-ups on a page
-that was already correct.
+of the LFS-only gate (both bit in #1586): (a) an "unblocked?" probe MUST
+exercise an LFS-SCALE upload (>10 MB, LFS-matched extension) — a passing
+small-file/text upload is NOT evidence the block lifted (small files ride the
+always-open non-LFS path); (b) a user-action escalation (enable auto-recharge,
+free quota) names the EXACT click path AND what the configured end-state looks
+like on the page.
 Corollary-(a) canonical probe (#1654): `hub.check_lfs_write_gate()` (or
 `preflight --no-gpu --planned-upload-gb <N>`) is the canonical zero-byte
-"is the LFS write path open?" / "unblocked?" probe at declared scale — one
-LFS batch-endpoint negotiation per repo declaring ~16 GB (env
-`EPM_HF_BILLING_PROBE_GB`; kill switch `EPM_HF_BILLING_PROBE=0`), exercising
-the batch-endpoint billing/quota check the small-file probe misses, with zero
-bytes transferred and zero commits; a REAL >10 MB LFS upload remains valid
-where end-to-end transfer confirmation is wanted. Three caveats: (i) a PASS
-(`ok`) is ADVISORY — the probe's 403 arm has never been observed live
-(billing was healthy when it landed; the arm is evidenced by the #1586
-incident record) — so on the NEXT 403-blocked incident, run
-`check_lfs_write_gate()` WHILE blocked and record the verdict against #1654
-assumption 3; (ii) coverage boundary: a ~16 GB-declared PASS ≠ credit
-clearance for a whole run's uploads (e.g. 215 GB) — mid-run credit exhaustion
-stays with the reactive 403 backstop, and do NOT size the probe to
-`--planned-upload-gb` (a declared object above per-file caps, e.g. >50 GB,
-fails for size reasons and degrades the verdict to `unknown`); (iii) the
-blocked-verdict `detail` excerpt governs the exact remediation path (a
-"storage patterns" manual-review 403 — hub issue #3366 — classifies
-`storage-blocked` and names its own contact address in the excerpt).
+"is the LFS write path open?" probe at declared scale — one LFS
+batch-endpoint negotiation per repo declaring ~16 GB (env
+`EPM_HF_BILLING_PROBE_GB`; kill switch `EPM_HF_BILLING_PROBE=0`), zero bytes
+transferred, zero commits; a REAL >10 MB LFS upload remains valid where
+end-to-end transfer confirmation is wanted. Three caveats: (i) a PASS (`ok`)
+is ADVISORY — the probe's 403 arm has never been observed live; on the NEXT
+403-blocked incident, run `check_lfs_write_gate()` WHILE blocked and record
+the verdict against #1654 assumption 3; (ii) a ~16 GB-declared PASS ≠ credit
+clearance for a whole run's uploads — mid-run credit exhaustion stays with the
+reactive 403 backstop, and do NOT size the probe to `--planned-upload-gb` (a
+declared object above per-file caps fails for size reasons and degrades the
+verdict to `unknown`); (iii) the blocked-verdict `detail` excerpt governs the
+exact remediation path (a "storage patterns" manual-review 403 — hub issue
+#3366 — classifies `storage-blocked` and names its own contact address).
 Diagnosis probes: sum account usage via
 `/api/{models,datasets}/<id>?expand[]=usedStorage` over
 `list_models(author=...)` / `list_datasets(author=...)`; a tiny non-LFS `.txt`
 upload probes the regular-blob path; a tiny `.bin` upload to the private repo
-probes the private-LFS path. (Incident #541, 2026-06-10: 11.3 TB public
-across 414 repos — 10.2 TB in `superkaiba1/explore-persona-space` alone —
+probes the private-LFS path. (Incident #541: 11.3 TB public across 414 repos
 killed the sweep's first upload; #552 hit the same wall the same day.)
 
 **Proactive detection (#564): soft-ceiling headroom check + minute-1 persist
 gate + opt-in overflow routing.** `check_hf_storage_headroom()`
 (`orchestrate/hub.py`) sums per-repo `usedStorage` over the account's public
 repos behind a 1h on-disk cache; knobs: `EPM_HF_STORAGE_SOFT_CEILING_TB`
-(default 10.0 — the wall was ~11.3 TB), `EPM_HF_STORAGE_CACHE_TTL_S`,
-`EPM_HF_STORAGE_CACHE_PATH`, kill switch `EPM_HF_STORAGE_CHECK=0` (the ceiling
-/ routing / check / TTL envs are threaded through the slurm + gcp passthrough
-allowlists; the cache-path + event-path envs deliberately are NOT). Preflight
-surfaces it as a WARN-only `HF storage:` line.
-`trainer.py::_validate_persist_headroom` — called at the top of `_init_phase`
-AND at the start of `sft.py::train_lora` — aborts a persist-declared run
-(`EPM_PERSIST_ADAPTER_HF_REPO` set) in minute 1 when a forced LIVE re-probe
-confirms the account is over the soft ceiling and the persist target is
-public with routing off (unknown headroom / undeterminable privacy fail
-OPEN — the upload-time backstop above stays authoritative).
+(default 10.0), `EPM_HF_STORAGE_CACHE_TTL_S`, `EPM_HF_STORAGE_CACHE_PATH`,
+kill switch `EPM_HF_STORAGE_CHECK=0` (the ceiling / routing / check / TTL
+envs are threaded through the slurm + gcp passthrough allowlists; the
+cache-path + event-path envs deliberately are NOT). Preflight surfaces it as
+a WARN-only `HF storage:` line. `trainer.py::_validate_persist_headroom` —
+called at the top of `_init_phase` AND at the start of `sft.py::train_lora`
+— aborts a persist-declared run (`EPM_PERSIST_ADAPTER_HF_REPO` set) in
+minute 1 when a forced LIVE re-probe confirms over-ceiling and the persist
+target is public with routing off (unknown headroom / undeterminable privacy
+fail OPEN — the upload-time backstop stays authoritative).
 `EPM_HF_OVERFLOW_ROUTING=1` (default OFF) makes `upload_model` reroute LFS
-uploads to the private overflow repo when KNOWN-over-ceiling, creating it
-private if missing, appending a deviation event to `EPM_HF_OVERFLOW_EVENT_PATH`
-→ `/workspace/logs/hf-overflow-routing.jsonl` →
-`~/.cache/explore_persona_space/hf-overflow-routing.jsonl` (the orchestrator /
-upload-verifier observing that sentinel posts the actual `epm:` plan-deviation
-marker — pod-side code never shells `task.py`), and committing a small
-`OVERFLOW_POINTER.json` breadcrumb (`{overflow_repo, path_in_repo, ts,
-used_tb, ceiling_tb}`) to the CANONICAL repo at
-`<path_in_repo>/OVERFLOW_POINTER.json` (non-LFS, so it works over quota).
-ARMING CONTRACT: routing is safe ONLY for flows that consume `upload_model`'s
-returned URL or read the pointer/deviation records — launchers that verify
-CANONICAL paths externally (the i528 family) must NOT arm it, because a
-reroute converts their 403 into a post-training verification abort. Dataset /
-raw-completion paths are deliberately un-routed (non-LFS JSON keeps flowing;
-sharding stays the big-text remedy). New per-issue scripts should prefer
-`upload_model` over direct `HfApi` calls for LFS artifacts so they inherit
-this guard.
+uploads to the private overflow repo when KNOWN-over-ceiling, appending a
+deviation event to `EPM_HF_OVERFLOW_EVENT_PATH` →
+`/workspace/logs/hf-overflow-routing.jsonl` →
+`~/.cache/explore_persona_space/hf-overflow-routing.jsonl` (the orchestrator
+/ upload-verifier observing that sentinel posts the actual `epm:`
+plan-deviation marker — pod-side code never shells `task.py`), and
+committing a small `OVERFLOW_POINTER.json` breadcrumb to the CANONICAL repo
+(non-LFS, so it works over quota). ARMING CONTRACT: routing is safe ONLY for
+flows that consume `upload_model`'s returned URL or read the
+pointer/deviation records — launchers that verify CANONICAL paths externally
+(the i528 family) must NOT arm it, because a reroute converts their 403 into
+a post-training verification abort. Dataset / raw-completion paths are
+deliberately un-routed. New per-issue scripts should prefer `upload_model`
+over direct `HfApi` calls for LFS artifacts so they inherit this guard.
 
 **Size-aware projected-headroom probe (#1034).**
 `hub.check_projected_upload_headroom(projected_bytes)` compares a PLANNED LFS
-upload's byte size against the REMAINING headroom (`used + projected >
-ceiling`), which the binary #564 check cannot do. Verdicts: `below-threshold`
-(projected under the probe floor `EPM_HF_LARGE_UPLOAD_PROBE_GB`, default 100
-decimal GB — ZERO headroom I/O) | `disabled` | `unknown` (fail-open — callers
-never block/reroute; the reactive 403 backstop stays authoritative) | `fits` |
-`insufficient` (only after a `force_refresh=True` LIVE confirm — never act on
-a ≤1h-stale cached over-read). Three consumers: (1) **`upload_dir_sharded`
-routes ALL shards to the private overflow repo UP-FRONT** on
-KNOWN-insufficient + confirmed-public canonical target (one
-`OVERFLOW_POINTER.json`, one JSONL event with
-`reason: "projected-headroom-proactive"` + `projected_gb`, zero canonical LFS
-bytes attempted; opt out with `proactive_overflow=False` for a
+upload's byte size against REMAINING headroom (`used + projected > ceiling`),
+which the binary #564 check cannot do. Verdicts: `below-threshold` (projected
+under `EPM_HF_LARGE_UPLOAD_PROBE_GB`, default 100 decimal GB — ZERO headroom
+I/O) | `disabled` | `unknown` (fail-open — callers never block/reroute) |
+`fits` | `insufficient` (only after a `force_refresh=True` LIVE confirm —
+never act on a ≤1h-stale cached over-read). Three consumers: (1)
+**`upload_dir_sharded` routes ALL shards to the private overflow repo
+UP-FRONT** on KNOWN-insufficient + confirmed-public canonical target (one
+pointer, one JSONL event `reason: "projected-headroom-proactive"`, zero
+canonical LFS bytes attempted; opt out with `proactive_overflow=False` for a
 canonical-path-verifying caller) — **route ≥100 GB stores through
 `upload_dir_sharded` explicitly** so they inherit this; (2) armed
 `upload_model` (`EPM_HF_OVERFLOW_ROUTING=1`) reroutes when
-`used + dir_size > ceiling`, not only when already over (ARMING CONTRACT
-unchanged: default-off, zero headroom I/O unarmed); (3) preflight
+`used + dir_size > ceiling`, not only when already over; (3) preflight
 `--planned-upload-gb <N>` turns the WARN-only advisory into a hard gate
 (LIVE-CONFIRMED-insufficient + routing off → FAIL; armed → WARN;
-unknown/disabled → WARN). Residual routes the guard does NOT cover:
-`hub._upload`, `hub._upload_folder_filtered`, and direct-`HfApi` per-issue
-scripts — the preflight plan-projection gate covers plan-declared big uploads
-regardless of helper, and the 403 stays fail-loud, but do not mistake the
-guard for fleet-wide coverage. Note overflow-repo artifacts are PRIVATE —
-downstream consumers reach them auth-required and pointer-mediated, never as
-canonical-path equivalents.
+unknown/disabled → WARN). Residual routes NOT covered: `hub._upload`,
+`hub._upload_folder_filtered`, direct-`HfApi` per-issue scripts — the
+preflight plan-projection gate covers plan-declared big uploads regardless
+of helper, and the 403 stays fail-loud, but do not mistake the guard for
+fleet-wide coverage. Overflow-repo artifacts are PRIVATE — reached
+auth-required and pointer-mediated, never as canonical-path equivalents.
 
 **File-count limit (100k) — reactive overflow fallback (#1108).** HF
-hard-rejects any push that would put a repo over 100,000 git files ("Your git
-repo would contain N files after this push, over the limit of 100000 files" —
-#1090's rejected c5 ladder push; the canonical model repo sits at the limit).
+hard-rejects any push that would put a repo over 100,000 git files (the
+canonical model repo sits at the limit; #1090's rejected c5 push).
 `hub._upload` catches that rejection on a MODEL-repo upload and retries the
-identical upload against the private overflow repo
-(`DEFAULT_OVERFLOW_REPO`), then emits the #564 routing event
-(`reason: "file-count-limit-reactive"`) and writes the
-`OVERFLOW_POINTER.json` breadcrumb at the canonical path — the pointer itself
-ADDS one (non-LFS) file to the canonical repo per reroute and fails soft at
-exactly 100,000. **Default ON** (kill switch `EPM_HF_FILECOUNT_FALLBACK=0`):
-unlike the #564 byte-quota routing (default-OFF because a pre-emptive reroute
-can divert a would-succeed push), this fires only AFTER the server refused
-the canonical push, so it can never reroute a push that would have succeeded.
-Detection is message-substring based (the exception class of the rejection is
-unverified); the rejection message changing shape degrades to today's
-fail-soft `""` — never a wrong reroute. **This is a TEMPORARY DURABILITY
-fallback pending the user's file-count triage (#1108's audit + freeing
-package), NOT a transparent successor to canonical storage** — overflow
-artifacts are PRIVATE and pointer-mediated (see the paragraph above).
-**i528-family caveat (the REACTIVE analogue of the #564 arming contract):** a
-persist-gated flow (`EPM_PERSIST_ADAPTER_HF_REPO`) that previously failed
-LOUD at the gate on a file-count rejection now proceeds on a VERIFIED private
-overflow landing — the artifact is durable and the returned path is the
-overflow path, but an EXTERNAL launcher that verifies CANONICAL paths fails
-LATER (at its own verify), not earlier; such launchers should set
-`EPM_HF_FILECOUNT_FALLBACK=0`. **Concurrent-deletion race (harmless):** if
-the user's freeing lands between the rejection and the overflow retry, the
-upload simply lands on overflow with a pointer — durable either way, and the
-next upload takes the canonical path again. **Scope:** `repo_type="model"`
-via `upload_model` → `_upload` only — the ~1M-file DATA repo empirically
-still accepts pushes (enforcement is not uniform across repos; a future
-risk, not a current one), and direct-`HfApi` per-issue scripts,
-`upload_dir_sharded`, and `_upload_folder_filtered` are named residuals
-outside this fallback.
+identical upload against the private overflow repo (`DEFAULT_OVERFLOW_REPO`),
+then emits the #564 routing event (`reason: "file-count-limit-reactive"`) and
+writes the `OVERFLOW_POINTER.json` breadcrumb at the canonical path. **Default
+ON** (kill switch `EPM_HF_FILECOUNT_FALLBACK=0`): unlike the #564 byte-quota
+routing (default-OFF because a pre-emptive reroute can divert a would-succeed
+push), this fires only AFTER the server refused the canonical push. Detection
+is message-substring based; a changed rejection shape degrades to the
+fail-soft `""` — never a wrong reroute. A TEMPORARY DURABILITY fallback
+pending the user's file-count triage, NOT a transparent successor to
+canonical storage — overflow artifacts are PRIVATE and pointer-mediated.
+**i528-family caveat:** a persist-gated flow (`EPM_PERSIST_ADAPTER_HF_REPO`)
+that previously failed LOUD at the gate now proceeds on a VERIFIED private
+overflow landing — an EXTERNAL launcher that verifies CANONICAL paths fails
+LATER (at its own verify); such launchers should set
+`EPM_HF_FILECOUNT_FALLBACK=0`. A concurrent user-side freeing between
+rejection and retry is harmless (lands on overflow with a pointer; the next
+upload takes the canonical path again). **Scope:** `repo_type="model"` via
+`upload_model` → `_upload` only — the ~1M-file DATA repo empirically still
+accepts pushes, and direct-`HfApi` per-issue scripts, `upload_dir_sharded`,
+and `_upload_folder_filtered` are named residuals outside this fallback.
 
 **Per-DIRECTORY file-count cap (10k/dir) — PACK many-small-file trees before
 upload (#1190/#1739).** The Hub ALSO rejects any single COMMIT staging
@@ -725,7 +622,7 @@ network I/O (`HUB_DIR_FILE_LIMIT` 10,000; kill switch
 `HUB_DIR_FILECOUNT_WARN` 5,000/dir and `HUB_COMMIT_FILECOUNT_WARN` 2,000
 staged files/commit, #1571 — a commit of many SMALL files crawls in Hub-side
 pre-processing regardless of byte size: #1481 killed a 31,000-file / 135 MB
-single commit after >20 min). When the guard fires — and at PLAN time,
+commit after >20 min). When the guard fires — and at PLAN time,
 whenever a workload will emit ≳2,000 per-unit small text/JSON files
 (per-rollout JSONs, per-sample transcripts, per-context captures) — do NOT
 point the per-file tree at `upload_folder`, and do NOT reach for the kill
@@ -737,14 +634,11 @@ small shard set in ONE bulk `upload_folder` commit with an exact-set verify.
 Consumers UNPACK back to the per-file layout (manifest/sha verify; never
 overwrite a differing file). This is the MANY-FILES sibling of the
 single-big-file >9.5 MB `<stem>.shardNN.jsonl` line-split in the quota-403
-recovery above (that recipe splits ONE oversized text file into line
-shards; this one packs thousands of small files into few shards) — a grep
-hit on `shardNN.jsonl` resolves to one or the other by that split. ≤9 MB
-keeps every shard on the always-open non-LFS path (the >10 MB LFS
-force-route above). Worked example: #1739 r4/r5 — a 115,941-file labeling
-tree packed to a small shard set (commits `a59b803712` pack / `4d9867611f`
-unpack + `--from-hf` scoped staging;
-`scripts/issue1739_pack.py`, on the issue-1739 branch until its merge). <!-- lint: historical-ref -->
+recovery above (that recipe splits ONE oversized text file; this one packs
+thousands of small files into few shards). ≤9 MB keeps every shard on the
+always-open non-LFS path (the >10 MB LFS force-route above). Worked
+example: #1739 r4/r5 — a 115,941-file labeling tree packed to a small shard
+set (`scripts/issue1739_pack.py`, on the issue-1739 branch until its merge). <!-- lint: historical-ref -->
 The `shard_NNNN/` ≤5,000-files-per-dir DIRECTORY-sharding recipe
 (`gotchas.md`, the #658 entry) stays the fallback ONLY when the consumer
 genuinely needs the per-file layout ON the Hub, and for binaries a jsonl
