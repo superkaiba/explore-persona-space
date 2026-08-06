@@ -352,6 +352,37 @@ def is_truncation_error_dict(parsed: object) -> bool:
     return is_truncation_stop_reason(parsed.get("stop_reason"))
 
 
+# Raw SDK stop_reason marking an API-CLASSIFIER refusal: the request was
+# accepted, the model produced NO verdict, and the content array is empty.
+# Distinct from an INSTRUCTED rubric refusal (graded_judge._is_refusal_parsed,
+# #1801), which IS a produced verdict and stays a rule-9 content drop.
+API_REFUSAL_STOP_REASONS = ("refusal",)
+
+
+def is_api_refusal_stop_reason(stop_reason: object) -> bool:
+    """True iff a persisted ``stop_reason`` marks an API-classifier refusal (#2151).
+
+    ``None`` / missing / non-str -> False (unknown, never KeyError).
+    """
+    return isinstance(stop_reason, str) and stop_reason in API_REFUSAL_STOP_REASONS
+
+
+def is_api_refusal_error_dict(parsed: object) -> bool:
+    """Rule-18 api-refusal class for judge error dicts (#2151).
+
+    True iff the row is an error dict (``error: True``) whose persisted
+    ``stop_reason`` is api-refusal-class — a TRANSPORT-CONDITIONAL censor,
+    neither a content verdict (rule 9) nor a transport loss (rule 24). A dict
+    lacking ``stop_reason`` (pre-#2021 legacy) is NOT api-refusal-class,
+    preserving today's behavior. Transport dicts carry no ``stop_reason`` by
+    construction, so the classes are disjoint; truncation and api-refusal are
+    disjoint by ``stop_reason`` value.
+    """
+    if not isinstance(parsed, dict) or not parsed.get("error"):
+        return False
+    return is_api_refusal_stop_reason(parsed.get("stop_reason"))
+
+
 def _collect_legacy_results(
     client: "anthropic.Anthropic",
     batch_id: str,
@@ -640,6 +671,7 @@ def _enumerate_and_check_cache(
                         cached is not None
                         and not is_transport_error_dict(cached)
                         and not is_truncation_error_dict(cached)
+                        and not is_api_refusal_error_dict(cached)
                     ):
                         # A stored transport-class error dict is a MISS (#1313,
                         # rule 24(ii)): fall through to re-dispatch so a re-run
@@ -649,6 +681,11 @@ def _enumerate_and_check_cache(
                         # (#2021, rule 23): the rubric key deliberately excludes
                         # max_tokens, so a budget raise would otherwise re-serve
                         # the truncated parse_error forever.
+                        # A stored API-REFUSAL-class error dict is a MISS too
+                        # (#2151): the censor is transport-conditional, so a
+                        # transport change (batch -> sync) must re-dispatch the
+                        # censored rows — this get-miss is what makes the class
+                        # operationally "retriable" with no fresh cache_dir.
                         cached_scores[custom_id] = cached
                         continue
 
@@ -860,12 +897,19 @@ def judge_completions_batch(
             for custom_id, question, comp, _user_msg in uncached_items:
                 if custom_id in batch_scores:
                     result = batch_scores[custom_id]
-                    if is_transport_error_dict(result) or is_truncation_error_dict(result):
+                    if (
+                        is_transport_error_dict(result)
+                        or is_truncation_error_dict(result)
+                        or is_api_refusal_error_dict(result)
+                    ):
                         # rule 24(ii)/23 (#1313): never cache a transport error —
                         # a cached one re-serves the outage on every resume.
                         # #2021: never cache a truncation-class error either —
                         # the rubric key excludes max_tokens, so a budget raise
                         # must re-dispatch these rows (self-heal, rule 23).
+                        # #2151: never cache an api-refusal-class error either —
+                        # the censor is transport-conditional, so a sync
+                        # re-issue must re-dispatch, never re-serve the censor.
                         continue
                     cache.put(question, comp, result, rubric_key=rubric_key)
 

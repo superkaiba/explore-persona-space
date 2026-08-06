@@ -73,12 +73,16 @@ class ArmPilotStats:
     :class:`~explore_persona_space.eval.graded_judge.JudgeResult` fields).
 
     ``parse_fail_rate`` = ``(n_content_dropped - n_refusal) / max(1, n_draws -
-    n_transport_lost)`` — refusals excluded (rule 9: a produced verdict), transport
-    losses excluded from the denominator (rule 24: freely re-judgeable, never
-    evidence about the instrument). ``n_unknown_stop_reason_drops`` counts residual
-    (non-transport, non-refusal) content DROPS lacking a persisted ``stop_reason``
-    — nonzero PARTIALLY detects a stale pre-#2021 judge cache being replayed
-    (expect ~0 against a fresh pilot ``cache_dir``).
+    n_transport_lost - n_api_refusal)`` — refusals excluded (rule 9: a produced
+    verdict), transport losses AND api-refusal draws excluded from the
+    denominator (rules 24/28: freely re-judgeable / transport-conditional
+    censoring, never evidence about the instrument). ``n_api_refusal`` (#2151)
+    is REPORT-ONLY — no gate condition keys on it (the rule-26 gate is NOT
+    protective for the api-refusal class; llm-judging.md rule 28's
+    non-coverage note). ``n_unknown_stop_reason_drops`` counts residual
+    (non-transport, non-refusal) content DROPS lacking a persisted
+    ``stop_reason`` — nonzero PARTIALLY detects a stale pre-#2021 judge cache
+    being replayed (expect ~0 against a fresh pilot ``cache_dir``).
     """
 
     n_items: int
@@ -88,6 +92,7 @@ class ArmPilotStats:
     n_refusal: int
     n_truncation: int
     n_transport_lost: int
+    n_api_refusal: int
     n_unknown_stop_reason_drops: int
     parse_fail_rate: float
     stop_reason_tally: dict[str, int]
@@ -378,7 +383,13 @@ def judge_pilot_gate(
             max_tokens=max_tokens,
             threshold_base=threshold_base,
         )
-        n_answered = result.n_total_draws - result.n_transport_lost_draws
+        # #2151: api-refusal draws (transport-conditional censoring, rule 28)
+        # leave the "answered" denominator exactly as transport losses do —
+        # neither is evidence about the instrument. REPORT-only: no gate
+        # condition keys on n_api_refusal (assumption #2151 §12.3).
+        n_answered = (
+            result.n_total_draws - result.n_transport_lost_draws - result.n_api_refusal_draws
+        )
         arm_stats[arm] = ArmPilotStats(
             n_items=len(sub),
             n_draws=result.n_total_draws,
@@ -387,6 +398,7 @@ def judge_pilot_gate(
             n_refusal=result.n_refusal_draws,
             n_truncation=result.n_truncation_dropped_draws,
             n_transport_lost=result.n_transport_lost_draws,
+            n_api_refusal=result.n_api_refusal_draws,
             n_unknown_stop_reason_drops=_count_unknown_stop_reason_drops(
                 save_raw, {item_id for item_id, _q, _a in sub}
             ),
