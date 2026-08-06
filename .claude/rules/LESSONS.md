@@ -17,6 +17,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - background-automation.md — you touch/reason about the cron audits/session watcher/pod-GCP janitors.
 - clean-result-critic-lens-reference.md — a clean-result critic twin reviews a markdown body (pointer-loaded spec-text rubrics).
 - clean-result-paper-review.md — a clean-result critic twin reviews a `paper: true` task (P1-P7 lenses, verify_paper.py pre-pass).
+- code-reviewer-section-reference.md — the code-reviewer runs a Step 0.x gate (pointer-loaded span).
 - code-style.md — you write/edit any `*.py` or Hydra config (lint, vectorized torch, checkpoint-per-phase incl. the ~50-unit count trigger + per-unit progress line, no dollar caps).
 - compute-backend-failover.md — you touch the backend router/dispatch/poll, or reason about GCP↔RunPod failover.
 - contrastive-negatives.md — a plan implants a behavior (marker/fact/refusal/trait) into a persona (contrastive negatives by default).

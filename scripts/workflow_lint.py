@@ -12358,7 +12358,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # reads), 99,000 — measured 98,126 B post-#1230 (Step 6 durability-pin
     # shipping duty), 97,000 — measured 96,072 B post-#1119, 95,000 —
     # measured 94,126 B post-#1115)
-    "code-reviewer.md": 140_300,
+    # measured 98,526 B post the 2026-08-05 compaction: Step 0.5-0.70
+    # gate-stack detail relocated to
+    # .claude/rules/code-reviewer-section-reference.md (#1159 mechanism);
+    # the spec keeps per-gate trigger + blocker-tag + lint-pinned tokens
+    # + § pointer lines. Cap = measured + ~1 KB.
+    "code-reviewer.md": 99_500,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:

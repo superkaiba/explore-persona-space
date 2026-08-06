@@ -135,6 +135,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | background-automation | LESSONS.md | v2-owner: autonomous_session_watch.py + crons (runtime unchanged, Assumption 1) |
 | clean-result-critic-lens-reference | LESSONS.md | v1-only — expires at drain |
 | clean-result-paper-review | LESSONS.md | v1-only — expires at drain |
+| code-reviewer-section-reference | LESSONS.md | v1-only — expires at drain |
 | code-style | LESSONS.md | v2-owner: efficiency-critic + code-correctness-critic |
 | compute-backend-failover | LESSONS.md | v2-owner: backend router (src/explore_persona_space/backends) + efficiency-critic |
 | contrastive-negatives | LESSONS.md | v2-owner: methodology-baselines-critic |
