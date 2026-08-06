@@ -1,6 +1,7 @@
 ---
-title: 'Single-position context/prefix interventions: fraction-of-swap (F) at activation
-  and behavior levels across matched-query / matched-prefix / cross settings'
+title: Context-end is the only single position where activation edits move behavior
+  clear of the shuffled-donor null, and even its strongest patch falls well short
+  of a full context swap (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-05T20:07:47Z'

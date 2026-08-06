@@ -8470,7 +8470,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2094",
       "status": "interpreting",
-      "title": "Single-position context/prefix interventions: fraction-of-swap (F) at activation and behavior levels across matched-query / matched-prefix / cross settings"
+      "title": "Context-end is the only single position where activation edits move behavior clear of the shuffled-donor null, and even its strongest patch falls well short of a full context swap (MODERATE confidence)"
     },
     "2095": {
       "has_clean_result": false,
