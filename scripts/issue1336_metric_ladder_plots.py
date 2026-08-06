@@ -550,8 +550,14 @@ def make_source_target_lines(
     plotted = []
     for k, (fmt, cp, clabel) in enumerate(CORPUS_ORDER):
         ax = axes[k]
+        # target → its own within-stage R², collected across every pair that
+        # reaches it. These are MATCHED to the transfer points plotted beside
+        # them (same prompt-id intersection, same seed-0 fold split), unlike the
+        # standalone cells_v2 per-stage read, which sits 0.10-0.20 lower on
+        # every cell and therefore must not share this axis.
+        self_r2 = {}
         for src in sources:
-            xs, ys, cs = [], [], []
+            xs, ys = [], []
             for p, plabel in PAIR_ORDER:
                 s, t = split_pair(p)
                 if s != src:
@@ -564,7 +570,7 @@ def make_source_target_lines(
                     )
                 xs.append(STAGE_IDX[t])
                 ys.append(r[f"{tier}_r2"])
-                cs.append(r["within_r2"])
+                self_r2.setdefault(t, []).append(r["within_r2"])
                 plotted.append(
                     {
                         "tier": tier,
@@ -586,21 +592,6 @@ def make_source_target_lines(
             order = np.argsort(xs)
             xs = [xs[i] for i in order]
             ys = [ys[i] for i in order]
-            cs = [cs[i] for i in order]
-            # target's own within-stage ceiling (grey dash). markeredgewidth is
-            # explicit: "_" renders as a marker EDGE, invisible under the paper
-            # style's lines.markeredgewidth=0 default.
-            ax.plot(
-                xs,
-                cs,
-                linestyle="none",
-                marker="_",
-                markersize=9,
-                markeredgewidth=1.6,
-                markeredgecolor="#9a9a9a",
-                color="#9a9a9a",
-                zorder=1,
-            )
             ax.plot(
                 xs,
                 ys,
@@ -612,6 +603,25 @@ def make_source_target_lines(
                 markeredgewidth=0.6,
                 label=dict(STAGE_ORDER)[src],
                 zorder=3,
+            )
+
+        # Self-transfer reference: one dot per x tick at that stage's R² with
+        # ITSELF. Averaged over the pairs reaching the target (max spread
+        # across contributing pairs 0.018 — negligible). The base tick carries
+        # no dot: base is never a target, so no matched self-read exists for
+        # it, and the standalone cells_v2 read is a different regime.
+        if self_r2:
+            sx = sorted(self_r2)
+            ax.plot(
+                [STAGE_IDX[t] for t in sx],
+                [float(np.mean(self_r2[t])) for t in sx],
+                linestyle="none",
+                marker="D",
+                markersize=5.0,
+                color="#4a4a4a",
+                markeredgewidth=0,
+                label="self (R² with itself)",
+                zorder=4,
             )
 
         ax.axhline(0, color="#888", linewidth=0.7, linestyle="--", zorder=0)
@@ -641,21 +651,12 @@ def make_source_target_lines(
     for h, lb in zip(handles, labels):
         if lb not in seen:
             seen.add(lb)
+            # the self-dot carries its own label; only source lines get the prefix
             uh.append(h)
-            ul.append(lb)
-    ceiling_handle = plt.Line2D(
-        [],
-        [],
-        linestyle="none",
-        marker="_",
-        markersize=9,
-        markeredgewidth=1.6,
-        markeredgecolor="#9a9a9a",
-        color="#9a9a9a",
-    )
+            ul.append(lb if lb.startswith("self ") else f"source: {lb}")
     fig.legend(
-        uh + [ceiling_handle],
-        [f"source: {lb}" for lb in ul] + ["target's within-stage R² (ceiling)"],
+        uh,
+        ul,
         loc="center",
         ncol=5,
         fontsize=9,
@@ -671,18 +672,22 @@ def make_source_target_lines(
     fig.text(
         0.5,
         0.020,
-        f"{TIER_LABELS[tier]}. Layer 30, Llama-3.1-8B Tulu ladder; {y_note}. The base column "
-        "is EMPTY because no pair transfers INTO base — backwards transfer down the ladder was "
-        "never run, so it is unmeasured, not zero.\nOnly 7 of the 20 ordered stage pairs exist "
-        "(base→all four, SFT→DPO, DPO→RLVR, DPO→longer RLVR), so SFT contributes one point and "
-        "RLVR none. All arms are on-policy — each stage answers in its own words — so every "
-        "point mixes representation change with answer-distribution change.",
+        f"{TIER_LABELS[tier]}. Layer 30, Llama-3.1-8B Tulu ladder; {y_note}. Dark diamond = that "
+        "stage's R² with ITSELF, on the same rows and folds as the transfer points beside it "
+        "(mean over contributing pairs; max spread 0.018).\nOnly 7 of the 20 ordered stage pairs "
+        "exist: SFT→RLVR, SFT→longer RLVR and RLVR→longer RLVR were never run, and no pair "
+        "transfers INTO base, so all 10 backward pairs are unmeasured — the empty base column and "
+        "the short SFT/DPO lines are missing data, not zeros.\nbase therefore has no self-diamond "
+        "either (it is never a target); its own within-stage R² is measured separately, in a "
+        "regime that reads 0.10–0.20 lower on every cell, so it is not plotted on this axis. All "
+        "arms are on-policy — each stage answers in its own words — so every point mixes "
+        "representation change with answer-distribution change.",
         ha="center",
         va="bottom",
         fontsize=8,
         color="#555555",
     )
-    fig.subplots_adjust(left=0.065, right=0.99, top=0.93, bottom=0.235, wspace=0.07, hspace=0.42)
+    fig.subplots_adjust(left=0.065, right=0.99, top=0.93, bottom=0.265, wspace=0.07, hspace=0.42)
     savefig_paper(fig, outname, dir=str(FIG_DIR), embed_data=True)
     plt.close(fig)
     return plotted
