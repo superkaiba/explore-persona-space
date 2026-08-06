@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -57,6 +58,7 @@ load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch/numpy impor
 
 import torch  # noqa: E402
 from huggingface_hub import HfApi, hf_hub_download  # noqa: E402
+from huggingface_hub import constants as hf_constants  # noqa: E402
 
 from explore_persona_space.analysis.sparsify_topk_sae import (  # noqa: E402
     load_sae_weights,
@@ -353,6 +355,50 @@ def iter_local_shards(tree_path: str, revision: str | None = None):
                 "(issue2061_hub_io.resolve_data_repo_revision; main() pins automatically)."
             )
         yield pt_local
+
+
+def reap_data_repo_hub_cache(cache_root: Path | None = None) -> int:
+    """Purge the DATA repo's hub-cache dir at a cell boundary (crash-fix R7).
+
+    P1's shard path (`iter_local_shards` -> `hf_hub_download`) lands every
+    cell's shards in the hub cache and nothing reaps them between cells: 16
+    completed cells accumulated 182 GB on the 200 GB /workspace volume and
+    production died ENOSPC at cell [17/35] (2026-08-06; total 35-cell shard
+    demand 332.7 GB, remaining cells ~191 GB > a full wipe's ~182 GB — so a
+    per-cell reap is REQUIRED, not just a relaunch-prep wipe). A whole-repo
+    purge at the cell boundary is coarse-and-correct: downloads are lazy per
+    cell, ONE pinned revision per run, single-process P1 — at the boundary
+    the cache holds only consumed shards. Scoped STRICTLY to the data repo's
+    cache dir (``datasets--superkaiba1--explore-persona-space-data``); the
+    SAE model cache (``models--EleutherAI--sae-llama-3.1-8b-64x``) and every
+    other repo dir are NEVER touched. Fail-loud: an rmtree error raises; a
+    missing dir is a clean no-op (first cell / already reaped). Always emits
+    the ``[cache-reap]`` line (bytes freed + post-reap free space via
+    `shutil.disk_usage`) — the fix-engaged signal grepped in the relaunch
+    log. Returns bytes freed (blob bytes; snapshot symlinks count at their
+    own lstat size).
+
+    `cache_root` defaults to `huggingface_hub.constants.HF_HUB_CACHE` — the
+    SAME root `hf_hub_download` defaults to (env-resolved at import, so the
+    pod's HF_HOME=/workspace/.cache/huggingface binds both identically);
+    tests point it at a tmp dir.
+    """
+    root = Path(cache_root) if cache_root is not None else Path(hf_constants.HF_HUB_CACHE)
+    repo_dir = root / f"datasets--{DATA_REPO.replace('/', '--')}"
+    freed = 0
+    if repo_dir.exists():
+        freed = sum(p.lstat().st_size for p in repo_dir.rglob("*") if p.is_file() or p.is_symlink())
+        shutil.rmtree(repo_dir)
+    probe = root
+    while not probe.exists():  # disk_usage needs an existing path; '/' terminates
+        probe = probe.parent
+    free = shutil.disk_usage(probe).free
+    print(
+        f"[cache-reap] {repo_dir}: freed {freed} bytes ({freed / 1e9:.2f} GB); "
+        f"post-reap free {free} bytes ({free / 1e9:.2f} GB)",
+        flush=True,
+    )
+    return freed
 
 
 def _load_turnstore_state(
@@ -897,6 +943,14 @@ def main() -> int:
                 )
                 + "\n"
             )
+            # Crash-fix R7 (disk_exhaustion_p1_hub_cache): purge the DATA
+            # repo's hub-cache entry at EVERY cell boundary so the next
+            # cell's lazy shard downloads start from a clean cache. Runs
+            # after the cell's payload write (skip cells download nothing —
+            # the reap there is a harmless no-op / prior-residue sweep).
+            # The dispatch smoke legs drive this same loop, so the
+            # [cache-reap] line in the smoke log is the fix-engaged signal.
+            reap_data_repo_hub_cache()
 
     print(f"\n[done] Manifest: {manifest_path}")
 
