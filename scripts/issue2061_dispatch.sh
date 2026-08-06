@@ -8,8 +8,12 @@
 # `issue2061_hub_io.py sentinel`, and a terminal `[phase=done]` emitted ONLY
 # by this dispatcher, immediately before its normal exit.
 #
-# Phase routing (plan §9 P1-P5; each production phase runs on ITS OWN
-# provision — every cross-machine dependency rides the HF data repo):
+# Phase routing (plan §9 P1-P5 + the v11 P0 grain gate; each production phase
+# runs on ITS OWN provision — every cross-machine dependency rides the HF
+# data repo):
+#   P0 grain gate      - VM-local, pre-P1 (sidecar-only): realized-n / regime
+#                        / boundary / schema / sha-join asserts at the
+#                        CONSUMED grain; nonzero exit stops the dispatch
 #   P1 encode          - GPU pod (eval intent); uploads sae_encoded/ pre-terminate
 #   P2 per-feature fit - cpu-bigmem; stages P1+#1336 per-shard STREAM-FETCH-DELETE,
 #                        uploads analysis_tensors/per_feature_r2/ pre-terminate
@@ -155,6 +159,21 @@ cell_filter_args() {
 }
 
 # ─── production phase runners ────────────────────────────────────────────────
+run_p0_grain_gate() {
+  # P0 grain gate (plan v11 delta (d); §7 mitigation item 3): count realized
+  # rows at the CONSUMED grain via the production loader's enumeration over
+  # the registered 50-store set, write the grain manifest, and FAIL LOUD
+  # (nonzero exit -> set -e stops the dispatch) on any regime contradiction
+  # or boundary/schema assert failure. VM-local + sidecar-only (cheap); runs
+  # BEFORE any GPU phase.
+  echo "[phase=p0_grain_gate]"
+  mkdir -p "$EVAL_ROOT/grain_gate"
+  local args=(--all-cells --expect-n-cells 35
+    --output "$EVAL_ROOT/grain_gate/grain_manifest.json")
+  [[ -n "${ISSUE2061_DATA_REVISION:-}" ]] && args+=(--data-revision "$ISSUE2061_DATA_REVISION")
+  run uv run python scripts/issue2061_grain_gate.py "${args[@]}"
+}
+
 run_p1_encode() {
   echo "[phase=p1_encode]"
   ensure_sparsify
@@ -363,6 +382,15 @@ run_smoke() {
     ctx_args=(--context-shard-dir "$ISSUE2061_CONTEXT_SHARD_DIR")
   fi
 
+  echo "[phase=smoke_p0_grain_gate]"
+  # Same production gate, filtered to the smoke cells; the manifest is the
+  # acceptance reference for realized n below (plan delta (e) item (ii)).
+  mkdir -p "$SMOKE_ROOT/grain_gate"
+  local gate_args=(--stage "$SA" --stage "$SB" --render "$RD" --corpus "$CP"
+    --output "$SMOKE_ROOT/grain_gate/grain_manifest.json")
+  [[ -n "${ISSUE2061_DATA_REVISION:-}" ]] && gate_args+=(--data-revision "$ISSUE2061_DATA_REVISION")
+  run uv run python scripts/issue2061_grain_gate.py "${gate_args[@]}"
+
   echo "[phase=smoke_p1_parity]"
   ensure_sparsify
   run uv run python scripts/issue2061_sae_encode.py --smoke-only
@@ -375,8 +403,31 @@ run_smoke() {
   done
 
   echo "[phase=smoke_p2_fit]"
-  run uv run python scripts/issue2061_fit_per_feature.py --all-cells \
-    --encoded-dir "$enc" --output-dir "$r2" "${ctx_args[@]}"
+  # P2 output is tee'd to a log so the acceptance step below can assert the
+  # concat-grain regime (NO [dof-cap] line — plan delta (e) item (iii));
+  # `set -o pipefail` at the top makes a P2 failure fail the pipeline.
+  local p2_log="$SMOKE_ROOT/p2_fit.log"
+  echo "+ uv run python scripts/issue2061_fit_per_feature.py --all-cells ... | tee $p2_log"
+  if [[ "$DRY" != "1" ]]; then
+    uv run python scripts/issue2061_fit_per_feature.py --all-cells \
+      --encoded-dir "$enc" --output-dir "$r2" "${ctx_args[@]}" 2>&1 | tee "$p2_log"
+  fi
+
+  echo "[phase=smoke_accept]"
+  # Concat-grain smoke acceptance (plan delta (e)): (ii) realized n matches
+  # the grain manifest, (iii) convention=primal + NO [dof-cap] line, (v) the
+  # v13 λ grid + per-cell edge-audit fields.
+  if [[ "$DRY" == "1" ]]; then
+    echo "+ (dry-run) grep -L dof-cap $p2_log; issue2061_grain_gate.py --accept-r2-dir $r2"
+  else
+    if grep -q '\[dof-cap\]' "$p2_log"; then
+      echo "SMOKE ACCEPT FAIL: [dof-cap] active at the concat grain (n_tr <= d_in" >&2
+      echo "somewhere — the retired extension-slice regime; plan delta (e) item (iii))" >&2
+      exit 1
+    fi
+    run uv run python scripts/issue2061_grain_gate.py \
+      --accept-r2-dir "$r2" --manifest "$SMOKE_ROOT/grain_gate/grain_manifest.json"
+  fi
 
   echo "[phase=smoke_p3_null]"
   run uv run python scripts/issue2061_null.py --all-cells \
@@ -403,7 +454,7 @@ run_smoke() {
   fi
 
   finish "epm:smoke-result" \
-    "{\"smoke\": true, \"phases\": [\"p1_parity\", \"p1_encode\", \"p2_fit\", \"p3_null\", \"p4_fitness\", \"p5_figures\"], \"cells\": \"${SA}+${SB}/${RD}/${CP}\", \"n_draws\": ${DRAWS}, \"smoke_root\": \"${SMOKE_ROOT}\"}"
+    "{\"smoke\": true, \"phases\": [\"p0_grain_gate\", \"p1_parity\", \"p1_encode\", \"p2_fit\", \"smoke_accept\", \"p3_null\", \"p4_fitness\", \"p5_figures\"], \"cells\": \"${SA}+${SB}/${RD}/${CP}\", \"n_draws\": ${DRAWS}, \"smoke_root\": \"${SMOKE_ROOT}\"}"
 }
 
 # ─── argparse-lite ──────────────────────────────────────────────────────────
@@ -447,7 +498,7 @@ if [[ "$DRY" == "1" && -z "$MODE" && -z "$PHASE" ]]; then
   MODE=all # bare --dry-run walks the full production chain
 fi
 if [[ -z "$MODE" && -z "$PHASE" ]]; then
-  echo "ERROR: pass --smoke-only, --dry-run, --all, or --phase p1|p2|p3|p4|p5" >&2
+  echo "ERROR: pass --smoke-only, --dry-run, --all, or --phase p0|p1|p2|p3|p4|p5" >&2
   exit 2
 fi
 
@@ -459,18 +510,20 @@ if [[ "$MODE" == "smoke" ]]; then
 fi
 
 if [[ "$MODE" == "all" ]]; then
-  echo "MODE=all (P1 -> P5; stage_mode=$STAGE_MODE upload=$UPLOAD dry=$DRY)"
+  echo "MODE=all (P0 -> P5; stage_mode=$STAGE_MODE upload=$UPLOAD dry=$DRY)"
+  run_p0_grain_gate
   run_p1_encode
   run_p2_fit
   if [[ "$GPUS" -gt 1 ]]; then run_p3_fanout "$GPUS"; else run_p3_null; fi
   run_p4_fitness
   run_p5_figures 0
   finish "epm:results" \
-    "{\"mode\": \"all\", \"phases\": [\"p1\", \"p2\", \"p3\", \"p4\", \"p5\"], \"eval_root\": \"$EVAL_ROOT\", \"hf_prefix\": \"${ISSUE2061_HF_PREFIX:-issue2061_sae_predictability}\", \"upload\": \"$UPLOAD\"}"
+    "{\"mode\": \"all\", \"phases\": [\"p0\", \"p1\", \"p2\", \"p3\", \"p4\", \"p5\"], \"eval_root\": \"$EVAL_ROOT\", \"hf_prefix\": \"${ISSUE2061_HF_PREFIX:-issue2061_sae_predictability}\", \"upload\": \"$UPLOAD\"}"
   exit 0
 fi
 
 case "$PHASE" in
+  p0) run_p0_grain_gate ;;
   p1) run_p1_encode ;;
   p2) run_p2_fit ;;
   p3) if [[ "$GPUS" -gt 1 ]]; then run_p3_fanout "$GPUS"; else run_p3_null; fi ;;

@@ -375,11 +375,13 @@ def test_stage_turnstore_maps_shards_to_consumer_layout(tmp_path, monkeypatch):
         """Signature mirror of hio._resolve_data_repo_revision (network boundary)."""
         return revision or "deadbeefcafe"
 
-    def fake_resolve_tree(stage, render, corpus, revision=None):
+    def fake_resolve_tree(stage, render, corpus, revision=None, generation="v2"):
         """Signature mirror of enc.resolve_turnstore_tree (network boundary) —
-        returns the REALIZED v1-family tree name for the fixture cell."""
+        returns the REALIZED tree name for the fixture cell (v2 naming for the
+        registered generation, prefix-less for a wave-1 concat source)."""
         assert revision == "deadbeefcafe"
-        return f"{enc.BANKED_PREFIX}/turnstore_{stage}_{render}_{corpus}"
+        tag = "turnstore_v2" if generation == "v2" else "turnstore"
+        return f"{enc.BANKED_PREFIX}/{tag}_{stage}_{render}_{corpus}"
 
     def fake_hub_shard_files(tree_path: str, revision: str | None = None) -> list[str]:
         """Signature mirror of issue2061_sae_encode.hub_shard_files (network)."""
@@ -408,11 +410,30 @@ def test_stage_turnstore_maps_shards_to_consumer_layout(tmp_path, monkeypatch):
     dest = hio.stage_turnstore("base", "chat", "gsm8k_test1319", tmp_path)
     # Consumer layout: FLAT shard basenames under turnstore_<stage>_<render>_<corpus>
     # (issue2061_turnstore.enumerate_shards's own open shape — never a
-    # repo-path mirror; the #1774 mirror-root class).
+    # repo-path mirror; the #1774 mirror-root class). Sidecars ride along
+    # (v13 a1-bis: the loader's per-shard asserts read them).
     assert dest == tmp_path / "turnstore_base_chat_gsm8k_test1319"
-    assert sorted(p.name for p in dest.iterdir()) == ["x_shard000.pt", "x_shard001.pt"]
+    assert sorted(p.name for p in dest.iterdir()) == [
+        "x_shard000.json",
+        "x_shard000.pt",
+        "x_shard001.json",
+        "x_shard001.pt",
+    ]
     assert all(rev == "deadbeefcafe" for (_, _, _, rev) in seen)
     assert all(repo == hio.DATA_REPO for (repo, _, _, _) in seen)
+
+    # CONCAT cell (plan v11 delta a1/a2): the extended corpora stage BOTH
+    # stores — the wave-1 source AND the v2 extension — into the consumer
+    # layout; reap_turnstore reaps both.
+    dest2 = hio.stage_turnstore("base", "chat", "lmsys23k", tmp_path)
+    assert dest2 == tmp_path / "turnstore_base_chat_lmsys23k"
+    src_dir = tmp_path / "turnstore_base_chat_lmsys5k"
+    assert src_dir.is_dir() and dest2.is_dir()
+    staged_trees = {p.split("/")[-2] for (_, p, _, _) in seen}
+    assert "turnstore_base_chat_lmsys5k" in staged_trees  # v1-family source tree
+    assert "turnstore_v2_base_chat_lmsys23k" in staged_trees  # v2 extension tree
+    hio.reap_turnstore(tmp_path, "base", "chat", "lmsys23k")
+    assert not src_dir.exists() and not dest2.exists()
 
 
 def test_reap_turnstore_deletes_only_the_staged_dir(tmp_path):
@@ -566,3 +587,45 @@ def test_smoke_default_cell_is_a_registered_generation_stem():
         )
     else:
         assert render == "chat", f"unexpected smoke render {render!r}"
+
+
+# ---------------------------------------------------------------------------
+# P0 grain gate wiring (plan v11 delta (d)) + concat-grain smoke acceptance
+# (delta (e))
+# ---------------------------------------------------------------------------
+def test_p0_grain_gate_wired_before_p1_in_all_mode():
+    m = re.search(r"run_p0_grain_gate\(\) \{(.*?)\n\}", DISPATCH, flags=re.S)
+    assert m, "run_p0_grain_gate() block not found"
+    body = m.group(1)
+    assert "issue2061_grain_gate.py" in body
+    assert "--expect-n-cells 35" in body, "production gate pins the 35-cell grid"
+    assert "grain_gate/grain_manifest.json" in body
+    # MODE=all runs P0 BEFORE P1 (the gate exists to stop the dispatch pre-GPU).
+    all_block = DISPATCH[DISPATCH.index('MODE" == "all"') :]
+    assert all_block.index("run_p0_grain_gate") < all_block.index("run_p1_encode")
+    # And the per-machine form exposes it.
+    assert re.search(r"p0\)\s*run_p0_grain_gate", DISPATCH)
+
+
+def test_smoke_runs_grain_gate_and_acceptance():
+    m = re.search(r"run_smoke\(\) \{(.*?)\n\}", DISPATCH, flags=re.S)
+    assert m, "run_smoke() block not found"
+    body = m.group(1)
+    # Smoke leg of the SAME production gate, filtered to the smoke cells,
+    # manifest under the smoke root (never the canonical eval tree).
+    assert "issue2061_grain_gate.py" in body
+    assert '"$SMOKE_ROOT/grain_gate/grain_manifest.json"' in body
+    # Acceptance (delta (e)): NO [dof-cap] line at the concat grain + the
+    # r2-vs-manifest checks (convention=primal, v13 grid, realized n).
+    assert "smoke_accept" in body
+    assert re.search(r"grep -q .\\\[dof-cap\\\]", body), "the [dof-cap] acceptance grep"
+    assert "--accept-r2-dir" in body
+    # P2's output is captured for the grep (tee to the smoke log).
+    assert "p2_fit.log" in body
+
+
+def test_smoke_sentinel_phases_list_carries_p0_and_accept():
+    m = re.search(r'finish "epm:smoke-result" \\\n\s+"(.*)"', DISPATCH)
+    assert m, "smoke finish note not found"
+    note = m.group(1)
+    assert "p0_grain_gate" in note and "smoke_accept" in note

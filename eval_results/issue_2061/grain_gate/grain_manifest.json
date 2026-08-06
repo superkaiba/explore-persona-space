@@ -1,0 +1,1024 @@
+{
+  "format": "issue2061-grain-manifest-v1",
+  "d_in": 4096,
+  "k_folds": 5,
+  "fold_seed": 0,
+  "expected_convention": "primal",
+  "n_cells": 35,
+  "cells": [
+    {
+      "stage": "base",
+      "render": "chat",
+      "corpus": "gsm8k_train_full",
+      "stores": [
+        "turnstore_base_chat_gsm8k_train5k",
+        "turnstore_v2_base_chat_gsm8k_train_full"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 7315,
+      "per_fold_n_train": [
+        5852,
+        5852,
+        5852,
+        5852,
+        5852
+      ],
+      "min_per_fold_n_train": 5852,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "meta-llama/Llama-3.1-8B",
+      "n_target": 7473,
+      "keep_rate_vs_n_target": 0.9788572193228957
+    },
+    {
+      "stage": "base",
+      "render": "chat",
+      "corpus": "if11k",
+      "stores": [
+        "turnstore_v2_base_chat_if11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 7432,
+      "per_fold_n_train": [
+        5945,
+        5945,
+        5946,
+        5946,
+        5946
+      ],
+      "min_per_fold_n_train": 5945,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "meta-llama/Llama-3.1-8B",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.6756363636363636
+    },
+    {
+      "stage": "base",
+      "render": "chat",
+      "corpus": "lmsys23k",
+      "stores": [
+        "turnstore_base_chat_lmsys5k",
+        "turnstore_v2_base_chat_lmsys23k"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 15537,
+      "per_fold_n_train": [
+        12429,
+        12429,
+        12430,
+        12430,
+        12430
+      ],
+      "min_per_fold_n_train": 12429,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "meta-llama/Llama-3.1-8B",
+      "n_target": 23000,
+      "keep_rate_vs_n_target": 0.6755217391304348
+    },
+    {
+      "stage": "base",
+      "render": "chat",
+      "corpus": "math7500",
+      "stores": [
+        "turnstore_v2_base_chat_math7500"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 7271,
+      "per_fold_n_train": [
+        5816,
+        5817,
+        5817,
+        5817,
+        5817
+      ],
+      "min_per_fold_n_train": 5816,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "meta-llama/Llama-3.1-8B",
+      "n_target": 7500,
+      "keep_rate_vs_n_target": 0.9694666666666667
+    },
+    {
+      "stage": "base",
+      "render": "chat",
+      "corpus": "sft11k",
+      "stores": [
+        "turnstore_v2_base_chat_sft11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 7361,
+      "per_fold_n_train": [
+        5888,
+        5889,
+        5889,
+        5889,
+        5889
+      ],
+      "min_per_fold_n_train": 5888,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "meta-llama/Llama-3.1-8B",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.6691818181818182
+    },
+    {
+      "stage": "base",
+      "render": "chat",
+      "corpus": "uf11k",
+      "stores": [
+        "turnstore_v2_base_chat_uf11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 7580,
+      "per_fold_n_train": [
+        6064,
+        6064,
+        6064,
+        6064,
+        6064
+      ],
+      "min_per_fold_n_train": 6064,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "meta-llama/Llama-3.1-8B",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.6890909090909091
+    },
+    {
+      "stage": "base",
+      "render": "naturalistic",
+      "corpus": "lmsys23k",
+      "stores": [
+        "turnstore_base_naturalistic_lmsys5k",
+        "turnstore_v2_base_naturalistic_lmsys23k"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 15537,
+      "per_fold_n_train": [
+        12429,
+        12429,
+        12430,
+        12430,
+        12430
+      ],
+      "min_per_fold_n_train": 12429,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "meta-llama/Llama-3.1-8B",
+      "n_target": 23000,
+      "keep_rate_vs_n_target": 0.6755217391304348
+    },
+    {
+      "stage": "dpo",
+      "render": "chat",
+      "corpus": "gsm8k_train_full",
+      "stores": [
+        "turnstore_dpo_chat_gsm8k_train5k",
+        "turnstore_v2_dpo_chat_gsm8k_train_full"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 7473,
+      "per_fold_n_train": [
+        5978,
+        5978,
+        5978,
+        5979,
+        5979
+      ],
+      "min_per_fold_n_train": 5978,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-DPO",
+      "n_target": 7473,
+      "keep_rate_vs_n_target": 1.0
+    },
+    {
+      "stage": "dpo",
+      "render": "chat",
+      "corpus": "if11k",
+      "stores": [
+        "turnstore_v2_dpo_chat_if11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 9572,
+      "per_fold_n_train": [
+        7657,
+        7657,
+        7658,
+        7658,
+        7658
+      ],
+      "min_per_fold_n_train": 7657,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-DPO",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.8701818181818182
+    },
+    {
+      "stage": "dpo",
+      "render": "chat",
+      "corpus": "lmsys23k",
+      "stores": [
+        "turnstore_dpo_chat_lmsys5k",
+        "turnstore_v2_dpo_chat_lmsys23k"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 17776,
+      "per_fold_n_train": [
+        14220,
+        14221,
+        14221,
+        14221,
+        14221
+      ],
+      "min_per_fold_n_train": 14220,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-DPO",
+      "n_target": 23000,
+      "keep_rate_vs_n_target": 0.7728695652173913
+    },
+    {
+      "stage": "dpo",
+      "render": "chat",
+      "corpus": "math7500",
+      "stores": [
+        "turnstore_v2_dpo_chat_math7500"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 7477,
+      "per_fold_n_train": [
+        5981,
+        5981,
+        5982,
+        5982,
+        5982
+      ],
+      "min_per_fold_n_train": 5981,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-DPO",
+      "n_target": 7500,
+      "keep_rate_vs_n_target": 0.9969333333333333
+    },
+    {
+      "stage": "dpo",
+      "render": "chat",
+      "corpus": "sft11k",
+      "stores": [
+        "turnstore_v2_dpo_chat_sft11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 9007,
+      "per_fold_n_train": [
+        7205,
+        7205,
+        7206,
+        7206,
+        7206
+      ],
+      "min_per_fold_n_train": 7205,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-DPO",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.8188181818181818
+    },
+    {
+      "stage": "dpo",
+      "render": "chat",
+      "corpus": "uf11k",
+      "stores": [
+        "turnstore_v2_dpo_chat_uf11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 9733,
+      "per_fold_n_train": [
+        7786,
+        7786,
+        7786,
+        7787,
+        7787
+      ],
+      "min_per_fold_n_train": 7786,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-DPO",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.8848181818181818
+    },
+    {
+      "stage": "dpo",
+      "render": "naturalistic",
+      "corpus": "lmsys23k",
+      "stores": [
+        "turnstore_dpo_naturalistic_lmsys5k",
+        "turnstore_v2_dpo_naturalistic_lmsys23k"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 17776,
+      "per_fold_n_train": [
+        14220,
+        14221,
+        14221,
+        14221,
+        14221
+      ],
+      "min_per_fold_n_train": 14220,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-DPO",
+      "n_target": 23000,
+      "keep_rate_vs_n_target": 0.7728695652173913
+    },
+    {
+      "stage": "rlvr",
+      "render": "chat",
+      "corpus": "gsm8k_train_full",
+      "stores": [
+        "turnstore_rlvr_chat_gsm8k_train5k",
+        "turnstore_v2_rlvr_chat_gsm8k_train_full"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 7473,
+      "per_fold_n_train": [
+        5978,
+        5978,
+        5978,
+        5979,
+        5979
+      ],
+      "min_per_fold_n_train": 5978,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B",
+      "n_target": 7473,
+      "keep_rate_vs_n_target": 1.0
+    },
+    {
+      "stage": "rlvr",
+      "render": "chat",
+      "corpus": "if11k",
+      "stores": [
+        "turnstore_v2_rlvr_chat_if11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 9535,
+      "per_fold_n_train": [
+        7628,
+        7628,
+        7628,
+        7628,
+        7628
+      ],
+      "min_per_fold_n_train": 7628,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.8668181818181818
+    },
+    {
+      "stage": "rlvr",
+      "render": "chat",
+      "corpus": "lmsys23k",
+      "stores": [
+        "turnstore_rlvr_chat_lmsys5k",
+        "turnstore_v2_rlvr_chat_lmsys23k"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 17681,
+      "per_fold_n_train": [
+        14144,
+        14145,
+        14145,
+        14145,
+        14145
+      ],
+      "min_per_fold_n_train": 14144,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed",
+        "pre-D2-absent"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B",
+      "n_target": 23000,
+      "keep_rate_vs_n_target": 0.7687391304347826
+    },
+    {
+      "stage": "rlvr",
+      "render": "chat",
+      "corpus": "math7500",
+      "stores": [
+        "turnstore_v2_rlvr_chat_math7500"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 7462,
+      "per_fold_n_train": [
+        5969,
+        5969,
+        5970,
+        5970,
+        5970
+      ],
+      "min_per_fold_n_train": 5969,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B",
+      "n_target": 7500,
+      "keep_rate_vs_n_target": 0.9949333333333333
+    },
+    {
+      "stage": "rlvr",
+      "render": "chat",
+      "corpus": "sft11k",
+      "stores": [
+        "turnstore_v2_rlvr_chat_sft11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 8986,
+      "per_fold_n_train": [
+        7188,
+        7189,
+        7189,
+        7189,
+        7189
+      ],
+      "min_per_fold_n_train": 7188,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.8169090909090909
+    },
+    {
+      "stage": "rlvr",
+      "render": "chat",
+      "corpus": "uf11k",
+      "stores": [
+        "turnstore_v2_rlvr_chat_uf11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 9740,
+      "per_fold_n_train": [
+        7792,
+        7792,
+        7792,
+        7792,
+        7792
+      ],
+      "min_per_fold_n_train": 7792,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.8854545454545455
+    },
+    {
+      "stage": "longer-rlvr",
+      "render": "chat",
+      "corpus": "gsm8k_train_full",
+      "stores": [
+        "turnstore_rlvr_long_chat_gsm8k_train5k",
+        "turnstore_v2_rlvr_long_chat_gsm8k_train_full"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 7469,
+      "per_fold_n_train": [
+        5975,
+        5975,
+        5975,
+        5975,
+        5976
+      ],
+      "min_per_fold_n_train": 5975,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3.1-8B",
+      "n_target": 7473,
+      "keep_rate_vs_n_target": 0.9994647397296935
+    },
+    {
+      "stage": "longer-rlvr",
+      "render": "chat",
+      "corpus": "if11k",
+      "stores": [
+        "turnstore_v2_rlvr_long_chat_if11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 8982,
+      "per_fold_n_train": [
+        7185,
+        7185,
+        7186,
+        7186,
+        7186
+      ],
+      "min_per_fold_n_train": 7185,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3.1-8B",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.8165454545454546
+    },
+    {
+      "stage": "longer-rlvr",
+      "render": "chat",
+      "corpus": "lmsys23k",
+      "stores": [
+        "turnstore_rlvr_long_chat_lmsys5k",
+        "turnstore_v2_rlvr_long_chat_lmsys23k"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 15868,
+      "per_fold_n_train": [
+        12694,
+        12694,
+        12694,
+        12695,
+        12695
+      ],
+      "min_per_fold_n_train": 12694,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3.1-8B",
+      "n_target": 23000,
+      "keep_rate_vs_n_target": 0.6899130434782609
+    },
+    {
+      "stage": "longer-rlvr",
+      "render": "chat",
+      "corpus": "math7500",
+      "stores": [
+        "turnstore_v2_rlvr_long_chat_math7500"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 7474,
+      "per_fold_n_train": [
+        5979,
+        5979,
+        5979,
+        5979,
+        5980
+      ],
+      "min_per_fold_n_train": 5979,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3.1-8B",
+      "n_target": 7500,
+      "keep_rate_vs_n_target": 0.9965333333333334
+    },
+    {
+      "stage": "longer-rlvr",
+      "render": "chat",
+      "corpus": "sft11k",
+      "stores": [
+        "turnstore_v2_rlvr_long_chat_sft11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 8694,
+      "per_fold_n_train": [
+        6955,
+        6955,
+        6955,
+        6955,
+        6956
+      ],
+      "min_per_fold_n_train": 6955,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3.1-8B",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.7903636363636364
+    },
+    {
+      "stage": "longer-rlvr",
+      "render": "chat",
+      "corpus": "uf11k",
+      "stores": [
+        "turnstore_v2_rlvr_long_chat_uf11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 9390,
+      "per_fold_n_train": [
+        7512,
+        7512,
+        7512,
+        7512,
+        7512
+      ],
+      "min_per_fold_n_train": 7512,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3.1-8B",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.8536363636363636
+    },
+    {
+      "stage": "longer-rlvr",
+      "render": "naturalistic",
+      "corpus": "lmsys23k",
+      "stores": [
+        "turnstore_rlvr_long_naturalistic_lmsys5k",
+        "turnstore_v2_rlvr_long_naturalistic_lmsys23k"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 15868,
+      "per_fold_n_train": [
+        12694,
+        12694,
+        12694,
+        12695,
+        12695
+      ],
+      "min_per_fold_n_train": 12694,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3.1-8B",
+      "n_target": 23000,
+      "keep_rate_vs_n_target": 0.6899130434782609
+    },
+    {
+      "stage": "rlvr",
+      "render": "naturalistic",
+      "corpus": "lmsys23k",
+      "stores": [
+        "turnstore_rlvr_naturalistic_lmsys5k",
+        "turnstore_v2_rlvr_naturalistic_lmsys23k"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 17681,
+      "per_fold_n_train": [
+        14144,
+        14145,
+        14145,
+        14145,
+        14145
+      ],
+      "min_per_fold_n_train": 14144,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed",
+        "pre-D2-absent"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B",
+      "n_target": 23000,
+      "keep_rate_vs_n_target": 0.7687391304347826
+    },
+    {
+      "stage": "sft",
+      "render": "chat",
+      "corpus": "gsm8k_train_full",
+      "stores": [
+        "turnstore_sft_chat_gsm8k_train5k",
+        "turnstore_v2_sft_chat_gsm8k_train_full"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 7473,
+      "per_fold_n_train": [
+        5978,
+        5978,
+        5978,
+        5979,
+        5979
+      ],
+      "min_per_fold_n_train": 5978,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-SFT",
+      "n_target": 7473,
+      "keep_rate_vs_n_target": 1.0
+    },
+    {
+      "stage": "sft",
+      "render": "chat",
+      "corpus": "if11k",
+      "stores": [
+        "turnstore_v2_sft_chat_if11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 9100,
+      "per_fold_n_train": [
+        7280,
+        7280,
+        7280,
+        7280,
+        7280
+      ],
+      "min_per_fold_n_train": 7280,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-SFT",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.8272727272727273
+    },
+    {
+      "stage": "sft",
+      "render": "chat",
+      "corpus": "lmsys23k",
+      "stores": [
+        "turnstore_sft_chat_lmsys5k",
+        "turnstore_v2_sft_chat_lmsys23k"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 17280,
+      "per_fold_n_train": [
+        13824,
+        13824,
+        13824,
+        13824,
+        13824
+      ],
+      "min_per_fold_n_train": 13824,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-SFT",
+      "n_target": 23000,
+      "keep_rate_vs_n_target": 0.7513043478260869
+    },
+    {
+      "stage": "sft",
+      "render": "chat",
+      "corpus": "math7500",
+      "stores": [
+        "turnstore_v2_sft_chat_math7500"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 7395,
+      "per_fold_n_train": [
+        5916,
+        5916,
+        5916,
+        5916,
+        5916
+      ],
+      "min_per_fold_n_train": 5916,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-SFT",
+      "n_target": 7500,
+      "keep_rate_vs_n_target": 0.986
+    },
+    {
+      "stage": "sft",
+      "render": "chat",
+      "corpus": "sft11k",
+      "stores": [
+        "turnstore_v2_sft_chat_sft11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 8990,
+      "per_fold_n_train": [
+        7192,
+        7192,
+        7192,
+        7192,
+        7192
+      ],
+      "min_per_fold_n_train": 7192,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-SFT",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.8172727272727273
+    },
+    {
+      "stage": "sft",
+      "render": "chat",
+      "corpus": "uf11k",
+      "stores": [
+        "turnstore_v2_sft_chat_uf11k"
+      ],
+      "concat": false,
+      "boundary": null,
+      "realized_n": 9529,
+      "per_fold_n_train": [
+        7623,
+        7623,
+        7623,
+        7623,
+        7624
+      ],
+      "min_per_fold_n_train": 7623,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-SFT",
+      "n_target": 11000,
+      "keep_rate_vs_n_target": 0.8662727272727273
+    },
+    {
+      "stage": "sft",
+      "render": "naturalistic",
+      "corpus": "lmsys23k",
+      "stores": [
+        "turnstore_sft_naturalistic_lmsys5k",
+        "turnstore_v2_sft_naturalistic_lmsys23k"
+      ],
+      "concat": true,
+      "boundary": 5000,
+      "realized_n": 17280,
+      "per_fold_n_train": [
+        13824,
+        13824,
+        13824,
+        13824,
+        13824
+      ],
+      "min_per_fold_n_train": 13824,
+      "d_in": 4096,
+      "selected_convention": "primal",
+      "conventions": [
+        "committed"
+      ],
+      "model_id": "allenai/Llama-3.1-Tulu-3-8B-SFT",
+      "n_target": 23000,
+      "keep_rate_vs_n_target": 0.7513043478260869
+    }
+  ],
+  "pre_d2_stores": [
+    "turnstore_rlvr_chat_lmsys5k",
+    "turnstore_rlvr_naturalistic_lmsys5k"
+  ],
+  "sha_join": {
+    "gsm8k_train_full": {
+      "n_stores": 5,
+      "n_rows_checked": 9829,
+      "n_mismatches": 0
+    },
+    "if11k": {
+      "n_stores": 5,
+      "n_rows_checked": 34155,
+      "n_mismatches": 0
+    },
+    "lmsys23k": {
+      "n_stores": 10,
+      "n_rows_checked": 119327,
+      "n_mismatches": 0
+    },
+    "math7500": {
+      "n_stores": 5,
+      "n_rows_checked": 29581,
+      "n_mismatches": 0
+    },
+    "sft11k": {
+      "n_stores": 5,
+      "n_rows_checked": 33455,
+      "n_mismatches": 0
+    },
+    "uf11k": {
+      "n_stores": 5,
+      "n_rows_checked": 35700,
+      "n_mismatches": 0
+    }
+  },
+  "assert_failures": [],
+  "regime_contradictions": [],
+  "verdict": "PASS",
+  "meta": {
+    "git_commit": "fd9ff244d6f41d3704a66da2a25a582a2f145536",
+    "created_unix": 1785991205.884898,
+    "data_revision": null,
+    "n_requested_cells": 35,
+    "argv": [
+      "--all-cells",
+      "--expect-n-cells",
+      "35",
+      "--output",
+      "eval_results/issue_2061/grain_gate/grain_manifest.json"
+    ]
+  }
+}

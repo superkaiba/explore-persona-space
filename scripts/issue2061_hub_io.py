@@ -151,6 +151,42 @@ def _resolve_data_repo_revision(revision: str | None) -> str:
     return str(info.sha)
 
 
+def _stage_one_store(
+    tree_path: str,
+    dest_dir: Path,
+    rev: str,
+    max_shards: int | None,
+) -> int:
+    """Stage one realized store tree's shards + JSON sidecars into `dest_dir`.
+
+    The `.json` sidecar beside every `.pt` shard is staged too — the loader's
+    per-shard schema/convention asserts read it (plan v13 delta a1-bis).
+    Returns the shard count.
+    """
+    from explore_persona_space.orchestrate.hub import stage_hub_file
+
+    import issue2061_sae_encode as enc
+
+    rels = enc.hub_shard_files(tree_path, revision=rev)
+    if max_shards is not None:
+        rels = rels[:max_shards]
+    t0 = time.time()
+    for rel in rels:
+        for r in (rel.removesuffix(".pt") + ".json", rel):
+            stage_hub_file(
+                DATA_REPO,
+                r,
+                dest_dir / Path(r).name,
+                repo_type="dataset",
+                revision=rev,
+            )
+    _log(
+        f"[stage] {tree_path} staged: {len(rels)} shard(s)+sidecars -> {dest_dir} "
+        f"({time.time() - t0:.1f}s)"
+    )
+    return len(rels)
+
+
 def stage_turnstore(
     stage: str,
     render: str,
@@ -160,60 +196,67 @@ def stage_turnstore(
     revision: str | None = None,
     max_shards: int | None = None,
 ) -> Path:
-    """Stage one #1336 turnstore's `*_shardNNN.pt` files into the consumer layout.
+    """Stage one CELL's #1336 turnstore store(s) into the consumer layout.
 
-    Shards land FLAT at `<turnstore_root>/turnstore_<stage>_<render>_<corpus>/`
-    — exactly the layout `issue2061_turnstore.enumerate_shards` opens (an
-    explicit hub-rel -> local-rel basename map, not a prefix mirror). One
-    resolved revision covers the listing AND every file (#833). Idempotent:
+    Registered consumption grain (plan v11 delta a1/a2): an extended corpus
+    (`ts.V2_CONCAT_SOURCES`) stages BOTH stores — the wave-1 concat source
+    (generation v1) AND the v2 extension — each into its own
+    `<turnstore_root>/turnstore_<stage>_<render>_<corpus'>/` dir (exactly the
+    layout `issue2061_turnstore.cell_store_dirs` opens); standalone corpora
+    stage their single store. `.json` sidecars ride along (v13 a1-bis). One
+    resolved revision covers the listings AND every file (#833). Idempotent:
     already-staged files are skipped by `stage_hub_file`. `max_shards` is a
     smoke-probe knob ONLY — a partial turnstore misaligns with a full encode
-    payload, so production callers never pass it.
+    payload, so production callers never pass it. Returns the cell's PRIMARY
+    (extension / standalone) dir.
     """
-    from explore_persona_space.orchestrate.hub import stage_hub_file
-
     # Sibling-script import (script-dir sys.path insert at module bottom of
     # main scripts; here the script dir IS this file's dir).
     import issue2061_sae_encode as enc
+    import issue2061_turnstore as ts
 
     rev = _resolve_data_repo_revision(revision)
-    # Resolve the REALIZED tree name from the canonical cell identity — the
-    # store carries `v2_` prefixes and the `rlvr_long` stage token, so a
-    # hand-built canonical name 404s (unit-E live probe finding).
-    tree_path = enc.resolve_turnstore_tree(stage, render, corpus, revision=rev)
-    rels = enc.hub_shard_files(tree_path, revision=rev)
-    if max_shards is not None:
-        rels = rels[:max_shards]
-    dest_dir = Path(turnstore_root) / f"turnstore_{stage}_{render}_{corpus}"
-    t0 = time.time()
-    for rel in rels:
-        stage_hub_file(
-            DATA_REPO,
-            rel,
-            dest_dir / Path(rel).name,
-            repo_type="dataset",
-            revision=rev,
+    root = Path(turnstore_root)
+    # (corpus, generation) parts in the canonical concat order.
+    parts: list[tuple[str, str]] = []
+    if corpus in ts.V2_CONCAT_SOURCES:
+        parts.append((ts.V2_CONCAT_SOURCES[corpus], "v1"))
+        parts.append((corpus, "v2"))
+    else:
+        parts.append((corpus, enc.REGISTERED_GENERATION))
+    for part_corpus, generation in parts:
+        # Resolve the REALIZED tree name from the canonical cell identity —
+        # the store carries `v2_` prefixes and the `rlvr_long` stage token,
+        # so a hand-built canonical name 404s (unit-E live probe finding).
+        tree_path = enc.resolve_turnstore_tree(
+            stage, render, part_corpus, revision=rev, generation=generation
         )
-    _log(
-        f"[stage] {tree_path} staged: {len(rels)} shard(s) -> {dest_dir} ({time.time() - t0:.1f}s)"
-    )
-    return dest_dir
+        _stage_one_store(
+            tree_path,
+            root / ts.turnstore_dir_name(stage, render, part_corpus),
+            rev,
+            max_shards,
+        )
+    return root / ts.turnstore_dir_name(stage, render, corpus)
 
 
 def reap_turnstore(turnstore_root: Path | str, stage: str, render: str, corpus: str) -> None:
-    """Delete one staged turnstore dir (stream-fetch-delete / last-consumer reap).
+    """Delete one CELL's staged turnstore dir(s) (stream-fetch-delete reap).
 
-    Fail-loud `rmtree` (no ignore_errors — a failed reap must crash at the
-    reap, #1586 fu); a missing dir logs + no-ops (already reaped / never
-    staged). ONLY legal against a staging copy — callers must never point
-    this at a canonical source tree.
+    Concat-aware (plan v11): an extended corpus reaps BOTH staged stores
+    (wave-1 source + v2 extension). Fail-loud `rmtree` (no ignore_errors — a
+    failed reap must crash at the reap, #1586 fu); a missing dir logs +
+    no-ops (already reaped / never staged). ONLY legal against a staging copy
+    — callers must never point this at a canonical source tree.
     """
-    dest_dir = Path(turnstore_root) / f"turnstore_{stage}_{render}_{corpus}"
-    if not dest_dir.is_dir():
-        _log(f"[reap] {dest_dir} absent — nothing to reap")
-        return
-    shutil.rmtree(dest_dir)
-    _log(f"[reap] deleted staged {dest_dir}")
+    import issue2061_turnstore as ts
+
+    for dest_dir in ts.cell_store_dirs(turnstore_root, stage, render, corpus):
+        if not dest_dir.is_dir():
+            _log(f"[reap] {dest_dir} absent — nothing to reap")
+            continue
+        shutil.rmtree(dest_dir)
+        _log(f"[reap] deleted staged {dest_dir}")
 
 
 def write_sentinel(

@@ -309,8 +309,21 @@ def iter_local_shards(tree_path: str, revision: str | None = None):
 
     Lazy so `load_state_from_shards(max_rows=...)` stops FETCHING once enough
     rows are accumulated (the smoke gate needs ~2-3 shards, not all ~46).
+    ALSO fetches each shard's `.json` sidecar (same repo-relative dir, so it
+    lands ADJACENT to the `.pt` in the snapshot cache) — the loader's
+    per-shard sidecar asserts read it (plan v13 delta a1-bis).
     """
     for rel in hub_shard_files(tree_path, revision=revision):
+        sidecar_rel = rel.removesuffix(".pt") + ".json"
+        retry_transient(
+            lambda rel=sidecar_rel: hf_hub_download(
+                repo_id=DATA_REPO,
+                filename=rel,
+                repo_type="dataset",
+                revision=revision,
+            ),
+            what=f"issue2061 sidecar {sidecar_rel}",
+        )
         yield retry_transient(
             lambda rel=rel: hf_hub_download(
                 repo_id=DATA_REPO,
@@ -328,22 +341,140 @@ def _load_turnstore_state(
     layer: int,
     revision: str | None = None,
     max_rows: int | None = None,
+    check_sidecars: bool = True,
 ) -> tuple[torch.Tensor, list[str]]:
     """((n_rows, d_in) float32 rows, row-aligned conv_ids) for one state.
 
     Real #1336 payload schema + state extraction live in
     `issue2061_turnstore.extract_state_rows` (fail-loud schema assert per
-    shard). `state`: "answer" (a1 turn profile — the plan target Y),
-    "context" (a1-header slot state), or "prefix" (prefix-header slot state).
-    conv_ids ride into the encoded payload so consumers can KEY the X/Y row
-    alignment instead of trusting shard order (review M1).
+    shard); each shard's JSON sidecar is additionally asserted
+    (schema/convention, plan v13 delta a1-bis). `state`: "answer" (a1 turn
+    profile — the plan target Y), "context" (a1-header slot state), or
+    "prefix" (prefix-header slot state). conv_ids ride into the encoded
+    payload so consumers can KEY the X/Y row alignment instead of trusting
+    shard order (review M1).
     """
     return ts.load_state_from_shards(
         iter_local_shards(tree_path, revision=revision),
         state=state,
         layer=layer,
         max_rows=max_rows,
+        check_sidecars=check_sidecars,
     )
+
+
+def resolve_turnstore_trees(
+    stage: str,
+    render: str,
+    corpus: str,
+    revision: str | None = None,
+    generation: str = REGISTERED_GENERATION,
+    *,
+    v2_stores: list[dict] | None = None,
+    v1_stores: list[dict] | None = None,
+) -> list[str]:
+    """ORDERED realized tree paths one cell consumes (registered grain, v11).
+
+    For the extended corpora (`ts.V2_CONCAT_SOURCES`) under the registered v2
+    generation: `[wave-1 source tree, v2 extension tree]` — the canonical
+    concat order (wave-1 rows FIRST; plan §Design "Registered consumption
+    grain"). Standalone corpora (and any `generation="v1"` robustness-arm
+    resolution) return their single store. `v2_stores` / `v1_stores` accept
+    pre-fetched enumerations so batch callers (P0 grain gate, encode main)
+    resolve all 35 cells against TWO listings instead of 50.
+    """
+
+    def _find(stores: list[dict], want_corpus: str, gen: str) -> str:
+        for t in stores:
+            if (t["stage"], t["render"], t["corpus"]) == (stage, render, want_corpus):
+                return t["tree_path"]
+        available = sorted((t["stage"], t["corpus"]) for t in stores if t["render"] == render)
+        raise FileNotFoundError(
+            f"No realized #1336 turnstore for (stage={stage!r}, render={render!r}, "
+            f"corpus={want_corpus!r}) in capture generation {gen!r}; realized "
+            f"(stage, corpus) combos for render={render!r}: {available}"
+        )
+
+    if generation != "v2" or corpus not in ts.V2_CONCAT_SOURCES:
+        if generation == "v2" and v2_stores is not None:
+            stores = v2_stores
+        elif generation == "v1" and v1_stores is not None:
+            stores = v1_stores
+        else:
+            stores = _stage_render_corpus_turnstores(revision=revision, generation=generation)
+        return [_find(stores, corpus, generation)]
+    src_corpus = ts.V2_CONCAT_SOURCES[corpus]
+    v2s = (
+        v2_stores
+        if v2_stores is not None
+        else _stage_render_corpus_turnstores(revision=revision, generation="v2")
+    )
+    v1s = (
+        v1_stores
+        if v1_stores is not None
+        else _stage_render_corpus_turnstores(revision=revision, generation="v1")
+    )
+    return [_find(v1s, src_corpus, "v1"), _find(v2s, corpus, "v2")]
+
+
+def _load_turnstore_state_cell(
+    turnstore: dict,
+    state: str,
+    layer: int,
+    revision: str | None = None,
+    max_rows: int | None = None,
+) -> tuple[torch.Tensor, list[str], dict]:
+    """Cell-grain state rows over the cell's ORDERED tree list (hub path).
+
+    Consumes `turnstore["tree_paths"]` (falling back to the single
+    `tree_path`), loading each tree's shards in shard-index order and — for a
+    two-tree concat cell — applying the ported boundary + disjointness
+    asserts (`ts.assert_concat_boundary`; plan v11 delta a1/a2). A `max_rows`
+    debug cap that exhausts inside the FIRST tree skips the remaining
+    tree(s); the concat asserts then cover only the loaded parts (debug-only:
+    the `_rows{N}` filename suffix already fences such payloads from
+    production reuse).
+    """
+    trees = list(turnstore.get("tree_paths") or [turnstore["tree_path"]])
+    if turnstore["corpus"] in ts.V2_CONCAT_SOURCES and len(trees) != 2:
+        raise ValueError(
+            f"extended corpus {turnstore['corpus']!r} consumed with {len(trees)} tree(s) — "
+            "the REGISTERED grain is wave-1 source + v2 extension (plan v11; resolve via "
+            "resolve_turnstore_trees). Extension-only consumption is the retired defect."
+        )
+    xs: list[torch.Tensor] = []
+    ids_parts: list[list[str]] = []
+    remaining = max_rows
+    for tree in trees:
+        if remaining is not None and remaining <= 0:
+            break
+        x, cids = _load_turnstore_state(
+            tree, state=state, layer=layer, revision=revision, max_rows=remaining
+        )
+        xs.append(x)
+        ids_parts.append(cids)
+        if remaining is not None:
+            remaining -= len(cids)
+    concat = len(ids_parts) == 2
+    if concat:
+        ts.assert_concat_boundary(ids_parts[0], ids_parts[1], turnstore["corpus"])
+    conv_ids = [c for part in ids_parts for c in part]
+    if len(set(conv_ids)) != len(conv_ids):
+        raise ValueError(
+            f"cell {turnstore['stage']}/{turnstore['render']}/{turnstore['corpus']}: "
+            f"duplicate conv_ids in the consumed row set (n={len(conv_ids)}, "
+            f"unique={len(set(conv_ids))})."
+        )
+    x = torch.cat(xs, dim=0).contiguous() if len(xs) > 1 else xs[0]
+    parts = [{"tree_path": t, "n_rows": len(p)} for t, p in zip(trees, ids_parts)]
+    composition = " + ".join(f"{Path(p['tree_path']).name}:{p['n_rows']}" for p in parts)
+    print(
+        f"[cell-load] {turnstore['stage']}/{turnstore['render']}/{turnstore['corpus']} "
+        f"state={state}: {composition} = {len(conv_ids)} rows"
+        + (" (concat; boundary+disjointness PASS)" if concat else ""),
+        flush=True,
+    )
+    return x, conv_ids, {"concat": concat, "parts": parts, "n_rows": len(conv_ids)}
 
 
 def loader_parity_smoke_gate(
@@ -471,8 +602,11 @@ def encode_turnstore(
     Skip predicate (review M3): a `--max-rows` debug cap writes a `_rows{N}`
     suffixed filename, so a capped shard can never be skip-reused by a
     production run; an existing file is skip-reused ONLY when it parses as
-    the current sparse format for the same cell — a stale dense store or a
-    foreign-cell payload is re-encoded loudly, never consumed.
+    the current sparse format for the same cell AND the same consumption
+    grain (v11: a stale extension-only payload at the same path must be
+    re-encoded loudly at the concat grain, never silently reused) — a stale
+    dense store or a foreign-cell payload is re-encoded loudly, never
+    consumed.
     """
     cell = {
         "stage": turnstore["stage"],
@@ -481,6 +615,8 @@ def encode_turnstore(
         "state": state,
         "layer": layer,
     }
+    trees = list(turnstore.get("tree_paths") or [turnstore["tree_path"]])
+    grain = "concat-v11" if len(trees) == 2 else "single-store"
     output_path = output_dir / ts.encoded_target_name(
         turnstore["stage"],
         turnstore["render"],
@@ -495,16 +631,21 @@ def encode_turnstore(
         except Exception as e:  # stale/foreign payload: re-encode, never consume
             print(f"[re-encode] {output_path} exists but is not reusable ({e})")
         else:
-            if existing["cell"] == cell and existing["meta"].get("max_rows") == max_rows:
+            if (
+                existing["cell"] == cell
+                and existing["meta"].get("max_rows") == max_rows
+                and existing["meta"].get("consumption_grain") == grain
+            ):
                 print(f"[skip] {output_path} exists ({existing['n_rows']} rows, valid payload)")
                 return output_path
             print(
                 f"[re-encode] {output_path}: regime mismatch "
-                f"(cell={existing['cell']} max_rows={existing['meta'].get('max_rows')})"
+                f"(cell={existing['cell']} max_rows={existing['meta'].get('max_rows')} "
+                f"grain={existing['meta'].get('consumption_grain')} != {grain})"
             )
 
-    x, conv_ids = _load_turnstore_state(
-        turnstore["tree_path"],
+    x, conv_ids, _load_info = _load_turnstore_state_cell(
+        {**turnstore, "tree_paths": trees},
         state=state,
         layer=layer,
         revision=revision,
@@ -512,7 +653,7 @@ def encode_turnstore(
     )
     x = x.to(device)
     n = x.shape[0]
-    print(f"[encode] {turnstore['tree_path']} state={state} L{layer} n={n} d_in={x.shape[1]}")
+    print(f"[encode] {' + '.join(trees)} state={state} L{layer} n={n} d_in={x.shape[1]}")
 
     idx_chunks: list[torch.Tensor] = []
     val_chunks: list[torch.Tensor] = []
@@ -541,6 +682,8 @@ def encode_turnstore(
             "sae_repo": SAE_REPO,
             "data_repo": DATA_REPO,
             "tree_path": turnstore["tree_path"],
+            "tree_paths": trees,
+            "consumption_grain": grain,
             "batch_size": batch_size,
         },
     )
@@ -643,7 +786,26 @@ def main() -> int:
             f"[error] No turnstores match filters (stage={args.stage} render={args.render} corpus={args.corpus})"
         )
         return 1
-    print(f"[setup] Target: {len(targets)} turnstore(s)")
+
+    # Registered consumption grain (plan v11 delta a2): each target cell
+    # resolves its ORDERED tree list — the wave-1 concat source + the v2
+    # extension for the extended corpora, the single store otherwise. The v1
+    # listing is fetched ONCE for all concat targets (never per cell).
+    v1_stores = None
+    if args.generation == "v2" and any(t["corpus"] in ts.V2_CONCAT_SOURCES for t in targets):
+        v1_stores = _stage_render_corpus_turnstores(revision=args.data_revision, generation="v1")
+    for t in targets:
+        t["tree_paths"] = resolve_turnstore_trees(
+            t["stage"],
+            t["render"],
+            t["corpus"],
+            revision=args.data_revision,
+            generation=args.generation,
+            v2_stores=all_turnstores,
+            v1_stores=v1_stores,
+        )
+    n_stores = len({tree for t in targets for tree in t["tree_paths"]})
+    print(f"[setup] Target: {len(targets)} cell(s) consuming {n_stores} store(s)")
 
     print(f"[setup] Loading SAE weights layer={args.layer}")
     weights, cfg = load_sae_weights(
@@ -683,6 +845,11 @@ def main() -> int:
                         "state": args.state,
                         "layer": args.layer,
                         "format": ts.ENCODED_TARGET_FORMAT,
+                        "consumption_grain": (
+                            "concat-v11"
+                            if len(cell.get("tree_paths") or [0]) == 2
+                            else "single-store"
+                        ),
                         "max_rows": args.max_rows,
                         "output_path": str(output_path.relative_to(args.output_dir.parent.parent))
                         if output_path.is_absolute()

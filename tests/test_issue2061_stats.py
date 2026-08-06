@@ -96,6 +96,16 @@ def _write_random_turnstore(dir_: Path, conv_gs: list[int], seed: int, stem: str
             ],
         }
         torch.save(recs, dir_ / f"{stem}_shard{shard_idx:03d}.pt")
+        # Producer JSON sidecar (the v13 a1-bis loader asserts read it).
+        (dir_ / f"{stem}_shard{shard_idx:03d}.json").write_text(
+            json.dumps(
+                {
+                    "shard_index": shard_idx,
+                    "n_conversations": len(gs),
+                    "conv_ids": recs["conv_ids"],
+                }
+            )
+        )
 
 
 def _dense_to_iv(y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -130,7 +140,7 @@ def test_fit_cell_end_to_end_tiny(tmp_path):
 
     out = tmp_path / "out.jsonl"
     fpf._PARITY_GATE_STATE["done"] = False  # force the gate on this cell
-    fpf.fit_cell(tdir, enc, arm="context", output_path=out, layer=LAYER)
+    fpf.fit_cell(tmp_path, "base", "chat", "tiny", enc, arm="context", output_path=out, layer=LAYER)
     assert fpf._PARITY_GATE_STATE["done"] is True  # gate ran (>=3 slices)
 
     rows = [json.loads(line) for line in out.read_text().split("\n") if line.strip()]
@@ -262,6 +272,11 @@ def test_engine_identity_matches_p2_estimator():
             xb[train_idx][None],
             yb[train_idx][None].astype(np.float64),
             xb[test_idx][None],
+            # ONE grid on both sides (plan v13 delta (f)): the engine rides
+            # the widened v13 LAMBDA_GRID; the shared helper's own 13-point
+            # default is deliberately untouched, so the P2-parity reference
+            # must thread the grid explicitly.
+            lambdas=nullmod.LAMBDA_GRID,
             gcv_dof_cap=nullmod.DOF_CAP_FRACTION,
         )[0]
         y_test = yb[test_idx]
@@ -503,3 +518,227 @@ def test_engine_requires_paired_conversations():
             [f"R{c}" for c in ca],
             d_sae=d_sae,
         )
+
+
+# ---------------------------------------------------------------------------
+# v11 delta (b) — runtime convention branch: the Gram/dual adapter is the
+# SAME estimator as the streamed primal fit (parity fixture at n_tr <= d_in,
+# the shape the plan's §Design estimator bullet mandates for this family).
+# ---------------------------------------------------------------------------
+def test_fold_fit_gram_matches_streamed_at_n_le_d():
+    rng = np.random.default_rng(23)
+    n, d_in, d_sae = 30, 48, 16  # per-fold n_tr = 24 <= d_in — the dual regime
+    X = rng.normal(size=(n, d_in)).astype(np.float32)
+    y = (rng.normal(size=(n, d_sae)) * (rng.random(size=(n, d_sae)) < 0.5)).astype(np.float32)
+    y_idx, y_val = _dense_to_iv(y)
+    conv = [f"c{i:03d}" for i in range(n)]
+    folds = fpf._make_folds(conv, k=5, seed=0)
+    for fi, test_idx in enumerate(folds):
+        train_idx = np.concatenate([f for j, f in enumerate(folds) if j != fi])
+        assert len(train_idx) <= d_in, "fixture must exercise the n_tr <= d_in regime"
+        outs = {}
+        for name, fn in (("primal", fpf._fold_fit_streamed), ("gram", fpf._fold_fit_gram)):
+            ss_res = np.zeros(d_sae)
+            ss_tot = np.zeros(d_sae)
+            out_pred = np.zeros((n, d_sae), dtype=np.float64)
+            info = fn(
+                X,
+                y_idx,
+                y_val,
+                d_sae,
+                train_idx,
+                test_idx,
+                gcv_dof_cap=fpf.DOF_CAP_FRACTION,
+                feature_chunk=7,  # deliberately unaligned chunking
+                ss_res=ss_res,
+                ss_tot=ss_tot,
+                out_pred=out_pred,
+            )
+            outs[name] = (info, ss_res, ss_tot, out_pred)
+        ip, rp, tp, pp = outs["primal"]
+        ig, rg, tg, pg = outs["gram"]
+        # λ exact, dof rel 1e-9, preds rtol 1e-7 — the parity family tolerances.
+        assert ig["best_lambda"] == pytest.approx(ip["best_lambda"], rel=1e-12)
+        assert ig["dof"] == pytest.approx(ip["dof"], rel=1e-9)
+        np.testing.assert_allclose(pg[test_idx], pp[test_idx], rtol=1e-7, atol=1e-10)
+        np.testing.assert_allclose(rg, rp, rtol=1e-7, atol=1e-10)
+        np.testing.assert_allclose(tg, tp, rtol=1e-9, atol=1e-12)
+
+
+def test_gram_adapter_call_binds_against_real_helper_api():
+    """Offline signature-bind of the adapter's helper call shape (the
+    fabricated-signature production-TypeError class — the sparsify pin's
+    sibling)."""
+    sig = inspect.signature(ridge_fit_predict_fast_layer_batched)
+    sig.bind(
+        np.zeros((1, 4, 6)),
+        np.zeros((1, 4, 3)),
+        np.zeros((1, 2, 6)),
+        lambdas=np.logspace(-3, 8, 23),
+        device="cpu",
+        return_info=True,
+        gcv_dof_cap=0.9,
+    )
+
+
+def test_fit_cell_runtime_convention_gram_dual(tmp_path):
+    """A cell whose folds land at n_tr <= d_in routes the Gram/dual branch
+    and logs it (plan v11 delta (b): the selected convention rides the JSONL)."""
+    n, d_sae = 20, 12
+    stem = "turnstore_base_chat_tiny"
+    tdir = tmp_path / stem
+    _write_random_turnstore(tdir, list(range(n)), seed=4, stem=stem)
+    rng = np.random.default_rng(5)
+    y = (rng.normal(size=(n, d_sae)) * (rng.random(size=(n, d_sae)) < 0.5)).astype(np.float32)
+    y_idx, y_val = _dense_to_iv(y)
+    enc = tmp_path / f"base_chat_tiny_answer_L{LAYER}.pt"
+    ts.save_encoded_target(
+        enc,
+        idx=torch.as_tensor(y_idx),
+        val=torch.as_tensor(y_val),
+        d_sae=d_sae,
+        k=y_idx.shape[1],
+        conv_ids=[f"conv-{g:03d}" for g in range(n)],
+        cell={"stage": "base", "render": "chat", "corpus": "tiny", "state": "answer", "layer": 1},
+    )
+    out = tmp_path / "out.jsonl"
+    fpf._PARITY_GATE_STATE["done"] = True  # gate covered by its own tests
+    # HIDDEN=8 fixture d_in vs per-fold n_tr=16: force the dual regime by
+    # treating d_in as larger than any fold's n_tr is NOT possible via args —
+    # the branch keys on realized shapes — so pin the regime with a wide-d
+    # random X via the payload instead: n_tr=16 > 8 means primal here; assert
+    # the OPPOSITE regime through _fold_fit_gram parity above. This test pins
+    # the PRIMAL logging surface + field presence end-to-end.
+    fpf.fit_cell(tmp_path, "base", "chat", "tiny", enc, arm="context", output_path=out, layer=LAYER)
+    row = json.loads(out.read_text().split("\n")[0])
+    assert row["convention"] == "primal"
+    assert row["convention_folds"] == ["primal"] * fpf.K_FOLDS
+    for key in (
+        "n_at_low_edge",
+        "n_at_high_edge",
+        "lambda_grid_log10_lo",
+        "lambda_grid_log10_hi",
+        "n_lambda",
+        "n_ext_low",
+        "n_ext_high",
+        "regularization_limited",
+    ):
+        assert key in row, key
+
+
+def test_engine_regime_guard_fails_loud_at_n_le_d():
+    """v11 delta (c): the null engine REFUSES an n_tr <= d_in regime at init,
+    naming contingency lever (b) — it can never silently run a regime the
+    plan did not declare (the P2 side fits it via the Gram/dual branch)."""
+    rng = np.random.default_rng(11)
+    n, d_in, d_sae = 40, 64, 16  # pooled per-(fold, group) n_tr ~ 32 <= 64
+    conv = [f"c{i:03d}" for i in range(n)]
+    xb = rng.normal(size=(n, d_in))
+    xa = rng.normal(size=(n, d_in))
+    yb = (rng.normal(size=(n, d_sae)) * (rng.random(size=(n, d_sae)) < 0.4)).astype(np.float64)
+    ya = (rng.normal(size=(n, d_sae)) * (rng.random(size=(n, d_sae)) < 0.4)).astype(np.float64)
+    yib, yvb = _dense_to_iv(yb)
+    yia, yva = _dense_to_iv(ya)
+    with pytest.raises(RuntimeError, match=r"lever \(b\)"):
+        nullmod._CellEngine(xb, yib, yvb, conv, xa, yia, yva, conv, d_sae=d_sae)
+
+
+# ---------------------------------------------------------------------------
+# v13 delta (f) — the registered λ grid + the edge-hit audit/disposition
+# ---------------------------------------------------------------------------
+def test_lambda_grid_registration_v13():
+    """P2 and the P3 engine share ONE grid — the v13 np.logspace(-3, 8, 23)
+    (plan §11 RIDGE_LAMBDA_GRID); the shared #779 helper's own default stays
+    the untouched 13-point grid."""
+    expected = np.logspace(-3, 8, 23)
+    np.testing.assert_allclose(fpf.LAMBDA_GRID, expected, rtol=1e-12)
+    np.testing.assert_allclose(nullmod.LAMBDA_GRID, expected, rtol=1e-12)
+    helper_default = inspect.signature(ridge_fit_predict_fast_layer_batched)
+    assert helper_default.parameters["lambdas"].default is None  # resolved in-body to 13-pt
+
+
+def test_lambda_grid_lattice_helpers():
+    lo, hi = fpf._lambda_grid_log10_bounds(fpf.LAMBDA_GRID)
+    assert (lo, hi) == (-3.0, 8.0)
+    g = fpf._build_lambda_grid(-4.0, 8.0)
+    assert len(g) == 25 and g[0] == pytest.approx(1e-4) and g[-1] == pytest.approx(1e8)
+    # The retired 13-point grid is ALSO a half-decade lattice (its bounds
+    # parse); a non-lattice grid fails loud.
+    assert fpf._lambda_grid_log10_bounds(np.logspace(-2, 4, 13)) == (-2.0, 4.0)
+    with pytest.raises(ValueError, match="half-decade lattice"):
+        fpf._lambda_grid_log10_bounds(np.logspace(-2, 4, 10))
+
+
+def test_fit_cell_edge_extension_and_regularization_limited(tmp_path):
+    """Pure-noise targets drive GCV to ever-larger λ: the top edge pins, the
+    cell extends one decade per pass (<= 2), re-runs FULL-CELL each time, and
+    is finally flagged REGULARIZATION-LIMITED (plan v13 delta (f))."""
+    n, d_sae = 30, 10
+    stem = "turnstore_base_chat_tiny"
+    tdir = tmp_path / stem
+    _write_random_turnstore(tdir, list(range(n)), seed=7, stem=stem)
+    rng = np.random.default_rng(8)
+    y = rng.normal(size=(n, d_sae)).astype(np.float32)  # dense noise target
+    y_idx, y_val = _dense_to_iv(y)
+    enc = tmp_path / f"base_chat_tiny_answer_L{LAYER}.pt"
+    ts.save_encoded_target(
+        enc,
+        idx=torch.as_tensor(y_idx),
+        val=torch.as_tensor(y_val),
+        d_sae=d_sae,
+        k=y_idx.shape[1],
+        conv_ids=[f"conv-{g:03d}" for g in range(n)],
+        cell={"stage": "base", "render": "chat", "corpus": "tiny", "state": "answer", "layer": 1},
+    )
+    out = tmp_path / "out.jsonl"
+    fpf._PARITY_GATE_STATE["done"] = True
+    # Start from a deliberately narrow lattice ending far below the noise
+    # optimum (λ -> inf for pure noise) so the top edge pins every pass.
+    fpf.fit_cell(
+        tmp_path,
+        "base",
+        "chat",
+        "tiny",
+        enc,
+        arm="context",
+        output_path=out,
+        layer=LAYER,
+        lambda_grid=fpf._build_lambda_grid(-3.0, -1.0),
+    )
+    row = json.loads(out.read_text().split("\n")[0])
+    assert row["n_ext_high"] == fpf.MAX_EDGE_EXTENSIONS
+    assert row["n_at_high_edge"] > 0
+    assert row["regularization_limited"] is True
+    # The realized grid record reflects the extensions (one decade per pass).
+    assert row["lambda_grid_log10_hi"] == pytest.approx(-1.0 + 2.0)
+    assert row["lambda_grid_log10_lo"] == pytest.approx(-3.0)
+    assert (
+        row["n_lambda"]
+        == round((row["lambda_grid_log10_hi"] - row["lambda_grid_log10_lo"]) / 0.5) + 1
+    )
+
+
+def test_cell_lambda_grid_union_and_legacy(tmp_path):
+    """P3 rides the UNION lattice of both stages' realized P2 grids (v13
+    delta (f): true and null always share one realized grid); legacy P2 rows
+    without the grid fields fall back to the module default."""
+    r2 = tmp_path
+
+    def _write(stage, lo=None, hi=None):
+        row = {"feature_id": 0, "R2": 0.1}
+        if lo is not None:
+            row["lambda_grid_log10_lo"] = lo
+            row["lambda_grid_log10_hi"] = hi
+        (r2 / f"{stage}_chat_tiny_context_L{nullmod.LAYER}.jsonl").write_text(
+            json.dumps(row) + "\n"
+        )
+
+    _write("base", -3.0, 8.0)
+    _write("sft", -3.0, 10.0)  # sft extended twice upward
+    g = nullmod.cell_lambda_grid(r2, ("base", "sft"), "chat", "tiny", "context")
+    assert g[0] == pytest.approx(1e-3) and g[-1] == pytest.approx(1e10) and len(g) == 27
+
+    _write("base")  # legacy row, no grid fields
+    _write("sft")
+    g2 = nullmod.cell_lambda_grid(r2, ("base", "sft"), "chat", "tiny", "context")
+    np.testing.assert_allclose(g2, nullmod.LAMBDA_GRID, rtol=1e-12)

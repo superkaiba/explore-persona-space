@@ -44,7 +44,7 @@ import issue2061_turnstore as ts
 N_LAYERS = 4
 HIDDEN = 8
 LAYER = 2  # test layer (production LAYER=29 is an arg everywhere)
-STEM = "turnstore_base_chat_lmsys23k"
+STEM = "turnstore_base_chat_if11k"
 
 
 def _make_record(g: int) -> dict:
@@ -169,10 +169,11 @@ def test_fit_per_feature_loader_both_arms_all_shards(tmp_path):
     _write_shard(d, 0, [0, 1])
     _write_shard(d, 1, [2, 3, 4])
     for arm in ("prefix", "context"):
-        x, conv_ids = fpf._load_arm_inputs(d, arm, layer=LAYER)
+        x, conv_ids, info = fpf._load_arm_inputs(tmp_path, "base", "chat", "if11k", arm, LAYER)
         assert x.shape == (5, HIDDEN), (arm, x.shape)  # 2 + 3 rows: BOTH shards
         assert torch.equal(torch.from_numpy(x), _expected([0, 1, 2, 3, 4], arm)), arm
         assert conv_ids == [f"conv-{g:03d}" for g in range(5)], arm
+        assert info["concat"] is False and info["n_rows"] == 5
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +225,10 @@ def test_sae_encode_loader_max_rows_stops_early(tmp_path, monkeypatch):
     assert x.shape == (2, HIDDEN)
     assert torch.equal(x, _expected([0, 1], "context"))
     assert conv_ids == ["conv-000", "conv-001"]
-    assert len(downloads) == 1  # lazy generator: shard 1 never fetched
+    # Lazy generator: shard 1 never fetched (shard 0's .pt + its .json
+    # sidecar — the v13 a1-bis loader assert input — are the only downloads).
+    assert [Path(f).suffix for f in downloads] == [".json", ".pt"]
+    assert all("shard000" in f for f in downloads)
 
 
 # ---------------------------------------------------------------------------
@@ -251,11 +255,11 @@ def test_encode_turnstore_sparse_payload_roundtrip(tmp_path, monkeypatch):
     _fake_hub(monkeypatch, enc, d)
     weights = _tiny_sae_weights()
     out_dir = tmp_path / "encoded"
-    turnstore = {"stage": "base", "render": "chat", "corpus": "lmsys23k", "tree_path": "t"}
+    turnstore = {"stage": "base", "render": "chat", "corpus": "if11k", "tree_path": "t"}
     out = enc.encode_turnstore(
         turnstore, weights=weights, k=3, output_dir=out_dir, layer=LAYER, device="cpu"
     )
-    assert out.name == f"base_chat_lmsys23k_answer_L{LAYER}.pt"
+    assert out.name == f"base_chat_if11k_answer_L{LAYER}.pt"
 
     # Consumer 1 (P2/P3 shared loader): payload opens, conv_ids keyed.
     payload = ts.load_encoded_target(out)
@@ -278,12 +282,37 @@ def test_encode_turnstore_sparse_payload_roundtrip(tmp_path, monkeypatch):
     )
     assert ts.load_encoded_target(out3)["format"] == ts.ENCODED_TARGET_FORMAT
 
+    # ...and a payload from a DIFFERENT consumption grain (the v11 class: a
+    # stale extension-only encode lacks the grain key) is re-encoded loudly,
+    # never skip-reused at the concat grain.
+    stale = ts.load_encoded_target(out)
+    stale_meta = {k: v for k, v in stale["meta"].items() if k != "consumption_grain"}
+    ts.save_encoded_target(
+        out,
+        idx=stale["idx"],
+        val=stale["val"],
+        d_sae=stale["d_sae"],
+        k=stale["k"],
+        conv_ids=stale["conv_ids"],
+        cell=stale["cell"],
+        extra_meta={
+            k: v
+            for k, v in stale_meta.items()
+            if k not in ("git_commit", "torch_version", "created_unix")
+        },
+    )
+    assert "consumption_grain" not in ts.load_encoded_target(out)["meta"]
+    out4 = enc.encode_turnstore(
+        turnstore, weights=weights, k=3, output_dir=out_dir, layer=LAYER, device="cpu"
+    )
+    assert ts.load_encoded_target(out4)["meta"]["consumption_grain"] == "single-store"
+
     # --max-rows debug cap writes a SUFFIXED path the production glob and the
     # canonical consumers never see (M3: no skip-reuse of a capped shard).
     capped = enc.encode_turnstore(
         turnstore, weights=weights, k=3, output_dir=out_dir, layer=LAYER, device="cpu", max_rows=2
     )
-    assert capped.name == f"base_chat_lmsys23k_answer_L{LAYER}_rows2.pt"
+    assert capped.name == f"base_chat_if11k_answer_L{LAYER}_rows2.pt"
     assert sorted(p.name for p in out_dir.glob(f"*_answer_L{LAYER}.pt")) == [out.name]
     assert ts.load_encoded_target(capped)["n_rows"] == 2
 
@@ -297,14 +326,14 @@ def test_null_stage_inputs_open_sparse_payload_and_key_alignment(tmp_path, monke
     _fake_hub(monkeypatch, enc, d)
     weights = _tiny_sae_weights()
     enc_dir = tmp_path / "encoded"
-    turnstore = {"stage": "base", "render": "chat", "corpus": "lmsys23k", "tree_path": "t"}
+    turnstore = {"stage": "base", "render": "chat", "corpus": "if11k", "tree_path": "t"}
     out = enc.encode_turnstore(
         turnstore, weights=weights, k=3, output_dir=enc_dir, layer=LAYER, device="cpu"
     )
 
     # Consumer 2 (P3 null): opens the payload + verifies conv-id alignment.
     x, y_idx, y_val, conv_ids, d_sae = nullmod._load_cell_stage_inputs(
-        tmp_path / "shards", enc_dir, "base", "chat", "lmsys23k", "context", layer=LAYER
+        tmp_path / "shards", enc_dir, "base", "chat", "if11k", "context", layer=LAYER
     )
     assert x.shape == (5, HIDDEN) and y_idx.shape == (5, 3) and y_val.shape == (5, 3)
     assert d_sae == 24 and conv_ids == [f"conv-{g:03d}" for g in range(5)]
@@ -322,7 +351,7 @@ def test_null_stage_inputs_open_sparse_payload_and_key_alignment(tmp_path, monke
     )
     with pytest.raises(ValueError, match="row alignment mismatch"):
         nullmod._load_cell_stage_inputs(
-            tmp_path / "shards", enc_dir, "base", "chat", "lmsys23k", "context", layer=LAYER
+            tmp_path / "shards", enc_dir, "base", "chat", "if11k", "context", layer=LAYER
         )
 
 

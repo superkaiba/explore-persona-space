@@ -37,6 +37,7 @@ recorded in the Unit A implementation report.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -55,6 +56,28 @@ import torch  # noqa: E402
 EXPECTED_SHARD_KEYS = frozenset({"conv_ids", "slots", "profiles", "nll", "spans_meta"})
 
 ARMS = ("prefix", "context")
+
+# ---------------------------------------------------------------------------
+# Extended-corpus concat registry (plan v11 delta (a1); registered consumption
+# grain, plan §Design "Registered consumption grain").
+#
+# PORTED VERBATIM from the unmerged parent branch `issue-1336-fullcorpora`
+# (`src/explore_persona_space/experiments/issue_1336/common.py:428-429`) per
+# `.claude/rules/artifact-reuse.md` § "Porting from an unmerged sibling
+# branch" — never a runtime import from the unmerged branch. Wave-1 covered
+# prompt_idx 0..boundary-1 of each extended corpus; the v2 stores hold ONLY
+# the extension rows (prompt_idx >= boundary), and #1336's own production fit
+# consumes the CONCATENATION (`load_bundle_concat`, fullcorpora
+# `fit_cells.py:766-781`). V2_CONCAT_BOUNDARY is a PER-CORPUS DICT (both
+# entries 5000 today) — never a scalar (plan v12 amendment item 4).
+# ---------------------------------------------------------------------------
+V2_CONCAT_SOURCES = {"lmsys23k": "lmsys5k", "gsm8k_train_full": "gsm8k_train5k"}
+V2_CONCAT_BOUNDARY = {"lmsys23k": 5000, "gsm8k_train_full": 5000}
+
+# #1336 conv_id convention: "s{prompt_idx}" (issue1336_extract_turnstore.py's
+# `sha_by_conv = {f"s{r['prompt_idx']}": ...}`); the concat boundary asserts
+# parse the index out of it.
+CONV_ID_RE = re.compile(r"^s(\d+)$")
 
 # state -> (payload key, row name, spans_meta names field)
 STATE_SPEC: dict[str, tuple[str, str, str]] = {
@@ -163,25 +186,196 @@ def enumerate_shards(turnstore_dir: Path | str) -> list[Path]:
     return [p for _, p in sorted(hits)]
 
 
+def conv_index(conv_id: str) -> int:
+    """Parse the #1336 conv_id convention `s{prompt_idx}` -> int prompt_idx.
+
+    Fail-loud ValueError on any non-conforming id (the concat boundary asserts
+    must never silently mis-bucket a row — plan §Design boundary asserts).
+    """
+    m = CONV_ID_RE.match(str(conv_id))
+    if m is None:
+        raise ValueError(
+            f"conv_id {conv_id!r} does not match the #1336 's<prompt_idx>' convention — "
+            "cannot apply the V2_CONCAT_BOUNDARY assert to it."
+        )
+    return int(m.group(1))
+
+
+def sidecar_path_for(shard_pt: Path | str) -> Path:
+    """The producer's JSON sidecar path beside one `*_shardNNN.pt` file."""
+    return Path(shard_pt).with_suffix(".json")
+
+
+def read_shard_sidecar(shard_pt: Path | str) -> dict:
+    """Load the JSON sidecar beside one shard; fail loud when it is missing.
+
+    The #1336 producer (`issue1336_extract_turnstore.py::write_shards`) writes
+    a `<stem>_shardNNN.json` sidecar next to every `.pt` shard; the loader's
+    schema/convention asserts (plan v13 delta (a1-bis)) read it, so staging
+    must include sidecars (issue2061_hub_io.stage_turnstore does since the
+    v13 round — re-stage any tree staged by older code).
+    """
+    sp = sidecar_path_for(shard_pt)
+    if not sp.exists():
+        raise FileNotFoundError(
+            f"Missing turnstore sidecar {sp} beside {shard_pt} — the loader's per-shard "
+            "schema/convention asserts (plan v13 delta a1-bis) require it. Re-stage the "
+            "turnstore (staging includes sidecars as of the v13 concat round)."
+        )
+    return json.loads(sp.read_text())
+
+
+def assert_shard_sidecar(payload: dict, sidecar: dict, src: str) -> dict:
+    """Fail-loud payload<->sidecar consistency + capture-convention asserts.
+
+    Plan §Design "Cross-wave schema parity" + v13 delta (a1-bis), per shard:
+
+    - sidecar `n_conversations` and `conv_ids` must equal the payload's
+      conv_ids EXACTLY (the ±1 row-count bookkeeping class — a divergence is
+      corruption / mixed write generations, never tolerated);
+    - per-row prompt-sha join: when BOTH the payload and the sidecar carry
+      `prompt_shas` (the v2-era stores), they must agree per row with ZERO
+      mismatches tolerated (the parent `load_bundle_concat` text-drift
+      contract); one-sided presence is corruption;
+    - capture-convention keys are PRESENCE-CONDITIONAL: present => must be
+      `"committed"` with `offset_override` null; ABSENT => accepted as a
+      pre-D2-era store (the 2 oldest wave-1 lmsys5k rlvr stores, extractor
+      commit 5653c791ac) and reported as `"pre-D2-absent"` so the P0 grain
+      manifest can log the store name. A hard key-presence assert would fail
+      loud on those two stores at first dispatch (plan v13 item 1).
+
+    Returns a summary dict: {"convention", "model_id", "n_rows"}.
+    """
+    pc = [str(c) for c in payload["conv_ids"]]
+    sc = [str(c) for c in sidecar.get("conv_ids", [])]
+    n_sc = sidecar.get("n_conversations")
+    if n_sc != len(pc) or sc != pc:
+        raise ValueError(
+            f"Turnstore shard {src}: sidecar/payload row mismatch — payload has "
+            f"{len(pc)} conv_ids, sidecar declares n_conversations={n_sc} with "
+            f"{len(sc)} conv_ids (first divergence: "
+            f"{next(((a, b) for a, b in zip(pc, sc) if a != b), '(length-only)')}). "
+            "Mixed write generations / corruption — never consume."
+        )
+    p_shas = payload.get("prompt_shas")
+    s_shas = sidecar.get("prompt_shas")
+    if (p_shas is None) != (s_shas is None):
+        side = "payload" if p_shas is not None else "sidecar"
+        raise ValueError(
+            f"Turnstore shard {src}: prompt_shas present on the {side} side ONLY — "
+            "the v2 producer writes them to BOTH (write_shards); mixed generations."
+        )
+    if p_shas is not None and s_shas is not None:
+        if len(p_shas) != len(pc) or len(s_shas) != len(pc):
+            raise ValueError(
+                f"Turnstore shard {src}: prompt_shas length mismatch "
+                f"(payload {len(p_shas)}, sidecar {len(s_shas)}, rows {len(pc)})."
+            )
+        mismatches = [i for i, (a, b) in enumerate(zip(p_shas, s_shas)) if str(a) != str(b)]
+        if mismatches:
+            raise ValueError(
+                f"Turnstore shard {src}: {len(mismatches)} per-row prompt-sha MISMATCH(es) "
+                f"payload-vs-sidecar (e.g. rows {mismatches[:5]}) — text drift; ZERO "
+                "mismatches tolerated (the parent load_bundle_concat contract)."
+            )
+    convention = sidecar_convention_state(sidecar, src)
+    return {"convention": convention, "model_id": sidecar.get("model_id"), "n_rows": len(pc)}
+
+
+def sidecar_convention_state(sidecar: dict, src: str) -> str:
+    """PRESENCE-CONDITIONAL capture-convention assert (plan v13 delta a1-bis).
+
+    Present => must be `"committed"` with `offset_override` null (fail-loud
+    ValueError otherwise); ABSENT => accepted as a pre-D2-era store and
+    reported as `"pre-D2-absent"` (the caller logs the store name — e.g. into
+    the P0 grain manifest). Shared by the shard loader
+    (`assert_shard_sidecar`) and the P0 grain gate.
+    """
+    if "convention" in sidecar:
+        if sidecar["convention"] != "committed" or sidecar.get("offset_override") is not None:
+            raise ValueError(
+                f"Turnstore shard {src}: capture convention "
+                f"{sidecar['convention']!r} / offset_override="
+                f"{sidecar.get('offset_override')!r} != the registered committed/null "
+                "(plan §Design cross-wave schema parity) — never consume a "
+                "corrected-convention store into the registered grain."
+            )
+        return "committed"
+    if sidecar.get("offset_override") is not None:
+        raise ValueError(
+            f"Turnstore shard {src}: offset_override present without a convention "
+            "key — not a known producer shape."
+        )
+    # Pre-D2-era store (keys introduced by the D2 capture-convention flags;
+    # committed-convention by construction). ACCEPTED + reported.
+    return "pre-D2-absent"
+
+
+def assert_concat_boundary(conv_wave1: Sequence[str], conv_ext: Sequence[str], corpus: str) -> int:
+    """The parent `load_bundle_concat` boundary + disjointness asserts, ported.
+
+    Every wave-1 row's prompt_idx < V2_CONCAT_BOUNDARY[corpus] <= every
+    extension row's; no conv_id overlap between the two parts. Returns the
+    boundary. Fail-loud ValueError naming the first offending ids.
+    """
+    if corpus not in V2_CONCAT_BOUNDARY:
+        raise ValueError(f"{corpus!r} is not an extended corpus ({sorted(V2_CONCAT_BOUNDARY)})")
+    boundary = V2_CONCAT_BOUNDARY[corpus]
+    if not conv_wave1 or not conv_ext:
+        raise ValueError(
+            f"concat {corpus}: empty part (wave1={len(conv_wave1)}, ext={len(conv_ext)})"
+        )
+    bad1 = [c for c in conv_wave1 if conv_index(c) >= boundary]
+    if bad1:
+        raise ValueError(
+            f"concat {corpus}: wave-1 store has {len(bad1)} row(s) with prompt_idx >= "
+            f"{boundary} (e.g. {bad1[:5]}) — not a wave-1 slice."
+        )
+    bad2 = [c for c in conv_ext if conv_index(c) < boundary]
+    if bad2:
+        raise ValueError(
+            f"concat {corpus}: extension store has {len(bad2)} row(s) with prompt_idx < "
+            f"{boundary} (e.g. {bad2[:5]}) — not an extension slice."
+        )
+    overlap = set(map(str, conv_wave1)) & set(map(str, conv_ext))
+    if overlap:
+        raise ValueError(
+            f"concat {corpus}: parts overlap on {len(overlap)} conv_id(s) "
+            f"(e.g. {sorted(overlap)[:5]})."
+        )
+    return boundary
+
+
 def load_state_from_shards(
     shard_paths: Iterable[Path | str],
     state: str,
     layer: int,
     max_rows: int | None = None,
+    *,
+    check_sidecars: bool = False,
+    sidecar_records: list[dict] | None = None,
 ) -> tuple[torch.Tensor, list[str]]:
     """Concat one state's rows across shards (caller supplies shard-index order).
 
     Accepts any iterable — a lazily-downloading generator stops fetching the
     moment `max_rows` rows are accumulated. Loads one shard payload at a time
     (peak memory ~ one shard), extracting via `extract_state_rows` so every
-    shard passes the fail-loud schema assert. Returns ((n, hidden) float32,
-    conv_ids).
+    shard passes the fail-loud schema assert. With `check_sidecars=True`
+    (production consumption paths) each shard's JSON sidecar is additionally
+    read + asserted via `assert_shard_sidecar` (plan v13 delta a1-bis);
+    per-shard summaries append to `sidecar_records` when provided. Returns
+    ((n, hidden) float32, conv_ids).
     """
     chunks: list[torch.Tensor] = []
     ids: list[str] = []
     n_acc = 0
     for p in shard_paths:
         payload = torch.load(p, map_location="cpu", weights_only=True)
+        if check_sidecars:
+            assert_shard_schema(payload, str(p))
+            rec = assert_shard_sidecar(payload, read_shard_sidecar(p), src=str(p))
+            if sidecar_records is not None:
+                sidecar_records.append({**rec, "shard": Path(p).name})
         x, cids = extract_state_rows(payload, state=state, layer=layer, src=str(p))
         chunks.append(x)
         ids.extend(cids)
@@ -195,6 +389,110 @@ def load_state_from_shards(
         x = x[:max_rows]
         ids = ids[:max_rows]
     return x.contiguous(), ids
+
+
+def turnstore_dir_name(stage: str, render: str, corpus: str) -> str:
+    """Canonical LOCAL turnstore dir name (consumer layout; canonical stage tokens)."""
+    return f"turnstore_{stage}_{render}_{corpus}"
+
+
+def cell_store_dirs(root: Path | str, stage: str, render: str, corpus: str) -> list[Path]:
+    """ORDERED local store dirs one (stage, render, corpus) cell consumes.
+
+    Registered consumption grain (plan v11): the extended corpora consume TWO
+    stores — the wave-1 concat source FIRST, then the v2 extension — in the
+    canonical concat row order; standalone corpora consume their single store.
+    """
+    root = Path(root)
+    dirs = []
+    if corpus in V2_CONCAT_SOURCES:
+        dirs.append(root / turnstore_dir_name(stage, render, V2_CONCAT_SOURCES[corpus]))
+    dirs.append(root / turnstore_dir_name(stage, render, corpus))
+    return dirs
+
+
+def load_state_cell(
+    root: Path | str,
+    stage: str,
+    render: str,
+    corpus: str,
+    state: str,
+    layer: int,
+    *,
+    check_sidecars: bool = True,
+) -> tuple[torch.Tensor, list[str], dict]:
+    """One cell's state rows at the REGISTERED consumption grain (local dirs).
+
+    For the extended corpora (`V2_CONCAT_SOURCES`) loads wave-1 source shards
+    FIRST then v2-extension shards (both in shard-index order — the canonical
+    row order P1/P2/P3 share, plan §Design "Registered consumption grain"),
+    applying the ported `load_bundle_concat` asserts: per-shard sidecar
+    schema/convention (a1-bis), boundary (every wave-1 idx < boundary <= every
+    extension idx), conv-id disjointness, cross-tree model_id equality, and a
+    duplicate-conv-id check over the union. Standalone corpora load their
+    single store through the same sidecar asserts.
+
+    Returns (x (n, hidden) float32, conv_ids, info) where info carries the
+    per-part composition (dir, n_rows, conventions, model_ids) + concat flag.
+    """
+    dirs = cell_store_dirs(root, stage, render, corpus)
+    xs: list[torch.Tensor] = []
+    ids_parts: list[list[str]] = []
+    parts: list[dict] = []
+    for d in dirs:
+        if not d.is_dir():
+            extra = (
+                " (a CONCAT cell consumes the wave-1 source AND the v2 extension — "
+                "stage both; issue2061_hub_io.stage_turnstore does)"
+                if len(dirs) == 2
+                else ""
+            )
+            raise FileNotFoundError(f"missing turnstore dir {d}{extra}")
+        recs: list[dict] = []
+        x, cids = load_state_from_shards(
+            enumerate_shards(d),
+            state=state,
+            layer=layer,
+            check_sidecars=check_sidecars,
+            sidecar_records=recs,
+        )
+        model_ids = sorted({str(r["model_id"]) for r in recs})
+        if check_sidecars and len(model_ids) > 1:
+            raise ValueError(f"turnstore {d}: mixed model_id across shards: {model_ids}")
+        xs.append(x)
+        ids_parts.append(cids)
+        parts.append(
+            {
+                "dir": d.name,
+                "n_rows": len(cids),
+                "conventions": sorted({r["convention"] for r in recs}),
+                "model_ids": model_ids,
+            }
+        )
+    concat = len(dirs) == 2
+    if concat:
+        assert_concat_boundary(ids_parts[0], ids_parts[1], corpus)
+        if check_sidecars and parts[0]["model_ids"] != parts[1]["model_ids"]:
+            raise ValueError(
+                f"concat {stage}/{render}/{corpus}: cross-wave model_id mismatch "
+                f"{parts[0]['model_ids']} vs {parts[1]['model_ids']} (plan §Design "
+                "cross-wave schema parity hard assert)."
+            )
+    conv_ids = [c for part in ids_parts for c in part]
+    if len(set(conv_ids)) != len(conv_ids):
+        raise ValueError(
+            f"cell {stage}/{render}/{corpus}: duplicate conv_ids in the consumed row set "
+            f"(n={len(conv_ids)}, unique={len(set(conv_ids))})."
+        )
+    x = torch.cat(xs, dim=0) if len(xs) > 1 else xs[0]
+    info = {"concat": concat, "parts": parts, "n_rows": len(conv_ids)}
+    composition = " + ".join(f"{p['dir']}:{p['n_rows']}" for p in parts)
+    print(
+        f"[cell-load] {stage}/{render}/{corpus} state={state}: {composition} = "
+        f"{len(conv_ids)} rows" + (" (concat; boundary+disjointness PASS)" if concat else ""),
+        flush=True,
+    )
+    return x.contiguous(), conv_ids, info
 
 
 def group_fold_ids(conv_ids: Sequence[str], n_folds: int, seed: int) -> np.ndarray:

@@ -20,7 +20,8 @@ Fits, per (stage, render, corpus, arm) cell:
   target applied in feature CHUNKS built dense-on-the-fly from the sparse
   payload. Numerically the SAME estimator as the #779 helper
   `ridge_fit_predict_fast_layer_batched` (same standardize-X / center-Y /
-  full-column GCV over the #823/#779 grid `np.logspace(-2, 4, 13)` WITH the
+  full-column GCV over the registered v13 grid `np.logspace(-3, 8, 23)` (the
+  parent #1336's realized grid — plan §11 RIDGE_LAMBDA_GRID) WITH the
   #1887 `gcv_dof_cap=0.9` mask / un-centered predictions; ridge primal==dual
   identity at lambda>0) — pinned by
   tests/test_issue2061_stats.py::test_streamed_fit_matches_layer_batched_helper.
@@ -83,6 +84,7 @@ import torch  # noqa: E402
 
 from explore_persona_space.experiments.issue_779.fit_h import (  # noqa: E402
     ridge_fit_predict,
+    ridge_fit_predict_fast_layer_batched,
 )
 
 # Sibling-script import (bare module name via the script-dir sys.path insert —
@@ -98,28 +100,66 @@ LAYER = 29
 D_IN = 4096
 K_FOLDS = 5
 FOLD_SEED = 0
-LAMBDA_GRID = np.logspace(-2, 4, 13)
+# Registered GCV grid (plan v13 delta (f) / §11 RIDGE_LAMBDA_GRID): the
+# parent #1336's realized `np.logspace(-3, 8, 23)` — the parent's own
+# persisted lambda_audit on these very activations refutes the previous
+# 13-point logspace(-2, 4) registration (edge-pins on registered cells,
+# incl. the headline base/chat/gsm8k_train_full context arm at 10^4.5 on
+# 120/160 (layer, fold) entries). Passed as an ARGUMENT to both fit paths
+# and the P3 null engine; the shared #779 helper's own 13-point default is
+# deliberately untouched.
+LAMBDA_GRID = np.logspace(-3, 8, 23)
 DOF_CAP_FRACTION = 0.9  # plan §7 under-determined-cell mitigation
 FEATURE_CHUNK = 8192  # streamed-fit feature-chunk width (matches the P3 engine)
+# λ-edge audit + disposition (plan v13 delta (f), §Design "λ-grid + edge-hit
+# audit + disposition"): an edge-selected fold triggers a one-decade (2-point,
+# half-decade-spaced) grid extension per flagged side and a FULL-CELL
+# selection-symmetric re-run, <= 2 extensions per side; still edge-pinned
+# after that => the cell is reported REGULARIZATION-LIMITED.
+LAMBDA_GRID_STEP_DECADES = 0.5
+EDGE_EXTENSION_DECADES = 1.0
+MAX_EDGE_EXTENSIONS = 2
+
+
+def _lambda_grid_log10_bounds(grid: np.ndarray) -> tuple[float, float]:
+    """(lo, hi) log10 bounds of a half-decade-lattice λ grid; fail-loud otherwise."""
+    grid = np.asarray(grid, dtype=np.float64)
+    lo, hi = float(np.log10(grid[0])), float(np.log10(grid[-1]))
+    n_expected = int(round((hi - lo) / LAMBDA_GRID_STEP_DECADES)) + 1
+    lattice = np.logspace(lo, hi, n_expected)
+    if len(grid) != n_expected or not np.allclose(grid, lattice, rtol=1e-9):
+        raise ValueError(
+            f"lambda grid is not a half-decade lattice (n={len(grid)}, "
+            f"log10 bounds [{lo:g}, {hi:g}]) — the edge-extension disposition "
+            "and the P3 union-grid reconstruction require the lattice form."
+        )
+    return lo, hi
+
+
+def _build_lambda_grid(lo_log10: float, hi_log10: float) -> np.ndarray:
+    """Half-decade λ lattice from 10^lo to 10^hi (the v13 grid family)."""
+    n = int(round((hi_log10 - lo_log10) / LAMBDA_GRID_STEP_DECADES)) + 1
+    return np.logspace(lo_log10, hi_log10, n)
 
 
 def _load_arm_inputs(
-    turnstore_dir: Path, arm: str, layer: int = LAYER
-) -> tuple[np.ndarray, list[str]]:
-    """((n, d_in) float32 arm inputs, conv_ids) from ALL shards of one turnstore dir.
+    context_root: Path, stage: str, render: str, corpus: str, arm: str, layer: int = LAYER
+) -> tuple[np.ndarray, list[str], dict]:
+    """((n, d_in) float32 arm inputs, conv_ids, load info) for one cell.
 
     `arm` selects the banked #1336 slot state — "prefix" -> the prefix-header
     slot, "context" -> the a1-assistant-header slot (end of the context).
-    Realized convention + fail-loud schema assert live in
-    `issue2061_turnstore` (see its docstring; plan §12(4)). Shards are
-    enumerated in shard-index order, matching the encode script's row order;
-    the conv_ids additionally KEY the X/Y alignment against the sparse
+    Loads at the REGISTERED consumption grain via
+    `issue2061_turnstore.load_state_cell` (plan v11 delta a1): the extended
+    corpora concatenate wave-1 source + v2 extension shards (canonical order,
+    boundary/disjointness/sidecar asserts fail-loud); standalone corpora load
+    their single store. Row order matches the encode script's (same loader),
+    and the conv_ids additionally KEY the X/Y alignment against the sparse
     payload's own conv_ids (review M1) and feed the #1336 GROUP-level fold
     construction (plan §10, review M5).
     """
-    shard_paths = ts.enumerate_shards(turnstore_dir)
-    x, conv_ids = ts.load_state_from_shards(shard_paths, state=arm, layer=layer)
-    return x.numpy(), conv_ids
+    x, conv_ids, info = ts.load_state_cell(context_root, stage, render, corpus, arm, layer)
+    return x.numpy(), conv_ids, info
 
 
 def _make_folds(conv_ids: list[str], k: int = K_FOLDS, seed: int = FOLD_SEED) -> list[np.ndarray]:
@@ -241,6 +281,62 @@ def _fold_fit_streamed(
         ss_tot[c0:c1] += ((yev - ybar_ev[c0:c1][None, :]) ** 2).sum(axis=0)
         out_pred[test_idx, c0:c1] = yhat.astype(out_pred.dtype)
     return {"best_lambda": best_lam, "dof": best_dof}
+
+
+def _fold_fit_gram(
+    X: np.ndarray,
+    y_idx: np.ndarray,
+    y_val: np.ndarray,
+    d_sae: int,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
+    *,
+    lambdas: np.ndarray = LAMBDA_GRID,
+    gcv_dof_cap: float | None = DOF_CAP_FRACTION,
+    feature_chunk: int = FEATURE_CHUNK,
+    device: str = "cpu",
+    ss_res: np.ndarray,
+    ss_tot: np.ndarray,
+    out_pred: np.ndarray,
+) -> dict:
+    """Gram/dual fold fit at n_tr <= d_in — the runtime convention branch.
+
+    Plan v11 delta (b) / §7 mitigation item 1: the registered n_tr <= d_in
+    convention is `ridge_fit_predict_fast_layer_batched`
+    (`experiments/issue_779/fit_h.py` — Gram eigh over (n_tr, n_tr)); this is
+    the thin streaming adapter around it, with the SAME call surface and
+    accumulator outputs as `_fold_fit_streamed`. The dense (n_tr, d_sae)
+    float64 target is feasible BY CONSTRUCTION in this regime (<= 4096 x
+    262,144 x 8 B ~ 8.6 GB); the helper runs ONE Gram eigendecomposition per
+    fold with full-column GCV over the SAME λ grid + the #1887 dof-cap.
+    Primal<->dual ridge is an algebraic identity, so the branch changes NO
+    statistic (parity pinned by
+    tests/test_issue2061_stats.py::test_fold_fit_gram_matches_streamed_at_n_le_d).
+    Returns {"best_lambda", "dof"} like the primal path.
+    """
+    ntr = int(len(train_idx))
+    y_train = np.zeros((ntr, d_sae), dtype=np.float64)
+    for c0 in range(0, d_sae, feature_chunk):
+        c1 = min(c0 + feature_chunk, d_sae)
+        y_train[:, c0:c1] = ts.sparse_dense_chunk(y_idx, y_val, train_idx, c0, c1)
+    preds, info = ridge_fit_predict_fast_layer_batched(
+        np.asarray(X[train_idx], dtype=np.float64)[None],
+        y_train[None],
+        np.asarray(X[test_idx], dtype=np.float64)[None],
+        lambdas=np.asarray(lambdas, dtype=np.float64),
+        device=device,
+        return_info=True,
+        gcv_dof_cap=gcv_dof_cap,
+    )
+    yhat = preds[0]  # (n_ev, d_sae) float64
+    ybar_ev = ts.sparse_column_means(y_idx, y_val, test_idx, d_sae)
+    for c0 in range(0, d_sae, feature_chunk):
+        c1 = min(c0 + feature_chunk, d_sae)
+        yev = ts.sparse_dense_chunk(y_idx, y_val, test_idx, c0, c1)
+        ss_res[c0:c1] += ((yev - yhat[:, c0:c1]) ** 2).sum(axis=0)
+        ss_tot[c0:c1] += ((yev - ybar_ev[c0:c1][None, :]) ** 2).sum(axis=0)
+        out_pred[test_idx, c0:c1] = yhat[:, c0:c1].astype(out_pred.dtype)
+    return {"best_lambda": float(info["best_lambda"][0]), "dof": float(info["dof"][0])}
 
 
 def _knn_retrieval_sparse(
@@ -387,7 +483,10 @@ def run_parity_gate(
 
 
 def fit_cell(
-    turnstore_dir: Path,
+    context_root: Path,
+    stage: str,
+    render: str,
+    corpus: str,
     encoded_shard: Path,
     arm: str,
     output_path: Path,
@@ -395,16 +494,31 @@ def fit_cell(
     device: str = "cpu",
     skip_parity_gate: bool = False,
     feature_chunk: int = FEATURE_CHUNK,
+    lambda_grid: np.ndarray = LAMBDA_GRID,
 ) -> None:
     """Fit ridge for one (stage, render, corpus, arm) cell + write JSONL.
 
     Consumes the P1 SPARSE payload directly (never a dense (n, d_sae)
     matrix); the module docstring carries the peak-RAM arithmetic (~37 GB at
     the worst lmsys23k shape vs the plan §9 P2 ~50 GB budget). X/Y row
-    alignment is asserted on conv_ids (review M1).
+    alignment is asserted on conv_ids (review M1). X loads at the REGISTERED
+    consumption grain (concat for the extended corpora — plan v11 delta a1).
+
+    Runtime convention selection (plan v11 delta (b) / §7 mitigation 1): each
+    fold reads its realized n_train and routes primal (`_fold_fit_streamed`)
+    at n_train > d_in, Gram/dual (`_fold_fit_gram`) at n_train <= d_in — the
+    algebraically identical estimator either way; the selected convention is
+    logged per cell into the JSONL.
+
+    λ-edge audit + disposition (plan v13 delta (f)): a fold selecting a grid
+    edge triggers a one-decade extension on the flagged side(s) and a
+    FULL-CELL selection-symmetric re-run (all folds, one grid), <= 2
+    extensions per side; a cell still edge-pinned after that is flagged
+    `regularization_limited` (the analyzer carries the caveat — its R² is
+    never narrated as a clean read).
     """
-    print(f"[fit] turnstore={turnstore_dir.name} arm={arm} encoded={encoded_shard.name}")
-    X, conv_ids = _load_arm_inputs(turnstore_dir, arm, layer=layer)  # (n, d_in)
+    print(f"[fit] cell={stage}/{render}/{corpus} arm={arm} encoded={encoded_shard.name}")
+    X, conv_ids, _load_info = _load_arm_inputs(context_root, stage, render, corpus, arm, layer)
     payload = ts.load_encoded_target(encoded_shard)
     if payload["conv_ids"] != conv_ids:
         n_common = len(set(payload["conv_ids"]) & set(conv_ids))
@@ -412,7 +526,9 @@ def fit_cell(
             f"X/Y row alignment mismatch for {encoded_shard.name}: the encoded payload's "
             f"conv_ids differ from the turnstore's ({n_common} ids in common; "
             f"n_payload={len(payload['conv_ids'])}, n_turnstore={len(conv_ids)}). "
-            "The encode and fit MUST consume the same turnstore snapshot (review M1)."
+            "The encode and fit MUST consume the same turnstore snapshot at the same "
+            "consumption grain (review M1; plan v11 — a stale extension-only encode "
+            "against the concat loader lands here)."
         )
     y_idx = payload["idx"].numpy().astype(np.int64)  # (n, k)
     y_val = payload["val"].numpy()  # (n, k) float32
@@ -431,60 +547,119 @@ def fit_cell(
 
     # Pooled per-feature R² with fold-local test means: track SS_res + SS_tot
     # per feature across folds. Also track per-fit best_lambda / dof for the
-    # dof-cap diagnostic.
+    # dof-cap diagnostic. Buffers allocate ONCE; an edge-extension re-run
+    # re-zeros them (Y_pred_pool is fully overwritten — every row is in
+    # exactly one fold's test set).
     ss_res = np.zeros(d_sae, dtype=np.float64)
     ss_tot = np.zeros(d_sae, dtype=np.float64)
-    per_fold_lambda: list[float] = []
-    per_fold_dof: list[float] = []
-    per_fold_ntrain: list[int] = []
 
     # Pooled held-out predictions for the kNN retrieval read — float32 (the
     # dominant per-cell allocation: 24.1 GB at n=23k x d_sae=262,144).
     Y_pred_pool = np.zeros((n, d_sae), dtype=np.float32)
 
-    for fi, test_idx in enumerate(folds):
-        train_idx = np.concatenate([f for j, f in enumerate(folds) if j != fi])
-        n_train = int(train_idx.shape[0])
-        n_test = int(test_idx.shape[0])
-        per_fold_ntrain.append(n_train)
-        t0 = time.time()
-        info = _fold_fit_streamed(
-            X,
-            y_idx,
-            y_val,
-            d_sae,
-            train_idx,
-            test_idx,
-            lambdas=LAMBDA_GRID,
-            gcv_dof_cap=DOF_CAP_FRACTION,  # #1887 mitigation, plan §11 (review M4)
-            feature_chunk=feature_chunk,
-            device=device,
-            ss_res=ss_res,
-            ss_tot=ss_tot,
-            out_pred=Y_pred_pool,
-        )
-        elapsed = time.time() - t0
-        best_lam = float(info["best_lambda"])
-        dof = float(info["dof"])
-        per_fold_lambda.append(best_lam)
-        per_fold_dof.append(dof)
+    grid = np.asarray(lambda_grid, dtype=np.float64)
+    grid_lo, grid_hi = _lambda_grid_log10_bounds(grid)
+    n_ext_low = 0
+    n_ext_high = 0
+    while True:
+        ss_res.fill(0.0)
+        ss_tot.fill(0.0)
+        per_fold_lambda: list[float] = []
+        per_fold_dof: list[float] = []
+        per_fold_ntrain: list[int] = []
+        per_fold_convention: list[str] = []
 
-        # The fit masks lambdas whose dof exceeds the cap (and fail-louds when
-        # ALL are masked), so the selected dof satisfies the cap by
-        # construction — assert it stays that way (guard against drift).
-        assert dof <= DOF_CAP_FRACTION * n_train * (1.0 + 1e-9), (
-            f"fold {fi}: selected dof={dof:.1f} violates gcv_dof_cap="
-            f"{DOF_CAP_FRACTION} * n_train={n_train} — dof-cap drift?"
-        )
-        if n_train < d_in:
-            print(
-                f"  [dof-cap] fold {fi}: n_train={n_train} < d_in={d_in} — "
-                f"cap {DOF_CAP_FRACTION} active (lambda={best_lam:.3g}, dof={dof:.1f})",
-                flush=True,
+        for fi, test_idx in enumerate(folds):
+            train_idx = np.concatenate([f for j, f in enumerate(folds) if j != fi])
+            n_train = int(train_idx.shape[0])
+            n_test = int(test_idx.shape[0])
+            per_fold_ntrain.append(n_train)
+            # Runtime convention selection from the realized per-fold n_train
+            # (#1336's own registered convention; plan §7 mitigation item 1).
+            if n_train > d_in:
+                fold_fit, convention = _fold_fit_streamed, "primal"
+            else:
+                fold_fit, convention = _fold_fit_gram, "gram-dual"
+            per_fold_convention.append(convention)
+            t0 = time.time()
+            info = fold_fit(
+                X,
+                y_idx,
+                y_val,
+                d_sae,
+                train_idx,
+                test_idx,
+                lambdas=grid,
+                gcv_dof_cap=DOF_CAP_FRACTION,  # #1887 mitigation, plan §11 (review M4)
+                feature_chunk=feature_chunk,
+                device=device,
+                ss_res=ss_res,
+                ss_tot=ss_tot,
+                out_pred=Y_pred_pool,
             )
+            elapsed = time.time() - t0
+            best_lam = float(info["best_lambda"])
+            dof = float(info["dof"])
+            per_fold_lambda.append(best_lam)
+            per_fold_dof.append(dof)
+
+            # The fit masks lambdas whose dof exceeds the cap (and fail-louds
+            # when ALL are masked), so the selected dof satisfies the cap by
+            # construction — assert it stays that way (guard against drift).
+            assert dof <= DOF_CAP_FRACTION * n_train * (1.0 + 1e-9), (
+                f"fold {fi}: selected dof={dof:.1f} violates gcv_dof_cap="
+                f"{DOF_CAP_FRACTION} * n_train={n_train} — dof-cap drift?"
+            )
+            if n_train < d_in:
+                print(
+                    f"  [dof-cap] fold {fi}: n_train={n_train} < d_in={d_in} — "
+                    f"cap {DOF_CAP_FRACTION} active (lambda={best_lam:.3g}, dof={dof:.1f})",
+                    flush=True,
+                )
+            print(
+                f"  fold {fi}: n_train={n_train} n_test={n_test} convention={convention} "
+                f"λ={best_lam:.3g} dof={dof:.1f} ({elapsed:.1f}s)"
+            )
+
+        # λ-edge audit over the per-fold selections (plan v13 delta (f); the
+        # parent's lambda_audit shape). Selected λs are grid members, so the
+        # isclose is exact up to float round-trips.
+        n_at_low_edge = int(sum(1 for lam in per_fold_lambda if np.isclose(lam, grid[0])))
+        n_at_high_edge = int(sum(1 for lam in per_fold_lambda if np.isclose(lam, grid[-1])))
+        ext_low = n_at_low_edge > 0 and n_ext_low < MAX_EDGE_EXTENSIONS
+        ext_high = n_at_high_edge > 0 and n_ext_high < MAX_EDGE_EXTENSIONS
+        if not (ext_low or ext_high):
+            break
+        if ext_low:
+            grid_lo -= EDGE_EXTENSION_DECADES
+            n_ext_low += 1
+        if ext_high:
+            grid_hi += EDGE_EXTENSION_DECADES
+            n_ext_high += 1
+        grid = _build_lambda_grid(grid_lo, grid_hi)
         print(
-            f"  fold {fi}: n_train={n_train} n_test={n_test} λ={best_lam:.3g} dof={dof:.1f} ({elapsed:.1f}s)"
+            f"  [lambda-edge] fold selection hit a grid edge (low={n_at_low_edge}, "
+            f"high={n_at_high_edge}) — re-running the FULL cell at the extended grid "
+            f"1e{grid_lo:g}..1e{grid_hi:g} (ext low {n_ext_low}/{MAX_EDGE_EXTENSIONS}, "
+            f"high {n_ext_high}/{MAX_EDGE_EXTENSIONS}; plan v13 delta (f))",
+            flush=True,
         )
+
+    regularization_limited = bool(
+        (n_at_low_edge > 0 and n_ext_low >= MAX_EDGE_EXTENSIONS)
+        or (n_at_high_edge > 0 and n_ext_high >= MAX_EDGE_EXTENSIONS)
+    )
+    if regularization_limited:
+        print(
+            f"  [lambda-edge] STILL edge-pinned after {MAX_EDGE_EXTENSIONS} extension(s) — "
+            "cell reported REGULARIZATION-LIMITED (plan v13 delta (f): the analyzer "
+            "carries the caveat; this R² is not a clean read)",
+            flush=True,
+        )
+    if len(set(per_fold_convention)) == 1:
+        cell_convention = per_fold_convention[0]
+    else:
+        cell_convention = "mixed"
 
     with np.errstate(divide="ignore", invalid="ignore"):
         r2 = 1.0 - np.where(ss_tot > 0, ss_res / ss_tot, np.nan)
@@ -515,6 +690,20 @@ def fit_cell(
                         "best_lambda_folds": per_fold_lambda,
                         "effective_dof_folds": per_fold_dof,
                         "lambda_selector": lambda_selector,
+                        # Runtime convention selection (plan v11 delta (b)).
+                        "convention": cell_convention,
+                        "convention_folds": per_fold_convention,
+                        # λ-edge audit + realized-grid record (plan v13 delta
+                        # (f); the P3 null reads the grid bounds so true and
+                        # null always ride the same realized grid).
+                        "n_at_low_edge": n_at_low_edge,
+                        "n_at_high_edge": n_at_high_edge,
+                        "lambda_grid_log10_lo": grid_lo,
+                        "lambda_grid_log10_hi": grid_hi,
+                        "n_lambda": int(len(grid)),
+                        "n_ext_low": n_ext_low,
+                        "n_ext_high": n_ext_high,
+                        "regularization_limited": regularization_limited,
                         "identity_bias": identity_bias,
                         "knn_acc_1_euclid": float(knn_e["acc_at_k"][1]),
                         "knn_acc_k_euclid": float(knn_e["acc_at_k"][k_ret]),
@@ -656,19 +845,24 @@ def main() -> int:
             continue
 
         if args.stage_context_from_hub:
-            turnstore_dir = hio.stage_turnstore(
-                stage, render, corpus, context_root, revision=args.data_revision
-            )
+            # Stages the CELL's store set (both stores for a concat corpus —
+            # plan v11 delta a1/a2) into context_root's consumer layout.
+            hio.stage_turnstore(stage, render, corpus, context_root, revision=args.data_revision)
         else:
-            turnstore_dir = context_root / f"turnstore_{stage}_{render}_{corpus}"
-            if not turnstore_dir.is_dir():
-                print(f"[skip] Missing turnstore dir: {turnstore_dir}")
+            missing = [
+                d for d in ts.cell_store_dirs(context_root, stage, render, corpus) if not d.is_dir()
+            ]
+            if missing:
+                print(f"[skip] Missing turnstore dir(s): {[str(d) for d in missing]}")
                 continue
         try:
             for arm in pending:
                 print(f"\n=== [{i}/{len(cells)}] {stage}/{render}/{corpus}/{arm} ===")
                 fit_cell(
-                    turnstore_dir=turnstore_dir,
+                    context_root=context_root,
+                    stage=stage,
+                    render=render,
+                    corpus=corpus,
                     encoded_shard=enc_path,
                     arm=arm,
                     output_path=outputs[arm],

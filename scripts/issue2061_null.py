@@ -120,7 +120,7 @@ STAGE_PAIRS = [
 LAYER = 29
 N_DRAWS = 1000
 DRAW_SEED_BASE = 42  # plan §Design synchronization contract
-LAMBDA_GRID = np.logspace(-2, 4, 13)  # #823/#779 grid — matches P2
+LAMBDA_GRID = np.logspace(-3, 8, 23)  # v13 registered grid — matches P2 (plan §11, delta (f))
 DOF_CAP_FRACTION = 0.9  # #1887 mitigation — matches P2 (plan §11)
 K_FOLDS = 5
 FOLD_SEED = 0
@@ -295,6 +295,22 @@ class _CellEngine:
                 u = ub if g == 0 else ua
                 u_tr = u[folds[u] != f]
                 u_ev = u[folds[u] == f]
+                # Runtime REGIME GUARD (plan v11 delta (c), §7 mitigation
+                # 3(b)): this engine implements ONLY the primal (n_tr > d_in)
+                # convention — it must fail LOUD, never silently run a regime
+                # the plan did not declare. (P2's runtime convention branch
+                # already fits an n_tr <= d_in cell correctly via the
+                # Gram/dual path; the NULL battery refuses here.)
+                n_tr_fg = int(len(ptr) + len(u_tr))
+                if n_tr_fg <= self.d:
+                    raise RuntimeError(
+                        f"regime guard: n_tr={n_tr_fg} <= d_in={self.d} at fold {f} "
+                        f"group {g} — the null engine implements ONLY the primal "
+                        "(n_tr > d_in) convention. Engaging the Gram/dual ENGINE "
+                        "branch is plan contingency lever (b) (Risks row 8) and "
+                        "requires a plan-authorized engine change — refusing to run "
+                        "a regime the plan did not declare (plan v11 delta (c))."
+                    )
                 per_group.append(
                     {
                         "ptr": torch.as_tensor(ptr, device=self.dev),
@@ -702,6 +718,43 @@ def _load_r2_file(
     return None
 
 
+def cell_lambda_grid(
+    r2_dir: Path,
+    pair: tuple[str, str],
+    render: str,
+    corpus: str,
+    arm: str,
+) -> np.ndarray:
+    """The delta cell's realized λ grid — the UNION lattice of both stages' P2 grids.
+
+    Plan v13 delta (f) edge-hit disposition: "true and null always ride the
+    same realized grid". P2 persists each cell's realized half-decade-lattice
+    grid bounds (`lambda_grid_log10_lo`/`_hi` — base grid + any edge
+    extensions) in its JSONL rows; the null engine for a delta cell rides the
+    UNION lattice of the two stages' realized grids (a superset of each, so
+    an extension re-run of one stage widens the null the same way — the
+    per-cell checkpoint meta keys on the grid, invalidating stale partials).
+    Legacy P2 rows without the grid fields fall back to the module
+    LAMBDA_GRID (the shared v13 default).
+    """
+    los: list[float] = []
+    his: list[float] = []
+    for stage in pair:
+        path = r2_dir / f"{stage}_{render}_{corpus}_{arm}_L{LAYER}.jsonl"
+        with path.open() as f:
+            row = json.loads(f.readline())
+        lo, hi = row.get("lambda_grid_log10_lo"), row.get("lambda_grid_log10_hi")
+        if lo is None or hi is None:
+            continue  # legacy pre-v13 P2 output
+        los.append(float(lo))
+        his.append(float(hi))
+    if not los:
+        return LAMBDA_GRID
+    lo, hi = min(los), max(his)
+    n = int(round((hi - lo) / 0.5)) + 1
+    return np.logspace(lo, hi, n)
+
+
 def _load_cell_stage_inputs(
     context_shard_dir: Path,
     encoded_dir: Path,
@@ -717,16 +770,14 @@ def _load_cell_stage_inputs(
     (`ts.load_encoded_target`; review M1 — the dense (n, d_sae) store is
     retired) and KEYS the X/Y row alignment on conv_ids: the payload carries
     the encode-time conversation ids, which must equal the turnstore's
-    (fail-loud, never order-faith).
+    (fail-loud, never order-faith). X loads at the REGISTERED consumption
+    grain via `ts.load_state_cell` (plan v11 delta a1: concat for the
+    extended corpora, with the boundary/disjointness/sidecar asserts).
     """
-    ts_dir = context_shard_dir / f"turnstore_{stage}_{render}_{corpus}"
     enc = encoded_dir / ts.encoded_target_name(stage, render, corpus, "answer", layer)
-    if not ts_dir.is_dir():
-        raise FileNotFoundError(f"missing turnstore dir {ts_dir}")
     if not enc.exists():
         raise FileNotFoundError(f"missing encoded target {enc}")
-    shard_paths = ts.enumerate_shards(ts_dir)
-    x, conv_ids = ts.load_state_from_shards(shard_paths, state=arm, layer=layer)
+    x, conv_ids, _info = ts.load_state_cell(context_shard_dir, stage, render, corpus, arm, layer)
     payload = ts.load_encoded_target(enc)
     if payload["conv_ids"] != conv_ids:
         n_common = len(set(payload["conv_ids"]) & set(conv_ids))
@@ -971,6 +1022,10 @@ def main() -> int:
 
                 t0 = time.time()
                 true_max, true_argmax = compute_true_delta_max(r2_before, r2_after)
+                # Realized λ grid = the UNION lattice of both stages' P2
+                # grids (plan v13 delta (f): true and null always ride the
+                # same realized grid; the checkpoint meta below keys on it).
+                cell_lambdas = cell_lambda_grid(r2_dir, pair, render, corpus, arm)
                 engine = _CellEngine(
                     xb,
                     yib,
@@ -981,6 +1036,7 @@ def main() -> int:
                     yva,
                     ca,
                     d_sae=dsb,
+                    lambdas=cell_lambdas,
                     gcv_m=args.gcv_feature_subsample,
                     feature_chunk=args.feature_chunk,
                     device=args.device,
@@ -1004,7 +1060,7 @@ def main() -> int:
                     "fold_seed": FOLD_SEED,
                     "gcv_dof_cap": DOF_CAP_FRACTION,
                     "gcv_feature_subsample": engine.gcv_m,
-                    "lambdas": [float(v) for v in LAMBDA_GRID],
+                    "lambdas": [float(v) for v in engine.lambdas],
                     "n_rows_before": int(xb.shape[0]),
                     "n_rows_after": int(xa.shape[0]),
                 }
