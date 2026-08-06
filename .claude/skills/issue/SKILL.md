@@ -979,10 +979,9 @@ self-report (`session_progress_report.py` would clobber the OWNER's shared
 UNLESS this session is its explicit replacement (an
 `autonomous_session_watch` crash-recovery respawn, or the user said to take
 over; in that case stop the stale session via `spawn_session.py stop` first).
-Incident 2026-06-09 (#524): two concurrent orchestrators both picked up a
-re-plan directive; one auto-approved a plan whose GPU budget the other's
-fact-checker had just shown to be a 2x underestimate, forcing a
-`running -> plan_pending` rollback and wasted implementer work.
+(#524: two concurrent orchestrators both picked up a re-plan directive —
+one auto-approved a plan the other's fact-checker had just shown to be a
+2x GPU underestimate, forcing a `running -> plan_pending` rollback.)
 
 **Stale-wake ownership re-check (applies on RESUME, not just invocation).**
 The guard above fires at `/issue` invocation — but a session that RESUMES
@@ -1004,7 +1003,7 @@ scripts/spawn_session.py list`.
 # register-current; an autonomous one whose registry entry was deleted
 # at a terminal transition), and a bare `ls`/`cat` on an absent path
 # exits non-zero (ls: 2, cat: 1), which CANCELS parallel sibling tool
-# calls issued in the same message (5+ sessions, 2026-07-09). Rule:
+# calls issued in the same message. Rule:
 # an INFORMATIONAL probe on an OPTIONAL file is ALWAYS fail-soft —
 # append `2>/dev/null` + `|| true`, or if-form it
 # (`if [ -f <p> ]; then cat <p>; fi`); Step 9c step 1b's "Recipe
@@ -1033,20 +1032,18 @@ successor session deriving state from the trail) must never count one as
 The cheap tell is always `task.py latest-marker <N>` before resuming any
 stale in-flight plan: if events have advanced past your own last-known
 state, re-derive state from the markers instead of executing the stale
-next step. Incident 2026-06-10 (#535): a manually-started interactive
-session stalled ~3h mid-flight, the watcher respawned an autonomous
-replacement that worked for 1.5h, then the stale session WOKE and resumed
-its stale plan — re-posting already-posted markers and launching a
-duplicate live acceptance run + SLURM job the replacement had to
-kill/scancel.
+next step. (#535: a stalled interactive session woke after the watcher had
+respawned a replacement and resumed its stale plan — re-posting
+already-posted markers and launching a duplicate run + SLURM job the
+replacement had to kill/scancel.)
 
 **Interactive-session registration (run once the guard passes).** An
 INTERACTIVE session (`EPM_AUTONOMOUS_SESSION` unset) driving `/issue <N>`
 registers itself ONCE at Step 0 so it appears in `spawn_session.py list`'s
 issue-mapping — otherwise a manually-started session is invisible to every
-OTHER session's single-orchestrator guard (the other half of incident
-#535: the watcher's autonomous replacement could not see the live manual
-session precisely because it never registered):
+OTHER session's single-orchestrator guard (the other half of #535: the
+replacement could not see the live manual session precisely because it
+never registered):
 
 ```bash
 uv run python scripts/spawn_session.py register-current --issue <N>
@@ -1189,10 +1186,9 @@ run the Step 5a spec-freshness sync (surgical `git checkout origin/main -- `
 of the workflow-surface specs, with the branch-side-feature-edit guard)
 FIRST, and resolve workflow-helper scripts (`verify_task_body.py`,
 `post_step_completed.py`, ...) from the MAIN checkout (`"$REPO_ROOT"/scripts/...`),
-never the worktree copy. (Incident #501, 2026-06-06→08: a worktree's
-pre-split skill copy armed `/issue 501` at */10 instead of the
-lightweight `/issue-tick` backstop (then */20, now */45) — 362 full
-~44K-token skill reloads over 2.5 days. Incident #496: a worktree's pre-W22 `verify_task_body.py`
+never the worktree copy. (#501: a worktree's stale skill copy armed the
+full `/issue` reload on a tight cadence instead of the lightweight
+`/issue-tick` backstop; #496: a worktree's stale `verify_task_body.py`
 false-FAILed a spec-conformant body, wrongly indicting the analyzer.)
 
 **MANDATORY auto-armed backstop for autonomous sessions — arm it NOW.**
@@ -1203,11 +1199,10 @@ historical site (Step 6d.2) only covers `kind: experiment` runs that
 reach the pod-launched polling loop; a session can stall ANYWHERE in
 the lifecycle (during planning, code-review, plan_pending park, the
 analyzer / clean-result-critic loop, even at first invocation) and the
-late-arm leaves all of those stretches uncovered. Real incident: task
-#518 (2026-06-08) stalled in the code-review loop at round 7 — the
-session ended its turn at a clean exit point, and because Step 6d.2
-had not yet run, NO tick cron was armed; the session sat dead until
-the external watcher's stalled-detector pass caught it.
+late-arm leaves all of those stretches uncovered. (#518: a session
+stalled in the code-review loop before Step 6d.2 ever ran — no tick
+cron was armed, and it sat dead until the external watcher's
+stalled-detector pass caught it.)
 
 ```python
 # Load the deferred Cron tools once per session if not already loaded.
@@ -1219,7 +1214,7 @@ if os.environ.get("EPM_AUTONOMOUS_SESSION") == "1":
     # Preload the always-needed wait/poll schemas too — every autonomous
     # session reaches a Monitor until-loop or a TaskOutput read eventually,
     # and an unloaded deferred-tool call fails with InputValidationError
-    # (#1875: 3 sessions on 2026-07-29 each burned a wasted call + retry).
+    # (#1875).
     ToolSearch("select:Monitor,TaskOutput")
 
     jobs = CronList()
@@ -1343,8 +1338,8 @@ metadata. Order:
    issue's `## Takeaways` / answer an `open_questions.md` question
    (→ `experiment`), or just confirm the fix is sound (→ `infra`)? When the
    title says `Test:`/`Validate:` but the body reads as fix-validation,
-   suggest `infra` as `(Recommended)`. (Incident #672: a GCP-fix validation
-   filed as `experiment` was parked at `awaiting_promotion` as a promotable
+   suggest `infra` as `(Recommended)`. (#672: a fix-validation filed as
+   `experiment` was parked at `awaiting_promotion` as a promotable
    clean-result.)
 
    <!-- gate: gates.missing_type -->
@@ -1680,10 +1675,9 @@ plans missing any):**
 `frontmatter.goal` and compare against the spawn-time snapshot
 (`adversarial-planner` SKILL.md § Goal-currency gate) — a goal-update newer
 than the draft start forces a mechanical redraft bounce (re-spawn the
-planner against the amended Goal; NOT a critic round). Incident #922
-(2026-07-03): plan v3 persisted quoting a Goal superseded 10 minutes
-earlier by `epm:goal-updated`, was auto-approved 3 s later, and was caught
-only by a PM-chat directive one wasted implementer round later.
+planner against the amended Goal; NOT a critic round). (#922: a plan
+persisted quoting a Goal already superseded by `epm:goal-updated` was
+auto-approved and caught only one wasted implementer round later.)
 
 **Edit-success gate:** when the draft was produced or modified by a SCRIPTED
 edit (the Step 2b/3 revise paths included), `&&`-chain edit → verify
@@ -1695,9 +1689,8 @@ anchor — #1631; its printed `PLAN-PATCH APPLIED` line and `--verify-contains`
 double as verify evidence; prefer ≥1-line distinctive anchors), never an
 improvised per-turn anchor script; an edit-script failure aborts the persist
 loudly, never `;`-chained
-(`adversarial-planner` SKILL.md § Edit-success gate; incident #1565: a
-chained persist landed v2 as an unmodified copy of v1 after the edit script
-died on an anchor-text `AssertionError`).
+(`adversarial-planner` SKILL.md § Edit-success gate; #1565: a chained
+persist landed v2 as an unmodified copy of v1 after the edit script died).
 
 Post the plan body via `new-plan-version` (writes
 `tasks/<status>/<N>/plans/v<K>.md` and rotates the `plan.md` symlink),
@@ -1740,7 +1733,7 @@ gate parses, e.g.
 plan-approval gate fires "Approve" and the task moves to
 `status:approved`). Posting the cost note and then provisioning "to
 save time" creates an orphan pod if the session exits before approval
-(incident #406: an idle 2× H100 burned ~24h at ~$5-6/hr because the
+(#406: an idle pod burned ~24h because the
 session exited at this gate and was never re-invoked). If the session
 must exit at this gate, post `epm:awaiting-spend-approval v1` and
 ensure NO pod exists yet — the stale-pod audit cannot reap a pod the
@@ -1864,10 +1857,9 @@ A PreToolUse hook on `AskUserQuestion`
 `AskUserQuestion` while `EPM_AUTONOMOUS_SESSION` is set — so the autonomous
 path physically cannot reach the interactive ask even if this prose is
 mis-followed. (Why both: the script removes the gate so the ask is never
-reached; the hook is the backstop that forbids it if reached. Incident
-2026-06-05 — four `--auto` sessions all asked for plan approval because the
-auto-approve lived only as prose here and the LLM deferred to the global
-"ask before spending money" prior.)
+reached; the hook is the backstop that forbids it if reached — four
+`--auto` sessions once asked for plan approval when the auto-approve lived
+only as prose here.)
 
 Branch on the decision (equivalently, re-read the task status):
 
@@ -1916,9 +1908,9 @@ removed is the human veto, not the pipeline. Interactive mode is also
 unaffected: the Step 2c plan-approval ask still governs a human-present
 session.
 
-Rationale: parked plans hold an infra concurrency slot indefinitely — on
-2026-08-04, #1217 (17 days) and #1771 (6 days) held 2 of 5 slots while 65 ripe
-infra fixes queued behind them with `dispatched=0`.
+Rationale: parked plans hold an infra concurrency slot indefinitely
+(#1217/#1771 held 2 of 5 slots while 65 ripe infra fixes queued behind
+them with `dispatched=0`).
 
 - **Legacy autonomous mode** (no chat user present AND
   `EPM_AUTONOMOUS_SESSION` is unset — a headless invocation outside the
@@ -2096,8 +2088,8 @@ worktree cwd returns the worktree root and doubles the path — and reuse
 `$WORKTREE` / `$REPO_ROOT` in every subsequent command. Corollary: this
 issue's experiment files (scripts, configs, plan-referenced code) exist
 ONLY in the worktree until Step 10d merges — a repo-root-relative
-read/exec of `scripts/issue<N>_*.py` misses them (~5 failed tool calls in
-one #1739 session, 2026-07-28); always prefix with `$WORKTREE/`.
+read/exec of `scripts/issue<N>_*.py` misses them (#1739); always prefix
+with `$WORKTREE/`.
 
 **Open the draft PR only if the branch is ahead of fetched `origin/main`.** `gh pr create` errors with `No commits between main and issue-<N>` when the branch has no commits yet (the common case before the implementer has run). Pre-check first (bounded fetch + `origin/main`-anchored aheadness):
 ```bash
@@ -2183,8 +2175,8 @@ round ONLY to notification-BODY-sourced text (the two sources are
 exclusive-or). Canonical recipe + worked extraction code:
 `.claude/skills/adversarial-planner/SKILL.md` §§ "De-escape harness HTML
 entities before persisting" + "Extract the output-file text via the
-transcript recipe" (#952 v9, #1219; independently rediscovered by sessions
-#1287 + #1288 on 2026-07-13 — the pointer this paragraph exists to spare).
+transcript recipe" (#952, #1219; independently rediscovered by
+#1287/#1288 — the pointer this paragraph exists to spare).
 
 **Pre-split multi-deliverable builds at dispatch (#1810; precedents
 #1090/#1775).** Before composing the brief, count the approved plan's
@@ -2277,12 +2269,9 @@ Brief passed to the implementer:
     into the (d) slot displaces `### (d) Needs human eyeball` and is
     itself a `marker-shape` FAIL.
 
-  Incident: task #506 round 1 (2026-06-06) — orchestrator's ad-hoc
-  labels (`(a) Plan adherence / (b) Files touched / (c) How to run /
-  (d) Smoke run / (e) Needs human eyeball`) triggered the Codex
-  `marker-shape` BLOCKER and the reconciler upheld FAIL, costing a
-  full round of revision plus the substantive code fixes that landed
-  in round 2.
+  (#506: ad-hoc section labels triggered the Codex `marker-shape`
+  BLOCKER and the reconciler upheld FAIL, costing a full revision
+  round.)
 
   The brief MUST also carry the deferred-production-path duty: any
   deferred feature the approved plan's PRODUCTION path requires is
@@ -2290,7 +2279,7 @@ Brief passed to the implementer:
   --severity CONCERN --summary "<≤200c>" --by experiment-implementer
   --round <n>` (BLOCKER if the production path provably crashes
   without it) BEFORE posting the implementation marker — a `(d)`
-  bullet is not a substitute (incident #509). Belt-and-suspenders on
+  bullet is not a substitute (#509). Belt-and-suspenders on
   `experiment-implementer.md` § "Deferred production-path TODOs are
   persisted concerns, not (d) prose", so round-N briefs surface the
   duty without the implementer having to recall its agent spec.
@@ -2322,7 +2311,7 @@ Brief passed to the implementer:
   implementer to "post nothing" / skip its `epm:experiment-implementation` /
   `epm:results` marker — the code-review ensemble's mechanical contract KEYS
   on that four-section marker, so suppressing it manufactures a
-  `marker-shape` blocker and an extra fix round (#1900, 2026-07-31). A
+  `marker-shape` blocker and an extra fix round (#1900). A
   round whose diff is deliberately partial still posts the marker, saying so.
 - **Marker-version discipline — a brief NEVER instructs a literal marker
   version.** Any brief line about posting `epm:experiment-implementation` /
@@ -2331,9 +2320,9 @@ Brief passed to the implementer:
   max+1, or omit `--version` (the CLI derives max+1)". Never "post as `v1`"
   or any literal `v<k>`: on a fresh task max+1 IS 1, but on a follow-up
   round / TDD resume / crash-recovery re-post prior rows exist, and an
-  explicit `--version` beats the CLI's safe default (incident #825: a
-  follow-up-round brief instructed a literal `v1` for the implementation
-  marker on a task already at v6 — the #389 collision class). See
+  explicit `--version` beats the CLI's safe default (#825: a
+  follow-up-round brief instructed a literal `v1` on a task already at
+  v6 — the #389 collision class). See
   `experiment-implementer.md` / `implementer.md` § Posting review-round
   markers.
 - **Instruction: work ONLY inside the worktree; never touch a pod; post
