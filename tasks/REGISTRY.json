@@ -7799,8 +7799,8 @@
     "2006": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2006",
-      "status": "reviewing",
+      "path": "tasks/completed/2006",
+      "status": "completed",
       "title": "daily-fix: pod-side-reporting: hand-rolled box teardown leg"
     },
     "2007": {
