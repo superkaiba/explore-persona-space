@@ -18,7 +18,10 @@ Subcommand-structured via ``--phase``:
                    read at 27 + marked; full 28-layer profiles exploratory),
                    F_beh over unit D's judge scores (coherent-only per the >60
                    gate), traversal companion, cap-hit NEXT TO incoherence,
-                   Type-B donor annotation; cell-coverage SET-CHECK (plan §7,
+                   Type-B donor annotation, ``degenerate_self`` marking of the
+                   degenerate-by-design mp x pe x replace cells (marked, never
+                   dropped; excluded from aggregate reads / bootstrap draws /
+                   stage-2 eligibility); cell-coverage SET-CHECK (plan §7,
                    distinct rc on mismatch).
 - ``transport``    transport cosines at banked-map cells only (ce L14/L19 + the
                    DECLARED L26 transport-only extension; pe L14/L19/L26), with
@@ -730,6 +733,30 @@ def annotate_donor(row: dict) -> dict:
     return {"donor_kind": "typeA-derangement", "donor_antiparallel": False}
 
 
+def degenerate_self(row: dict) -> bool:
+    """True for the degenerate-BY-DESIGN matched-prefix pe x replace cells.
+
+    At pe (prefix-internal) a matched-prefix pair's ``V_B(pe) == V_A(pe)``
+    (same prefix tokens => same state by the causal identity), so the steered
+    replace installs the recipient's OWN state (a no-op) and the matched null
+    reproduces the recipient's OWN ``V_B`` (``donor_pair_id ==
+    'self:<pair_id>'``) — both arms structurally-zero contrasts (round 3,
+    concern ``self-degenerate-cells-analysis-treatment``). Such rows are
+    MARKED in every per-cell table (never dropped) and EXCLUDED from
+    specificity/F aggregate reads, bootstrap draws, and stage-2 selection
+    eligibility.
+    """
+    if "degenerate_self" in row:  # rows already marked by assemble_shard_rows
+        return bool(row["degenerate_self"])
+    if str(row.get("donor_pair_id") or "").startswith("self:"):
+        return True
+    return (
+        row.get("setting") == "matched_prefix"
+        and row.get("slot") == "pe"
+        and row.get("dose") == "replace"
+    )
+
+
 def _f_act_for_rows(
     va_span: torch.Tensor,
     read_layers: list[int],
@@ -847,6 +874,8 @@ def assemble_shard_rows(
             "context_a": r["context_a"],
             "context_b": r["context_b"],
             "donor_pair_id": r.get("donor_pair_id"),
+            # marked, never dropped; excluded from aggregate reads downstream.
+            "degenerate_self": degenerate_self(r),
             **annotate_donor(r),
             # coherence + cap-hit side by side (plan §4.5).
             "coherence_score": coh,
@@ -895,7 +924,9 @@ def coverage_check(produced: set[tuple[str, str]], expected: set[tuple[str, str]
 def _ftables_regime(cfg: AnalysisConfig) -> str:
     key = json.dumps(
         {
-            "code": "ftables-v1",
+            # v2: rows carry the machine-readable ``degenerate_self`` flag
+            # (schema change => stale parts must not resume-mix).
+            "code": "ftables-v2",
             "coherence_threshold": COHERENCE_THRESHOLD,
             "primary_read_layer": PRIMARY_READ_LAYER,
             "profiles": cfg.profiles,
@@ -1165,6 +1196,7 @@ def phase_transport(cfg: AnalysisConfig) -> int:
                     "arm": r["arm"],
                     "pair_id": r["pair_id"],
                     "setting": r["setting"],
+                    "degenerate_self": degenerate_self(r),
                     "orientation": orientation,
                     "cosine_tail": _nan_to_none(FM.safe_cosine(realized, pred)),
                     "cosine_tail_half1": _nan_to_none(
@@ -1188,29 +1220,44 @@ def phase_transport(cfg: AnalysisConfig) -> int:
         )
     tdir = cfg.out_root / "transport"
     _write_jsonl_atomic(tdir / "transport_cells.jsonl", out_rows)
-    summary: dict[str, dict] = {}
-    for r in out_rows:
-        k = f"{r['map_id']}|{r['dose']}|{r['vec_type']}|{r['arm']}"
-        s = summary.setdefault(k, {"n": 0, "sum": 0.0, "n_nan": 0})
-        if r["cosine_tail"] is None:
-            s["n_nan"] += 1
-        else:
-            s["n"] += 1
-            s["sum"] += r["cosine_tail"]
     _write_json_atomic(
         tdir / "transport_summary.json",
         {
-            "cells": {
-                k: {"mean_cosine": (s["sum"] / s["n"]) if s["n"] else None, **s}
-                for k, s in sorted(summary.items())
-            },
+            "cells": transport_summary_cells(out_rows),
             "note": "cosines use the tail-inclusive va_tail pooling (map-lineage parity, "
-            "plan §6); donor-null rows are the in-design control",
+            "plan §6); donor-null rows are the in-design control; degenerate-by-design "
+            "self-transfer rows (matched-prefix x pe x replace) are counted "
+            "(n_degenerate_self) but EXCLUDED from every pooled mean",
             "repro": _repro(),
         },
     )
     logger.info("[phase=transport_done] rows=%d", len(out_rows))
     return RC_OK
+
+
+def transport_summary_cells(out_rows: list[dict]) -> dict[str, dict]:
+    """Pooled mean cosine per (map, dose, vec, arm) family.
+
+    Degenerate-self rows are tallied per family (``n_degenerate_self``) and
+    EXCLUDED from ``n``/``sum``/``mean_cosine``/``n_nan`` — a structurally-zero
+    contrast must not dilute the steered-vs-null specificity read (concern
+    ``self-degenerate-cells-analysis-treatment``).
+    """
+    summary: dict[str, dict] = {}
+    for r in out_rows:
+        k = f"{r['map_id']}|{r['dose']}|{r['vec_type']}|{r['arm']}"
+        s = summary.setdefault(k, {"n": 0, "sum": 0.0, "n_nan": 0, "n_degenerate_self": 0})
+        if degenerate_self(r):
+            s["n_degenerate_self"] += 1
+        elif r["cosine_tail"] is None:
+            s["n_nan"] += 1
+        else:
+            s["n"] += 1
+            s["sum"] += r["cosine_tail"]
+    return {
+        k: {"mean_cosine": (s["sum"] / s["n"]) if s["n"] else None, **s}
+        for k, s in sorted(summary.items())
+    }
 
 
 # ── linearity: the L fit + comparisons (phase linearity) ───────────────
@@ -1861,6 +1908,14 @@ def _cell_metric(row: dict, metric: str) -> float:
     return float("nan") if v is None else float(v)
 
 
+def bootstrap_eligible_rows(rows: list[dict]) -> tuple[list[dict], int]:
+    """Bootstrap-eligible rows: degenerate-by-design self-transfer cells are
+    EXCLUDED from observed means + draws (structurally-zero contrasts; concern
+    ``self-degenerate-cells-analysis-treatment``). Returns ``(kept, n_excluded)``."""
+    kept = [r for r in rows if not degenerate_self(r)]
+    return kept, len(rows) - len(kept)
+
+
 def phase_bootstrap(cfg: AnalysisConfig) -> int:
     """Pair-clustered B=10,000 bootstrap CIs per cell family (batched)."""
     logger.info("[phase=bootstrap]")
@@ -1868,6 +1923,10 @@ def phase_bootstrap(cfg: AnalysisConfig) -> int:
         _iter_jsonl(cfg.fmetrics_dir / "null_cells.jsonl")
     )
     assert rows, "no f-table rows — run --phase ftables first"
+    rows, n_degenerate_excluded = bootstrap_eligible_rows(rows)
+    assert rows, "every f-table row is degenerate-self — nothing to bootstrap"
+    if n_degenerate_excluded:
+        logger.info("[bootstrap] degenerate-self rows excluded: %d", n_degenerate_excluded)
     pairs = BANK.build_pairs()
     pair_ids_by_setting = {
         s: sorted(p.pair_id for p in pairs if p.setting == s)
@@ -1929,6 +1988,10 @@ def phase_bootstrap(cfg: AnalysisConfig) -> int:
             "B": cfg.bootstrap_b,
             "seed": BOOTSTRAP_SEED,
             "resample_axis": "pairs (pair-clustered, within setting)",
+            "degenerate_self_excluded": n_degenerate_excluded,
+            "note": "degenerate-by-design self-transfer rows (matched-prefix x pe x "
+            "replace; concern self-degenerate-cells-analysis-treatment) are excluded "
+            "from every family's observed mean + draws",
             "families": out,
             "repro": _repro(),
         },
@@ -2020,8 +2083,14 @@ def select_best_cells(
         slot: {f"L{layer}" for layer in layers} for slot, layers in restriction.items()
     }
     stats: dict[tuple, dict] = {}
+    n_degenerate_excluded = 0
     for row in rows:
         if row["arm"] != "steered":
+            continue
+        if degenerate_self(row):
+            # structurally-zero contrast — selection over it is meaningless
+            # (concern self-degenerate-cells-analysis-treatment).
+            n_degenerate_excluded += 1
             continue
         slot = row["slot"]
         if slot not in allowed_variants or row["layer_variant"] not in allowed_variants[slot]:
@@ -2084,10 +2153,12 @@ def select_best_cells(
         "cells": cells,
         "restriction": {k: list(v) for k, v in restriction.items()},
         "selection_rule": "argmax over cell families of the mean level-F across pairs "
-        "(coherent, non-degenerate cells only; min_pairs floor); LABELED post-selection "
+        "(coherent, non-degenerate cells only; degenerate-by-design self-transfer cells "
+        "excluded from eligibility; min_pairs floor); LABELED post-selection "
         "(plan §6 — stage-2 is a confirmation, never an unbiased estimate)",
         "post_selection": True,
         "min_pairs": min_pairs,
+        "degenerate_self_excluded": n_degenerate_excluded,
     }
 
 

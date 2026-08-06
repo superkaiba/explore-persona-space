@@ -14,7 +14,12 @@ Conventions (one color = one meaning across the whole set):
   "baseline" role color, everywhere;
 * <50-percent-coherent cells are OVERLAID with a visible x marker — never
   grayed out or suppressed (plan section 4.5); cells with NO coherent draw at
-  all show no value and carry the same marker.
+  all show no value and carry the same marker;
+* degenerate-by-design self-transfer cells (matched-prefix x prefix-end x
+  replace; ``degenerate_self`` rows) are OVERLAID with an open-circle marker
+  on heatmaps (marked, never suppressed) and EXCLUDED from aggregate/scatter
+  panels, with a per-figure footnote naming the exclusion (rides into the
+  ``.meta.json`` provenance via the rendered-text embedding).
 
 Figures (stems): hero1_f_act_heatmap, hero1_f_act_dose_curves,
 hero2_f_beh_heatmap, hero2_f_beh_dose_response, result1b_transport_cosines,
@@ -175,6 +180,44 @@ def load_inputs(out_root: Path, judge_root: Path) -> FigInputs:
 # ── row helpers ────────────────────────────────────────────────────────
 
 
+def degenerate_self_row(row: dict) -> bool:
+    """Degenerate-BY-DESIGN matched-prefix pe x replace cells (round 3, concern
+    ``self-degenerate-cells-analysis-treatment``): the steered replace installs
+    ``V_B(pe) == V_A(pe)`` (a no-op) and the null reproduces the recipient's
+    OWN ``V_B`` (``donor_pair_id == 'self:<pair_id>'``) — structurally-zero
+    contrasts. MARKED in per-cell displays, EXCLUDED from aggregate panels."""
+    if "degenerate_self" in row:  # machine-readable field from P7 ftables
+        return bool(row["degenerate_self"])
+    if str(row.get("donor_pair_id") or "").startswith("self:"):
+        return True
+    return (
+        row.get("setting") == "matched_prefix"
+        and row.get("slot") == "pe"
+        and row.get("dose") == "replace"
+    )
+
+
+def split_degenerate(rows: list[dict]) -> tuple[list[dict], int]:
+    """(rows without degenerate-self cells, n_excluded) — for aggregate panels."""
+    kept = [r for r in rows if not degenerate_self_row(r)]
+    return kept, len(rows) - len(kept)
+
+
+def note_degenerate_excluded(fig: plt.Figure, n: int) -> plt.Figure:
+    """Provenance footnote naming the exclusion (rides into ``.meta.json`` via
+    ``savefig_paper``'s rendered-text embedding)."""
+    if n:
+        fig.text(
+            0.005,
+            0.002,
+            f"{n} degenerate-by-design self-transfer rows "
+            "(matched-prefix x prefix-end x replace) excluded",
+            fontsize=6,
+            color="dimgray",
+        )
+    return fig
+
+
 def row_f_beh(row: dict) -> float | None:
     """Mean F_beh over the row's available rubric kinds (None when all missing)."""
     vals = [
@@ -217,6 +260,7 @@ class CellAgg:
     n_values: int
     n_rows: int
     coherent_frac: float
+    degenerate_frac: float = 0.0  # degenerate-by-design self-transfer rows
 
 
 def aggregate_cells(rows: list[dict], metric: str) -> dict[tuple[str, str, str, str], CellAgg]:
@@ -224,9 +268,10 @@ def aggregate_cells(rows: list[dict], metric: str) -> dict[tuple[str, str, str, 
     acc: dict[tuple[str, str, str, str], dict] = {}
     for row in rows:
         key = (row["setting"], row["dose"], row["slot"], row["layer_variant"])
-        rec = acc.setdefault(key, {"vals": [], "n_rows": 0, "n_coh": 0})
+        rec = acc.setdefault(key, {"vals": [], "n_rows": 0, "n_coh": 0, "n_deg": 0})
         rec["n_rows"] += 1
         rec["n_coh"] += int(bool(row.get("coherent")))
+        rec["n_deg"] += int(degenerate_self_row(row))
         v = row_metric(row, metric)
         if v is not None and math.isfinite(v):
             rec["vals"].append(v)
@@ -237,6 +282,7 @@ def aggregate_cells(rows: list[dict], metric: str) -> dict[tuple[str, str, str, 
             n_values=len(rec["vals"]),
             n_rows=rec["n_rows"],
             coherent_frac=rec["n_coh"] / rec["n_rows"] if rec["n_rows"] else 0.0,
+            degenerate_frac=rec["n_deg"] / rec["n_rows"] if rec["n_rows"] else 0.0,
         )
     return out
 
@@ -253,6 +299,23 @@ def overlay_low_coherence(ax, xs: list[float], ys: list[float]) -> None:
             color="black",
             zorder=5,
             label="<50 percent coherent",
+        )
+
+
+def overlay_degenerate_self(ax, xs: list[float], ys: list[float]) -> None:
+    """VISIBLE marker on degenerate-by-design self-transfer cells (marked,
+    never suppressed — same convention as the low-coherence overlay)."""
+    if xs:
+        ax.scatter(
+            xs,
+            ys,
+            marker="o",
+            s=70,
+            linewidths=1.4,
+            facecolors="none",
+            edgecolors="black",
+            zorder=5,
+            label="degenerate by design (self-transfer)",
         )
 
 
@@ -287,6 +350,7 @@ def fig_f_heatmap(rows: list[dict], metric: str, title: str) -> plt.Figure:
             ax = axes[i][j]
             mat = np.full((len(slots), len(lvs)), np.nan)
             low_x, low_y = [], []
+            deg_x, deg_y = [], []
             for (st, do, sl, lv), cell in agg.items():
                 if st != setting or do != dose:
                     continue
@@ -296,6 +360,9 @@ def fig_f_heatmap(rows: list[dict], metric: str, title: str) -> plt.Figure:
                 if cell.coherent_frac < LOW_COHERENCE_FRAC:
                     low_x.append(x)
                     low_y.append(y)
+                if cell.degenerate_frac > 0:  # all-or-nothing by construction
+                    deg_x.append(x)
+                    deg_y.append(y)
             im = ax.imshow(
                 np.ma.masked_invalid(mat),
                 aspect="auto",
@@ -305,6 +372,7 @@ def fig_f_heatmap(rows: list[dict], metric: str, title: str) -> plt.Figure:
                 interpolation="nearest",
             )
             overlay_low_coherence(ax, low_x, low_y)
+            overlay_degenerate_self(ax, deg_x, deg_y)
             if n_single and n_single < len(lvs):
                 ax.axvline(n_single - 0.5, color="black", linewidth=1.0)
             ax.set_xticks(range(len(lvs)))
@@ -320,7 +388,10 @@ def fig_f_heatmap(rows: list[dict], metric: str, title: str) -> plt.Figure:
                 ax.set_ylabel(DOSE_LABELS[dose], fontsize=8)
     fig.supxlabel("steered layer (right of divider: joint variants)")
     fig.colorbar(im, ax=axes, shrink=0.8, label=title)
-    fig.suptitle(f"{title} — mean over pairs; x marker = <50 percent coherent cell")
+    fig.suptitle(
+        f"{title} — mean over pairs; x marker = <50 percent coherent cell; "
+        "o marker = degenerate by design (self-transfer; excluded from aggregate reads)"
+    )
     return fig
 
 
@@ -496,6 +567,9 @@ def fig_dose_response(
 
 
 def fig_transport(transport_cells: list[dict]) -> plt.Figure:
+    # degenerate-self rows (zero payload => cosine undefined) never enter the
+    # pooled bars; the count is footnoted (marked in transport_cells.jsonl).
+    transport_cells, n_deg = split_degenerate(transport_cells)
     assert transport_cells, "no transport rows"
     groups = sorted({r["map_id"] for r in transport_cells})
     dose_classes = [
@@ -560,7 +634,7 @@ def fig_transport(transport_cells: list[dict]) -> plt.Figure:
         ax.set_title("additive doses (pooled)" if dc == "additive" else "replace (full state)")
     axes[0][0].legend(fontsize=7)
     fig.suptitle("Banked-map transport at context-end / prefix-end cells")
-    return fig
+    return note_degenerate_excluded(fig, n_deg)
 
 
 # ── Result 1c: homogeneity + L fit + 2x2 ───────────────────────────────
@@ -1156,34 +1230,54 @@ def fig_audit_rates(audit_rows: dict[str, list[dict]]) -> plt.Figure:
 
 
 def build_all(inp: FigInputs, only: set[str] | None = None) -> dict[str, plt.Figure | str]:
-    """Build every figure; returns {stem: Figure | skip-reason-string}."""
+    """Build every figure; returns {stem: Figure | skip-reason-string}.
+
+    Heatmaps show EVERY cell (degenerate-by-design self-transfer cells marked,
+    never suppressed); aggregate/scatter panels read the degenerate-EXCLUDED
+    row set, footnoted per figure (concern
+    ``self-degenerate-cells-analysis-treatment``)."""
     steered = inp.f_cells
     both = inp.f_cells + inp.null_cells
+    steered_eff, n_deg = split_degenerate(steered)
+    if n_deg:
+        logger.info(
+            "[figures] %d degenerate-self steered rows excluded from aggregate panels", n_deg
+        )
     producers = {
         "hero1_f_act_heatmap": lambda: fig_f_heatmap(
             steered, "f_act", "F_act (fraction of activation swap)"
         ),
-        "hero1_f_act_dose_curves": lambda: fig_dose_response(
-            steered, "f_act", "F_act", inp.bootstrap
+        "hero1_f_act_dose_curves": lambda: note_degenerate_excluded(
+            fig_dose_response(steered_eff, "f_act", "F_act", inp.bootstrap), n_deg
         ),
         "hero2_f_beh_heatmap": lambda: fig_f_heatmap(
             steered, "f_beh", "F_beh (fraction of behavior swap)"
         ),
-        "hero2_f_beh_dose_response": lambda: fig_dose_response(
-            steered, "f_beh", "F_beh", inp.bootstrap
+        "hero2_f_beh_dose_response": lambda: note_degenerate_excluded(
+            fig_dose_response(steered_eff, "f_beh", "F_beh", inp.bootstrap), n_deg
         ),
         "result1b_transport_cosines": lambda: fig_transport(inp.transport_cells),
         "result1c_homogeneity": lambda: fig_homogeneity(inp.homogeneity or {}),
         "result1c_l_fit": lambda: fig_l_fit(inp.l_fit or {}),
         "result1c_operator_2x2": lambda: fig_operator_2x2(inp.operator_cmp or {}),
-        "result2c_transfer_decomposition": lambda: fig_transfer_decomposition(steered),
-        "result3_fact_vs_fbeh": lambda: fig_fact_vs_fbeh(steered),
-        "result3_fbeh_vs_traversal": lambda: fig_fbeh_vs_traversal(steered),
+        "result2c_transfer_decomposition": lambda: note_degenerate_excluded(
+            fig_transfer_decomposition(steered_eff), n_deg
+        ),
+        "result3_fact_vs_fbeh": lambda: note_degenerate_excluded(
+            fig_fact_vs_fbeh(steered_eff), n_deg
+        ),
+        "result3_fbeh_vs_traversal": lambda: note_degenerate_excluded(
+            fig_fbeh_vs_traversal(steered_eff), n_deg
+        ),
         "result4_fragility": lambda: fig_fragility(inp.fragility or {}),
         "exp_anchor_separation": lambda: fig_anchor_separation(inp.anchors),
-        "exp_fact_layer_profiles": lambda: fig_fact_layer_profiles(steered),
+        "exp_fact_layer_profiles": lambda: note_degenerate_excluded(
+            fig_fact_layer_profiles(steered_eff), n_deg
+        ),
         "exp_typeA_vs_typeB": lambda: fig_type_ab(both),
-        "exp_query_prefix_marginals": lambda: fig_marginals(steered),
+        "exp_query_prefix_marginals": lambda: note_degenerate_excluded(
+            fig_marginals(steered_eff), n_deg
+        ),
         "exp_stage2_vs_stage1": lambda: fig_stage2_vs_stage1(
             inp.stage2_scores, inp.anchors, inp.best_cells
         ),

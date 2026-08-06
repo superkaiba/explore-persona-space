@@ -185,6 +185,91 @@ def test_heatmap_never_suppresses_low_coherence_value():
     plt.close(fig)
 
 
+def test_degenerate_self_row_predicate_and_split():
+    deg_struct = _row(setting="matched_prefix", slot="pe", dose="replace")
+    assert F.degenerate_self_row(deg_struct)
+    assert F.degenerate_self_row({"degenerate_self": True})
+    assert F.degenerate_self_row({"donor_pair_id": "self:mp--bare__q1--bare__q2"})
+    ok = _row(setting="matched_prefix", slot="ce", dose="replace")
+    assert not F.degenerate_self_row(ok)
+    assert not F.degenerate_self_row(_row(setting="cross", slot="pe", dose="replace"))
+    kept, n = F.split_degenerate([deg_struct, ok])
+    assert kept == [ok] and n == 1
+
+
+def test_heatmap_marks_degenerate_cells_value_kept():
+    rows = _grid_rows()  # includes matched-prefix pe x replace rows
+    agg = F.aggregate_cells(rows, "f_act")
+    cell = agg[("matched_prefix", "replace", "pe", "L14")]
+    assert cell.degenerate_frac == 1.0
+    assert cell.mean is not None  # value kept — marked, never suppressed
+    assert agg[("matched_prefix", "a1", "ce", "L14")].degenerate_frac == 0.0
+    fig = F.fig_f_heatmap(rows, "f_act", "F_act")
+    labels = {a.get_label() for ax in fig.axes for a in ax.collections}
+    assert "degenerate by design (self-transfer)" in labels
+    assert "degenerate by design" in fig.get_suptitle()
+    plt.close(fig)
+
+
+def test_aggregate_panels_unmoved_by_degenerate_rows():
+    base = [r for r in _grid_rows() if not F.degenerate_self_row(r)]
+    extreme = _row(setting="matched_prefix", slot="pe", dose="replace", f_act=99.0, f_beh_q=99.0)
+
+    def _marginal_heights(rows):
+        inp = F.FigInputs(f_cells=rows, anchors=_anchors())
+        figs = F.build_all(inp, only={"exp_query_prefix_marginals"})
+        fig = figs["exp_query_prefix_marginals"]
+        heights = np.array([p.get_height() for ax in fig.axes for p in ax.patches])
+        noted = any("self-transfer" in (t.get_text() or "") for t in fig.texts)
+        plt.close(fig)
+        return heights, noted
+
+    h_base, noted_base = _marginal_heights(base)
+    h_plus, noted_plus = _marginal_heights([*base, extreme])
+    assert h_base.shape == h_plus.shape
+    assert np.allclose(h_base, h_plus, equal_nan=True)  # aggregate unmoved
+    assert noted_plus and not noted_base  # exclusion footnoted (meta.json text)
+
+
+def test_transport_fig_excludes_degenerate_rows():
+    tcells = []
+    for arm in ("steered", "null"):
+        for pid, setting in PAIRS[:3]:
+            tcells.append(
+                {
+                    "map_id": "m1738_pe_L19",
+                    "slot": "pe",
+                    "dose": "a1",
+                    "alpha": 1.0,
+                    "vec_type": "A",
+                    "arm": arm,
+                    "pair_id": pid,
+                    "setting": setting,
+                    "cosine_tail": 0.4 if arm == "steered" else 0.05,
+                }
+            )
+    deg = {
+        "map_id": "m1738_pe_L19",
+        "slot": "pe",
+        "dose": "replace",
+        "alpha": None,
+        "vec_type": "A",
+        "arm": "steered",
+        "pair_id": "mp--bare__q1--bare__q2",
+        "setting": "matched_prefix",
+        "degenerate_self": True,
+        "cosine_tail": 0.99,
+    }
+    fig_a = F.fig_transport(list(tcells))
+    fig_b = F.fig_transport([*tcells, deg])
+    h_a = [p.get_height() for ax in fig_a.axes for p in ax.patches]
+    h_b = [p.get_height() for ax in fig_b.axes for p in ax.patches]
+    assert h_a == h_b  # pooled bars unmoved (the replace panel never appears)
+    assert any("self-transfer" in (t.get_text() or "") for t in fig_b.texts)
+    plt.close(fig_a)
+    plt.close(fig_b)
+
+
 def test_dose_response_nonempty_with_bands_and_slopes():
     fig = F.fig_dose_response(_grid_rows(), "f_beh", "F_beh", _bootstrap())
     assert _fig_nonempty(fig)

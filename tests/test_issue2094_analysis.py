@@ -69,6 +69,20 @@ def test_annotate_donor_stratification():
     assert steered == {"donor_kind": None, "donor_antiparallel": None}
 
 
+def test_degenerate_self_predicate():
+    # structural triple (covers STEERED rows, which carry no donor label)
+    deg = {"setting": "matched_prefix", "slot": "pe", "dose": "replace"}
+    assert A.degenerate_self(deg)
+    # machine-readable null-row label (round 3: donor_pair_id='self:<pair_id>')
+    assert A.degenerate_self({"donor_pair_id": "self:mp--bare__q1--bare__q2", "setting": "cross"})
+    # already-marked f-table rows round-trip through the field
+    assert A.degenerate_self({"degenerate_self": True})
+    # every neighbor combination stays eligible
+    assert not A.degenerate_self({"setting": "matched_query", "slot": "pe", "dose": "replace"})
+    assert not A.degenerate_self({"setting": "matched_prefix", "slot": "ce", "dose": "replace"})
+    assert not A.degenerate_self({"setting": "matched_prefix", "slot": "pe", "dose": "a1"})
+
+
 # ── f-table assembly fixtures ──────────────────────────────────────────
 
 
@@ -243,6 +257,61 @@ def test_read_layer_marking_in_rows(pairs, pairs_by_id):
 # ── coverage gate ──────────────────────────────────────────────────────
 
 
+def test_ftable_rows_carry_degenerate_self_marked_never_dropped(pairs, pairs_by_id):
+    mp = next(p for p in pairs if p.setting == "matched_prefix")
+    over = {"slot": "pe", "layer_variant": "L19", "layers": [19], "dose": "replace", "alpha": None}
+    steered = _mk_grid_row(mp, block_key="pe|L19|replace|A|steered", **over)
+    null = _mk_grid_row(
+        mp,
+        arm="null",
+        block_key="pe|L19|replace|A|null",
+        donor_pair_id=f"self:{mp.pair_id}",
+        **over,
+    )
+    control = _mk_grid_row(mp)  # ce x a1 — eligible
+    rows = [steered, null, control]
+    lk = _mk_lookups(
+        rows, [90, 90, 90], {(i, "query", s): 50 for i in range(3) for s in ("a", "b")}
+    )
+    out = _assemble(rows, lk, _pair_stats_for(mp, "query"), pairs_by_id)
+    # marked (machine-readable field), NEVER dropped: all three rows present
+    # with their computed reads intact.
+    assert [r["degenerate_self"] for r in out] == [True, True, False]
+    assert len(out) == 3
+    for r in out:
+        assert "f_act" in r and "f_act_raw" in r and "f_beh" in r
+
+
+def test_bootstrap_eligible_rows_excludes_only_degenerate_self():
+    deg = {"setting": "matched_prefix", "slot": "pe", "dose": "replace", "arm": "steered"}
+    ok = {"setting": "matched_prefix", "slot": "ce", "dose": "replace", "arm": "steered"}
+    kept, n_excluded = A.bootstrap_eligible_rows([deg, ok, {**deg, "arm": "null"}])
+    assert kept == [ok]
+    assert n_excluded == 2
+
+
+def test_transport_summary_excludes_degenerate_from_pooled_mean():
+    base = {"map_id": "m1738_pe_L19", "slot": "pe", "dose": "replace", "vec_type": "A"}
+    rows = [
+        {**base, "arm": "steered", "setting": "cross", "cosine_tail": 0.4},
+        {**base, "arm": "steered", "setting": "matched_query", "cosine_tail": 0.2},
+        # a degenerate row must not move the pooled mean even with a value...
+        {**base, "arm": "steered", "setting": "matched_prefix", "cosine_tail": 0.9},
+        # ...nor land in n_nan when (as in production) its cosine is undefined.
+        {
+            **base,
+            "arm": "steered",
+            "setting": "matched_prefix",
+            "degenerate_self": True,
+            "cosine_tail": None,
+        },
+    ]
+    cells = A.transport_summary_cells(rows)
+    rec = cells["m1738_pe_L19|replace|A|steered"]
+    assert rec["n"] == 2 and rec["n_degenerate_self"] == 2 and rec["n_nan"] == 0
+    assert rec["mean_cosine"] == pytest.approx(0.3)
+
+
 def test_coverage_check_refuses_on_mismatch():
     expected = {("b1", "p1"), ("b1", "p2"), ("b2", "p1")}
     ok = A.coverage_check(set(expected), expected)
@@ -396,6 +465,27 @@ def test_select_stage2_cap_and_dedupe():
     # both levels recorded on one cell.
     for cell in sel["cells"]:
         assert len(cell["selected_for"]) == 2
+
+
+def test_select_stage2_never_picks_degenerate_self_cells():
+    # the degenerate family carries the BEST raw values at an IN-restriction
+    # layer (pe allows L26) — selection over a structurally-zero contrast is
+    # meaningless, so the modest legit family must win (fails pre-fix).
+    rows = [
+        _sel_row("matched_prefix", "pe", "L26", 99.0, f"p{i}", dose="replace") for i in range(4)
+    ]
+    rows += [_sel_row("matched_prefix", "ce", "L14", 1.0, f"p{i}") for i in range(4)]
+    sel = A.select_best_cells(rows)
+    assert sel["degenerate_self_excluded"] == 4
+    picked = sel["selections"]["matched_prefix|activation"]
+    assert (picked["slot"], picked["dose"]) == ("ce", "a1")
+    for cell in sel["cells"]:
+        assert not (
+            cell["setting"] == "matched_prefix"
+            and cell["slot"] == "pe"
+            and cell["dose"] == "replace"
+        ), cell
+    assert "self-transfer" in sel["selection_rule"]
 
 
 def test_select_stage2_min_pairs_floor():

@@ -513,7 +513,11 @@ def test_null_donor_walk_covers_the_full_production_grid(pairs):
     fams = R.enumerate_block_families(pairs, N_LAYERS)
     combos: dict[tuple[str, str, str], tuple[str, ...]] = {}
     for _steered, null in fams:
-        combos.setdefault((null.slot, null.dose, null.vec_type), null.pair_ids)
+        key = (null.slot, null.dose, null.vec_type)
+        # variant-invariance HARDENED (round-3 Minor): every layer variant of a
+        # combo must carry the SAME pair set — a future variant-dependent
+        # subset must widen this walk, never silently shrink it.
+        assert combos.setdefault(key, null.pair_ids) == null.pair_ids, key
     assert len(combos) == 34, combos.keys()  # 6 slots x 5 A-doses + ce x 4 B-doses
     exhausted: list[tuple[str, str, str, str]] = []
     degenerate: list[tuple[str, str, str, str]] = []

@@ -237,11 +237,17 @@ def cmd_transport_mini(args: argparse.Namespace) -> int:
     # executes against the REAL staged maps. pe block: matched-QUERY pairs at
     # dose REPLACE only — replace is transport-eligible but excluded from
     # FIT_DOSES, so no degenerate 2-obs (pe, 19) linearity family is created
-    # (an additive pe dose at 2 pairs would crash the PC-ridge n>k assert);
-    # mp pairs are excluded at pe anyway (zero Delta by causal identity).
+    # (an additive pe dose at 2 pairs would crash the PC-ridge n>k assert) —
+    # PLUS one matched-PREFIX pair so the transport mirror traverses the
+    # degenerate ``self:`` carve-out + the summary's n_degenerate_self
+    # accounting at production dims (round 4, concern
+    # self-degenerate-cells-analysis-treatment).
     subset_by_slot = {
         "ce": list(pairs),
-        "pe": [p for p in pairs if p.setting == "matched_query"][:2],
+        "pe": [
+            *[p for p in pairs if p.setting == "matched_query"][:2],
+            next(p for p in pairs if p.setting == "matched_prefix"),
+        ],
     }
     bank = _mini_bank(pairs, gen)
     bank_dir = mirror / "analysis_tensors" / "vc_bank"
