@@ -62,17 +62,41 @@ GRAY = "#9a9a9a"
 
 
 def _load(ladder_dir: Path, percontext_dir: Path):
+    """Load the per-rung fits (REQUIRED) plus the analyzer round's cap-hit /
+    restriction digests and per-context CSVs (OPTIONAL).
+
+    The digests + per-context CSVs are produced by
+    ``issue1491_caphit_restriction_analysis.py``, which runs AFTER the fits. A
+    second measurement arm (e.g. the greedy-decoding ladder) therefore has its
+    fits committed well before that analysis exists, and used to crash here on
+    FileNotFoundError. Missing optional inputs now degrade to "skip the
+    dependent figure", reported by the caller — never a crash, and never a
+    silently error-bar-less hero figure.
+
+    Returns ``(fits, digests_or_None, percontext_or_None)``. The optional
+    members are all-or-nothing across rungs: a PARTIAL set is treated as
+    missing, because a figure covering only some rungs of the ladder would
+    misrepresent the sweep.
+    """
     fits, digests, percontext = {}, {}, {}
     for slug in SLUGS:
         fits[slug] = json.loads((ladder_dir / f"fits_{slug}.json").read_text())
-        digests[slug] = json.loads((ladder_dir / f"caphit_restriction_{slug}.json").read_text())
-        rows = list(csv.DictReader(open(percontext_dir / f"{slug}_percontext.csv")))
-        percontext[slug] = {
-            "ci": np.array([int(r["ci"]) for r in rows]),
-            "cos": np.array([float(r["cosine_pred_target"]) for r in rows]),
-            "cap": np.array([int(r["cap_hit"]) for r in rows], dtype=bool),
-        }
-    return fits, digests, percontext
+        digest_path = ladder_dir / f"caphit_restriction_{slug}.json"
+        if digest_path.exists():
+            digests[slug] = json.loads(digest_path.read_text())
+        percontext_path = percontext_dir / f"{slug}_percontext.csv"
+        if percontext_path.exists():
+            rows = list(csv.DictReader(open(percontext_path)))
+            percontext[slug] = {
+                "ci": np.array([int(r["ci"]) for r in rows]),
+                "cos": np.array([float(r["cosine_pred_target"]) for r in rows]),
+                "cap": np.array([int(r["cap_hit"]) for r in rows], dtype=bool),
+            }
+    return (
+        fits,
+        digests if len(digests) == len(SLUGS) else None,
+        percontext if len(percontext) == len(SLUGS) else None,
+    )
 
 
 def _x(slugs=SLUGS):
@@ -94,7 +118,7 @@ def _ridge_ci(digests, slug):
     return r2, r2 - lo, hi - r2
 
 
-def fig_hero(fits, digests, out):
+def fig_hero(fits, digests, out, suffix=""):
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.0))
     x = _x()
     ridge = np.array([fits[s]["predictors"]["ridge"]["test_r2"] for s in SLUGS])
@@ -102,8 +126,15 @@ def fig_hero(fits, digests, out):
     krr = np.array([fits[s]["predictors"]["krr_nystrom"]["test_r2"] for s in SLUGS])
     ceil = np.array([fits[s]["ceiling_two_draw"]["ceiling_var_weighted_r"] for s in SLUGS])
     null = np.array([fits[s]["floors"]["shuffled_pairing"]["test_r2"] for s in SLUGS])
-    yerr = np.array(
-        [[_ridge_ci(digests, s)[1] for s in SLUGS], [_ridge_ci(digests, s)[2] for s in SLUGS]]
+    # Bootstrap CIs live in the restriction digests. Without them the series is
+    # still correct, just uncertainty-free — the caller reports the omission so
+    # it is never mistaken for "the estimate has no uncertainty".
+    yerr = (
+        np.array(
+            [[_ridge_ci(digests, s)[1] for s in SLUGS], [_ridge_ci(digests, s)[2] for s in SLUGS]]
+        )
+        if digests is not None
+        else None
     )
 
     ax = axes[0]
@@ -131,7 +162,7 @@ def fig_hero(fits, digests, out):
     ax.errorbar(
         x,
         ridge / ceil,
-        yerr=yerr / ceil,
+        yerr=None if yerr is None else yerr / ceil,
         color=COL["ridge"],
         marker="o",
         label="ridge ÷ ceiling",
@@ -146,11 +177,11 @@ def fig_hero(fits, digests, out):
     ax.set_title("ceiling-normalized predictability", loc="left")
     ax.set_ylim(0.55, 0.95)
     ax.legend(fontsize=8, loc="lower center")
-    savefig_paper(fig, "issue_1491/ladder_r2_raw_and_normalized", dir=str(out))
+    savefig_paper(fig, f"issue_1491/ladder_r2_raw_and_normalized{suffix}", dir=str(out))
     plt.close(fig)
 
 
-def fig_hero_points(percontext, out):
+def fig_hero_points(percontext, out, suffix=""):
     set_paper_style("blog")
     fig, ax = plt.subplots(figsize=(8.0, 4.0))
     rng = np.random.default_rng(0)
@@ -177,11 +208,11 @@ def fig_hero_points(percontext, out):
     ax.set_title(
         "per-context fit quality behind each aggregate R² (dark diamond = median)", loc="left"
     )
-    savefig_paper(fig, "issue_1491/ladder_r2_raw_and_normalized_points", dir=str(out))
+    savefig_paper(fig, f"issue_1491/ladder_r2_raw_and_normalized_points{suffix}", dir=str(out))
     plt.close(fig)
 
 
-def fig_depth_pair(fits, digests, percontext, out):
+def fig_depth_pair(fits, digests, percontext, out, suffix=""):
     set_paper_style("blog")
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.2))
     ax = axes[0]
@@ -191,12 +222,18 @@ def fig_depth_pair(fits, digests, percontext, out):
     xs = np.arange(3)
     v14 = [fits["scale14"]["predictors"][f]["test_r2"] for f in fitters]
     v32 = [fits["scale32"]["predictors"][f]["test_r2"] for f in fitters]
-    r14, lo14, hi14 = _ridge_ci(digests, "scale14")
-    r32, lo32, hi32 = _ridge_ci(digests, "scale32")
-    yerr14 = np.zeros((2, 3))
-    yerr14[:, 0] = [lo14, hi14]
-    yerr32 = np.zeros((2, 3))
-    yerr32[:, 0] = [lo32, hi32]
+    # Same contract as fig_hero: the bootstrap CIs live in the restriction
+    # digests, so an arm whose digests have not been produced yet plots the
+    # bars uncertainty-free rather than crashing. The caller reports it.
+    if digests is None:
+        yerr14 = yerr32 = None
+    else:
+        _, lo14, hi14 = _ridge_ci(digests, "scale14")
+        _, lo32, hi32 = _ridge_ci(digests, "scale32")
+        yerr14 = np.zeros((2, 3))
+        yerr14[:, 0] = [lo14, hi14]
+        yerr32 = np.zeros((2, 3))
+        yerr32[:, 0] = [lo32, hi32]
     ax.bar(xs - w / 2, v14, w, yerr=yerr14, capsize=3, label="14B (48 layers)", color=PAL[0])
     ax.bar(xs + w / 2, v32, w, yerr=yerr32, capsize=3, label="32B (64 layers)", color=PAL[3])
     ax.set_xticks(xs)
@@ -230,11 +267,11 @@ def fig_depth_pair(fits, digests, percontext, out):
     ax.set_title(
         "same contexts, paired (n = %d; below diagonal = worse at 32B)" % len(a), loc="left"
     )
-    savefig_paper(fig, "issue_1491/depth_pair_fixed_width", dir=str(out))
+    savefig_paper(fig, f"issue_1491/depth_pair_fixed_width{suffix}", dir=str(out))
     plt.close(fig)
 
 
-def fig_caphit_restriction(digests, out):
+def fig_caphit_restriction(digests, out, suffix=""):
     set_paper_style("blog")
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.0))
     x = _x()
@@ -303,11 +340,11 @@ def fig_caphit_restriction(digests, out):
     ax.set_ylabel("ridge held-out test R²")
     ax.set_title("scale trend restricted to untruncated generations", loc="left")
     ax.legend(fontsize=8)
-    savefig_paper(fig, "issue_1491/caphit_and_restriction", dir=str(out))
+    savefig_paper(fig, f"issue_1491/caphit_and_restriction{suffix}", dir=str(out))
     plt.close(fig)
 
 
-def fig_wc_transfer(fits, out):
+def fig_wc_transfer(fits, out, suffix=""):
     set_paper_style("blog")
     fig, ax = plt.subplots(figsize=(7.0, 4.2))
     x = _x()
@@ -331,11 +368,11 @@ def fig_wc_transfer(fits, out):
     ax.set_ylabel("ridge held-out test R² (variance-weighted)")
     ax.set_title("in-distribution vs corpus-transfer predictability", loc="left")
     ax.legend(fontsize=8)
-    savefig_paper(fig, "issue_1491/wc_transfer_ladder", dir=str(out))
+    savefig_paper(fig, f"issue_1491/wc_transfer_ladder{suffix}", dir=str(out))
     plt.close(fig)
 
 
-def fig_floors_retrieval(fits, out):
+def fig_floors_retrieval(fits, out, suffix=""):
     set_paper_style("blog")
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.2))
     x = _x()
@@ -372,7 +409,7 @@ def fig_floors_retrieval(fits, out):
     ax.set_title("does the prediction find the right answer vector?", loc="left")
     ax.set_ylim(0, 0.9)
     ax.legend(fontsize=8)
-    savefig_paper(fig, "issue_1491/floors_and_retrieval", dir=str(out))
+    savefig_paper(fig, f"issue_1491/floors_and_retrieval{suffix}", dir=str(out))
     plt.close(fig)
 
 
@@ -383,17 +420,39 @@ def main() -> int:
     # Defaults to <ladder-dir>/percontext — the durable committed home for the
     # per-context CSVs (data/ is gitignored, so a data/ copy is not reproducible).
     ap.add_argument("--percontext-dir", type=Path, default=None)
+    # Appended to every figure stem so a second measurement arm (the greedy
+    # ladder) writes beside the sampled arm's figures instead of overwriting
+    # them. Empty by default: the sampled arm's stems are unchanged.
+    ap.add_argument("--stem-suffix", default="")
     args = ap.parse_args()
     percontext_dir = args.percontext_dir or (args.ladder_dir / "percontext")
+    sfx = args.stem_suffix
     set_paper_style("blog")
     fits, digests, percontext = _load(args.ladder_dir, percontext_dir)
-    fig_hero(fits, digests, args.out)
-    fig_hero_points(percontext, args.out)
-    fig_depth_pair(fits, digests, percontext, args.out)
-    fig_caphit_restriction(digests, args.out)
-    fig_wc_transfer(fits, args.out)
-    fig_floors_retrieval(fits, args.out)
+
+    # Each figure declares the OPTIONAL inputs it cannot render without. A
+    # figure whose inputs are absent is skipped and named at the end — never
+    # rendered from a partial set, and never silently dropped.
+    skipped: list[str] = []
+    fig_hero(fits, digests, args.out, suffix=sfx)
+    if percontext is None:
+        skipped.append("ladder_r2_raw_and_normalized_points (needs per-context CSVs)")
+        skipped.append("depth_pair_fixed_width (needs per-context CSVs)")
+    else:
+        fig_hero_points(percontext, args.out, suffix=sfx)
+        fig_depth_pair(fits, digests, percontext, args.out, suffix=sfx)
+    if digests is None:
+        skipped.append("caphit_and_restriction (needs cap-hit/restriction digests)")
+    else:
+        fig_caphit_restriction(digests, args.out, suffix=sfx)
+    fig_wc_transfer(fits, args.out, suffix=sfx)
+    fig_floors_retrieval(fits, args.out, suffix=sfx)
+
     print("figures written under", args.out / "issue_1491")
+    if digests is None:
+        print("NOTE: bootstrap CIs unavailable (no restriction digests) — error bars omitted")
+    for name in skipped:
+        print("SKIPPED:", name)
     return 0
 
 
