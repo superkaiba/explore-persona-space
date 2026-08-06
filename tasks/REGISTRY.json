@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2154,
+  "highest_id": 2155,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8926,6 +8926,13 @@
       "path": "tasks/running/2154",
       "status": "running",
       "title": "workflow-fix: #1739 follow-up-run marker writes label= not followup_label=, reddening test_corpus_replay_all_historical_markers on main"
+    },
+    "2155": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2155",
+      "status": "proposed",
+      "title": "Cut ~35K tokens/spawn from the always-on context load (autocompact thrash)"
     },
     "216": {
       "has_clean_result": true,
