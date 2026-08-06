@@ -9,8 +9,11 @@ description: >
 skills:
   - codebase-debugger
   - cleanup
-  - refactor
-  - adversarial-planner
+# NOT preloaded (frontmatter `skills:` inlines the WHOLE SKILL.md on every
+# spawn): `refactor` (8.5 KB) and `adversarial-planner` (68 KB) are used on a
+# minority of rounds and are already invoked on demand via the Skill tool from
+# the body (§ Workflow step 2 / the escalation table). Preloading them cost
+# ~21K tokens per implementer spawn.
 memory: project
 effort: xhigh
 tools:

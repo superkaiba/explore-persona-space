@@ -11809,13 +11809,19 @@ _LESSONS_ROW_RE = re.compile(
 )
 
 
-# Leanness cap: ~2000 tokens always-on (7500->8000, #869/#872 coordinated
-# raise; #992 restored headroom under the SAME cap via the row-format slim).
-_LESSONS_MAX_BYTES = 8000
+# Leanness cap: ~2600 tokens always-on (7500->8000, #869/#872 coordinated
+# raise; #992 restored headroom under the SAME cap via the row-format slim;
+# 8000->9600 at the 2026-08-06 CLAUDE.md relocation, which moved ~79 KB of
+# orchestrator-only prose out of the always-on body into NINE new
+# .claude/rules/ files. Each needs an index row, so the index necessarily
+# grows — but the trade is ~1.4 KB of index for ~79 KB of body, a ~21.9K
+# token/spawn net WIN. Do NOT read this raise as license for row bloat: the
+# per-row cap and the non-row cap are unchanged and still bind.
+_LESSONS_MAX_BYTES = 9600
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
-# 8000-byte FAIL (early warning only — advisory, never a FAIL).
-_LESSONS_WARN_BYTES = 7200
+# _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
+_LESSONS_WARN_BYTES = 8800
 
 # Per-row budget (#1269): one bloated row is caught on the row that adds it —
 # at edit time, in the grower's own tree — not fleet-wide later at the total
