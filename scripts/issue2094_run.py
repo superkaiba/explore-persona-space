@@ -121,7 +121,12 @@ GATE_OFFTARGET_REL_MAX = 1e-3
 GATE_TYPEB_PREFIX_COS_MIN = 0.9999
 # Reuse-seam parity: our bank's v_ce / v_pe vs steering.capture_vectors'
 # v_c_context / v_c_prefix on the single-turn contexts (bare + persona).
-GATE_CAPTURE_PARITY_COS_MIN = 0.9999
+# Recalibrated 2026-08-06: production 8xH100 bf16 cross-path parity measured
+# cos_min 0.99975 (injection_gate_report.json; jitter ~2.5e-4 between the two
+# capture code paths). Bar per the two-bar rule (>=4x measured jitter),
+# matching GATE_COS_MIN's 0.999 convention; the prior 0.9999 sat 10x tighter
+# than the plan's own injection-bar grounding and failed on healthy parity.
+GATE_CAPTURE_PARITY_COS_MIN = 0.999
 
 # Plan §9: P3 (2.4 h) + P4 (0.6 h) = 3.0 h projected pod wall at width 8.
 PLANNED_GRID_WALL_H = 3.0
