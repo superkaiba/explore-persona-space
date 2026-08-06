@@ -27,7 +27,10 @@ result1c_homogeneity, result1c_l_fit, result1c_operator_2x2,
 result2c_transfer_decomposition, result3_fact_vs_fbeh,
 result3_fbeh_vs_traversal, result4_fragility, exp_anchor_separation,
 exp_fact_layer_profiles, exp_typeA_vs_typeB, exp_query_prefix_marginals,
-exp_stage2_vs_stage1, exp_audit_rates.
+exp_stage2_vs_stage1, exp_audit_rates, result_fbeh_dose_L14L19_wellsep
+(FA-2 follow-up: banked-layer dose response on well-separated pairs; needs
+``f_metrics/bootstrap_cis_wellsep.json`` from
+``scripts/issue2094_wellsep_bootstrap.py``).
 
 Usage (VM; thread caps per the shared-VM rule):
 
@@ -137,6 +140,7 @@ class FigInputs:
     anchors: list[dict] = field(default_factory=list)
     anchor_draws: list[dict] = field(default_factory=list)
     bootstrap: dict | None = None
+    bootstrap_wellsep: dict | None = None  # FA-3 recount (well-separated pairs only)
     transport_cells: list[dict] = field(default_factory=list)
     l_fit: dict | None = None
     operator_cmp: dict | None = None
@@ -155,6 +159,7 @@ def load_inputs(out_root: Path, judge_root: Path) -> FigInputs:
         anchors=list(_iter_jsonl(fm / "anchors.jsonl")),
         anchor_draws=list(_iter_jsonl(fm / "anchor_draws.jsonl")),
         bootstrap=_load_json(fm / "bootstrap_cis.json"),
+        bootstrap_wellsep=_load_json(fm / "bootstrap_cis_wellsep.json"),
         l_fit=_load_json(out_root / "linearity" / "l_fit_results.json"),
         operator_cmp=_load_json(out_root / "linearity" / "operator_comparison.json"),
         homogeneity=_load_json(out_root / "linearity" / "homogeneity.json"),
@@ -234,6 +239,35 @@ def row_metric(row: dict, metric: str) -> float | None:
         return None if v is None else float(v)
     assert metric == "f_beh", metric
     return row_f_beh(row)
+
+
+# Analyzer round-1 convention (scripts/issue2094_sep_stratified_fig.py): a
+# (pair, rubric kind) is WELL-SEPARATED when its anchor separation (the F_beh
+# denominator, ceiling-minus-floor judge contrast) clears this floor.
+WELLSEP_MIN_SEPARATION = 0.5
+WELLSEP_LAYERS: tuple[str, ...] = ("L14", "L19")  # banked-map layers (plan section 4.3)
+
+
+def wellsep_pair_kinds(
+    anchors: list[dict], min_sep: float = WELLSEP_MIN_SEPARATION
+) -> set[tuple[str, str]]:
+    """(pair_id, rubric kind) pairs whose |anchor separation| >= ``min_sep``."""
+    return {
+        (a["pair_id"], a["kind"])
+        for a in anchors
+        if a.get("separation") is not None and abs(a["separation"]) >= min_sep
+    }
+
+
+def row_f_beh_wellsep(row: dict, ws: set[tuple[str, str]]) -> float | None:
+    """Mean F_beh over the row's rubric kinds whose (pair, kind) anchor is
+    well-separated (None when no well-separated kind carries a value)."""
+    vals = [
+        v["f_beh"]
+        for kind, v in (row.get("f_beh") or {}).items()
+        if isinstance(v, dict) and v.get("f_beh") is not None and (row["pair_id"], kind) in ws
+    ]
+    return float(np.mean(vals)) if vals else None
 
 
 def dose_alpha(dose: str) -> float | None:
@@ -414,6 +448,41 @@ def _family_ci(
     return fams.get("|".join([arm, setting, slot, lv, dose, vec_type, metric_key]))
 
 
+def _band_points(
+    bootstrap: dict | None,
+    arm: str,
+    setting: str,
+    slot: str,
+    lv: str,
+    metric_keys: tuple[str, ...],
+) -> tuple[list[float], list[float], list[float], list[float]]:
+    """(log2-dose, mean, ci_lo, ci_hi) band points for one arm from a
+    bootstrap-CIs family dict (additive doses; vec_type A — the family the
+    grid sweeps at every layer)."""
+    xs_c, mid, lo, hi = [], [], [], []
+    for dose in ("a0.5", "a1", "a2", "a4"):
+        cis = [
+            c
+            for k in metric_keys
+            for c in [_family_ci(bootstrap, arm, setting, slot, lv, dose, "A", k)]
+            if c and c.get("observed_mean") is not None
+        ]
+        if not cis:
+            continue
+        xs_c.append(math.log2(dose_alpha(dose)))
+        mid.append(float(np.mean([c["observed_mean"] for c in cis])))
+        lo.append(float(np.mean([c["ci_lo"] for c in cis if c["ci_lo"] is not None] or [np.nan])))
+        hi.append(float(np.mean([c["ci_hi"] for c in cis if c["ci_hi"] is not None] or [np.nan])))
+    return xs_c, mid, lo, hi
+
+
+def _draw_band(ax, xs_c, mid, lo, hi, color: str, label: str) -> None:
+    """Mean line + CI band; markers keep a single-dose cell visible."""
+    ax.plot(xs_c, mid, color=color, linewidth=2.0, label=label, marker="o", markersize=3.5)
+    if np.isfinite(lo).all() and np.isfinite(hi).all():
+        ax.fill_between(xs_c, lo, hi, color=color, alpha=0.25, linewidth=0)
+
+
 def pair_slopes(by_pair: dict[str, dict[float, float]]) -> dict[str, float]:
     """Per-pair OLS slope of F vs log2(alpha) (pairs with >=2 doses)."""
     out = {}
@@ -479,48 +548,14 @@ def fig_dose_response(
                     marker="o",
                     markersize=2.2,
                 )
-            mkey = "f_act" if metric == "f_act" else None
+            keys = ("f_act",) if metric == "f_act" else ("f_beh_query", "f_beh_prefix")
             for arm, color, label in (
                 ("steered", STEERED_COLOR, "steered mean (bootstrap 95 percent)"),
                 ("null", NULL_COLOR, "shuffled-donor null"),
             ):
-                xs_c, mid, lo, hi = [], [], [], []
-                for dose in ("a0.5", "a1", "a2", "a4"):
-                    keys = [mkey] if mkey else ["f_beh_query", "f_beh_prefix"]
-                    cis = [
-                        c
-                        for k in keys
-                        if k
-                        for c in [_family_ci(bootstrap, arm, setting, slot, lv, dose, "A", k)]
-                        if c and c.get("observed_mean") is not None
-                    ]
-                    if not cis:
-                        continue
-                    xs_c.append(math.log2(dose_alpha(dose)))
-                    mid.append(float(np.mean([c["observed_mean"] for c in cis])))
-                    lo.append(
-                        float(
-                            np.mean([c["ci_lo"] for c in cis if c["ci_lo"] is not None] or [np.nan])
-                        )
-                    )
-                    hi.append(
-                        float(
-                            np.mean([c["ci_hi"] for c in cis if c["ci_hi"] is not None] or [np.nan])
-                        )
-                    )
+                xs_c, mid, lo, hi = _band_points(bootstrap, arm, setting, slot, lv, keys)
                 if xs_c:
-                    # markers keep a single-dose cell visible (a 1-point line draws nothing)
-                    ax.plot(
-                        xs_c,
-                        mid,
-                        color=color,
-                        linewidth=2.0,
-                        label=label,
-                        marker="o",
-                        markersize=3.5,
-                    )
-                    if np.isfinite(lo).all() and np.isfinite(hi).all():
-                        ax.fill_between(xs_c, lo, hi, color=color, alpha=0.25, linewidth=0)
+                    _draw_band(ax, xs_c, mid, lo, hi, color, label)
             ax.axhline(0.0, color="grey", linewidth=0.6)
             ax.set_xlabel("log2 dose")
             if j == 0:
@@ -560,6 +595,110 @@ def fig_dose_response(
             ax.set_ylabel("pairs")
     lv_note = ", ".join(f"{SLOT_LABELS[s]} @ {lv_by_slot[s]}" for s in slots)
     fig.suptitle(f"{title} dose response ({lv_note}; additive doses)")
+    return fig
+
+
+def fig_fbeh_dose_wellsep(
+    steered: list[dict], anchors: list[dict], bootstrap_wellsep: dict | None
+) -> plt.Figure:
+    """FA-2 companion to hero2_f_beh_dose_response (which reads layer 0 only):
+    F_beh dose response at the BANKED layers (L14/L19), per-pair spaghetti +
+    steered/null bootstrap bands, everything restricted to WELL-SEPARATED
+    (pair, rubric kind) anchors (|separation| >= WELLSEP_MIN_SEPARATION).
+    Bands come from ``bootstrap_cis_wellsep.json`` (the FA-3 recount), never
+    the all-pair CIs."""
+    ws = wellsep_pair_kinds(anchors)
+    assert ws, "no well-separated (pair, kind) anchors"
+    assert bootstrap_wellsep, (
+        "bootstrap_cis_wellsep.json absent - run scripts/issue2094_wellsep_bootstrap.py first"
+    )
+    panels = [
+        (slot, lv)
+        for slot in ("ce", "pe")
+        for lv in WELLSEP_LAYERS
+        if any(r["slot"] == slot and r["layer_variant"] == lv for r in steered)
+    ]
+    assert panels, "no steered rows at the banked layers"
+    settings = [s for s in SETTING_ORDER if any(r["setting"] == s for r in steered)]
+    fig, axes = plt.subplots(
+        len(panels),
+        len(settings),
+        figsize=(3.2 * len(settings) + 0.6, 2.3 * len(panels)),
+        squeeze=False,
+        layout="constrained",
+    )
+    for i, (slot, lv) in enumerate(panels):
+        for j, setting in enumerate(settings):
+            ax = axes[i][j]
+            by_pair: dict[tuple[str, str], dict[float, float]] = defaultdict(dict)
+            for r in steered:
+                if r["slot"] != slot or r["setting"] != setting or r["layer_variant"] != lv:
+                    continue
+                a, v = dose_alpha(r["dose"]), row_f_beh_wellsep(r, ws)
+                if a is not None and v is not None:
+                    by_pair[(r["pair_id"], r["vec_type"])][a] = v
+            for (_pid, vt), d in sorted(by_pair.items()):
+                xs = sorted(d)
+                ax.plot(
+                    np.log2(xs),
+                    [d[a] for a in xs],
+                    color=setting_color(setting),
+                    alpha=0.35,
+                    linewidth=0.9,
+                    linestyle="-" if vt == "A" else "--",
+                    marker="o",
+                    markersize=2.2,
+                )
+            drew_band = False
+            for arm, color, label in (
+                ("steered", STEERED_COLOR, "steered mean (well-sep bootstrap 95 percent)"),
+                ("null", NULL_COLOR, "shuffled-donor null (well-sep)"),
+            ):
+                xs_c, mid, lo, hi = _band_points(
+                    bootstrap_wellsep, arm, setting, slot, lv, ("f_beh_query", "f_beh_prefix")
+                )
+                if xs_c:
+                    _draw_band(ax, xs_c, mid, lo, hi, color, label)
+                    drew_band = True
+            if not by_pair and not drew_band:
+                # never a misleading blank axis: name the exclusion
+                msg = (
+                    "N/A — no eligible rows\n(degenerate by design:\nmatched-prefix x prefix-end)"
+                    if setting == "matched_prefix" and slot == "pe"
+                    else "N/A — no eligible\nwell-separated rows"
+                )
+                ax.text(
+                    0.5,
+                    0.5,
+                    msg,
+                    transform=ax.transAxes,
+                    ha="center",
+                    va="center",
+                    fontsize=7,
+                    color="dimgray",
+                )
+                ax.set_xticks([])
+                ax.set_yticks([])
+            ax.axhline(0.0, color="grey", linewidth=0.6)
+            if i == len(panels) - 1:
+                ax.set_xlabel("log2 dose")
+            if j == 0:
+                ax.set_ylabel(f"F_beh\n{SLOT_LABELS[slot]} @ {lv}")
+            if i == 0:
+                ax.set_title(SETTING_LABELS[setting], fontsize=8)
+            if i == 0 and j == 0:
+                # proxy handles for the vec-type linestyle convention
+                ax.plot([], [], color="dimgray", linestyle="-", label="pair difference (vec A)")
+                ax.plot([], [], color="dimgray", linestyle="--", label="prefix centroid (vec B)")
+                if ax.get_legend_handles_labels()[0]:
+                    ax.legend(fontsize=6)
+    n_ws_pairs = len({p for p, _ in ws})
+    fig.suptitle(
+        "F_beh dose response at the banked layers, well-separated pairs only\n"
+        f"(|anchor separation| >= {WELLSEP_MIN_SEPARATION}; {n_ws_pairs} pairs; additive doses; "
+        "bands: pair-clustered bootstrap on well-separated pairs, vec A)",
+        fontsize=9,
+    )
     return fig
 
 
@@ -1179,12 +1318,16 @@ def fig_stage2_vs_stage1(
         stage1[key] = cell["mean_f"]
     xs, ys, labels = [], [], []
     for (cell, kind), rec in sorted(s2.items()):
-        x = stage1.get(cell)
+        # stage-2 rows carry an "s2|" block-key prefix that best_cells join
+        # keys never have — strip it at the join (FA-1: the committed figure
+        # silently fell into the fallback path on this mismatch).
+        cell_key = (cell or "").removeprefix("s2|")
+        x = stage1.get(cell_key)
         if x is None:
             continue
         xs.append(x)
         ys.append(rec["mean_f"])
-        labels.append(f"{cell} ({KIND_LABELS[kind]})")
+        labels.append(f"{cell_key} ({KIND_LABELS[kind]})")
     if not xs:  # smoke path: synthesized best-cells key set differs — show s2 alone
         for i, ((cell, kind), rec) in enumerate(sorted(s2.items())):
             xs.append(float(i))
@@ -1282,10 +1425,14 @@ def build_all(inp: FigInputs, only: set[str] | None = None) -> dict[str, plt.Fig
             inp.stage2_scores, inp.anchors, inp.best_cells
         ),
         "exp_audit_rates": lambda: fig_audit_rates(inp.audit_rows),
+        "result_fbeh_dose_L14L19_wellsep": lambda: note_degenerate_excluded(
+            fig_fbeh_dose_wellsep(steered_eff, inp.anchors, inp.bootstrap_wellsep), n_deg
+        ),
     }
     optional = {
         "exp_stage2_vs_stage1",
         "exp_audit_rates",
+        "result_fbeh_dose_L14L19_wellsep",
         "result1b_transport_cosines",
         # operator comparisons exist only where parity + banked-dim fits ran
         # (production / the production-dim smoke leg)

@@ -1,50 +1,54 @@
 {
-  "commit": "7b069c07",
-  "git_commit": "7b069c07",
-  "git_dirty": false,
-  "created": "2026-08-06T14:33:01Z",
+  "commit": "9d252d52+dirty",
+  "git_commit": "9d252d52",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/analyzer/MEMORY.md",
+    "scripts/issue2094_figures.py"
+  ],
+  "created": "2026-08-06T16:41:02Z",
   "figsize": [
     4.8,
     4.2
   ],
   "points": [
     {
-      "stage-2 cell index (no matching stage-1 selection)": 0.0,
+      "stage-1 selected-cell mean F (greedy)": 0.05566254868172109,
       "stage-2 re-measured mean F_beh (temp 1.0)": 0.43404528961751293,
       "_kind": "scatter"
     },
     {
-      "stage-2 cell index (no matching stage-1 selection)": 1.0,
+      "stage-1 selected-cell mean F (greedy)": 0.05566254868172109,
       "stage-2 re-measured mean F_beh (temp 1.0)": 0.011848182504503861,
       "_kind": "scatter"
     },
     {
-      "stage-2 cell index (no matching stage-1 selection)": 2.0,
+      "stage-1 selected-cell mean F (greedy)": 1.1915166770108043,
       "stage-2 re-measured mean F_beh (temp 1.0)": 1.8569474919442825,
       "_kind": "scatter"
     },
     {
-      "stage-2 cell index (no matching stage-1 selection)": 3.0,
+      "stage-1 selected-cell mean F (greedy)": 1.1915166770108043,
       "stage-2 re-measured mean F_beh (temp 1.0)": 0.005589928719468285,
       "_kind": "scatter"
     },
     {
-      "stage-2 cell index (no matching stage-1 selection)": 4.0,
+      "stage-1 selected-cell mean F (greedy)": 0.005950180115178227,
       "stage-2 re-measured mean F_beh (temp 1.0)": -0.0018568803600633311,
       "_kind": "scatter"
     },
     {
-      "stage-2 cell index (no matching stage-1 selection)": 5.0,
+      "stage-1 selected-cell mean F (greedy)": 0.0067748735193163155,
       "stage-2 re-measured mean F_beh (temp 1.0)": 0.01124583466225772,
       "_kind": "scatter"
     },
     {
-      "stage-2 cell index (no matching stage-1 selection)": 6.0,
+      "stage-1 selected-cell mean F (greedy)": 0.8518826733343303,
       "stage-2 re-measured mean F_beh (temp 1.0)": 1.1668232627204793,
       "_kind": "scatter"
     },
     {
-      "stage-2 cell index (no matching stage-1 selection)": 7.0,
+      "stage-1 selected-cell mean F (greedy)": 0.20958216621850928,
       "stage-2 re-measured mean F_beh (temp 1.0)": 0.13156065760007232,
       "_kind": "scatter"
     }
@@ -57,37 +61,43 @@
     "axes": [
       {
         "title_left": "Stage-2 confirmation vs stage-1 selection (post-selection, labeled)",
-        "xlabel": "stage-2 cell index (no matching stage-1 selection)",
+        "xlabel": "stage-1 selected-cell mean F (greedy)",
         "ylabel": "stage-2 re-measured mean F_beh (temp 1.0)",
         "annotations": [
-          "s2|cross|ce|L14|a4|A (prefix rubric)",
-          "s2|cross|ce|L14|a4|A (query rubric)",
-          "s2|cross|ce|L19|a2|A (prefix rubric)",
-          "s2|cross|ce|L19|a2|A (query rubric)",
-          "s2|matched_prefix|ce|L14|a1|A (query rubric)",
-          "s2|matched_prefix|ce|L19|a4|A (query rubric)",
-          "s2|matched_query|ce|L19|a4|B (prefix rubric)",
-          "s2|matched_query|pe|L26|replace|A (prefix rubric)"
+          "cross|ce|L14|a4|A (prefix rubric)",
+          "cross|ce|L14|a4|A (query rubric)",
+          "cross|ce|L19|a2|A (prefix rubric)",
+          "cross|ce|L19|a2|A (query rubric)",
+          "matched_prefix|ce|L14|a1|A (query rubric)",
+          "matched_prefix|ce|L19|a4|A (query rubric)",
+          "matched_query|ce|L19|a4|B (prefix rubric)",
+          "matched_query|pe|L26|replace|A (prefix rubric)"
         ],
         "xticklabels": [
-          "\u22122",
-          "0",
-          "2",
-          "4",
-          "6",
-          "8"
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5"
         ],
         "yticklabels": [
-          "\u22120.25",
-          "0.00",
-          "0.25",
-          "0.50",
-          "0.75",
-          "1.00",
-          "1.25",
-          "1.50",
-          "1.75",
-          "2.00"
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5"
         ]
       }
     ]
