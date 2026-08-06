@@ -54,8 +54,6 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-import numpy as np
-
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _SCRIPT_DIR.parent
 for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
@@ -64,7 +62,11 @@ for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
+# load_dotenv() BEFORE any heavy import (numpy) so the shared-VM thread caps
+# (#847) bind in-process — torch/BLAS freeze their pools at import.
 load_dotenv()
+
+import numpy as np  # noqa: E402
 
 import issue2054_forms as forms  # noqa: E402
 
