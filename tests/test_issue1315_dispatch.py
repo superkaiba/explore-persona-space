@@ -901,36 +901,57 @@ def test_phase_tier2_resume_skips_organism_entirely(tmp_path, monkeypatch):
 # ── round-6 porting audit: p7_rb trait gate (issue779_common seeded lineage) ──
 
 
-def test_issue779_trait_gate_accepts_seeded_impolite(tmp_path, monkeypatch):
-    """p7_rb audit fix: issue779_common's TRAITS asserts rejected 'impolite'
+def test_issue779_trait_gate_accepts_seeded_lineage_trait(tmp_path, monkeypatch):
+    """p7_rb audit fix: issue779_common's trait gate rejected a lineage trait
     even though the dispatcher pre-seeds its artifacts cache — the extractor
     subprocess would have crashed on the pod (production-only; smoke skips
     p7). Post-fix: a SEEDED lineage trait loads; an unseeded one still fails
     loud; Sonnet regeneration of a lineage trait is refused; TRAITS members
-    are byte-unchanged."""
+    are byte-unchanged.
+
+    PREMISE UPDATE (#2153 gate run, 2026-08-06): the original probe trait was
+    'impolite', which had no TRAIT_DESCRIPTIONS entry when this test was
+    written (#1315). 514c16dd9d added it via PV_ADDITIONAL_TRAITS and
+    47e50dac55 deliberately re-keyed the gate onto TRAIT_DESCRIPTIONS
+    membership, so 'impolite' now passes the gate as a DESCRIBED trait — the
+    lineage-gate legs probe a genuinely description-less name instead (the
+    seeder writes the registry impolite definition to whatever cache path it
+    is given), and the new described-trait semantics for 'impolite' itself
+    are pinned below."""
     import issue779_common as c779
     import issue1315_dispatch as d
 
     monkeypatch.setattr(c779, "_artifacts_dir", lambda: tmp_path)
 
-    with pytest.raises(ValueError, match="pre-seeded"):
-        c779.load_extraction_artifacts("impolite")
-    with pytest.raises(ValueError, match="pre-seeded"):
-        c779.generate_extraction_artifacts("impolite")
+    lineage = "impolite_lineage_probe"
+    assert lineage not in c779.TRAIT_DESCRIPTIONS  # the premise the gate legs need
 
-    # REAL seeder body (BEHAVIORS registry -> the #1090 impolite definition).
-    seeded = d._seed_rb_artifacts_from_registry(tmp_path / "impolite.json")
-    loaded = c779.load_extraction_artifacts("impolite")
+    with pytest.raises(ValueError, match="pre-seeded"):
+        c779.load_extraction_artifacts(lineage)
+    with pytest.raises(ValueError, match="pre-seeded"):
+        c779.generate_extraction_artifacts(lineage)
+
+    # REAL seeder body (BEHAVIORS registry -> the #1090 impolite definition;
+    # the seeder writes to the given cache path regardless of trait name).
+    seeded = d._seed_rb_artifacts_from_registry(tmp_path / f"{lineage}.json")
+    loaded = c779.load_extraction_artifacts(lineage)
     assert loaded == seeded
     assert len(loaded["instruction"]) == 5
     assert all(set(p) == {"pos", "neg"} for p in loaded["instruction"])
     assert len(loaded["extraction_questions"]) == 20
     assert "{question}" in loaded["eval_prompt"] and "{answer}" in loaded["eval_prompt"]
     # generate() returns the seeded cache without any API call...
-    assert c779.generate_extraction_artifacts("impolite") == seeded
+    assert c779.generate_extraction_artifacts(lineage) == seeded
     # ...and refuses to Sonnet-regenerate a lineage trait even under force.
     with pytest.raises(ValueError, match="cache-seeded only"):
-        c779.generate_extraction_artifacts("impolite", force=True)
+        c779.generate_extraction_artifacts(lineage, force=True)
+
+    # 47e50dac55 semantics for 'impolite' itself: a DESCRIBED trait passes the
+    # gate, and an absent cache fail-louds FileNotFoundError (never a silent
+    # default; generate('impolite') is NOT called here — it would Sonnet-call).
+    assert "impolite" in c779.TRAIT_DESCRIPTIONS
+    with pytest.raises(FileNotFoundError):
+        c779.load_extraction_artifacts("impolite")
 
     # TRAITS members: unchanged contracts.
     assert c779.load_extraction_artifacts("evil") == c779.EVIL_ARTIFACTS

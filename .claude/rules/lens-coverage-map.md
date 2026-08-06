@@ -128,22 +128,28 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 
 | Item | Source | State |
 |---|---|---|
+| after-every-experiment | LESSONS.md | v2-owner: report pipeline (methodology-writer REPORT MODE + plotter -> methodology-critic -> report-verifier) + upload-verifier; the follow-up bands are orchestrator-owned |
 | analyzer-paper-mode | LESSONS.md | v1-only — expires at drain |
 | analyzer-section-reference | LESSONS.md | v1-only — expires at drain |
 | artifact-reuse | LESSONS.md | v2-owner: consistency-checker + methodology-baselines-critic |
 | arxiv-mcp | LESSONS.md | v2-owner: methodology-baselines-critic + planner |
+| auto-continuation | LESSONS.md | v2-owner: orchestrator (/issue-v2 gate set + workflow.yaml; workflow-version-independent) |
 | background-automation | LESSONS.md | v2-owner: autonomous_session_watch.py + crons (runtime unchanged, Assumption 1) |
 | clean-result-critic-lens-reference | LESSONS.md | v1-only — expires at drain |
 | clean-result-paper-review | LESSONS.md | v1-only — expires at drain |
 | code-reviewer-section-reference | LESSONS.md | v1-only — expires at drain |
 | code-style | LESSONS.md | v2-owner: efficiency-critic + code-correctness-critic |
 | codex-composer-common | LESSONS.md | v2-owner: codex-* twin composers (workflow-version-independent) |
+| codex-ensemble-review | LESSONS.md | v2-owner: orchestrator (dispatches the codex-* twins; the v2 panel keeps one codex-code-reviewer twin) |
 | compute-backend-failover | LESSONS.md | v2-owner: backend router (src/explore_persona_space/backends) + efficiency-critic |
+| compute-backends | LESSONS.md | v2-owner: backend router (src/explore_persona_space/backends) + efficiency-critic |
+| context-hygiene | LESSONS.md | v2-owner: orchestrator (spawn/retry discipline; workflow-version-independent) |
 | contrastive-negatives | LESSONS.md | v2-owner: methodology-baselines-critic |
 | crash-fix-rounds | LESSONS.md | v2-owner: code-correctness-critic + experiment-implementer |
 | critic-lens-reference | LESSONS.md | v2-owner: statistics-critic + methodology-baselines-critic + efficiency-critic |
 | data-realism | LESSONS.md | v2-owner: methodology-baselines-critic |
 | diff-size-budget | LESSONS.md | v2-owner: code-correctness-critic + plan-adherence-critic + efficiency-critic |
+| disk-hygiene | LESSONS.md | v2-owner: efficiency-critic (plan-time footprint routing) + vm_disk_guard.py cron |
 | experiment-guidelines | LESSONS.md | v2-owner: v2 authoring agents (planner / implementer / experiment-implementer) author to it; the plan critic panel (statistics-critic / methodology-baselines-critic / efficiency-critic) verifies |
 | experiment-implementer-section-reference | LESSONS.md | v2-owner: experiment-implementer |
 | experimenter-section-reference | LESSONS.md | v2-owner: experimenter |
@@ -151,6 +157,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | llm-judging | LESSONS.md | v2-owner: statistics-critic |
 | marker-leakage-measurement | LESSONS.md | v2-owner: statistics-critic |
 | marker-training-recipe | LESSONS.md | v2-owner: methodology-baselines-critic |
+| methodology-writer-section-reference | LESSONS.md | v2-owner: methodology-writer (REPORT MODE) + methodology-critic |
 | on-policy-completions | LESSONS.md | v2-owner: methodology-baselines-critic |
 | ood-generalization-folds | LESSONS.md | v2-owner: statistics-critic |
 | persona-distance-metrics | LESSONS.md | v2-owner: code-correctness-critic + methodology-baselines-critic |
@@ -160,11 +167,13 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | pm-audit-reference | LESSONS.md | v2-owner: research-pm agent (PM runtime persona; workflow-version-independent) |
 | pod-config | LESSONS.md | v2-owner: pod scripts + experimenter (runtime unchanged) |
 | pod-side-reporting | LESSONS.md | v2-owner: code-correctness-critic + experiment-implementer |
+| pods | LESSONS.md | v2-owner: pod scripts + experimenter (runtime unchanged) + efficiency-critic (plan-time width/intent sizing) |
 | replication-fidelity | LESSONS.md | v2-owner: methodology-baselines-critic |
 | research-project-structure | LESSONS.md | v2-owner: report-verifier + task.py (report-v1 clean-result; RESULTS.md + open_questions.md manual per plan §6) |
 | selection-symmetric-nulls | LESSONS.md | v2-owner: statistics-critic |
 | trigger-dense-review | LESSONS.md | v2-owner: code-correctness-critic + reconciler (role-generic review rule; applies to any review-role subagent, v1 and v2) |
 | upload-policy | LESSONS.md | v2-owner: upload-verifier + methodology-baselines-critic |
+| upload-verifier-section-reference | LESSONS.md | v2-owner: upload-verifier (v2 mode) |
 | vectorize-many-cell-fits | LESSONS.md | v2-owner: efficiency-critic |
 | workflow-fix-on-bug | LESSONS.md | v2-owner: orchestrator (all agents emit candidates; unchanged) |
 | agents-vs-skills | LESSONS.md | v2-owner: (authoring-time design rule — all workflow authors) |

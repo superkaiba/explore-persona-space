@@ -1,0 +1,200 @@
+{
+  "commit": "1f3395b2+dirty",
+  "git_commit": "1f3395b2",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md"
+  ],
+  "created": "2026-08-06T16:41:10Z",
+  "figsize": [
+    10.8,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.14,
+      "Spearman correlation with behavior score": 0.5266521257191811,
+      "error": 0.01902106976154877,
+      "series": "clean",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.14,
+      "Spearman correlation with behavior score": 0.4271011769005095,
+      "error": 0.13654894554833855,
+      "series": "degenerate",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.86,
+      "Spearman correlation with behavior score": 0.7099962320347112,
+      "error": 0.013689759876100105,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.1400000000000001,
+      "Spearman correlation with behavior score": 0.6477756188924437,
+      "error": 0.10276650990143998,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1.8599999999999999,
+      "Spearman correlation with behavior score": 0.5358488538808212,
+      "error": 0.018804203006898945,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 2.14,
+      "Spearman correlation with behavior score": 0.5412443403504837,
+      "error": 0.12140691685612531,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": -0.14,
+      "y": 0.3590091856262746,
+      "error": 0.013930844986672075,
+      "series": "clean",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 0.14,
+      "y": 0.5515151515151515,
+      "error": 0.5307619847615875,
+      "series": "degenerate",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": 0.86,
+      "y": 0.31170888277778647,
+      "error": 0.014330106623019478,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 1.1400000000000001,
+      "y": 0.0303030303030303,
+      "error": 0.6293798477067876,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.8599999999999999,
+      "y": 0.1427181588238423,
+      "error": 0.015261410008821336,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 2.14,
+      "y": -0.29696969696969694,
+      "error": 0.6046945447549259,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": -0.14,
+      "y": 0.23572535974879463,
+      "error": 0.014840788766889032,
+      "series": "clean",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 0.14,
+      "y": 0.04242424242424241,
+      "error": 0.6291430044832567,
+      "series": "degenerate",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 0.86,
+      "y": 0.3080902690452525,
+      "error": 0.01435801427152486,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 1.1400000000000001,
+      "y": -0.01818181818181818,
+      "error": 0.6295376078471251,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 1.8599999999999999,
+      "y": 0.1452423391325732,
+      "error": 0.01525283166696427,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 2.14,
+      "y": 0.11515151515151514,
+      "error": 0.6260417268081327,
+      "_kind": "errorbar",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 18,
+  "text": {
+    "suptitle": "Layer-matched cells: prediction on clean vs degenerate contexts",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Evil \u2014 e1\u00b7full map\n(degenerate n=152)",
+        "ylabel": "Spearman correlation with behavior score",
+        "legend_labels": [
+          "clean",
+          "degenerate"
+        ],
+        "legend_title": "Context stratum",
+        "xticklabels": [
+          "Mapped answer",
+          "Real answer",
+          "Context"
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      },
+      {
+        "title_left": "Sycophancy \u2014 e1\u00b7full map\n(degenerate n=10)",
+        "xticklabels": [
+          "Mapped answer",
+          "Real answer",
+          "Context"
+        ]
+      },
+      {
+        "title_left": "Sycophancy \u2014 e1\u00b75000 map\n(degenerate n=10)",
+        "xticklabels": [
+          "Mapped answer",
+          "Real answer",
+          "Context"
+        ]
+      }
+    ],
+    "series": [
+      "clean",
+      "degenerate"
+    ]
+  }
+}

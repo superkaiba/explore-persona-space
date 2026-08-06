@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2153,
+  "highest_id": 2158,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2622,8 +2622,8 @@
       "goal": "Determine whether RLVR-style RL post-training changes the linear context\u2192answer-profile map more than SFT/DPO post-training, using a released separated-stage ladder (primary candidate: Llama-3.1-8B base \u2192 Tulu-3-8B-SFT \u2192 Tulu-3-8B-DPO \u2192 Tulu-3-8B post-RLVR) \u2014 per stage, measure (a) within-stage held-out R\u00b2 of the per-example ridge map c_x \u2192 v(x) (#779/#825 recipe, prefix AND context arms) and (b) the #825 Result-2 reparameterization gap (within-stage R\u00b2 minus reparameterized-base-map R\u00b2 on identical text), testing whether the gap grows specifically at the RLVR stage (teaching) vs stays \u22480 at all stages (elicitation) vs grows uniformly with post-training depth.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/blocked/1336",
-      "status": "blocked",
+      "path": "tasks/followups_running/1336",
+      "status": "followups_running",
       "title": "The Llama T\u00fclu ladder's DPO\u2192RLVR step needs at most a rotation of the linear context\u2192answer map on seven of eight corpora, and no coordinate change on four of eight (raw) / six of eight (recal companion) (MODERATE confidence)"
     },
     "1337": {
@@ -7806,15 +7806,15 @@
     "2007": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2007",
-      "status": "reviewing",
+      "path": "tasks/completed/2007",
+      "status": "completed",
       "title": "daily-fix: worktree_audit gc-wedge tier (git prune + gc.log)"
     },
     "2008": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2008",
-      "status": "proposed",
+      "path": "tasks/completed/2008",
+      "status": "completed",
       "title": "daily-fix: capture plans name pooling convention per vector"
     },
     "2009": {
@@ -8446,8 +8446,8 @@
       "goal": "Measure how the answer-decoding regime (single greedy vs K-rollout-averaged stochastic vs single stochastic draw) changes answer-vector variance, context->answer mapping quality and its cross-regime transfer, and behavioral-expression prediction accuracy for sycophancy / hallucination / evil, on generic held-out data versus trait-eliciting data.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2091",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/2091",
+      "status": "awaiting_promotion",
       "title": "Averaging five sampled answers buys a cleaner measurement target, not a better context-to-answer map (MODERATE confidence)"
     },
     "2092": {
@@ -8466,11 +8466,11 @@
     },
     "2094": {
       "goal": "On Qwen-2.5-7B-Instruct, test whether interventions (activation patching and steering) at single context positions \u2014 the context-end and prefix-end vectors, with last-3-token / query-span / full-context controls \u2014 causally move BOTH the answer state and behavior toward a target context, across three settings from one crossed context bank (matched query; matched prefix; cross), measured by one unified fraction-of-swap metric F at both levels (F_act signed projection with disjoint baseline halves; F_beh dual-judge contrast normalized between unpatched floor and generate-under-B ceiling), plus map-transport cosines against banked ridge maps only (context-end #779 963k L14/L19; prefix-end #1738 L14/L19/L26 \u2014 no new map training), an on-experiment linearity fit L (held out by pair; direction-aware vs banked M and the #1776 Jacobian J), coherence-gated reporting (judge > 60, coherent-only, <50%-coherent cells marked), and a fragility map vs the norm-matched shuffled-donor null.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2094",
-      "status": "interpreting",
-      "title": "Single-position context/prefix interventions: fraction-of-swap (F) at activation and behavior levels across matched-query / matched-prefix / cross settings"
+      "path": "tasks/followups_running/2094",
+      "status": "followups_running",
+      "title": "Context-end is the only single position where activation edits move behavior clear of the shuffled-donor null, and even its strongest patch falls well short of a full context swap (MODERATE confidence)"
     },
     "2095": {
       "has_clean_result": false,
@@ -8902,8 +8902,8 @@
     "2151": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2151",
-      "status": "running",
+      "path": "tasks/completed/2151",
+      "status": "completed",
       "title": "Give API-level stop_reason=refusal its own judge drop class (rules 9/24/18 + judge_dispatch.py:670-681)"
     },
     "2152": {
@@ -8916,9 +8916,44 @@
     "2153": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2153",
-      "status": "running",
+      "path": "tasks/completed/2153",
+      "status": "completed",
       "title": "Detached HF transfers must have timeout + observable progress (xet read-hang is silent); warn off snapshot_download(allow_patterns) on the 1M-file data repo"
+    },
+    "2154": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2154",
+      "status": "completed",
+      "title": "workflow-fix: #1739 follow-up-run marker writes label= not followup_label=, reddening test_corpus_replay_all_historical_markers on main"
+    },
+    "2155": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2155",
+      "status": "proposed",
+      "title": "Cut ~35K tokens/spawn from the always-on context load (autocompact thrash)"
+    },
+    "2156": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2156",
+      "status": "running",
+      "title": "workflow-fix: repair main-red pin test_mlp_chunk_size_changes_fit_batch_order_init"
+    },
+    "2157": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2157",
+      "status": "reviewing",
+      "title": "workflow-fix: pods.md names a --boot-disk-gb flag pod.py provision lacks; cpu-bigmem defaults to 50GB not 240GB"
+    },
+    "2158": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2158",
+      "status": "proposed",
+      "title": "Pre-split intermediate-unit review guard + cross-session shared-worktree writer arbitration"
     },
     "216": {
       "has_clean_result": true,

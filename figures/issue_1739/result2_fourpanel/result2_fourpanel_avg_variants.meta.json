@@ -1,0 +1,300 @@
+{
+  "commit": "faa17de7+dirty",
+  "git_commit": "faa17de7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md"
+  ],
+  "created": "2026-08-06T16:43:05Z",
+  "figsize": [
+    11.5,
+    6.4
+  ],
+  "points": [
+    {
+      "x": -0.285,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7314259037914721,
+      "error": 0.05953408363013202,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.095,
+      "Spearman rho, prediction vs judged behaviour expression": 0.6385550641995322,
+      "error": 0.07406615728459465,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.095,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7321723346158748,
+      "error": 0.058163519949545606,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.285,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7845906060940001,
+      "error": 0.05646700671498206,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.715,
+      "Spearman rho, prediction vs judged behaviour expression": -0.07114981209708202,
+      "error": 0.0946802468290712,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.905,
+      "Spearman rho, prediction vs judged behaviour expression": 0.1340039697714768,
+      "error": 0.09690505480938874,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.095,
+      "Spearman rho, prediction vs judged behaviour expression": 0.09230125122278093,
+      "error": 0.10329990579923132,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.285,
+      "Spearman rho, prediction vs judged behaviour expression": 0.178420558192515,
+      "error": 0.09601740492100694,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.715,
+      "Spearman rho, prediction vs judged behaviour expression": 0.019589686079242174,
+      "error": 0.018242572986098982,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.905,
+      "Spearman rho, prediction vs judged behaviour expression": 0.3015981254411329,
+      "error": 0.014605815168297231,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.095,
+      "Spearman rho, prediction vs judged behaviour expression": 0.34585133548718083,
+      "error": 0.015024391651020652,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.285,
+      "Spearman rho, prediction vs judged behaviour expression": 0.35464561133648,
+      "error": 0.014410457693009887,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.715,
+      "Spearman rho, prediction vs judged behaviour expression": 0.1029347469307564,
+      "error": 0.04246653945768743,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.905,
+      "Spearman rho, prediction vs judged behaviour expression": 0.2272914236974447,
+      "error": 0.04237872925330455,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 3.095,
+      "Spearman rho, prediction vs judged behaviour expression": 0.26634589535760145,
+      "error": 0.04080551500345447,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.285,
+      "Spearman rho, prediction vs judged behaviour expression": 0.3014672378747245,
+      "error": 0.04052810183464384,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": -0.285,
+      "y": 0.7314259037914721,
+      "error": 0.05953408363013202,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": -0.095,
+      "y": 0.6385550641995322,
+      "error": 0.07406615728459465,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 0.095,
+      "y": 0.7321723346158748,
+      "error": 0.058163519949545606,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 0.285,
+      "y": 0.7845906060940001,
+      "error": 0.05646700671498206,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 0.715,
+      "y": -0.025076425830966226,
+      "error": 0.09877144936588347,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 0.905,
+      "y": 0.1644752412242809,
+      "error": 0.088416098575793,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 1.095,
+      "y": 0.13353595589751638,
+      "error": 0.09135674705286582,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 1.285,
+      "y": 0.1944300382598091,
+      "error": 0.08875502382332004,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 1.715,
+      "y": 0.019589686079242174,
+      "error": 0.018242572986098982,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 1.905,
+      "y": 0.3015981254411329,
+      "error": 0.014605815168297231,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 2.095,
+      "y": 0.34585133548718083,
+      "error": 0.015024391651020652,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 2.285,
+      "y": 0.35464561133648,
+      "error": 0.014410457693009887,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 2.715,
+      "y": 0.07345479594698837,
+      "error": 0.04928905545198802,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 2.905,
+      "y": 0.20411776746490054,
+      "error": 0.05011166216836126,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": 3.095,
+      "y": 0.21952671878557894,
+      "error": 0.04996166519256541,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 3.285,
+      "y": 0.2577773284157877,
+      "error": 0.04822514693440079,
+      "_kind": "bar",
+      "_group": 31
+    }
+  ],
+  "n_series": 32,
+  "total_points": 32,
+  "text": {
+    "suptitle": "Average across behaviours: effect of excluding spread-failed cells",
+    "fig_texts": [
+      "Averaged-across-behaviours panel of the four-panel Result 2 (fair protocol) figure, both ways.   LEFT: spread-failed cells excluded (as in the main figure) \u2014 evil drops out of generic chat and completely OOD (its wildchat + both OOD rungs fail the Result 1 spread gate), so those bars average sycophancy + hallucination only (2 behaviours; the other groups average 3).   RIGHT: all cells included \u2014 generic chat and completely OOD then carry evil's near-floor uninterpretable cells and are hatched/muted accordingly.   Same metric, arms, CI convention, and per-cell n as the main figure (see its caption)."
+    ],
+    "axes": [
+      {
+        "title_left": "average across behaviours \u2014 spread-failed cells excluded",
+        "ylabel": "Spearman rho, prediction vs judged behaviour expression",
+        "xticklabels": [
+          "synthetic\n(avg of 3 behaviours)",
+          "generic chat\n(avg of 2 behaviours)",
+          "in-distribution\n(avg of 3 behaviours)",
+          "completely OOD\n(avg of 2 behaviours)"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "average across behaviours \u2014 all cells included",
+        "xticklabels": [
+          "synthetic\n(avg of 3 behaviours)",
+          "generic chat\n(avg of 3 behaviours)",
+          "in-distribution\n(avg of 3 behaviours)",
+          "completely OOD\n(avg of 3 behaviours)"
+        ]
+      },
+      {
+        "legend_labels": [
+          "Persona vector on context",
+          "Persona vector on mapped answer (linear map)",
+          "Persona vector on mapped answer (MLP map)",
+          "Persona vector on real answer",
+          "spread gate failed \u2014 not interpretable"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

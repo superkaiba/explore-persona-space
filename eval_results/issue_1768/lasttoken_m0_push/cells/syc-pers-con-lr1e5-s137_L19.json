@@ -1,0 +1,27 @@
+{
+ "arm_id": "syc-pers-con-lr1e5-s137",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 8.569817339016026,
+  "q25": 7.442421145827859,
+  "q75": 9.885939769793826,
+  "mean": 8.648941766855089,
+  "n": 1024
+ },
+ "delta_med_committed": 9.429141602997731,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.2587891188578667,
+ "push_all_rows": {
+  "median": 8.252131856212404,
+  "q25": 7.188772997324466,
+  "q75": 9.427892047086464,
+  "mean": 8.366273590166616,
+  "n": 16400
+ }
+}

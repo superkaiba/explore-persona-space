@@ -8,10 +8,11 @@ description: >
   experiments, write code, or invoke `/issue <N>` itself — those run in
   separate per-issue sessions.
 skills:
-  - ideation
   - experiment-proposer
-  - adversarial-planner
   - promote-clean-result
+# `skills:` INLINES the whole SKILL.md per spawn: `adversarial-planner` (68 KB,
+# "rare" per § skill table) + `ideation` (26.6 KB, Mode 3) are Skill-tool
+# on-demand instead — was ~26K tok/boot.
 memory: project
 effort: xhigh
 disallowedTools: mcp__todoist, mcp__google-workspace, mcp__plugin_playwright_playwright

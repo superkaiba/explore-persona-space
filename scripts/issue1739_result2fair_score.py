@@ -4,7 +4,7 @@
 User-directed same-issue follow-up (2026-08-05; spec revision: 7 methods). The
 committed Result-2 rows train the label-consuming readouts on the
 trait-eliciting train set only; this round re-fits them on ALL the judged
-training data and re-scores SEVEN methods under one shared protocol:
+training data and re-scores the linear-map roster under one shared protocol:
 
   every predictor gets
     - the generic UNJUDGED WildChat pool  -> the context->answer MAP fit pool
@@ -21,29 +21,41 @@ training data and re-scores SEVEN methods under one shared protocol:
       that would cannibalise the pvsynth evaluation setting. Recorded
       protocol deviation.)
 
-METHODS (7, user list): PV on context (arm1_ctx_e1), PV on mapped answer
-under the LINEAR map (arm6_map_proj_e1) and under the MLP map (same arm,
-map_kind=mlp), PV on real answer (arm11_oracle_proj), regression from mapped
-answer (arm7_map_ridge_pred), MLP from mapped answer (arm19_map_mlp_pred —
-NEW ARM, added this round: the arm-5 recipe with input mp), and regression
-from context (arm4_ridge_ctx). Label-consuming readouts: arms 4/7/19.
+METHODS (LINEAR MAP ONLY — the nonlinear-map arms were dropped by user scope
+decision 2026-08-06; no MLP map pass, no MLP readout): PV on context
+(arm1_ctx_e1), PV on mapped answer (arm6_map_proj_e1), PV on real answer
+(arm11_oracle_proj), regression from context (arm4_ridge_ctx), regression
+from mapped answer — fit AND evaluated on the mapped answer
+(arm7_map_ridge_pred), regression from the REAL answer (arm12_oracle_reg —
+the fitted oracle: ridge from the whitened true-answer acts za to the DV; no
+map, no regime direction), PLUS two comparator/control reads: arm8
+(arm8_map_ridge_true — arm12's fitted w APPLIED TO THE MAPPED answer: fit on
+real, evaluated on mapped, sharing ONE za RidgeJob with arm12, so
+arm8:arm12 is the fitted analogue of arm6:arm11 and the map-error-sensitive
+regression comparator) and the shuffled-map ridge CONTROL
+(arm20_shuffled_map_ridge — ridge from the SHUFFLED-weight mapped answer
+mp_shuf to the DV; the fitted-readout counterpart of arm13's projection
+control, reading the identical per-cell shuffle). arm20 is a falsification
+test of the linear-collapse argument, not a method: a row permutation
+preserves the map's rank exactly, so ridge-on-shuffled-map should land
+within noise of arms 4/7 — a materially lower score means the induced ridge
+prior genuinely bites. Label-consuming readouts: arms 4/7/8/12/20.
 
-MAP-KIND RESOLUTION (recorded): the primary mapped-answer READOUT cells
-(arm7/arm19) run under the LINEAR map, matching the PV-on-mapped-answer
-method, so readout family is the only thing varying between them and arm4;
-the MLP-map pass ({arm6, arm7, arm19} under map_kind=mlp) runs on the same
-pool as separate cells — map kinds are never averaged within a bar. The
-linear+linear composition arm7 is deliberately KEPT (not collapsed into
-arm4): max |rho(arm7) - rho(arm4)| across linear cells is the empirical
-collapse check.
+MAP-KIND RESOLUTION (recorded): everything runs under the LINEAR map — the
+equivalence argument the design tests is specific to it. The linear+linear
+composition arm7 is deliberately KEPT (not collapsed into arm4): max
+|rho(arm7) - rho(arm4)| across linear cells is the empirical collapse check.
 
 Settings (4 roles): pvsynth grid, WildChat held-out eval split, train
 out-of-fold, and the behaviour's committed OOD rungs.
 
 FROZEN LAYERS: committed modal train-grid layers for the arms that have them
-under the linear map (arm1/4/6/7/11); arms without a committed convention
-(arm19, and every MLP-map cell) freeze on THIS run's own train-OOF per-layer
-rho (own-pool selection — never on eval outcome). Per-arm source recorded.
+under the linear map (arm1/4/6/7/8/11/12); arm20 (new — no committed
+train-grid rows exist) freezes on THIS run's own train-OOF per-layer rho
+(own-pool selection — never on eval outcome). Per-arm source recorded.
+Matched-layer companions close the freezing asymmetries: arm20's rho is
+also read at arm7's frozen layer, and arm8's at arm12's (each an index into
+the scored profile — see attach_matched_layer_companion).
 
 NO LEAKAGE is the point: hard asserts that no context in the readout training
 set appears in any evaluation setting. Realized counts recorded in meta.
@@ -95,31 +107,66 @@ PV_RUNG = "pvsynth"
 WC_SPLIT_MOD = 5
 WC_EVAL_BUCKET = 4
 
-# Per-map-kind rosters. The linear pass carries the map-independent arms
-# (1/4/11) alongside the linear-map cells; the mlp pass re-scores ONLY the
-# map-consuming arms (6/7/19) under map_kind=mlp.
+# Fair roster — LINEAR MAP ONLY (user scope decision 2026-08-06): the whole
+# map_kind="mlp" pass AND the MLP readout (arm19_map_mlp_pred) are DROPPED —
+# the target figure is five ridge/PV methods plus the two comparators/
+# controls, nothing in it is an MLP, and the equivalence argument that
+# motivates the design is specific to the linear map. arm12 reads the REAL
+# answer (no map input); arm20's shuffled-WEIGHT control is linear-map only
+# (a nonlinear map has no weight tensor to permute — arm13's contract).
+# arm8 rides the SAME za RidgeJob as arm12 (one fitted w on real answers,
+# TWO eval matrices: mapped -> arm8, real -> arm12), so it costs ZERO extra
+# Gram+eigh factorizations — the map-error-sensitive regression comparator
+# (arm8:arm12 is the fitted analogue of arm6:arm11).
 ROSTER_LINEAR = (
     "arm1_ctx_e1",
     "arm4_ridge_ctx",
     "arm6_map_proj_e1",
     "arm7_map_ridge_pred",
+    "arm8_map_ridge_true",
     "arm11_oracle_proj",
-    "arm19_map_mlp_pred",
+    "arm12_oracle_reg",
+    "arm20_shuffled_map_ridge",
 )
-ROSTER_MLPMAP = ("arm6_map_proj_e1", "arm7_map_ridge_pred", "arm19_map_mlp_pred")
-ROSTER_BY_KIND = {"linear": ROSTER_LINEAR, "mlp": ROSTER_MLPMAP}
+ROSTER_BY_KIND = {"linear": ROSTER_LINEAR}
 # Arms whose frozen layer comes from the committed modal train-grid convention
 # (linear-map pass only; everything else freezes on this run's own train OOF).
+# arm12 freezes on the SAME modal-committed-train-cells convention as the
+# other oracle arm (arm11) — its committed (context_end, e1, 'full')
+# u_rung_label set is byte-identical to arm11's for all three behaviors.
+# arm8 VERIFIED to resolve on the same convention (2026-08-06 live probe:
+# modal_frozen_layers at (context_end, e1, 'full') gives evil=21 / syco=17 /
+# hall=16) — footing parity with arm11/arm12 by construction.
+# arm20 is deliberately ABSENT (the arm19 precedent): it is new, so
+# modal_frozen_layers has no committed rows for it — it takes the
+# own-train-OOF-argmax fallback below, recorded per arm in frozen_sources.
 COMMITTED_FROZEN_ARMS = (
     "arm1_ctx_e1",
     "arm4_ridge_ctx",
     "arm6_map_proj_e1",
     "arm7_map_ridge_pred",
+    "arm8_map_ridge_true",
     "arm11_oracle_proj",
+    "arm12_oracle_reg",
 )
-LABEL_CONSUMING = ("arm4_ridge_ctx", "arm7_map_ridge_pred", "arm19_map_mlp_pred")
+# Arms whose readout FITS against the DV (documented in meta as
+# label_consuming_arms): arm12 trains a ridge from za to the DV, exactly like
+# arm4 (z) / arm7 (mp) / arm20 (mp_shuf); arm8 SHARES arm12's fitted w (the
+# arm8_12 target) and differs only in the eval matrix. The projection arms
+# (1/6/11/13) are label-free.
+LABEL_CONSUMING = (
+    "arm4_ridge_ctx",
+    "arm7_map_ridge_pred",
+    "arm8_map_ridge_true",
+    "arm12_oracle_reg",
+    "arm20_shuffled_map_ridge",
+)
 
-DEFAULT_OUT_ROOT = Path("eval_results/issue_1739/result2_fair")
+# V2 sibling path (2026-08-06): the committed `result2_fair/` tree is the
+# source of the already-shipped four-panel/five-method figures (they read
+# result2_fair/result2_fair_points.json) — this re-score must NEVER overwrite
+# it in place. The no-MLP + arm8/arm12/arm20 roster writes to result2_fair_v2.
+DEFAULT_OUT_ROOT = Path("eval_results/issue_1739/result2_fair_v2")
 DEFAULT_MAIN_ROOT = Path("eval_results/issue_1739")
 DEFAULT_TENSORS_ROOT = Path("analysis_tensors/issue_1739")
 DEFAULT_STORE_ROOT = Path("data/issue_1739/hf_dl")
@@ -127,7 +174,7 @@ DEFAULT_STORE_ROOT = Path("data/issue_1739/hf_dl")
 PVSYNTH_READOUT_DEVIATION = (
     "protocol item 4 (pvsynth judged data) is satisfied for the projection arms through "
     "r_B — the E1 direction is built from the judge-filtered pvsynth extraction set — but "
-    "the REGRESSION/MLP readouts (arms 4/7/19) do NOT train on pvsynth rows: the only "
+    "the REGRESSION readouts (arms 4/7/8/12/20) do NOT train on pvsynth rows: the only "
     "judged pvsynth rows are the 200 split=eval grid contexts that ARE the pvsynth "
     "evaluation setting (no judged pvsynth train rows exist), so training on them would "
     "evaluate the readout on its own training contexts. Recorded protocol deviation."
@@ -255,6 +302,77 @@ def fit_add_maps(args, loaded, variant: str, layers: list[int]):
         print(f"[fair] map fit kind={kind}: {diags[kind]['map_fit_s']}s", flush=True)
     del x_w, y_w
     return wh, mapfits, diags, u_label, n_u
+
+
+# (arm, reference arm) pairs whose freezing/layer asymmetry gets a companion
+# read: arm20 freezes own-argmax while arm7 uses the committed convention;
+# arm8 + arm12 share ONE fitted w but freeze independently off their own
+# profiles, so each pair's gap would otherwise carry a layer-selection term.
+MATCHED_COMPANIONS = (
+    ("arm20_shuffled_map_ridge", "arm7_map_ridge_pred"),
+    ("arm8_map_ridge_true", "arm12_oracle_reg"),
+)
+
+
+def attach_matched_layer_companion(
+    rows, scores_ev, dv_ev, rungs_ev, frozen, layers, *, arm, ref_arm, min_n=3
+):
+    """Attach the layer-asymmetry companion read to every ``arm`` transfer row.
+
+    Re-reads ``arm``'s rho at ``ref_arm``'s frozen layer — an index into the
+    already-computed per-layer score profile, no new fit, no new bootstrap —
+    so the arm-vs-ref comparison has a like-for-like (same-layer) number.
+    Two registered pairs (MATCHED_COMPANIONS): arm20 @ arm7's layer (arm20
+    freezes on own train-OOF argmax, arm7 on the committed modal convention)
+    and arm8 @ arm12's layer (one shared fitted w, independently frozen
+    profiles). Emitted as FIELDS on the arm's row
+    (``rho_matched_<ref>_layer`` / ``matched_layer`` / ``matched_note``),
+    deliberately NOT a points-file method slot: slots are 1:1 with bars +
+    legend entries, and this is a diagnostic read of the SAME method, never a
+    second method. Fails loud when the reference arm's frozen layer is
+    unavailable in scope — a silent own-argmax fallback would hide exactly
+    the asymmetry this exists to expose. No-op when no ``arm`` rows exist
+    (skip cases).
+    """
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    a_rows = [r for r in rows if r.get("arm") == arm]
+    if not a_rows:
+        return
+    if ref_arm not in frozen:
+        raise SystemExit(
+            f"{arm} matched-layer companion: {ref_arm} has no frozen layer in "
+            "scope (committed_frozen did not cover it) — refusing a silent fallback"
+        )
+    ref_short = ref_arm.split("_")[0]  # "arm7" / "arm12"
+    field = f"rho_matched_{ref_short}_layer"
+    sc = np.asarray(scores_ev[arm], dtype=np.float64)
+    fl_ref = min(int(frozen[ref_arm]), sc.shape[0] - 1)
+    s = sc[fl_ref]
+    dv = np.asarray(dv_ev, dtype=np.float64)
+    rungs = np.asarray([str(x) for x in rungs_ev])
+    for row in a_rows:
+        m = (rungs == str(row["eval_rung"])) & np.isfinite(s) & np.isfinite(dv)
+        n = int(m.sum())
+        row["matched_layer"] = int(layers[fl_ref])
+        row["matched_layer_idx"] = int(fl_ref)
+        row["n_eval_matched"] = n
+        row[field] = float(arms.spearman_rows(s[m][None], dv[m])[0]) if n >= min_n else None
+        row["matched_note"] = (
+            f"confound check: {arm} rho re-read at {ref_arm}'s frozen layer "
+            f"({arm}'s own rho_frozen freezes off its own profile); a diagnostic "
+            "FIELD on the same method, not a second method"
+        )
+
+
+def attach_matched_companions(rows, scores_ev, dv_ev, rungs_ev, frozen, layers, min_n=3):
+    """Run every registered MATCHED_COMPANIONS pair over one row batch."""
+    for arm, ref_arm in MATCHED_COMPANIONS:
+        attach_matched_layer_companion(
+            rows, scores_ev, dv_ev, rungs_ev, frozen, layers, arm=arm, ref_arm=ref_arm, min_n=min_n
+        )
 
 
 def run_fair(args, loaded, tbl_pv, behavior: str, layers: list[int]) -> dict:
@@ -427,6 +545,9 @@ def run_fair(args, loaded, tbl_pv, behavior: str, layers: list[int]) -> dict:
         per_layer_all += per_layer_rows_for(
             scores_el, dv_el, frozen, {**prov, "eval_rung": "train"}, layers, "mixed-see-meta"
         )
+        attach_matched_companions(
+            rows_tr, scores_el, dv_el, ["train"] * n_el, frozen, layers, min_n=args.min_n
+        )
         rows_all += rows_tr
         del scores_tr, scores_el
         print(f"[fair] {behavior}/{kind}: train OOF done ({len(rows_tr)} rows)", flush=True)
@@ -459,6 +580,7 @@ def run_fair(args, loaded, tbl_pv, behavior: str, layers: list[int]) -> dict:
             per_layer_all += per_layer_rows_for(
                 scores, dv_ev, _f, {**p, "eval_rung": tag}, layers, "mixed-see-meta"
             )
+            attach_matched_companions(rows, scores, dv_ev, rungs, _f, layers, min_n=args.min_n)
             rows_all += rows
             skips_all += skips
             print(
@@ -484,6 +606,13 @@ def run_fair(args, loaded, tbl_pv, behavior: str, layers: list[int]) -> dict:
     del z_ctx, z_ans, z_wc_ev, za_wc_ev, z_pv, za_pv, z_ood, za_ood
     _free_cuda(args.device)
 
+    # Process-wide monotone RSS high-water (Linux ru_maxrss is KiB) — the
+    # pilot's per-behavior memory record for the batch-1 sequencing fix.
+    import resource
+
+    rss_gib = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024**2)
+    print(f"[fair] {behavior}: ru_maxrss high-water {rss_gib:.1f} GiB", flush=True)
+
     return {
         "rows": rows_all,
         "skips": skips_all,
@@ -508,9 +637,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--map-kinds",
         nargs="+",
-        default=["linear", "mlp"],
-        choices=["linear", "mlp"],
-        help="map kinds to fit + score (the linear pass carries the map-independent arms)",
+        default=["linear"],
+        choices=["linear"],
+        help="LINEAR ONLY — the map_kind=mlp pass was dropped with the whole "
+        "nonlinear-map scope (user decision 2026-08-06); the flag survives for "
+        "pipeline compatibility",
     )
     ap.add_argument("--regime", default="e1", choices=("e1",))
     ap.add_argument("--layers", type=int, nargs="+", default=None)
@@ -577,8 +708,8 @@ def main(argv: list[str] | None = None) -> int:
             resolve_wcrung_store,
         )
 
-        assert "arm19_map_mlp_pred" in _arms.ARM_REGISTRY, (
-            "arm19 registry entry missing — pull the fair-round commit on this checkout"
+        assert "arm20_shuffled_map_ridge" in _arms.ARM_REGISTRY, (
+            "arm20 registry entry missing — pull the follow-up-round commit on this checkout"
         )
         _assert_no_judge_modules("after --import-check imports")
         print("[fair] import-check OK", flush=True)
@@ -593,8 +724,8 @@ def main(argv: list[str] | None = None) -> int:
     from scripts.issue1739_wcrung_arms import _git_tracked, _verify_input_shas
 
     load_dotenv()
-    if "arm19_map_mlp_pred" not in arms.ARM_REGISTRY:
-        raise SystemExit("arm19_map_mlp_pred missing from ARM_REGISTRY — stale checkout")
+    if "arm20_shuffled_map_ridge" not in arms.ARM_REGISTRY:
+        raise SystemExit("arm20_shuffled_map_ridge missing from ARM_REGISTRY — stale checkout")
     for b in args.behaviors:
         out = args.out_root / b / "all_arms_spearman.json"
         if _git_tracked(out) and not args.allow_overwrite_committed:
@@ -628,29 +759,79 @@ def main(argv: list[str] | None = None) -> int:
                 "regimes": [args.regime],
                 "variants": [args.variant],
                 "variant_scope": VARIANT_SCOPE_NOTE,
-                "arms": sorted(set(ROSTER_LINEAR) | set(ROSTER_MLPMAP)),
+                "arms": sorted(ROSTER_LINEAR),
                 "map_kinds": list(args.map_kinds),
                 "rosters_by_map_kind": {k: list(v) for k, v in ROSTER_BY_KIND.items()},
                 "label_consuming_arms": sorted(LABEL_CONSUMING),
                 "map_condition": "add",
                 "map_kind_resolution": (
-                    "primary mapped-answer readout cells (arm7/arm19) run under the LINEAR "
-                    "map, matching the PV-on-mapped-answer method; the mlp pass re-scores "
-                    "arms 6/7/19 under map_kind=mlp as separate cells — never averaged"
+                    "LINEAR map only — the nonlinear-map arms (the whole map_kind=mlp pass "
+                    "AND the MLP readout arm19_map_mlp_pred) were dropped by user scope "
+                    "decision on 2026-08-06; the equivalence argument the design tests is "
+                    "specific to the linear map, and nothing in the target five-method "
+                    "figure is an MLP. Their absence from this summary is deliberate, not "
+                    "an oversight or a failure"
                 ),
                 "map_reuse_note": (
                     "the ADD/union map re-runs the committed result2_trait_aug 'add' recipe "
                     "(same pool composition, same seed, same reviewed compose+fit path); "
                     "map weights are not persisted anywhere, so the deterministic re-fit IS "
-                    "the reuse — never a new map condition. The mlp map is the nonlinear-map "
-                    "round's recipe (fits.fit_nonlinear_map, #779 N1M fitters) on the same "
-                    "ADD pool"
+                    "the reuse — never a new map condition"
                 ),
-                "arm19_note": (
-                    "arm19_map_mlp_pred is NEW this round: the arm-5 MLP recipe "
-                    "(vectorized_mlp_skill.fit_batched_loco_mlp_multihead, same "
-                    "hyperparameters) with input mp — differs from arm5 in input only, "
-                    "from arm7 in readout family only; pinned by tests/test_issue1739_arm19.py"
+                "arm8_note": (
+                    "arm8_map_ridge_true added 2026-08-06: arm12's fitted w — ONE za "
+                    "RidgeJob per (fold), solved on REAL-answer acts — APPLIED TO THE "
+                    "MAPPED answer via a second eval matrix (mp_ev), so fit-on-real / "
+                    "evaluate-on-mapped is the arm's entire content: the fitted analogue "
+                    "of arm6:arm11 and the map-error-sensitive regression comparator "
+                    "(arm7 fits AND evaluates on mapped, so its fit absorbs systematic "
+                    "map distortion; arm8's cannot). MARGINAL COST ZERO factorizations: "
+                    "the za Gram+eigh already exists for arm12; arm8 adds one eval "
+                    "projection per (fold x layer). Committed-modal frozen layer "
+                    "(verified: evil=21/syco=17/hall=16); label-consuming (shares the "
+                    "arm8_12 DV-fitted target); ceiling-BOUNDED (w·M(z) is a "
+                    "deterministic function of the context). The mlp-pass arm8 cell is a "
+                    "DELIBERATE, COSTED omission superseded by the full mlp drop: it "
+                    "would have required a fresh za factorization set (+224/behavior) "
+                    "in a pass that no longer exists"
+                ),
+                "arm12_note": (
+                    "arm12_oracle_reg added to the fair roster by the 2026-08-06 follow-up "
+                    "round (the one five-method-comparison method R2FAIR never ran): ridge "
+                    "from the whitened TRUE-answer acts to the DV — the fitted-oracle "
+                    "companion to arm11's projection read. Label-consuming like arms "
+                    "4/7/8; committed-modal frozen layer like arm11; no map input; "
+                    "pinned by tests/test_issue1739_result2fair_roster.py"
+                ),
+                "arm20_note": (
+                    "arm20_shuffled_map_ridge added by the same 2026-08-06 follow-up: ridge "
+                    "from the SHUFFLED-weight mapped answer (mp_shuf) to the DV — the "
+                    "fitted-readout counterpart of arm13's projection control, consuming "
+                    "the IDENTICAL per-cell shuffle (one shuffled_map_weights draw at "
+                    "seed=cell.seed serves both controls). A CONTROL / falsification test "
+                    "of the linear-collapse argument, never a method: the row permutation "
+                    "preserves the map's rank exactly, so ridge-on-shuffled-map is "
+                    "predicted to land within noise of arms 4/7; materially lower means "
+                    "the induced anisotropic ridge prior bites and the arm4-vs-arm7 "
+                    "contrast has content. Label-consuming; frozen layer = own-train-OOF "
+                    "argmax (new arm — no committed convention, the arm19 precedent); "
+                    "LINEAR pass only (a nonlinear map has no weight tensor to permute); "
+                    "pinned by tests/test_issue1739_result2fair_roster.py"
+                ),
+                "matched_layer_note": (
+                    "two matched-layer companions ride the transfer rows as diagnostic "
+                    "FIELDS (never a second points-file method slot), each an index into "
+                    "the scored per-layer profile — no new fit: (a) every arm20 row "
+                    "carries rho_matched_arm7_layer — arm20's rho at arm7's committed "
+                    "frozen layer (arm20's own rho_frozen uses train-OOF argmax, a "
+                    "freezing-convention asymmetry vs arms 4/7/8/11/12); (b) every arm8 "
+                    "row carries rho_matched_arm12_layer — arm8's rho at arm12's frozen "
+                    "layer (arm8 and arm12 share ONE fitted w but freeze independently "
+                    "off their own profiles, so the arm8-vs-arm12 gap would otherwise "
+                    "carry a layer-selection component). Sibling fields per row: "
+                    "matched_layer / matched_layer_idx / n_eval_matched / matched_note. "
+                    "Fails loud if the reference arm's frozen layer is unavailable in "
+                    "scope"
                 ),
                 "readout_protocol": {
                     "training_set": (

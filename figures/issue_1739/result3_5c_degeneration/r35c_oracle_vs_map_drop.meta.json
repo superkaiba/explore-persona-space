@@ -1,0 +1,202 @@
+{
+  "commit": "1f3395b2+dirty",
+  "git_commit": "1f3395b2",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md"
+  ],
+  "created": "2026-08-06T16:41:08Z",
+  "figsize": [
+    6.4,
+    5.6
+  ],
+  "points": [
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.06689151100021395,
+      "Change in mapped-answer correlation on degenerate contexts": -0.10317306874756449,
+      "error": 0.13258793574441557,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.0787218242484038,
+      "Change in mapped-answer correlation on degenerate contexts": 0.07475359432831494,
+      "error": 0.1605256818310895,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.07521515795867043,
+      "Change in mapped-answer correlation on degenerate contexts": -0.19024257475577805,
+      "error": 0.14158470894195563,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.057818281465934436,
+      "Change in mapped-answer correlation on degenerate contexts": -0.0850585184976804,
+      "error": 0.14626474984361482,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.03379763438994155,
+      "Change in mapped-answer correlation on degenerate contexts": -0.3492001234530596,
+      "error": 0.15523113168542907,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.09360259067320809,
+      "Change in mapped-answer correlation on degenerate contexts": -0.32727368338539586,
+      "error": 0.16366570853925738,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.06516372522337062,
+      "Change in mapped-answer correlation on degenerate contexts": -0.0011541838373759848,
+      "error": 0.1353463372122405,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.06759259946372338,
+      "Change in mapped-answer correlation on degenerate contexts": 0.0778729241851368,
+      "error": 0.1502360988140315,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.06845836120316268,
+      "Change in mapped-answer correlation on degenerate contexts": 0.11861976967648286,
+      "error": 0.1427435158336493,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.29356412124133774,
+      "Change in mapped-answer correlation on degenerate contexts": 0.16053649010042698,
+      "error": 0.5907749024067641,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": 0.02598013783632701,
+      "Change in mapped-answer correlation on degenerate contexts": 0.1141421185067732,
+      "error": 0.4895667092696658,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.33305243385338035,
+      "Change in mapped-answer correlation on degenerate contexts": -0.3211989033759139,
+      "error": 0.70442633345023,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.4249660060475094,
+      "Change in mapped-answer correlation on degenerate contexts": 0.1682842254287759,
+      "error": 0.4569076609138709,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.01354654139242477,
+      "Change in mapped-answer correlation on degenerate contexts": -0.6748481951013852,
+      "error": 0.5688071105270285,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.33754915350519615,
+      "Change in mapped-answer correlation on degenerate contexts": -0.306621023120312,
+      "error": 0.7818941428000884,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.3153403371044111,
+      "Change in mapped-answer correlation on degenerate contexts": -0.19130939039504005,
+      "error": 0.7843322995630861,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.05962535019103671,
+      "Change in mapped-answer correlation on degenerate contexts": -0.025100793050113587,
+      "error": 0.5819239328781933,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.3382839363666036,
+      "Change in mapped-answer correlation on degenerate contexts": -0.3928234769015198,
+      "error": 0.7137222437858451,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.16860627379542,
+      "Change in mapped-answer correlation on degenerate contexts": 0.02754458826011819,
+      "error": 0.4537767662820264,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.24429191170843034,
+      "Change in mapped-answer correlation on degenerate contexts": 0.04669711875631684,
+      "error": 0.4978046739820141,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "Change in real-answer (oracle) correlation on degenerate contexts": -0.06746828053874238,
+      "Change in mapped-answer correlation on degenerate contexts": -0.22247647561871062,
+      "error": 0.512702773241565,
+      "_kind": "errorbar",
+      "_group": 20
+    }
+  ],
+  "n_series": 21,
+  "total_points": 21,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Below the dashed line = the map loses more than the oracle\non degenerate contexts",
+        "xlabel": "Change in real-answer (oracle) correlation on degenerate contexts",
+        "ylabel": "Change in mapped-answer correlation on degenerate contexts",
+        "legend_labels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination",
+          "Layer-matched cell",
+          "Excluded (blown-up fit)"
+        ],
+        "xticklabels": [
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ]
+      }
+    ]
+  }
+}
