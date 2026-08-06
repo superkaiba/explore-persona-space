@@ -137,6 +137,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | clean-result-paper-review | LESSONS.md | v1-only — expires at drain |
 | code-reviewer-section-reference | LESSONS.md | v1-only — expires at drain |
 | code-style | LESSONS.md | v2-owner: efficiency-critic + code-correctness-critic |
+| codex-composer-common | LESSONS.md | v2-owner: codex-* twin composers (workflow-version-independent) |
 | compute-backend-failover | LESSONS.md | v2-owner: backend router (src/explore_persona_space/backends) + efficiency-critic |
 | contrastive-negatives | LESSONS.md | v2-owner: methodology-baselines-critic |
 | crash-fix-rounds | LESSONS.md | v2-owner: code-correctness-critic + experiment-implementer |

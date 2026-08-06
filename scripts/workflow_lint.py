@@ -12377,7 +12377,8 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # template lens slots slimmed to heading + findings-contract lines (the
     # composed prompt already inlines the full lens reference verbatim via
     # the {{INLINED ...}} placeholders). Cap = measured + ~1 KB.
-    "codex-clean-result-critic.md": 50_200,
+    # (48_400 post the composer-common hard-rule dedupe, measured 47,431 B.)
+    "codex-clean-result-critic.md": 48_400,
     # measured 61,503 B post-#1805 (Step 4 copy-list bullet extension:
     # round-new-script no-flags lint duty, no-uv static hub-verify
     # adaptation — plan-mandated growth; cap = measured + ~1.3 KB. Prior:
@@ -12394,8 +12395,9 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # bullets deduped against the code-reviewer.md text the composer copies
     # verbatim at compose time (each bullet keeps the section name, the
     # lint/test-pinned tokens, and the Codex-specific adaptations only).
-    # Cap = measured + ~1 KB.
-    "codex-code-reviewer.md": 50_200,
+    # Cap = measured + ~1 KB. (47_900 post the composer-common hard-rule
+    # dedupe, measured 46,904 B.)
+    "codex-code-reviewer.md": 47_900,
     # measured 84,278 B post-#2002 (Resume-matrix + real production
     # out-root unit smoke-contract requirements + matching marker
     # `notes:` sub-blocks; incident driver: #1947 P0/P4/P5 + #1315 r6 +

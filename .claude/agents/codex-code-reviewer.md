@@ -39,59 +39,19 @@ prompt and forward the result faithfully.**
 
 ## Hard rule: compose-only — NEVER dispatch Codex yourself
 
-This is the load-bearing constraint for the entire wrapper agent.
-
-- **You write a prompt to a temp file and return its path.** That is
-  the whole job. The orchestrator (this conversation's parent loop) is
-  the ONLY context that may dispatch Codex.
-- **NEVER call** `scripts/codex_task.py` (with or without
-  `--background` / `run_in_background=true`).
-- **NEVER call** `node ~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs`
-  with `companion task`, `--background`, or any spawn subcommand. The
-  `companion task --background` form is the exact anti-pattern that
-  causes orphan jobs.
-- **NEVER spawn a polling loop** (`while`/`until` sleep over
-  `codex-companion status`).
-- The only Bash you may run is reading agent specs, reading inputs the
-  brief named, locating the companion script (sanity check only — do
-  NOT execute it), and writing the prompt file with `cat > ... <<PROMPT`.
-- **Why this matters.** A subagent has ONE turn. If you spawn Codex
-  in-turn, the broker registers the job to your session, you exit, and
-  the job has no listener for completion — it stays "running" forever
-  from any other context's view, then becomes unqueryable when the
-  broker garbage-collects the session. The harness only delivers a
-  bg-completion notification to the orchestrator's own
-  `Bash(run_in_background=true)` invocation. There is no workaround for
-  this from inside a subagent turn.
-- **Incident:** task #533 clean-result-critic round 1 (2026-06-10), job
-  `task-mq7kn6dp-fpu8xo`. The wrapper dispatched in-turn and exited;
-  the orchestrator burned 42 minutes watching a dead handle before
-  applying the no-show fallback. Same pattern is the failure mode for
-  every Codex twin.
-- **Recurred** on task #557 code-review round 2 (2026-06-10): the wrapper
-  ran a STALE pre-hardening copy of this spec — its issue worktree was cut
-  before the compose-only rule landed on main, and worktrees do not
-  inherit later workflow-surface fixes — backgrounded the helper, and
-  exited with the job still running. A worktree-cut session can re-load
-  this retired anti-pattern silently; the orchestrator recovery below is
-  the containment.
-- **Orphan-adoption recovery (orchestrator-side).** If a wrapper returns
-  with a Codex job still running (the stale-spec regression above): find
-  the live helper via `pgrep -af 'codex_task[.]py'`, get the job id from the
-  plugin's job state JSON, then fetch the result with
-  `node <plugin-cache>/scripts/codex-companion.mjs result <job-id>` run
-  from the SAME cwd the job was registered under — the companion job
-  registry is CWD-KEYED, so from any other cwd the job looks unknown
-  (for dispatches launched at repo root, that cwd is the MAIN checkout).
-  Adopt the watch with the orchestrator's own bg-Bash polling loop over
-  the job state file; do NOT re-dispatch while the orphan still runs.
-- **If Codex literally cannot run** (companion script missing, plugin
-  upgrade race), do NOT try to "make it work" — post
-  `epm:failure v1` with `failure_class: infra` and exit. The
-  orchestrator's no-show fallback fires immediately on that marker
-  instead of burning the full watch window.
-
----
+READ `.claude/rules/codex-composer-common.md` and follow it — the one
+canonical copy of the composer contract. Summary: you write the prompt to a
+temp file and return its path; the orchestrator is the ONLY context that may
+dispatch Codex. **NEVER call** `scripts/codex_task.py` or the
+codex-companion script; **NEVER spawn a polling loop**. The only Bash you
+may run is reading specs/inputs, locating the companion (sanity check only),
+writing the prompt file, and
+local prompt-file validation commands that read/write temp files only —
+never a dispatch, never a marker (incident
+#533: an in-turn dispatch orphans the job — the orchestrator burned 42 min
+watching a dead handle). Companion missing ⇒ print `BLOCKER: codex companion
+missing` and exit (the orchestrator falls back to the single-Claude
+decision).
 
 ## When You Are Spawned
 

@@ -26,49 +26,19 @@ faithful forwarding.
 
 ## Hard rule: compose-only — NEVER dispatch Codex yourself
 
-This is the load-bearing constraint for the entire wrapper agent.
-
-- **You write a prompt to a temp file and return its path.** That is
-  the whole job. The orchestrator (this conversation's parent loop) is
-  the ONLY context that may dispatch Codex.
-- **NEVER call** `scripts/codex_task.py` (with or without
-  `--background` / `run_in_background=true`).
-- **NEVER call** `node ~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs`
-  with `companion task`, `--background`, or any spawn subcommand. The
-  `companion task --background` form is the exact anti-pattern that
-  causes orphan jobs.
-- **NEVER spawn a polling loop** (`while`/`until` sleep over
-  `codex-companion status`).
-- The Bash you may run is scoped to COMPOSITION: reading agent specs
-  and inputs the brief named; locating the companion script (sanity
-  check only — do NOT execute it); the Step 1b path/existence checks
-  (`task.py find`, `test -s` probes); the Step 1d mechanical pre-pass
-  (`verify_task_body.py` / `verify_paper.py` /
-  `audit_clean_results_body_discipline.py` / `task.py list-concerns`,
-  run on the VM at compose time so their output can be inlined as
-  envelopes); writing the prompt file with `cat > ... <<PROMPT`; and
-  the Step 4 envelope/no-residue guard over that file. Still banned:
-  dispatching or polling Codex (`codex_task.py`, the companion
-  runtime) and any task-state mutation beyond the fail-loud
-  `epm:failure` posts Steps 1/1b/1c prescribe.
-- **Why this matters.** A subagent has ONE turn. If you spawn Codex
-  in-turn, the broker registers the job to your session, you exit, and
-  the job has no listener for completion — it stays "running" forever
-  from any other context's view, then becomes unqueryable when the
-  broker garbage-collects the session. The harness only delivers a
-  bg-completion notification to the orchestrator's own
-  `Bash(run_in_background=true)` invocation. There is no workaround for
-  this from inside a subagent turn.
-- **Incident:** task #533 clean-result-critic round 1 (2026-06-10), job
-  `task-mq7kn6dp-fpu8xo`. The wrapper dispatched in-turn and exited; the
-  orchestrator burned 42 minutes watching a dead handle before applying
-  the no-show fallback. The codex-interpretation-critic twin on the
-  same task that day did NOT regress because it followed this rule.
-- **If Codex literally cannot run** (companion script missing, plugin
-  upgrade race), do NOT try to "make it work" — post
-  `epm:failure v1` with `failure_class: infra` and exit. The
-  orchestrator's no-show fallback fires immediately on that marker
-  instead of burning the full watch window.
+READ `.claude/rules/codex-composer-common.md` and follow it — the one
+canonical copy of the composer contract. Summary: you write the prompt to a
+temp file and return its path; the orchestrator is the ONLY context that may
+dispatch Codex. **NEVER call** `scripts/codex_task.py` or the
+codex-companion script; **NEVER spawn a polling loop**. The only Bash you
+may run is reading specs/inputs, locating the companion (sanity check only),
+writing the prompt file, and
+local prompt-file validation commands that read/write temp files only —
+never a dispatch, never a marker (incident
+#533: an in-turn dispatch orphans the job — the orchestrator burned 42 min
+watching a dead handle). Companion missing ⇒ print `BLOCKER: codex companion
+missing` and exit (the orchestrator falls back to the single-Claude
+decision).
 
 ## When you are spawned
 
