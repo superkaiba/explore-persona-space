@@ -616,6 +616,99 @@ def test_state_walk_beyond_cycle_fallback_on_exhausted_cycle(pairs):
     assert torch.allclose(payload.norm(dim=-1), state.norm(dim=-1), rtol=1e-4, atol=1e-6)
 
 
+# ── crash-fix: qspan null payload-degenerate donors (production crash) ─
+
+
+def _share_leading_qspan(bank: dict, donor_pair, n_shared: int) -> None:
+    """Make ``donor_pair``'s qspan Delta EXACTLY zero at its ``n_shared``
+    LEADING positions — the equal-query-length shared-opening causal identity
+    (chat-template user-turn header + shared query opening tokens)."""
+    a = bank["per_context"][donor_pair.a]
+    b = bank["per_context"][donor_pair.b]
+    b["q_span"][:n_shared] = a["q_span"][:n_shared].clone()
+
+
+def _qspan_degenerate_against(bank: dict, donor, recipient: torch.Tensor) -> bool:
+    """Test-local twin of the walk's degeneracy predicate, built ONLY from
+    pre-fix primitives so this test RUNS (and fails at the production assert)
+    on the pre-fix code."""
+    raw, _s, _m = R._pair_payload(bank, donor, "qspan", "A")
+    raw = R.align_right(raw, recipient.shape[0])
+    return bool(((raw.norm(dim=-1) == 0) & (recipient.norm(dim=-1) > 0)).any())
+
+
+def test_qspan_null_walk_skips_payload_degenerate_donor(pairs):
+    """Crash-fix regression (fails PRE-fix with the production assert
+    'zero-norm donor position against a nonzero recipient position'): mirrors
+    the two production combos — degenerate donors mp--persona__q2--persona__q4
+    (3 shared leading positions) and mp--bare__q2--bare__q4 (1 shared leading
+    position). BOTH walk legs (seeded cycle + beyond-cycle sorted fallback)
+    must resolve PAST a payload-degenerate donor to a non-degenerate one with
+    norm_match succeeding, and every qspan-A-null cell resolves over the REAL
+    production donor map with the degenerate donors in place."""
+    bank = _synthetic_bank_same_prefix_pe(pairs)
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    donor_map = BANK.donor_derangement(pairs)
+    _share_leading_qspan(bank, pairs_by_id["mp--persona__q2--persona__q4"], 3)
+    _share_leading_qspan(bank, pairs_by_id["mp--bare__q2--bare__q4"], 1)
+
+    # ── seeded-cycle leg: recip -> DEG -> good (3-cycle) walks past DEG ──
+    for recip_id, deg_id in (
+        ("mp--persona__q2--persona__q5", "mp--persona__q2--persona__q4"),
+        ("mp--persona__q3--persona__q5", "mp--bare__q2--bare__q4"),
+    ):
+        recip, deg = pairs_by_id[recip_id], pairs_by_id[deg_id]
+        recipient, _s, _m = R._pair_payload(bank, recip, "qspan", "A")
+        assert bool((recipient.norm(dim=-1) > 0).all())  # nonzero at EVERY position
+        assert _qspan_degenerate_against(bank, deg, recipient)
+        # the raw pre-fix crash shape stays the last-line guard for RECORDED ids
+        with pytest.raises(AssertionError, match="zero-norm donor"):
+            R._donor_payload(bank, recip, deg, "qspan", "A", recipient)
+        good = next(
+            p
+            for p in pairs
+            if p.setting == "matched_prefix"
+            and p.pair_id not in (recip_id, deg_id)
+            and not _qspan_degenerate_against(bank, p, recipient)
+        )
+        synth_map = {recip_id: deg_id, deg_id: good.pair_id, good.pair_id: recip_id}
+        payload, donor_id = R._resolve_donor(
+            bank, recip, synth_map, pairs_by_id, "qspan", "A", recipient
+        )
+        assert donor_id == good.pair_id  # walked past the payload-degenerate donor
+        assert torch.allclose(payload.norm(dim=-1), recipient.norm(dim=-1), rtol=1e-4, atol=1e-6)
+
+    # ── beyond-cycle sorted-fallback leg: the 2-cycle {recip <-> DEG}
+    # exhausts; the fallback's sorted-FIRST candidate is the DEGENERATE bare
+    # pair (bare < persona) and must be skipped by the degeneracy check. ──
+    recip = pairs_by_id["mp--persona__q2--persona__q5"]
+    deg = pairs_by_id["mp--persona__q2--persona__q4"]
+    deg2_id, good_id = "mp--bare__q2--bare__q4", "mp--persona__q1--persona__q3"
+    recipient, _s, _m = R._pair_payload(bank, recip, "qspan", "A")
+    synth_map = {
+        recip.pair_id: deg.pair_id,
+        deg.pair_id: recip.pair_id,
+        deg2_id: deg2_id,
+        good_id: good_id,
+    }
+    assert sorted(synth_map)[0] == deg2_id  # the degenerate donor IS sorted-first
+    assert _qspan_degenerate_against(bank, pairs_by_id[deg2_id], recipient)
+    assert not _qspan_degenerate_against(bank, pairs_by_id[good_id], recipient)
+    payload, donor_id = R._resolve_donor(
+        bank, recip, synth_map, pairs_by_id, "qspan", "A", recipient
+    )
+    assert donor_id == good_id  # fallback skipped the sorted-first degenerate donor
+    assert torch.allclose(payload.norm(dim=-1), recipient.norm(dim=-1), rtol=1e-4, atol=1e-6)
+
+    # ── production-shaped sweep: EVERY qspan-A-null cell resolves over the
+    # REAL donor map with the two production-degenerate donors in place. ──
+    for p in pairs:
+        recipient, _s, _m = R._pair_payload(bank, p, "qspan", "A")
+        payload, label = R._resolve_donor(bank, p, donor_map, pairs_by_id, "qspan", "A", recipient)
+        assert label in pairs_by_id and label != p.pair_id, (p.pair_id, label)
+        assert not _qspan_degenerate_against(bank, pairs_by_id[label], recipient)
+
+
 # ── round-2 Critical 2: bank / anchors resume predicates ───────────────
 
 

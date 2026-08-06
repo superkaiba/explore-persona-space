@@ -974,10 +974,47 @@ def _donor_payload(
         donor_b = BANK._TYPE_B_DONOR_SWAP[pair.prefix_b]
         raw = (cent[donor_b] - cent[donor_a]).unsqueeze(0)
         return BANK.norm_match(raw, recipient), f"centroid:{donor_a}->{donor_b}"
+    raw = _aligned_donor_raw(bank, donor, slot, vec_type, recipient, payload_kind)
+    return BANK.norm_match(raw, recipient), donor.pair_id
+
+
+def _aligned_donor_raw(
+    bank: dict,
+    donor: BANK.Pair,
+    slot: str,
+    vec_type: str,
+    recipient: torch.Tensor,
+    payload_kind: str,
+) -> torch.Tensor:
+    """RAW Type-A donor payload aligned to the recipient's position count.
+
+    Exactly ``_donor_payload``'s pre-``norm_match`` computation, factored out
+    so the walk's payload-degeneracy skip (:func:`_payload_degenerate`) and
+    the returned payload share ONE computation per candidate donor.
+    """
+    assert vec_type == "A", vec_type
     raw_delta, raw_state, _ = _pair_payload(bank, donor, slot, vec_type)
     raw = raw_state if payload_kind == "state" else raw_delta
-    raw = align_right(raw, recipient.shape[0])
-    return BANK.norm_match(raw, recipient), donor.pair_id
+    return align_right(raw, recipient.shape[0])
+
+
+def _payload_degenerate(raw: torch.Tensor, recipient: torch.Tensor) -> bool:
+    """True when the ALIGNED donor payload is exactly zero at any position
+    where the recipient is nonzero — nothing to rescale there, so
+    ``norm_match`` would fail loud (its zero-donor guard, bank.py).
+
+    Mechanism (production crash, qspan x A x null): an EQUAL-query-length
+    matched-prefix donor pair shares its leading query-span TOKENS (the chat
+    template's user-turn header + any shared query opening), so by causal
+    identity its per-position Delta is EXACTLY zero at those leading
+    positions at every layer. A recipient pair of UNEQUAL query lengths is
+    aligned at different absolute offsets (RoPE), hence nonzero there. Only
+    the qspan slot is exposed — it contains LEADING span positions; the
+    ce/cm2/cm3/l3j slots read trailing positions past the query divergence
+    point. This is the payload-level twin of the structural pe same-prefix
+    exclusion in :func:`_donor_eligible`.
+    """
+    return bool(((raw.norm(dim=-1) == 0) & (recipient.norm(dim=-1) > 0)).any())
 
 
 def _donor_eligible(
@@ -1056,6 +1093,15 @@ def _resolve_donor(
     2-cycle), the walk continues deterministically over the recipient's
     SETTING group in sorted-pair-id order, so resolution is guaranteed
     whenever ANY eligible donor exists in the group.
+
+    BOTH legs (seeded cycle AND sorted fallback) additionally skip
+    PAYLOAD-DEGENERATE candidates — an aligned donor payload exactly zero at
+    any position where the recipient is nonzero (an equal-query-length
+    matched-prefix donor's shared leading query-span tokens are exact causal
+    identities => Delta exactly 0 there; only qspan reads leading positions —
+    see :func:`_payload_degenerate`). A skipped candidate joins ``seen`` (in
+    the cycle leg) and the walk continues; ``norm_match``'s zero-donor assert
+    in bank.py stays UNCHANGED as the last-line guard for recorded donor ids.
     """
     if vec_type == "B":
         return _donor_payload(bank, pair, pair, slot, vec_type, recipient, payload_kind)
@@ -1081,17 +1127,24 @@ def _resolve_donor(
         seen.add(donor_id)
         donor = pairs_by_id[donor_id]
         if donor_id != pair.pair_id and _donor_eligible(donor, slot, pair, payload_kind):
-            return _donor_payload(bank, pair, donor, slot, vec_type, recipient, payload_kind)
+            raw = _aligned_donor_raw(bank, donor, slot, vec_type, recipient, payload_kind)
+            if not _payload_degenerate(raw, recipient):
+                return BANK.norm_match(raw, recipient), donor_id
+            # payload-degenerate (zero at a recipient-nonzero position):
+            # the candidate joins ``seen`` and the walk continues.
         donor_id = donor_map[donor_id]
-    # Seeded cycle exhausted (every member self/ineligible): deterministic
-    # beyond-cycle fallback over the setting group in sorted-pair-id order
-    # (round-3 fix, concern pe-replace-null-walk-exhaustion).
+    # Seeded cycle exhausted (every member self/ineligible/degenerate):
+    # deterministic beyond-cycle fallback over the setting group in
+    # sorted-pair-id order (round-3 fix, concern pe-replace-null-walk-exhaustion).
     for donor_id in sorted(donor_map):
         donor = pairs_by_id[donor_id]
         if donor.setting != pair.setting or donor_id in seen or donor_id == pair.pair_id:
             continue
         if _donor_eligible(donor, slot, pair, payload_kind):
-            return _donor_payload(bank, pair, donor, slot, vec_type, recipient, payload_kind)
+            raw = _aligned_donor_raw(bank, donor, slot, vec_type, recipient, payload_kind)
+            if _payload_degenerate(raw, recipient):
+                continue
+            return BANK.norm_match(raw, recipient), donor_id
     raise AssertionError(f"no eligible donor for {pair.pair_id} at slot {slot}")
 
 
