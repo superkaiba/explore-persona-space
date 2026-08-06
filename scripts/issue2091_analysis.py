@@ -2445,7 +2445,7 @@ def run_family_behavior(args, behavior: str) -> None:
             pool_tag=job,
             n_wc=min(fits.GENERIC_WC, sum(1 for i in core_ids if not i.startswith("lmsys::"))),
             n_lmsys=min(fits.GENERIC_LMSYS, sum(1 for i in core_ids if i.startswith("lmsys::"))),
-            u_pool=len(core_ids),
+            u_floor=len(core_ids),
         )
         fits.assert_group_disjoint([gk[c] for c in pool_c], [gk[c] for c in eval_c], where=job)
         id_to_row = {cid: i for i, cid in enumerate(core_ids)}
