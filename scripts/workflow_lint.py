@@ -9284,26 +9284,55 @@ def _snapshot_allow_patterns_waiver_present(lines: list[str], call_lineno: int) 
     )
 
 
-def _snapshot_download_data_repo_hits(tree: ast.Module) -> list[int]:
-    """Line numbers of ``snapshot_download(...)`` CALLS that carry an
-    ``allow_patterns=`` kwarg AND target the data repo.
-
-    Call name legs (mirrors :func:`_hub_verify_bare_hits`, call-grain): an
-    ``ast.Attribute`` func whose attr is ``snapshot_download`` under ANY
-    receiver, or an ``ast.Name`` func bound by ``from huggingface_hub
-    import snapshot_download [as alias]`` (asname-aware). Data-repo legs
-    (either suffices): a ``repo_type="dataset"`` str-constant kwarg, or a
-    ``repo_id`` str constant (kwarg or first positional) containing
-    :data:`SNAPSHOT_DATA_REPO_SUBSTRING`. A call in a docstring / comment /
-    f-string can never match (AST predicate); Store/Del contexts are
-    irrelevant at call grain (a Call func is always Load-ctx).
-    """
+def _snapshot_download_bound_names(tree: ast.Module) -> set[str]:
+    """Names bound by ``from huggingface_hub import snapshot_download [as
+    alias]`` (asname-aware; mirrors :func:`_hub_verify_bare_hits`'s Name
+    leg)."""
     bound: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("huggingface_hub"):
             for a in node.names:
                 if a.name == "snapshot_download":
                     bound.add(a.asname or a.name)
+    return bound
+
+
+def _snapshot_call_flagged(node: ast.Call) -> bool:
+    """True when a ``snapshot_download``-named Call carries an
+    ``allow_patterns=`` kwarg AND targets the data repo. Data-repo legs
+    (either suffices): a ``repo_type="dataset"`` str-constant kwarg, or a
+    ``repo_id`` str constant (kwarg or first positional) containing
+    :data:`SNAPSHOT_DATA_REPO_SUBSTRING`."""
+    kwargs = {k.arg: k.value for k in node.keywords if k.arg is not None}
+    if "allow_patterns" not in kwargs:
+        return False
+    repo_type = kwargs.get("repo_type")
+    if isinstance(repo_type, ast.Constant) and repo_type.value == "dataset":
+        return True
+    repo_id = kwargs.get("repo_id")
+    if repo_id is None and node.args:
+        repo_id = node.args[0]
+    return (
+        isinstance(repo_id, ast.Constant)
+        and isinstance(repo_id.value, str)
+        and SNAPSHOT_DATA_REPO_SUBSTRING in repo_id.value
+    )
+
+
+def _snapshot_download_data_repo_hits(tree: ast.Module) -> list[int]:
+    """Line numbers of ``snapshot_download(...)`` CALLS that carry an
+    ``allow_patterns=`` kwarg AND target the data repo.
+
+    Call name legs (mirrors :func:`_hub_verify_bare_hits`, call-grain): an
+    ``ast.Attribute`` func whose attr is ``snapshot_download`` under ANY
+    receiver, or an ``ast.Name`` func bound per
+    :func:`_snapshot_download_bound_names`. The flagged-call predicate
+    (``allow_patterns`` + data-repo) is :func:`_snapshot_call_flagged`. A
+    call in a docstring / comment / f-string can never match (AST
+    predicate); Store/Del contexts are irrelevant at call grain (a Call
+    func is always Load-ctx).
+    """
+    bound = _snapshot_download_bound_names(tree)
     hits: list[int] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
@@ -9317,23 +9346,7 @@ def _snapshot_download_data_repo_hits(tree: ast.Module) -> list[int]:
                 continue
         else:
             continue
-        kwargs = {k.arg: k.value for k in node.keywords if k.arg is not None}
-        if "allow_patterns" not in kwargs:
-            continue
-        data_repo = False
-        repo_type = kwargs.get("repo_type")
-        if isinstance(repo_type, ast.Constant) and repo_type.value == "dataset":
-            data_repo = True
-        repo_id = kwargs.get("repo_id")
-        if repo_id is None and node.args:
-            repo_id = node.args[0]
-        if (
-            isinstance(repo_id, ast.Constant)
-            and isinstance(repo_id.value, str)
-            and SNAPSHOT_DATA_REPO_SUBSTRING in repo_id.value
-        ):
-            data_repo = True
-        if data_repo:
+        if _snapshot_call_flagged(node):
             hits.append(node.lineno)
     return hits
 
