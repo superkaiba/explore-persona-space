@@ -107,7 +107,7 @@ def fig_dispersion() -> None:
     ax.set_yticklabels([SETTING_LABEL[k] for k in keys])
     ax.invert_yaxis()
     ax.set_xlabel("answer-vector dispersion (mean pairwise cosine distance, 5 draws)")
-    ax.set_title("Dispersion varies about threefold across prompt families", loc="left")
+    ax.set_title("Dispersion spans about fourfold across prompt families", loc="left")
 
     colors = paper_palette_blog(len(LOWLEVEL))
     for c, k in zip(colors, LOWLEVEL, strict=True):
@@ -148,7 +148,7 @@ def fig_centrality() -> None:
     ax.set_yticklabels([SETTING_LABEL[k] for k in keys])
     ax.invert_yaxis()
     ax.set_xlabel("greedy-minus-draw closeness (↑ greedy more central)")
-    ax.set_title("Greedy is more central in every rung but one", loc="left")
+    ax.set_title("Greedy is more central in six of eight trait rungs", loc="left")
     handles = [
         plt.Rectangle((0, 0), 1, 1, color=pal[1]),
         plt.Rectangle((0, 0), 1, 1, color=pal[2]),
@@ -311,12 +311,14 @@ def fig_behavioral() -> None:
 # ── Figure 5: moderator commonality ───────────────────────────────────────────
 def fig_moderators() -> None:
     fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.6, 4.6))
+    # Cells with at least 100 contexts only; the harmful-compliance transfer
+    # rungs carry 9-27 middling contexts and are uninformative (caption states it).
     pairs = [
+        ("sycophancy", "wildchat"),
         ("sycophancy", "syc_train"),
         ("sycophancy", "syc_aita"),
         ("hallucination", "wildchat"),
         ("evil", "evil_train"),
-        ("evil", "evil_toxicchat"),
     ]
     fams = list(FAMILY_LABEL)
     colors = paper_palette_blog(len(pairs))
@@ -343,7 +345,7 @@ def fig_moderators() -> None:
         [FAMILY_LABEL[f] for f in fams], rotation=20, ha="right", rotation_mode="anchor"
     )
     ax.set_ylabel("share of score variance explained")
-    ax.set_title("Explained share is small outside the smallest cell", loc="left")
+    ax.set_title("Both moderators together explain under 5% of score variance", loc="left")
     ax.legend(loc="upper left", fontsize=7.5)
 
     ys, xs, lo, hi, ticks = [], [], [], [], []
@@ -364,7 +366,13 @@ def fig_moderators() -> None:
             xs.append(m)
             lo.append(max(m - ci[0], 0.0))
             hi.append(max(ci[1] - m, 0.0))
-            ticks.append(f"{FAMILY_LABEL[f]} — {SETTING_LABEL[setting]}")
+            beh_lab = "harmful compliance" if beh == "evil" else beh
+            tick_setting = (
+                f"{SETTING_LABEL[setting]} ({beh_lab})"
+                if setting == "wildchat"
+                else SETTING_LABEL[setting]
+            )
+            ticks.append(f"{FAMILY_LABEL[f]} — {tick_setting}")
             row += 1
     ax2.errorbar(
         xs,
@@ -383,7 +391,7 @@ def fig_moderators() -> None:
     ax2.set_yticklabels(ticks, fontsize=6.2)
     ax2.invert_yaxis()
     ax2.set_xlabel("sampling minus behavioral unique share")
-    ax2.set_title("Per-arm contrasts: intervals straddle zero", loc="left")
+    ax2.set_title("Per-arm contrasts: 19 of 25 intervals cover zero", loc="left")
     fig.tight_layout()
     savefig_paper(fig, "moderator_commonality", dir=FIGDIR)
     plt.close(fig)
