@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2133,
+  "highest_id": 2134,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8772,6 +8772,13 @@
       "path": "tasks/proposed/2133",
       "status": "proposed",
       "title": "daily-fix: measured n_train + regime-change pilot basis"
+    },
+    "2134": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2134",
+      "status": "proposed",
+      "title": "daily-fix: pre-dispatch staleness pass for queued tasks"
     },
     "215": {
       "has_clean_result": true,
