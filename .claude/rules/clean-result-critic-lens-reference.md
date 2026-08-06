@@ -45,9 +45,7 @@ clean, so this passes."
   FAIL when
   a result's prose is a multi-sentence wall where bullets would read
   better, or any single paragraph runs ≥4 sentences in the analytical
-  read. (v3: `### <finding>` read paragraph.) (Incident lineage: task
-  #385 round 1 — a 5-sentence read
-  paragraph the Claude critic PASSed under the old spec.)
+  read. (v3: `### <finding>` read paragraph.) (#385 r1.)
 - **Lens 2 — no body `Confidence: …` sentence** (SPEC
   `.claude/skills/clean-results/SPEC.md`). For v4 bodies confidence
   lives in the H1 title tag ONLY; there is no body `Confidence: …`
@@ -82,8 +80,7 @@ clean, so this passes."
   SHA; a missing subset-disclosure label; a `## Methodology` Sample slot
   that omits the per-load-bearing-condition example for a
   text-generation run. (v3: the per-finding excerpt + the
-  `## Data → ### Generated` systematic samples.) (Incident: task #385
-  round 1 — block absent; Claude critic PASSed.)
+  `## Data → ### Generated` systematic samples.) (#385 r1.)
 - **Lens 7 — bracketed-CI form (`[low, high]`, `Wilson 95% CI [..., ...]`,
   `upper bound = 0.0021`) in `## Takeaways` / `## Goal` /
   `## Methodology` / `## Results` prose** is the same banned construct as
@@ -728,10 +725,9 @@ verdict is equally legitimate). A protocol delta stated to qualify a
 cited number is comparability qualification, NOT Lens 2's banned
 correction framing. FAIL when two protocol-mismatched headlines sit
 side by side (e.g. in `## Takeaways`, `## Goal` context prose, a
-caption, or interpretation prose) with no delta stated —
-mentor-facing incident: #779 vs #823 R² headlines (single-split vs
-k-fold, different layer-selection rules) needed ~6 clarifying
-questions. PASS vacuously when no sibling headline is quoted, the cited
+caption, or interpretation prose) with no delta stated (#779-vs-#823
+R² headlines: single-split vs k-fold, different layer-selection
+rules). PASS vacuously when no sibling headline is quoted, the cited
 protocol matches this issue's, or the delta (+ a comparability verdict
 where the protocols differ materially) is stated.
 Forward-only: binds v4 bodies and follow-up rounds folding onto older
@@ -793,7 +789,7 @@ completions:**`, NOT inside each result. (v3: `## Findings`, each
 `### <finding>` framed by setup/read bullets, with the systematic samples
 in `## Data → ### Generated`.)
 
-The user framing this rule came from (#381, 2026-05-26): *"Basically it
+The user framing this rule came from (#381): *"Basically it
 should be more like a story. We have one takeaway, one result, one
 figure."* v4 generalises this: one takeaway = one `### <result>` = one
 inline figure. (v3: one `### <finding>`.)
@@ -1328,7 +1324,7 @@ conditions OR when the run delivered all planned conditions cleanly
 
 ### Lens 14 — Binding-concerns audit (composed onto Lens 13 by task #455)
 
-Adopted **2026-05-31** by task #455, ON TOP of main's existing
+Adopted by task #455 ON TOP of main's existing
 PASS+CONCERNS auto-advance + mechanical-contract-strip policy
 (neither is weakened). The lens is the LM-side companion to
 `verify_task_body.py`'s `check_concerns_audit` (Lens 14): the verifier
