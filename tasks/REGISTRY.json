@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2149,
+  "highest_id": 2150,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8891,6 +8891,13 @@
       "path": "tasks/completed/215",
       "status": "completed",
       "title": "Only continuous soft prefixes hit both EM axes at once on Qwen-2.5-7B-Instruct: discrete prompt searches split between the alignment objective and the distributional objective, and both discretizations of the soft prefix collapse (MODERATE confidence)"
+    },
+    "2150": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2150",
+      "status": "proposed",
+      "title": "wf-compact fallout: codex-code-reviewer.md lost the Step 4.6 gate-scope copy-list bullet \u2014 3 pin tests red on main"
     },
     "216": {
       "has_clean_result": true,
