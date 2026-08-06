@@ -11811,17 +11811,23 @@ _LESSONS_ROW_RE = re.compile(
 
 # Leanness cap: ~2600 tokens always-on (7500->8000, #869/#872 coordinated
 # raise; #992 restored headroom under the SAME cap via the row-format slim;
-# 8000->9600 at the 2026-08-06 CLAUDE.md relocation, which moved ~79 KB of
-# orchestrator-only prose out of the always-on body into NINE new
+# 8000->9600 at the 2026-08-06 CLAUDE.md relocation, which moved ~52 KB of
+# orchestrator-only prose out of the always-on body into SEVEN new
 # .claude/rules/ files. Each needs an index row, so the index necessarily
-# grows — but the trade is ~1.4 KB of index for ~79 KB of body, a ~21.9K
-# token/spawn net WIN. Do NOT read this raise as license for row bloat: the
+# grows — but the trade is ~1.1 KB of index for ~52 KB of body, a large
+# net token WIN. Do NOT read this raise as license for row bloat: the
 # per-row cap and the non-row cap are unchanged and still bind.
 _LESSONS_MAX_BYTES = 9600
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
-_LESSONS_WARN_BYTES = 8800
+# DELIBERATELY left at 7200 (the #992 plan latitude 7000-7400, pinned by
+# tests/test_workflow_lint.py::test_check_lessons_index_warns_in_warn_band)
+# even though the index now sits above it: the standing advisory WARN is
+# TRUE and is the intended signal to make a deliberate cap decision before
+# the next addition FAILs. Raising the band to silence it would be a
+# separate, argued contract change — not a side effect of this relocation.
+_LESSONS_WARN_BYTES = 7200
 
 # Per-row budget (#1269): one bloated row is caught on the row that adds it —
 # at edit time, in the grower's own tree — not fleet-wide later at the total

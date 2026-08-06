@@ -136,7 +136,6 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | auto-continuation | LESSONS.md | v2-owner: orchestrator (/issue-v2 gate set + workflow.yaml; workflow-version-independent) |
 | background-automation | LESSONS.md | v2-owner: autonomous_session_watch.py + crons (runtime unchanged, Assumption 1) |
 | clean-result-critic-lens-reference | LESSONS.md | v1-only — expires at drain |
-| clean-result-format | LESSONS.md | v1-only — expires at drain |
 | clean-result-paper-review | LESSONS.md | v1-only — expires at drain |
 | code-reviewer-section-reference | LESSONS.md | v1-only — expires at drain |
 | code-style | LESSONS.md | v2-owner: efficiency-critic + code-correctness-critic |
@@ -155,7 +154,6 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | experiment-implementer-section-reference | LESSONS.md | v2-owner: experiment-implementer |
 | experimenter-section-reference | LESSONS.md | v2-owner: experimenter |
 | gotchas | LESSONS.md | v2-owner: code-correctness-critic + efficiency-critic + experiment-implementer |
-| inline-free-analysis | LESSONS.md | v2-owner: orchestrator (user-chat inline carve-out; duties byte-mirrored into CLAUDE.md + issue/SKILL.md Step 9a-ter, lint-enforced) |
 | llm-judging | LESSONS.md | v2-owner: statistics-critic |
 | marker-leakage-measurement | LESSONS.md | v2-owner: statistics-critic |
 | marker-training-recipe | LESSONS.md | v2-owner: methodology-baselines-critic |
