@@ -264,10 +264,13 @@ def smoke_block_families(pairs: list[BANK.Pair], n_layers: int) -> list[tuple[Bl
     """A tiny per-ARM-CLASS slice: >=1 family per class-defining axis.
 
     Classes covered (each with BOTH arms, so every donor-null path runs too):
-    single-layer add on a full-sweep slot, replace mode, joint-middle multi-layer,
+    single-layer add on a full-sweep slot, replace mode on BOTH full-sweep
+    slots (the pe x replace family exercises the state-kind donor walk AND the
+    matched-prefix degenerate ``self:`` carve-out — the round-2/3
+    pe-replace-null-walk-exhaustion arm class), joint-middle multi-layer,
     joint-all, Type B, a single-position control slot, a multi-position control
-    slot (l3j), and the query span (+ a Type-A twin on the Type-B cell). 12
-    families = 24 blocks. The pair subset
+    slot (l3j), and the query span (+ a Type-A twin on the Type-B cell). 13
+    families = 26 blocks. The pair subset
     ALWAYS includes a conv-``context_a`` pair (the multi-turn history render is
     otherwise smoke-invisible — the unit-E render-seam requirement), and the
     ``ce``/mid slot carries FOUR additive doses so the downstream P7 linearity
@@ -298,6 +301,7 @@ def smoke_block_families(pairs: list[BANK.Pair], n_layers: int) -> list[tuple[Bl
         ("ce", mid, "a4", "A", a_subset),
         ("ce", mid, "replace", "A", a_subset),
         ("pe", last, "a2", "A", a_subset),
+        ("pe", last, "replace", "A", a_subset),
         ("pe", "joint_mid", "a1", "A", a_subset),
         ("cm2", "joint_mid", "replace", "A", a_subset),
         ("l3j", "joint_mid", "a0.5", "A", a_subset),
@@ -1019,17 +1023,34 @@ def _resolve_donor(
 ) -> tuple[torch.Tensor, str]:
     """Deterministic donor resolution: walk the seeded derangement cycle from
     ``donor_map[pair]`` to the first slot-ELIGIBLE donor (skipping the
-    recipient pair itself). The REALIZED donor id is recorded per cell
+    recipient pair itself), continuing over the sorted setting group when the
+    cycle exhausts. The REALIZED donor id is recorded per cell
     (``donor_pair_id``), and the analysis transport reconstruction prefers
     that recorded id, so the walk rule never has to be re-derived downstream.
     Type B routes straight to the centroid-swap donor (derangement-free).
+
+    DEGENERATE cells short-circuit BEFORE the walk, mirroring each other
+    (round 3, concern ``pe-replace-null-walk-exhaustion``): a ZERO recipient
+    Delta (the canonicalized same-prefix pe Delta) nulls to a zero injection,
+    and a matched-prefix pair's single-position pe REPLACE (state kind) nulls
+    to the recipient's OWN ``V_B`` recorded ``self:<pair_id>`` — in both the
+    STEERED edit is a no-op by the causal identity (same prefix tokens =>
+    identical prefix-end state), so the matched null is the same no-op.
+    Installing a REAL wrong-prefix donor state instead would perturb the null
+    arm against a no-op steered twin, breaking the arms' parallelism (and the
+    mp group has NO walk-eligible state donor at pe anyway — the round-2 crash).
 
     The eligibility walk is payload-kind-AWARE: the pe same-prefix exclusion
     (Δ-degeneracy) applies to both kinds, and ``state`` payloads ADDITIONALLY
     skip donors sharing the recipient's target slot state (same context ``b``;
     same ``prefix_b`` at pe) — see :func:`_donor_eligible`. So a pair's
     additive and replace null cells share the realized donor EXCEPT where the
-    same-target-state exclusion forces a further walk step.
+    same-target-state exclusion forces a further walk step. When the seeded
+    cycle exhausts without an eligible donor (the same-target-state exclusion
+    can eat a short cross cycle whole — 2 cross pairs at pe/replace form a
+    2-cycle), the walk continues deterministically over the recipient's
+    SETTING group in sorted-pair-id order, so resolution is guaranteed
+    whenever ANY eligible donor exists in the group.
     """
     if vec_type == "B":
         return _donor_payload(bank, pair, pair, slot, vec_type, recipient, payload_kind)
@@ -1039,6 +1060,16 @@ def _resolve_donor(
         # twin, which injects exactly nothing at this cell. Record the seeded
         # donor id for provenance.
         return torch.zeros_like(recipient), donor_map[pair.pair_id]
+    if payload_kind == "state" and slot == "pe" and pair.prefix_a == pair.prefix_b:
+        # Degenerate STATE cell (state-kind twin of the zero-Delta convention
+        # above): a matched-prefix pair's steered pe replace installs
+        # V_B(pe) == V_A(pe) — a no-op — so the matched null installs the
+        # recipient's own state (the same no-op). The ``self:`` label flags
+        # the cell for downstream reads (its specificity read is meaningless
+        # under ANY donor choice: the steered arm edits nothing), and falls
+        # through transport_row_payload's recorded-donor branch back to this
+        # carve-out (one source site).
+        return recipient, f"self:{pair.pair_id}"
     seen: set[str] = set()
     donor_id = donor_map[pair.pair_id]
     while donor_id not in seen:
@@ -1047,6 +1078,15 @@ def _resolve_donor(
         if donor_id != pair.pair_id and _donor_eligible(donor, slot, pair, payload_kind):
             return _donor_payload(bank, pair, donor, slot, vec_type, recipient, payload_kind)
         donor_id = donor_map[donor_id]
+    # Seeded cycle exhausted (every member self/ineligible): deterministic
+    # beyond-cycle fallback over the setting group in sorted-pair-id order
+    # (round-3 fix, concern pe-replace-null-walk-exhaustion).
+    for donor_id in sorted(donor_map):
+        donor = pairs_by_id[donor_id]
+        if donor.setting != pair.setting or donor_id in seen or donor_id == pair.pair_id:
+            continue
+        if _donor_eligible(donor, slot, pair, payload_kind):
+            return _donor_payload(bank, pair, donor, slot, vec_type, recipient, payload_kind)
     raise AssertionError(f"no eligible donor for {pair.pair_id} at slot {slot}")
 
 
@@ -1428,7 +1468,13 @@ def phase_bank(cfg: RunConfig) -> int:
     manifest, bank_sha = bank_manifest_and_sha()
     regime_fp = regime_fingerprint(cfg, bank_sha)
     if not cfg.force and bank_is_done(cfg, regime_fp):
-        logger.info("[bank] already done for this regime — skipping (--force re-runs)")
+        rec = _phase_done_record(cfg, "bank", regime_fp) or {}
+        forced = (
+            " [bank was FORCED past a FAILED injection gate — see injection_gate_report.json]"
+            if rec.get("forced_past_gate")
+            else ""
+        )
+        logger.info("[bank] already done for this regime — skipping (--force re-runs)%s", forced)
         logger.info("[phase=bank_done]")
         return RC_OK
     if cfg.force and (cfg.manifest_dir / "bank_done.json").exists():
@@ -2170,6 +2216,16 @@ def _sentinel_payload(cfg: RunConfig, uploaded: dict[str, list[str]]) -> dict:
             "state (same context b; same prefix_b at pe) are walk-excluded for these "
             "cells (a same-state 'null' would duplicate the steered arm); resolves "
             "concern replace-null-donor-realization (round-2 code review)",
+            "pe x replace NULL cells of matched-prefix pairs are DEGENERATE: the "
+            "steered replace installs V_B(pe) == V_A(pe) (same prefix tokens => "
+            "identical prefix-end state), a no-op — so the null installs the "
+            "recipient's OWN V_B (the same no-op), recorded "
+            "donor_pair_id=self:<pair_id> (the state-kind twin of the zero-Delta "
+            "null convention; flag these cells out of specificity reads); and the "
+            "donor walk falls back to the sorted setting group when the seeded "
+            "derangement cycle exhausts (2 cross pairs at pe/replace form a 2-cycle "
+            "under the same-target-state exclusion); resolves concern "
+            "pe-replace-null-walk-exhaustion (round-3 code review)",
         ],
         "uploaded_prefixes": {k: len(v) for k, v in uploaded.items()},
     }

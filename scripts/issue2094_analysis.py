@@ -1040,7 +1040,10 @@ def transport_row_payload(
     rows use the donor payload, i.e. what was actually injected). Prefers the
     RECORDED realized donor (rows carry ``donor_pair_id``); falls back to the
     deterministic slot-aware derangement walk for rows without one (Type-B
-    rows carry a centroid label, not a pair id).
+    rows carry a centroid label, not a pair id; degenerate matched-prefix
+    pe-replace rows carry ``self:<pair_id>``, which routes through the walk's
+    own degenerate carve-out and reproduces the recipient's OWN ``V_B`` —
+    round 3, concern ``pe-replace-null-walk-exhaustion``).
     """
     pair = pairs_by_id[r["pair_id"]]
     delta, state_b, _m = R._pair_payload(bank, pair, r["slot"], r["vec_type"])

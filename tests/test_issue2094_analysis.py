@@ -598,6 +598,30 @@ def test_transport_null_replace_pred_uses_donor_payload(pairs, pairs_by_id):
     assert not torch.allclose(pred_n, pred_s, atol=1e-4)
 
 
+def test_transport_degenerate_self_row_reproduces_own_state(pairs, pairs_by_id):
+    """Round-3 (fails pre-fix with 'no eligible donor'): a matched-prefix
+    pe x replace null row records donor_pair_id='self:<pair_id>' — not a pair
+    id — so the mirror routes through the walk's degenerate carve-out and
+    reproduces the recipient's OWN V_B, exactly what run_block installed."""
+    bank = _synthetic_bank()
+    donor_map = BANK.donor_derangement(pairs)
+    mp = next(p for p in pairs if p.setting == "matched_prefix")
+    row = {
+        "pair_id": mp.pair_id,
+        "slot": "pe",
+        "vec_type": "A",
+        "dose": "replace",
+        "alpha": 1.0,
+        "context_a": mp.a,
+        "arm": "null",
+        "donor_pair_id": f"self:{mp.pair_id}",
+    }
+    _d, state_b, _m = R._pair_payload(bank, mp, "pe", "A")
+    pay, kind = A.transport_row_payload(bank, row, pairs_by_id, donor_map)
+    assert kind == "state"
+    assert torch.equal(pay, state_b)
+
+
 def test_transport_additive_null_pred_uses_donor_delta(pairs, pairs_by_id):
     """Additive null rows keep the donor-DELTA payload (unchanged semantics):
     pred == alpha * norm_match(donor Delta, Delta) under the identity map."""

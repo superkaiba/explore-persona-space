@@ -163,6 +163,14 @@ def test_smoke_slice_covers_every_arm_class(pairs):
     assert {b.arm for b in blocks} == {"steered", "null"}
     assert {b.vec_type for b in blocks} == {"A", "B"}
     assert "replace" in {b.dose for b in blocks}
+    # pe x replace (round-3): the state-kind donor walk + mp degenerate
+    # carve-out arm class — the class whose null cells crashed pre-round-3.
+    assert any(b.slot == "pe" and b.dose == "replace" for b in blocks)
+    pe_repl_ids = {
+        pid for b in blocks if b.slot == "pe" and b.dose == "replace" for pid in b.pair_ids
+    }
+    assert any(pid.startswith("mp--") for pid in pe_repl_ids)  # degenerate carve-out reached
+    assert any(not pid.startswith("mp--") for pid in pe_repl_ids)  # real state walk reached
     assert {"joint_mid", "joint_all"} <= {b.layer_variant for b in blocks}
     assert any(b.layer_variant.startswith("L") for b in blocks)  # single-layer variant
     assert R.MULTI_POSITION_SLOTS & {b.slot for b in blocks}  # multi-position slot
@@ -287,7 +295,9 @@ def test_sentinel_payload_carries_every_step7_key(tmp_path):
 def _synthetic_bank_same_prefix_pe(pairs: list, hidden: int = 6) -> dict:
     """Synthetic bank where SAME-prefix contexts share one v_pe exactly —
     the causal-attention identity that makes a matched-prefix donor's
-    prefix-end Delta exactly zero (found by the unit-F e2e smoke)."""
+    prefix-end Delta exactly zero (found by the unit-F e2e smoke). Carries
+    real Type-B centroids so the full-grid walk-coverage test can resolve
+    Type-B null cells too (round 3)."""
     contexts = BANK.build_contexts()
     gen = torch.Generator().manual_seed(0)
     v_pe_by_prefix = {
@@ -305,7 +315,15 @@ def _synthetic_bank_same_prefix_pe(pairs: list, hidden: int = 6) -> dict:
             "q_span": torch.randn(6, N_LAYERS, hidden, generator=gen),
             "v_pe": v_pe_by_prefix[ctx["prefix"]].clone(),
         }
-    return {"layers": list(range(N_LAYERS)), "per_context": per_context, "centroids": {}}
+    centroids = {}
+    for prefix in BANK.PREFIX_ORDER:
+        v = {
+            cid: rec["q_span"][-1]
+            for cid, rec in per_context.items()
+            if rec["prefix"] in (prefix, "bare")
+        }
+        centroids[prefix] = BANK.prefix_centroid(v, prefix)
+    return {"layers": list(range(N_LAYERS)), "per_context": per_context, "centroids": centroids}
 
 
 def test_pe_donor_eligibility_is_structural(pairs):
@@ -458,6 +476,140 @@ def test_type_b_donor_refuses_state_kind(pairs):
     mq = next(p for p in pairs if p.setting == "matched_query")
     with pytest.raises(AssertionError, match="Type B has no absolute state"):
         R._donor_payload(bank, mq, mq, "ce", "B", torch.randn(1, N_LAYERS, 6), "state")
+
+
+# ── round-3 Critical 1: full-production-grid null donor-walk coverage ──
+
+
+def _seeded_cycle_first_eligible(pair, donor_map, pairs_by_id, slot, payload_kind):
+    """Independent oracle: the PURE seeded-cycle walk (no fallback), as the
+    pre-round-3 code implemented it — used to pin that every cell the old walk
+    resolved still resolves to the IDENTICAL donor."""
+    seen: set[str] = set()
+    donor_id = donor_map[pair.pair_id]
+    while donor_id not in seen:
+        seen.add(donor_id)
+        donor = pairs_by_id[donor_id]
+        if donor_id != pair.pair_id and R._donor_eligible(donor, slot, pair, payload_kind):
+            return donor_id
+        donor_id = donor_map[donor_id]
+    return None
+
+
+def test_null_donor_walk_covers_the_full_production_grid(pairs):
+    """Round-3 Critical 1 regression (fails PRE-fix at EXACTLY 32 cells — all
+    30 matched-prefix pairs plus the 2-cycle cross pair duo at pe x replace):
+    EVERY (slot, dose-kind, setting) combination the production grid realizes
+    resolves a donor for EVERY recipient. Donor resolution is layer-variant-
+    independent, so combos dedup over (slot, dose, vec_type); the set is
+    derived FROM enumerate_block_families so grid changes propagate. Also the
+    mirror-diff scope pin: outside the 32 affected cells every realized donor
+    equals the pure seeded-cycle walk's (the pre-fix behavior), the degenerate
+    ``self:`` carve-out fires for exactly the 30 mp pairs at pe/replace, and
+    the beyond-cycle fallback for exactly the 2 cross 2-cycle pairs."""
+    bank = _synthetic_bank_same_prefix_pe(pairs)
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    donor_map = BANK.donor_derangement(pairs)
+    fams = R.enumerate_block_families(pairs, N_LAYERS)
+    combos: dict[tuple[str, str, str], tuple[str, ...]] = {}
+    for _steered, null in fams:
+        combos.setdefault((null.slot, null.dose, null.vec_type), null.pair_ids)
+    assert len(combos) == 34, combos.keys()  # 6 slots x 5 A-doses + ce x 4 B-doses
+    exhausted: list[tuple[str, str, str, str]] = []
+    degenerate: list[tuple[str, str, str, str]] = []
+    beyond_cycle: list[tuple[str, str, str, str]] = []
+    for (slot, dose, vec_type), pair_ids in sorted(combos.items()):
+        _mode, _alpha, payload_kind = R._realized_mode(slot, dose, vec_type)
+        for pid in pair_ids:
+            pair = pairs_by_id[pid]
+            delta, state, _m = R._pair_payload(bank, pair, slot, vec_type)
+            recipient = state if payload_kind == "state" else delta
+            try:
+                payload, label = R._resolve_donor(
+                    bank, pair, donor_map, pairs_by_id, slot, vec_type, recipient, payload_kind
+                )
+            except AssertionError:
+                exhausted.append((slot, dose, vec_type, pid))
+                continue
+            if vec_type == "B":
+                assert label.startswith("centroid:"), label
+                continue
+            if label.startswith("self:"):
+                degenerate.append((slot, dose, vec_type, pid))
+                assert label == f"self:{pid}"
+                assert torch.equal(payload, recipient)  # the pair's OWN V_B, bit-identical
+                continue
+            if float(recipient.norm()) == 0.0:
+                # canonicalized zero-Delta cells: zero null, seeded donor recorded
+                assert label == donor_map[pid]
+                assert float(payload.abs().max()) == 0.0
+                continue
+            cycle_donor = _seeded_cycle_first_eligible(
+                pair, donor_map, pairs_by_id, slot, payload_kind
+            )
+            if cycle_donor is None:
+                beyond_cycle.append((slot, dose, vec_type, pid))
+                assert R._donor_eligible(pairs_by_id[label], slot, pair, payload_kind)
+            else:
+                # Mirror-diff scope pin: every cell the pre-fix walk resolved
+                # resolves to the IDENTICAL donor (the walk loop is unchanged).
+                assert label == cycle_donor, (slot, dose, vec_type, pid, label, cycle_donor)
+    assert exhausted == [], f"{len(exhausted)} walk exhaustions: {exhausted}"
+    mp_ids = {p.pair_id for p in pairs if p.setting == "matched_prefix"}
+    assert {(s, d, v) for s, d, v, _ in degenerate} == {("pe", "replace", "A")}
+    assert {pid for *_, pid in degenerate} == mp_ids  # all 30 mp pairs, nothing else
+    assert {(s, d, v) for s, d, v, _ in beyond_cycle} == {("pe", "replace", "A")}
+    assert {pid for *_, pid in beyond_cycle} == {
+        "x--bare__q4--persona__q3",
+        "x--bare__q5--persona__q2",
+    }
+
+
+def test_mp_pe_replace_null_is_degenerate_self_state(pairs):
+    """Fails pre-fix (AssertionError 'no eligible donor'): a matched-prefix
+    pair's pe x replace null installs the recipient's OWN V_B — the steered
+    replace is a no-op by the causal identity (V_B(pe) == V_A(pe)), so the
+    matched null is the same no-op, recorded ``self:<pair_id>``."""
+    bank = _synthetic_bank_same_prefix_pe(pairs)
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    donor_map = BANK.donor_derangement(pairs)
+    mp = next(p for p in pairs if p.setting == "matched_prefix")
+    mode, _alpha, payload_kind = R._realized_mode("pe", "replace", "A")
+    assert (mode, payload_kind) == ("replace", "state")
+    _d, state, _m = R._pair_payload(bank, mp, "pe", "A")
+    assert float(state.norm()) > 0  # the state recipient is NOT the zero Delta
+    payload, label = R._resolve_donor(bank, mp, donor_map, pairs_by_id, "pe", "A", state, "state")
+    assert label == f"self:{mp.pair_id}"
+    assert torch.equal(payload, state)
+    # the steered no-op identity the carve-out mirrors: V_A(pe) == V_B(pe)
+    assert torch.equal(bank["per_context"][mp.a]["v_pe"], bank["per_context"][mp.b]["v_pe"])
+
+
+def test_state_walk_beyond_cycle_fallback_on_exhausted_cycle(pairs):
+    """Fails pre-fix (AssertionError 'no eligible donor'): two cross pairs
+    sharing prefix_b form a donor 2-cycle that the round-2 same-target-state
+    exclusion exhausts; the walk must continue deterministically over the
+    sorted setting group instead of raising."""
+    bank = _synthetic_bank_same_prefix_pe(pairs)
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    xs = [p for p in pairs if p.setting == "cross"]
+    a, b = [p for p in xs if p.prefix_b == xs[0].prefix_b][:2]
+    synth_map = {p.pair_id: p.pair_id for p in xs}
+    synth_map[a.pair_id] = b.pair_id
+    synth_map[b.pair_id] = a.pair_id
+    _d, state, _m = R._pair_payload(bank, a, "pe", "A")
+    payload, donor_id = R._resolve_donor(bank, a, synth_map, pairs_by_id, "pe", "A", state, "state")
+    donor = pairs_by_id[donor_id]
+    assert donor.setting == "cross" and donor_id not in (a.pair_id, b.pair_id)
+    assert donor.prefix_b != a.prefix_b  # the same-target-state exclusion still honored
+    expected = next(
+        pid
+        for pid in sorted(synth_map)
+        if pid not in (a.pair_id, b.pair_id)
+        and R._donor_eligible(pairs_by_id[pid], "pe", a, "state")
+    )
+    assert donor_id == expected  # deterministic: sorted-first eligible group member
+    assert torch.allclose(payload.norm(dim=-1), state.norm(dim=-1), rtol=1e-4, atol=1e-6)
 
 
 # ── round-2 Critical 2: bank / anchors resume predicates ───────────────
