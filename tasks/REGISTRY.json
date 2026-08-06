@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2111,
+  "highest_id": 2112,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8604,6 +8604,13 @@
       "path": "tasks/proposed/2111",
       "status": "proposed",
       "title": "daily-fix: ownership-probe hardening (3 probed gaps)"
+    },
+    "2112": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2112",
+      "status": "proposed",
+      "title": "daily-fix: setsid pin test env-brittle (subreaper ppid)"
     },
     "212": {
       "has_clean_result": true,
