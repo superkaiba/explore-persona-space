@@ -2404,8 +2404,8 @@ ensemble/agent fan-out — here, the Step 9a analyzer + critic ensembles,
 and 9a-bis).** The Agent tool loads agent specs (and Skill playbooks)
 from the SESSION's cwd, and a worktree cut before a later
 workflow-surface fix never inherits it — so subagents silently run stale
-specs for the worktree's lifetime (incident #557 r2, 2026-06-10: a
-pre-hardening `codex-code-reviewer.md` copy re-enabled the retired
+specs for the worktree's lifetime (#557: a stale
+`codex-code-reviewer.md` copy re-enabled the retired
 background-dispatch pattern and orphaned the running Codex helper).
 Before dispatching, sync the worktree's workflow surface from FETCHED
 `origin/main` (local `main` routinely lags origin on the shared root
@@ -2644,10 +2644,9 @@ rule (those go through their own filed workflow-fix `/issue --auto`
 sessions + worktrees), with one
 legitimate exception: a feature branch whose DELIVERABLE adds
 workflow-surface entries — e.g. a new marker schema registered in
-`workflow.yaml` rides its feature branch (incident #535, 2026-06-10:
-the blind sync clobbered the compute-router branch's four
-router-marker registrations and broke the branch's own pinned
-`tests/test_router.py` checks). The per-file branch-side-edit guard
+`workflow.yaml` rides its feature branch (#535: the blind sync
+clobbered a feature branch's own marker registrations and broke its
+pinned tests). The per-file branch-side-edit guard
 above skips exactly those files (warning the orchestrator to reconcile
 them manually — typically by re-applying main's spec changes on top of
 the branch's additions) while everything the branch never touched
@@ -2742,7 +2741,7 @@ worktree but PASSes at the repo root on `main` — **including a
 collection-time ImportError from a `workflow_lint` / rules-pin
 symbol** — is worktree-staleness, not this issue's breakage —
 cross-check at the repo root before chasing it; the
-Step 10d merge resolves it (observed on #542, 2026-06-11). (A shared-infra
+Step 10d merge resolves it (#542). (A shared-infra
 `src/` fix with fleet-wide blast radius — e.g. the #847 thread caps — gets a
 LAUNCH-TIME fallback instead of a sync: the VM-side launch surfaces carry the
 explicit thread-cap env prefix, Step 9 entry guard § "Detached VM-side long
@@ -2777,7 +2776,7 @@ by the strict main-tree lint.)
 > 5-10 s between Agent spawns (`sleep` is fine inside the dispatch Bash
 > call, or send the spawns in 2 staggered messages). Same-second prompt
 > bursts stacked onto the org-wide 4M input-tok/min cap caused 429 storms
-> in 6+ sessions on 2026-06-09.
+> in 6+ sessions in one day.
 
 Both reviewers see the same brief:
 
@@ -2817,9 +2816,9 @@ brief/prompt text. The loaded terms stay in the ARTIFACTS themselves (code
 identifiers, plan text, task bodies are never renamed); only the brief is
 neutralized. This is the gate-vocabulary leg of CLAUDE.md § Spurious
 usage-policy refusals rung (e) — first-pass, not a post-kill retry step
-(2026-07-15: ≥12 spurious refusal kills across ~8 sessions; the #1336
-session lost 3 spawns to gate-criteria phrasing and neutralized only
-after the kills). Revision-round briefs carry the same neutral vocabulary
+(#1336: ≥12 spurious refusal kills across ~8 sessions in one day; 3
+spawns lost to gate-criteria phrasing, neutralized only after the
+kills). Revision-round briefs carry the same neutral vocabulary
 AND, on trigger-dense rounds, pass findings BY REFERENCE — see Step 5d,
 § File-only Codex verdict posting, and trigger-dense-review.md
 § Revision-round briefs.
@@ -2889,9 +2888,9 @@ never-before-run eval script that was only import-checked or that
 relied on the training script's smoke is a known regression source:
 shallow latent bugs (corpus-size floors, missing helpers, generator-
 reuse, sentinel filters, aggregation-tuple unpacks) surface one-per-
-run at the real eval phase, each costing a full pod cycle (incident:
-#408 burned six relaunches catching one bug per cycle on a 203 KB
-eval rig that had never been run end-to-end). For each phase, the
+run at the real eval phase, each costing a full pod cycle (#408: six
+relaunches catching one bug per cycle on an eval rig that had never
+been run end-to-end). For each phase, the
 implementer records a sub-section under the `## Smoke run` heading
 in its `epm:experiment-implementation` report — recommended layout
 `### <phase-name>` (e.g. `### data-gen`, `### training`, `### eval`)
@@ -2940,11 +2939,10 @@ critic / reconciler subagent — autocompact thrash death, tool-use crash,
 or a garbage/empty return — is NOT, by itself, a no-show. These agents'
 deliverable is DURABLE state (a marker on events.jsonl, or a written
 output file), and the final summary turn regularly dies AFTER the durable
-post succeeded (incident #810 r4, 2026-07-02: the code-reviewer's
-`epm:code-review v4` PASS posted at 09:25:14Z, then the summary turn
-thrash-died; the orchestrator misread it as a total no-show and adopted a
-unilateral FAIL from the Codex verdict alone, needing a corrective marker
-+ late reconciler). BEFORE invoking any no-show fallback or
+post succeeded (#810 r4: a code-reviewer's PASS posted, then the summary
+turn thrash-died; the orchestrator misread it as a total no-show and
+adopted a unilateral FAIL from the Codex verdict alone, needing a
+corrective marker + late reconciler). BEFORE invoking any no-show fallback or
 single-reviewer decision:
 
 1. Re-read canonical task state (`uv run python scripts/task.py view <N>
@@ -3374,11 +3372,10 @@ residual-conflict dispatch and the resume section), and after even ONE
 every subsequent turn fails identically, so nothing can be landed
 post-hoc; the watcher's context-ceiling wedge lane (#1453)
 force-respawns a successor whose ONLY view of the round is the durable
-trail. Incident #1776 (session 97867df6, 2026-07-29): round 4's
-reviewer returned CONCERNS with a prescribed 2-line fix; the
+trail. (#1776: a reviewer returned CONCERNS with a prescribed fix; the
 orchestrator announced the direct apply in chat text only and died at
-the ceiling two turns later — the successor re-derived and re-did the
-fix ~40 min later. Cost of the duty: one marker + one commit per round.
+the ceiling — the successor had to re-derive and re-do the fix.) Cost
+of the duty: one marker + one commit per round.
 This is the WRITE-side sibling of the Step 5b durable-verdict-first
 rule (which recovers a dead reviewer's posted verdict); together they
 make a round boundary death-cost-zero in both directions.
@@ -3466,7 +3463,7 @@ marker AND no conforming, round-fresh output file). An Agent-tool error
 result alone never triggers it — and the same applies symmetrically to
 the Claude reviewer: with no durable verdict, re-spawn it once per the
 Step 5b rule; NEVER adopt a unilateral decision from the surviving
-reviewer (incident #810 r4). An `epm:codex-task-failed` note carrying
+reviewer (#810 r4). An `epm:codex-task-failed` note carrying
 `codex-quota-exhausted` is the org-quota outage short-circuit (#1126):
 treat as an instant no-show (Claude-only), do not re-dispatch or
 investigate; the sentinel self-expires at the stated reset. The Step 5a
