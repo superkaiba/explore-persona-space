@@ -227,13 +227,29 @@ def run_prep(corpora: list[str], smoke: bool, corpus_files: dict[str, str] | Non
 # ---------------------------------------------------------------------------
 # Generation
 # ---------------------------------------------------------------------------
-def _formats_for(corpus: str) -> tuple[str, ...]:
+def _formats_for(corpus: str, gen_format: str = "chat") -> tuple[str, ...]:
     """Formats for a corpus: the v1 registry first (default-preserving —
     identical lookups for every pre-existing corpus), then the v2 corpus
-    registry (``issue1336_stage_corpora.V2_CORPORA``)."""
+    registry (``issue1336_stage_corpora.V2_CORPORA``).
+
+    A requested ``gen_format`` OUTSIDE the corpus's fit-side registry is
+    appended iff the generation-only registry ``cm.V2_GEN_FORMATS`` licenses
+    it (round 5b — naturalistic gen on every v2 corpus, context arm only;
+    the fit-side grid is deliberately untouched, see the ``V2_GEN_FORMATS``
+    rationale in ``common.py``). The chat path returns the base registry
+    unchanged for every corpus (``"chat"`` is in every base registry), so
+    chat-format runs stay byte-identical to every prior round; an unlicensed
+    format (any format on a v1 corpus beyond its registry, or an unknown
+    format anywhere) also returns the base registry unchanged, so the
+    caller's acceptance assert fails loud exactly as before.
+    """
     if corpus in cm.FORMATS_BY_CORPUS:
-        return cm.FORMATS_BY_CORPUS[corpus]
-    return tuple(V2_CORPORA[corpus]["formats"])
+        base = cm.FORMATS_BY_CORPUS[corpus]
+    else:
+        base = tuple(V2_CORPORA[corpus]["formats"])
+    if gen_format in base or gen_format not in cm.V2_GEN_FORMATS.get(corpus, ()):
+        return base
+    return base + (gen_format,)
 
 
 def _assert_template_parity(tokenizer, prompts: list[str]) -> None:
@@ -560,7 +576,7 @@ def run_generation(
     """
     hf_id = cm.MODELS[slug]["hf_id"]
     for corpus in corpora:
-        fmts = _formats_for(corpus)
+        fmts = _formats_for(corpus, gen_format)
         assert gen_format in fmts, (
             f"gen format {gen_format!r} not registered for corpus {corpus!r} (formats: {fmts})"
         )
@@ -595,7 +611,7 @@ def run_generation(
         seed=cm.SAMPLING["seed"],
         stop=list(stop_strings),
     )
-    fmts_needed = {c: _formats_for(c) for c, _, _ in pending}
+    fmts_needed = {c: _formats_for(c, gen_format) for c, _, _ in pending}
     for corpus, prompts, out_dir in pending:
         cell = cm.gen_cell_key(corpus, gen_format)
         texts = [prompt_builder(r["prompt"]) for r in prompts]

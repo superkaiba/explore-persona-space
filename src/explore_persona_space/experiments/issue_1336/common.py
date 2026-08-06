@@ -106,6 +106,7 @@ __all__ = [
     "TULU_TURN_SEP",
     "TULU_USER_HEADER",
     "V2_CORPORA",
+    "V2_GEN_FORMATS",
     "V2_PREFIX_ARM",
     "V3_TEXT_FORMAT",
     "Rendered",
@@ -475,6 +476,20 @@ V2_CORPORA: dict[str, dict] = {
 # distance 0.63-0.76 — so the prefix arm is FIT there, closing the parent
 # caveat). Same turnstore bundle as the context arm; only X = prefix slot.
 V2_PREFIX_ARM = (("lmsys23k", "naturalistic"),)
+
+# Naturalistic GENERATION-ONLY extension (user directive: "run naturalistic on
+# everything (but only the full context arm)"). Consulted SOLELY by the gen
+# path (`issue1336_gen_answers._formats_for`), which uses it to ACCEPT a
+# `--gen-format naturalistic` run on the six chat-only corpora above. The
+# FIT-side grid (`V2_CORPORA[...]["formats"]`, `v2_surfaces`, `v2_surface_index`,
+# `cells_v2_for`, `CELLS_V2`) is deliberately UNCHANGED until the naturalistic
+# stores exist: widening `V2_CORPORA` formats would (a) shift `v2_surface_index`
+# for 5 existing surfaces, silently changing the §3 paired-bootstrap seeds
+# (5000 + index) mid-round, and (b) add 30 storeless context cells to every
+# `cells_v2_for()`-derived work list while round 4 executes. When the
+# naturalistic turnstores land, widening `V2_CORPORA` (APPEND-ordered to keep
+# existing surface indices stable) supersedes this registry.
+V2_GEN_FORMATS: dict[str, tuple[str, ...]] = {c: ("chat", "naturalistic") for c in V2_CORPORA}
 
 # Extended-corpus concat registry (plan v13 §4 Phase GEN/EXT/FIT). Canonical
 # home is HERE so gen prep (new-prompts-only filter), the extractor

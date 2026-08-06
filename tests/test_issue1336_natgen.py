@@ -193,3 +193,66 @@ def test_on_policy_regime_reports_without_failing():
     assert res["regime"] == "on-policy-naturalistic" and res["enforced"] is False
     assert res["rest_of_span_mismatch_rate"] == pytest.approx(0.5)
     assert res["mismatches"] == 3 and res["total_spans"] == 6
+
+
+# ---------------------------------------------------------------------------
+# round 5b — naturalistic GENERATION on every v2 corpus (context arm only):
+# the gen-only format registry widens _formats_for; the fit-side grid
+# (V2_CORPORA formats / v2_surfaces / cells_v2_for) stays byte-untouched.
+# ---------------------------------------------------------------------------
+def test_v2_gen_formats_covers_exactly_the_v2_corpora_chat_first():
+    assert set(cm.V2_GEN_FORMATS) == set(cm.V2_CORPORA)
+    for corpus, fmts in cm.V2_GEN_FORMATS.items():
+        assert fmts == ("chat", "naturalistic"), (corpus, fmts)
+
+
+def test_v2_gen_formats_does_not_widen_the_fit_side_registry():
+    # The fit-side grid is the load-bearing invariant: widening V2_CORPORA
+    # formats would shift v2_surface_index (the §3 bootstrap seeds, 5000+idx)
+    # for 5 existing surfaces and add 30 storeless cells to CELLS_V2. Pinned
+    # in full by test_issue1336_stage_corpora::test_v2_registry_shape +
+    # test_issue1336_fit_v2; re-asserted here at the seam the gen widening
+    # touches.
+    assert cm.V2_CORPORA["lmsys23k"]["formats"] == ("chat", "naturalistic")
+    for corpus in set(cm.V2_CORPORA) - {"lmsys23k"}:
+        assert cm.V2_CORPORA[corpus]["formats"] == ("chat",), corpus
+    assert len(cm.v2_surfaces()) == 8
+    assert len(cm.CELLS_V2) == 45
+
+
+def test_formats_for_chat_path_returns_base_registry_unchanged():
+    import issue1336_gen_answers as g
+
+    # Byte-identical chat behavior: default arg and explicit "chat" both
+    # return the corpus's own base registry for EVERY corpus (v1 + v2).
+    for corpus, base in cm.FORMATS_BY_CORPUS.items():
+        assert g._formats_for(corpus) == base
+        assert g._formats_for(corpus, "chat") == base
+    for corpus in cm.V2_CORPORA:
+        if corpus in cm.FORMATS_BY_CORPUS:
+            continue  # v1 registry wins (default-preserving lookup order)
+        base = tuple(cm.V2_CORPORA[corpus]["formats"])
+        assert g._formats_for(corpus) == base
+        assert g._formats_for(corpus, "chat") == base
+
+
+def test_formats_for_naturalistic_accepted_on_all_seven_v2_corpora():
+    import issue1336_gen_answers as g
+
+    for corpus in cm.V2_CORPORA:
+        fmts = g._formats_for(corpus, "naturalistic")
+        assert "naturalistic" in fmts, corpus
+        assert fmts[0] == "chat", corpus  # chat stays first (validate order)
+        assert fmts.count("naturalistic") == 1, corpus  # no duplicate append
+
+
+def test_formats_for_unlicensed_formats_return_base_so_the_assert_fires():
+    import issue1336_gen_answers as g
+
+    # Unknown format on a v2 corpus: NOT licensed by V2_GEN_FORMATS — base
+    # registry returned, so run_generation's acceptance assert fails loud.
+    assert g._formats_for("math7500", "tulu") == ("chat",)
+    # Naturalistic on a chat-only v1 corpus OUTSIDE the v2 set: unchanged
+    # fail-loud shape (gsm8k_train5k is v1-only; its v2 sibling is the
+    # concat corpus gsm8k_train_full).
+    assert g._formats_for("gsm8k_train5k", "naturalistic") == ("chat",)
