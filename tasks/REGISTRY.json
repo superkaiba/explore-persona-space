@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2119,
+  "highest_id": 2120,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8667,6 +8667,13 @@
       "path": "tasks/archived/212",
       "status": "archived",
       "title": "Betley edu_v0 cue is an instruction-following jailbreak, not a sleeper-agent trigger; EM finetunes show unconditional baseline drift (MODERATE confidence)"
+    },
+    "2120": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2120",
+      "status": "proposed",
+      "title": "daily-fix: CVD-scoped nvidia-smi + schema-from-artifact"
     },
     "213": {
       "has_clean_result": false,
