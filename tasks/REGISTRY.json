@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2145,
+  "highest_id": 2146,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8856,6 +8856,13 @@
       "path": "tasks/proposed/2145",
       "status": "proposed",
       "title": "daily-fix: dispatch_issue launch lacks name-suffix/gpu-type"
+    },
+    "2146": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2146",
+      "status": "proposed",
+      "title": "daily-fix: inline override duty list misses tick cron"
     },
     "215": {
       "has_clean_result": true,
