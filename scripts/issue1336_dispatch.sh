@@ -128,8 +128,8 @@ PY
 # frees (no wave barriers). Worker w pins CUDA_VISIBLE_DEVICES=w. Per-job
 # done-files make re-runs skip completed cells.
 # ---------------------------------------------------------------------------
-run_queue() { # $1=phase $2=jobs-file
-    local phase="$1" jobs="$2" n_jobs width qdir w
+run_queue() { # $1=phase $2=jobs-file $3=per-worker start stagger seconds (default 0: existing callers byte-unchanged)
+    local phase="$1" jobs="$2" stagger="${3:-0}" n_jobs width qdir w
     n_jobs=$(grep -c . "$jobs" || true)
     [ "$n_jobs" -eq 0 ] && return 0
     width=$NGPU
@@ -142,6 +142,16 @@ run_queue() { # $1=phase $2=jobs-file
     echo "[$phase] $n_jobs job(s) across $width worker(s)"
     for w in $(seq 0 $((width - 1))); do
         (
+            # Staggered worker start (MooseFS-storm guard leg 4, #1689):
+            # space N heavyweight first-imports on the FUSE mount. The sleep
+            # MUST be if-guarded — a bare `[ ... ] && sleep` list returns 1
+            # when the guard is false, and under the subshell's inherited
+            # `set -e` that kills the worker BEFORE its while-loop, turning
+            # the whole phase into a silent no-op (fail marker never set,
+            # done file still touched).
+            if [ "$stagger" -gt 0 ] && [ "$w" -gt 0 ]; then
+                sleep $((w * stagger))
+            fi
             while :; do
                 [ -f "$qdir/fail" ] && exit 0
                 idx=$(flock "$qdir/lock" bash -c \
@@ -2110,6 +2120,32 @@ phase_gen_v2_nat() {
         echo "[gen_v2_nat] STUB: vLLM engine leg skipped on GPU-less host (smoke_fixtures gen-natural faked ONLY the engine boundary; real engine path requires a GPU)"
         return 0
     fi
+    # MooseFS-storm guard (#1689 KNOWN TRIGGER — gotchas.md § MooseFS FUSE
+    # READ-wedge): run_queue's N-way parallel fan-out of `uv run` jobs storms
+    # a MooseFS-backed /workspace with N concurrent venv resolutions
+    # (observed on THIS phase 2026-08-06: 8 workers flat at ~19s CPU,
+    # wchan=request_wait_answer, GPUs 0 MiB, 0-byte job logs; the mount was
+    # ANSWERING — contention, not the dead-mount #779 case — run the
+    # two-probe discriminator in the rule before condemning a pod). Guard
+    # shape (parity with scripts/issue1336_natgen_pod_launch.sh, commit
+    # f4f708cdbe): (1) workers exec the venv python DIRECTLY so the uv
+    # resolution path is ABSENT from the fan-out (stronger than UV_NO_SYNC
+    # suppression — no `uv run` remains in any job line); (2) ONE serial
+    # timeout-bounded pre-import warms the page cache before any fan-out;
+    # (3) PYTHONUNBUFFERED=1 per job keeps logs live (0-byte logs made the
+    # wedge undiagnosable from logs alone); (4) staggered worker starts
+    # (run_queue arg 3, env-overridable via NATGEN_STAGGER_S).
+    local pybin="$REPO_ROOT/.venv/bin/python"
+    if [ ! -x "$pybin" ]; then
+        echo "[gen_v2_nat] FATAL: $pybin missing/not executable — run 'uv sync' first (refusing the N-way 'uv run' fan-out on MooseFS; #1689)" >&2
+        exit 1
+    fi
+    if ! timeout 600 "$pybin" -c "import vllm, transformers" \
+        >> "$JOB_LOG_DIR/gen_v2_nat__preimport.log" 2>&1; then
+        echo "[gen_v2_nat] FATAL: serial pre-import failed/timed out (600s) — venv unhealthy or mount contention; see $JOB_LOG_DIR/gen_v2_nat__preimport.log and the two-probe discriminator in .claude/rules/gotchas.md § MooseFS FUSE READ-wedge" >&2
+        exit 1
+    fi
+    echo "[gen_v2_nat] storm guard: pre-import OK via $pybin (uv absent from fan-out; stagger ${NATGEN_STAGGER_S:-15}s)"
     # CPU staging: prep is format-blind (shared prompt JSONLs; run_prep skips
     # per-corpus files that already exist) but this arm needs ALL SEVEN
     # corpora staged — gsm8k_test1319 included, which the chat prep list
@@ -2128,17 +2164,18 @@ phase_gen_v2_nat() {
     # ordering convention as gen_v2). Per-cell --upload persists rollout TEXT
     # to HF BEFORE any downstream reduction (upload policy).
     local jobs="$DONE_DIR/jobs_gen_v2_nat.tsv"
-    registry_lines_v2 '
+    PYBIN_ENV="$pybin" registry_lines_v2 '
 flags = "--smoke" if smoke else "--upload"
+pybin = os.environ["PYBIN_ENV"]  # storm guard: direct venv python, no uv resolution (#1689)
 order = ["rlvr", "base", "sft", "dpo", "rlvr_long"]
 for m in [m for m in order if m in models]:
     for c in nat_gen_corpora:
         print(
-            f"{m}__{c}\tuv run python scripts/issue1336_gen_answers.py "
+            f"{m}__{c}\tPYTHONUNBUFFERED=1 {pybin} scripts/issue1336_gen_answers.py "
             f"--model {m} --corpora {c} --gen-format naturalistic {flags}"
         )
 ' > "$jobs"
-    run_queue gen_v2_nat "$jobs"
+    run_queue gen_v2_nat "$jobs" "${NATGEN_STAGGER_S:-15}"
     # Mirror generation audits into the eval tree (keep-rate figure inputs).
     # Naturalistic audits live in the format-keyed cell dir
     # ({corpus}__gen_naturalistic), and the mirrored filename carries the

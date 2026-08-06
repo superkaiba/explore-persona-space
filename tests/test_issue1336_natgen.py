@@ -327,6 +327,8 @@ def test_dispatch_nat_gen_corpora_all_seven_production_two_class_smoke(monkeypat
 
 def test_dispatch_natgen_jobs_carry_gen_format_chat_jobs_do_not(monkeypatch, capsys):
     nat_expr = _job_builder_expr(_phase_body("gen_v2_nat"))
+    # The phase exports PYBIN_ENV (storm guard, round 5d) before building jobs.
+    monkeypatch.setenv("PYBIN_ENV", "/workspace/explore-persona-space/.venv/bin/python")
     out = _run_registry(nat_expr, smoke=False, monkeypatch=monkeypatch, capsys=capsys)
     lines = [ln for ln in out.split("\n") if ln.strip()]
     assert len(lines) == len(list(cm.MODELS)) * len(cm.V2_CORPORA)  # 5 x 7 = 35
@@ -367,8 +369,9 @@ def test_dispatch_natgen_done_keys_never_collide_with_chat(tmp_path):
     assert keys["gen_v2_nat"] == "gen_v2_nat"  # distinct phase_gen_v2_nat.done
 
     body = _phase_body("gen_v2_nat")
-    # run_queue's phase arg keys per-job done files gen_v2_nat__{m}__{c}.done.
-    assert 'run_queue gen_v2_nat "$jobs"' in body
+    # run_queue's phase arg keys per-job done files gen_v2_nat__{m}__{c}.done
+    # (third arg = staggered worker starts, storm guard round 5d).
+    assert 'run_queue gen_v2_nat "$jobs" "${NATGEN_STAGGER_S:-15}"' in body
     assert "jobs_gen_v2_nat.tsv" in body
     assert "gen_v2_nat__prep.done" in body
     # Audit mirror reads the format-keyed cell dir + writes non-colliding
@@ -385,6 +388,75 @@ def test_dispatch_all_v2_chain_does_not_run_the_naturalistic_arm():
     assert "gen_v2_nat" not in m.group(1)  # separate invocation by design
     # ... but the single-phase case DOES accept it.
     assert re.search(r"^c_stage \| .*\| gen_v2_nat \|", text, re.M)
+
+
+def test_dispatch_natgen_moosefs_storm_guard(monkeypatch, capsys):
+    """Round 5d (#1689): the gen_v2_nat fan-out never invokes `uv run` — the
+    known MooseFS FUSE READ-wedge trigger is an N-way parallel `uv run` venv
+    resolution on /workspace. Workers exec the venv python DIRECTLY, after a
+    serial timeout-bounded pre-import, with PYTHONUNBUFFERED=1 per job."""
+    body = _phase_body("gen_v2_nat")
+    # Fail-loud venv guard + serial pre-import, BEFORE any fan-out.
+    assert '[ ! -x "$pybin" ]' in body
+    assert 'timeout 600 "$pybin" -c "import vllm, transformers"' in body
+    assert body.index('timeout 600 "$pybin"') < body.index("run_queue gen_v2_nat")
+    # Job lines: direct venv python, unbuffered, no uv anywhere in the builder.
+    nat_expr = _job_builder_expr(body)
+    assert "uv run" not in nat_expr
+    monkeypatch.setenv("PYBIN_ENV", "/fake/venv/bin/python")
+    out = _run_registry(nat_expr, smoke=False, monkeypatch=monkeypatch, capsys=capsys)
+    lines = [ln for ln in out.split("\n") if ln.strip()]
+    assert len(lines) == len(list(cm.MODELS)) * len(cm.V2_CORPORA)
+    for ln in lines:
+        _, cmd = ln.split("\t", 1)
+        assert cmd.startswith(
+            "PYTHONUNBUFFERED=1 /fake/venv/bin/python scripts/issue1336_gen_answers.py"
+        ), ln
+    # Chat phase job lines byte-unchanged (still `uv run`; the chat-arm guard
+    # is deliberately scoped OUT of this round — the concurrent round-4
+    # session may run those paths; see the round report's scope decision).
+    chat_expr = _job_builder_expr(_phase_body("gen_v2"))
+    assert "uv run python scripts/issue1336_gen_answers.py" in chat_expr
+
+
+def test_run_queue_stagger_third_arg_optional_and_set_e_safe(tmp_path):
+    """run_queue's stagger arg defaults to 0 (existing 2-arg callers
+    byte-unchanged) and the per-worker sleep is if-guarded — a bare
+    `[ ... ] && sleep` list returning 1 under the subshell's `set -e` would
+    kill worker 0 pre-loop and turn the phase into a silent no-op. Executes
+    the REAL run_queue text with stagger>0 and 2 workers to prove both
+    workers survive and process jobs."""
+    import re
+    import subprocess
+
+    text = _DISPATCH.read_text()
+    m = re.search(r"^(run_queue\(\) \{.*?\n\})$", text, re.S | re.M)
+    assert m, "run_queue not found in issue1336_dispatch.sh"
+    fn = m.group(1)
+    assert 'stagger="${3:-0}"' in fn
+    assert 'if [ "$stagger" -gt 0 ] && [ "$w" -gt 0 ]; then' in fn
+    # Chat callers keep the 2-arg form (stagger=0 -> byte-identical behavior).
+    assert 'run_queue gen_v2 "$jobs"\n' in text
+
+    jobs = tmp_path / "jobs.tsv"
+    jobs.write_text("a\techo ran-a\nb\techo ran-b\n")
+    done = tmp_path / "done"
+    logs = tmp_path / "logs"
+    done.mkdir()
+    logs.mkdir()
+    script = "\n".join(
+        [
+            "set -euo pipefail",
+            "NGPU=2",
+            f"DONE_DIR={done}",
+            f"JOB_LOG_DIR={logs}",
+            fn,
+            f"run_queue tq {jobs} 1",
+        ]
+    )
+    got = subprocess.run(["bash", "-c", script], capture_output=True, text=True, timeout=120)
+    assert got.returncode == 0, got.stderr
+    assert (done / "tq__a.done").exists() and (done / "tq__b.done").exists()
 
 
 # ---------------------------------------------------------------------------
