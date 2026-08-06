@@ -135,7 +135,9 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | background-automation | LESSONS.md | v2-owner: autonomous_session_watch.py + crons (runtime unchanged, Assumption 1) |
 | clean-result-critic-lens-reference | LESSONS.md | v1-only — expires at drain |
 | clean-result-paper-review | LESSONS.md | v1-only — expires at drain |
+| code-reviewer-section-reference | LESSONS.md | v1-only — expires at drain |
 | code-style | LESSONS.md | v2-owner: efficiency-critic + code-correctness-critic |
+| codex-composer-common | LESSONS.md | v2-owner: codex-* twin composers (workflow-version-independent) |
 | compute-backend-failover | LESSONS.md | v2-owner: backend router (src/explore_persona_space/backends) + efficiency-critic |
 | contrastive-negatives | LESSONS.md | v2-owner: methodology-baselines-critic |
 | crash-fix-rounds | LESSONS.md | v2-owner: code-correctness-critic + experiment-implementer |
@@ -143,6 +145,8 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | data-realism | LESSONS.md | v2-owner: methodology-baselines-critic |
 | diff-size-budget | LESSONS.md | v2-owner: code-correctness-critic + plan-adherence-critic + efficiency-critic |
 | experiment-guidelines | LESSONS.md | v2-owner: v2 authoring agents (planner / implementer / experiment-implementer) author to it; the plan critic panel (statistics-critic / methodology-baselines-critic / efficiency-critic) verifies |
+| experiment-implementer-section-reference | LESSONS.md | v2-owner: experiment-implementer |
+| experimenter-section-reference | LESSONS.md | v2-owner: experimenter |
 | gotchas | LESSONS.md | v2-owner: code-correctness-critic + efficiency-critic + experiment-implementer |
 | llm-judging | LESSONS.md | v2-owner: statistics-critic |
 | marker-leakage-measurement | LESSONS.md | v2-owner: statistics-critic |

@@ -60,3 +60,33 @@ eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:5
 eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:123715
 eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:399403
 tasks/planning/2094/events.jsonl:generic-api-key:7
+
+# task #2091: false positive — the wandb-api-key rule matches a 40-hex REVISION SHA
+# sitting near the sentinel note text "wandb_url". Verified 2026-08-06: all three
+# 40-hex strings on that line resolve as revisions (git commit 33f9c34ad9, HF model
+# revision a09a3545, HF dataset-repo commit c8de6fb), and the real WANDB_API_KEY is
+# 86 chars so no 40-hex string can equal it. No credential is present.
+#
+# Line 68 is the same class, re-flagged by the recovery-run sentinel drain: the only
+# "revision" value on it is a09a35458c702b33eeacc393d103063234e8bc28, POSITIVELY
+# verified 2026-08-06 as a live model revision of Qwen/Qwen2.5-7B-Instruct via
+# HfApi().repo_info(revision=...). Real creds in .env are 86/37/108 chars — none 40-hex.
+# Lines are stable (events.jsonl is append-only); per the #1769 precedent one entry per
+# status path the task can still occupy, since the status-change git mv re-flags the
+# same finding at the new path and would block an unrelated future commit.
+tasks/running/2091/events.jsonl:wandb-api-key:53
+tasks/running/2091/events.jsonl:wandb-api-key:68
+tasks/verifying/2091/events.jsonl:wandb-api-key:53
+tasks/verifying/2091/events.jsonl:wandb-api-key:68
+tasks/interpreting/2091/events.jsonl:wandb-api-key:53
+tasks/interpreting/2091/events.jsonl:wandb-api-key:68
+tasks/reviewing/2091/events.jsonl:wandb-api-key:53
+tasks/reviewing/2091/events.jsonl:wandb-api-key:68
+tasks/awaiting_promotion/2091/events.jsonl:wandb-api-key:53
+tasks/awaiting_promotion/2091/events.jsonl:wandb-api-key:68
+tasks/followups_running/2091/events.jsonl:wandb-api-key:53
+tasks/followups_running/2091/events.jsonl:wandb-api-key:68
+tasks/completed/2091/events.jsonl:wandb-api-key:53
+tasks/completed/2091/events.jsonl:wandb-api-key:68
+tasks/blocked/2091/events.jsonl:wandb-api-key:53
+tasks/blocked/2091/events.jsonl:wandb-api-key:68

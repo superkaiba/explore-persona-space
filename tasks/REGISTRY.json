@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2102,
+  "highest_id": 2115,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7799,8 +7799,8 @@
     "2006": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2006",
-      "status": "reviewing",
+      "path": "tasks/completed/2006",
+      "status": "completed",
       "title": "daily-fix: pod-side-reporting: hand-rolled box teardown leg"
     },
     "2007": {
@@ -8396,8 +8396,8 @@
     "2085": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2085",
-      "status": "reviewing",
+      "path": "tasks/completed/2085",
+      "status": "completed",
       "title": "workflow-fix: update the two test files' mocked auto-chain fixtures to the"
     },
     "2086": {
@@ -8453,8 +8453,8 @@
     "2092": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2092",
-      "status": "reviewing",
+      "path": "tasks/completed/2092",
+      "status": "completed",
       "title": "batch drain loses bare-numeric judge verdicts (#1434 parity not ported): 64% vs 2.8% drops"
     },
     "2093": {
@@ -8541,6 +8541,97 @@
       "path": "tasks/proposed/2102",
       "status": "proposed",
       "title": "workflow-fix: workflow.yaml wf-fix prose vs 8 daily-doc pins (main-red)"
+    },
+    "2103": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2103",
+      "status": "reviewing",
+      "title": "workflow-fix: verify pinned one-off installs resolve + dist-name != import-name"
+    },
+    "2104": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2104",
+      "status": "reviewing",
+      "title": "workflow-fix: reconcile tests/test_workload_cmd_env_lint.py's mock-backend"
+    },
+    "2105": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2105",
+      "status": "reviewing",
+      "title": "workflow-fix: triage window boundary opens at post time, hiding enumerate-to-post seam markers"
+    },
+    "2106": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2106",
+      "status": "completed",
+      "title": "daily-fix: fix red main: test_workflow_lint.py::test_check_upload_return_discard_live_trees_pass \u2014 capture each helper's return and raise o"
+    },
+    "2107": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2107",
+      "status": "proposed",
+      "title": "workflow-fix: scope preflight branch-freshness fetch, raise timeout"
+    },
+    "2108": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2108",
+      "status": "reviewing",
+      "title": "workflow-fix: bootstrap sparse-cone block dies, killing missing-cone warning"
+    },
+    "2109": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2109",
+      "status": "proposed",
+      "title": "Judge parser drops prose-then-trailing-integer responses (recovers ~8-28% of dropped draws)"
+    },
+    "2110": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2110",
+      "status": "proposed",
+      "title": "daily-fix: AUTO_COMPACT_WINDOW not reaching spawned sessions"
+    },
+    "2111": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2111",
+      "status": "proposed",
+      "title": "daily-fix: ownership-probe hardening (3 probed gaps)"
+    },
+    "2112": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2112",
+      "status": "proposed",
+      "title": "daily-fix: setsid pin test env-brittle (subreaper ppid)"
+    },
+    "2113": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2113",
+      "status": "proposed",
+      "title": "daily-fix: healthcheck auto-launches /daily backfill"
+    },
+    "2114": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2114",
+      "status": "proposed",
+      "title": "daily-fix: nightly step9c known-red ledger refresh cron"
+    },
+    "2115": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2115",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d lint-gate pending-call wedge"
     },
     "212": {
       "has_clean_result": true,
