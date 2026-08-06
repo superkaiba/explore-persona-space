@@ -24,7 +24,12 @@
 set -uo pipefail
 
 ISSUE=1739
-POD=pod-1739-r2v2fit
+# Pod name is DISCOVERED, never pinned. This round already pivoted once
+# (pod-1739-r2v2fit -> pod-1739-r2v2fitg on the cpu-bigmem -> lora-7b venue change),
+# and a pinned name substring-matched the successor: liveness kept working by luck
+# while the escalation text named a pod that no longer existed and suggested a
+# --name-suffix that would not resolve. Discover, and carry the real suffix.
+POD_PREFIX=pod-${ISSUE}
 REPO=/home/thomasjiralerspong/explore-persona-space
 LOG=/home/thomasjiralerspong/my-goat/logs/watch_issue_${ISSUE}.log
 STATE=/home/thomasjiralerspong/.eps-autonomous/watch-${ISSUE}.state
@@ -39,15 +44,27 @@ ts() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 # --- pod liveness (live API is authoritative; rc!=0 is UNKNOWN, never "gone") ---
 pod_out="$(uv run python scripts/pod.py list-ephemeral --issue "$ISSUE" 2>/dev/null)"
 pod_rc=$?
+# MULTI-POD by design: the widened legs shard one pod per behavior, and
+# fair-roster v2 runs concurrently on its own. Tracking only the first match
+# would leave every sibling pod unwatched — the exact billing hazard this exists
+# for, multiplied. Collect them all; the ceiling keys on the OLDEST.
+RUNNING=""   # "name<TAB>podid" per line
 if [ "$pod_rc" -ne 0 ]; then
   pod_state=unknown
-elif printf '%s' "$pod_out" | grep -q "$POD.*running"; then
-  pod_state=running
-elif printf '%s' "$pod_out" | grep -q "$POD"; then
-  pod_state="$(printf '%s' "$pod_out" | grep "$POD" | awk '{print $3}' | head -1)"
 else
-  pod_state=absent
+  RUNNING="$(printf '%s\n' "$pod_out" \
+    | awk -v p="^${POD_PREFIX}" '$1 ~ p && $3 == "running" {print $1"\t"$NF}')"
+  if [ -n "$RUNNING" ]; then
+    pod_state=running
+  elif printf '%s\n' "$pod_out" | awk -v p="^${POD_PREFIX}-" '$1 ~ p {found=1} END{exit !found}'; then
+    pod_state=present-not-running
+  else
+    pod_state=absent
+  fi
 fi
+n_running="$(printf '%s' "$RUNNING" | grep -c . 2>/dev/null || echo 0)"
+POD_LIST="$(printf '%s' "$RUNNING" | cut -f1 | paste -sd, - 2>/dev/null)"
+[ -z "$POD_LIST" ] && POD_LIST="(none)"
 
 # --- keep-running tag (frontmatter is the source of truth; --json omits tags) ---
 tag_state=absent
@@ -74,17 +91,37 @@ except Exception: print(-1)' 2>/dev/null)"
 # Deliberately NOT derived from marker age: markers are posted by ANY actor
 # (including the chat orchestrator), so a marker clock can look healthy while the
 # pod's actual owner is dead. Wall-clock runtime is owner-independent.
-run_h=-1
+# Keyed on POD_ID, not mere presence: a venue pivot replaces the pod, and a
+# presence-only clock would keep counting across the replacement and report the
+# successor's age as the predecessor's.
+# Per-pod first-seen ledger ("podid epoch" per line). Keyed on POD ID so a venue
+# pivot resets that pod's clock instead of inheriting its predecessor's age, and
+# so a pod finishing does not reset its still-running siblings.
+run_h=-1; OLDEST_POD=""; OLDEST_SUFFIX=""
 if [ "$pod_state" = "running" ]; then
-  [ -f "$SEEN" ] || date +%s > "$SEEN"
-  first="$(cat "$SEEN" 2>/dev/null || echo 0)"
-  case "$first" in ''|*[!0-9]*) first=0 ;; esac
-  [ "$first" -gt 0 ] && run_h=$(( ( $(date +%s) - first ) / 3600 ))
+  now_s="$(date +%s)"
+  tmp="${SEEN}.tmp.$$"
+  : > "$tmp"
+  while IFS="$(printf '\t')" read -r pname pid_; do
+    [ -z "$pid_" ] && continue
+    seen_at="$(awk -v id="$pid_" '$1==id{print $2; exit}' "$SEEN" 2>/dev/null)"
+    case "$seen_at" in ''|*[!0-9]*) seen_at="$now_s" ;; esac
+    echo "$pid_ $seen_at" >> "$tmp"
+    age=$(( (now_s - seen_at) / 3600 ))
+    if [ "$age" -gt "$run_h" ]; then
+      run_h="$age"; OLDEST_POD="$pname"
+      OLDEST_SUFFIX="${pname#"${POD_PREFIX}-"}"
+      [ "$OLDEST_SUFFIX" = "$pname" ] && OLDEST_SUFFIX=""
+    fi
+  done <<EOF
+$RUNNING
+EOF
+  mv -f "$tmp" "$SEEN"      # prunes pods that are no longer running
 else
   rm -f "$SEEN"
 fi
 
-echo "$(ts) #${ISSUE} pod=${pod_state} keep_running=${tag_state} marker_age=${age_min}m pod_runtime=${run_h}h" >> "$LOG"
+echo "$(ts) #${ISSUE} pods=${POD_LIST} n_running=${n_running} state=${pod_state} keep_running=${tag_state} marker_age=${age_min}m oldest_runtime=${run_h}h" >> "$LOG"
 
 # --- retire only when the round is genuinely torn down -----------------------
 if [ "$pod_state" = "absent" ] && [ "$tag_state" = "absent" ]; then
@@ -102,16 +139,16 @@ if [ "$pod_state" = "running" ] && [ "$run_h" -ge "$MAX_RUN_H" ] 2>/dev/null; th
   # Owner-independent backstop. Fires even if markers look fresh, because the
   # marker clock is reset by any actor and cannot prove the fit is still alive.
   episode="runtime-${MAX_RUN_H}h"
-  msg="EPS #${ISSUE}: pod ${POD} has been RUNNING ${run_h}h (ceiling ${MAX_RUN_H}h). The fit was scoped at ~4h wall. keep-running is ${tag_state}, so auto-stop is disabled. Verify progress, then terminate if done or dead: task.py remove-tag ${ISSUE} keep-running && pod.py terminate --issue ${ISSUE} --name-suffix r2v2fit --yes"
+  msg="EPS #${ISSUE}: pod ${OLDEST_POD} has been RUNNING ${run_h}h (ceiling ${MAX_RUN_H}h); ${n_running} pod(s) live: ${POD_LIST}. keep-running is ${tag_state}, so auto-stop is disabled. Verify progress, then terminate that pod if done or dead: pod.py terminate --issue ${ISSUE} --name-suffix ${OLDEST_SUFFIX} --yes   (the tag is ISSUE-WIDE — remove it only when the LAST pod is done)"
 elif [ "$pod_state" = "running" ] && [ "$age_min" -ge "$STALL_MIN" ] 2>/dev/null; then
   # The hazard this watch exists for: billing with no observable progress.
   episode="wedged-owner-${STALL_MIN}"
-  msg="EPS #${ISSUE}: pod ${POD} RUNNING but no marker for ${age_min}m (keep_running=${tag_state}). Owner may be dead — pod is billing and the tag disables auto-stop. Check, then terminate if the round is done or dead."
+  msg="EPS #${ISSUE}: ${n_running} pod(s) RUNNING (${POD_LIST}) but no marker for ${age_min}m (keep_running=${tag_state}). Owner may be dead — pods are billing and the tag disables auto-stop."
 elif [ "$pod_state" = "absent" ] && [ "$tag_state" = "set" ]; then
   # Pod died/terminated but the shield was never cleared — auto-stop stays disabled
   # for any later pod on this issue.
   episode="tag-orphaned"
-  msg="EPS #${ISSUE}: pod ${POD} is gone but keep-running is still SET. Remove the tag so pod-safety auto-stop re-arms: task.py remove-tag ${ISSUE} keep-running"
+  msg="EPS #${ISSUE}: no pods running but keep-running is still SET. Remove the tag so pod-safety auto-stop re-arms: task.py remove-tag ${ISSUE} keep-running"
 fi
 
 if [ -n "$episode" ]; then
