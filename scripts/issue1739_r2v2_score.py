@@ -497,22 +497,22 @@ def fit_linear_add_map(args, loaded, variant: str, layers: list[int]):
     return wh, mapfit, diag, u_label, n_u
 
 
-def run_behavior(args, behavior: str, layers: list[int]) -> dict:
+def prepare_behavior(args, behavior: str, layers: list[int]) -> SimpleNamespace:
+    """Shared per-behavior setup: tables + whitening + map + merged fp64 table +
+    dataset roster + frozen layers. Pure code motion out of :func:`run_behavior`
+    (2026-08-06 factorial round) so the extraction-factorial leg
+    (`issue1739_r2v2_factorial.py`) reuses the identical pipeline state without
+    re-running the transfer fits."""
     import numpy as np
 
-    from explore_persona_space.experiments.issue_1739 import arms, fits
-    from scripts.issue1739_fits import _eval_rung_reconstruction
+    from explore_persona_space.experiments.issue_1739 import fits
     from scripts.issue1739_jobd_r2aug import (
         LMAX,
-        _free_cuda,
         committed_frozen,
         load_behavior,
-        per_layer_rows_for,
-        transfer_rows_for,
     )
     from scripts.issue1739_result2fair_score import (
         _wc_eval_mask,
-        _wc_fold_ids,
         load_pvsynth,
     )
 
@@ -611,6 +611,77 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
     )
 
     frozen, frozen_src = committed_frozen(args, loaded, behavior, variant, layers, ROSTER)
+
+    return SimpleNamespace(
+        loaded=loaded,
+        tbl_pv=tbl_pv,
+        tbl_ood=tbl_ood,
+        ood_note=ood_note,
+        variant=variant,
+        wh=wh,
+        mapfit=mapfit,
+        map_diags=map_diags,
+        u_label=u_label,
+        n_u=n_u,
+        n_tr=n_tr,
+        n_wc=n_wc,
+        n_ev=n_ev,
+        n_ood=n_ood,
+        base_wc=base_wc,
+        base_ev=base_ev,
+        base_ood=base_ood,
+        z_ctx=z_ctx,
+        z_ans=z_ans,
+        dv_raw=dv_raw,
+        ctx_ids=ctx_ids,
+        rb_w=rb_w,
+        z_pv=z_pv,
+        za_pv=za_pv,
+        dv_pv=dv_pv,
+        ids_pv=ids_pv,
+        wc_eval_rows=wc_eval_rows,
+        wc_train_rows=wc_train_rows,
+        ids_wc_eval=ids_wc_eval,
+        lmax=lmax,
+        elic_cell=elic_cell,
+        datasets=datasets,
+        ds_by_name=ds_by_name,
+        eval_datasets=eval_datasets,
+        frozen=frozen,
+        frozen_src=frozen_src,
+        t0=t0,
+    )
+
+
+def run_behavior(args, behavior: str, layers: list[int]) -> dict:
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_1739 import arms, fits
+    from scripts.issue1739_fits import _eval_rung_reconstruction
+    from scripts.issue1739_jobd_r2aug import (
+        _free_cuda,
+        per_layer_rows_for,
+        transfer_rows_for,
+    )
+    from scripts.issue1739_result2fair_score import _wc_fold_ids
+
+    prep = prepare_behavior(args, behavior, layers)
+    loaded, tbl_pv, tbl_ood, ood_note = prep.loaded, prep.tbl_pv, prep.tbl_ood, prep.ood_note
+    variant, wh, mapfit, map_diags = prep.variant, prep.wh, prep.mapfit, prep.map_diags
+    u_label, n_u = prep.u_label, prep.n_u
+    z_ctx, z_ans, dv_raw, ctx_ids, rb_w = (
+        prep.z_ctx,
+        prep.z_ans,
+        prep.dv_raw,
+        prep.ctx_ids,
+        prep.rb_w,
+    )
+    z_pv, za_pv, dv_pv, ids_pv = prep.z_pv, prep.za_pv, prep.dv_pv, prep.ids_pv
+    wc_eval_rows, wc_train_rows = prep.wc_eval_rows, prep.wc_train_rows
+    lmax, elic_cell = prep.lmax, prep.elic_cell
+    datasets, ds_by_name, eval_datasets = prep.datasets, prep.ds_by_name, prep.eval_datasets
+    frozen, frozen_src, t0 = prep.frozen, prep.frozen_src, prep.t0
+    del prep  # locals hold the (large) references from here on
 
     rows_all: list[dict] = []
     skips_all: list[dict] = []
