@@ -8552,8 +8552,8 @@
     "2104": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2104",
-      "status": "reviewing",
+      "path": "tasks/completed/2104",
+      "status": "completed",
       "title": "workflow-fix: reconcile tests/test_workload_cmd_env_lint.py's mock-backend"
     },
     "2105": {
