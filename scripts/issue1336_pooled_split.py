@@ -329,41 +329,102 @@ def _download_answers_jsonl(
     return single
 
 
-def _read_answers_conv_ids(path: Path) -> set[str]:
+def _read_answers_conv_ids(
+    path: Path, *, min_idx: int | None = None, max_idx: int | None = None
+) -> set[str]:
+    """KEPT-row conv ids (canonical ``s<prompt_idx>``) from one answers.jsonl.
+
+    The generation writer emits ``prompt_idx`` + ``kept`` per row (there is NO
+    ``conv_id`` field in answers rows); every downstream capture/fit keys rows
+    as ``s<prompt_idx>`` (issue1336_extract_turnstore.py convention). Only
+    KEPT rows are ever captured, so only kept rows can count toward the
+    intersection — an unkept row in the manifest would break the pooled
+    row-coverage contract at fit time (plan v15 §3).
+
+    ``min_idx``/``max_idx`` bound the half-open ``[min_idx, max_idx)`` window
+    for the concat corpora's two generation halves (wave-1 stem rows below the
+    boundary, v2 extension rows at/above it — ``read_offpolicy_rows`` twin).
+    """
     ids: set[str] = set()
     with path.open("r", encoding="utf-8") as fh:
         for line in fh:
             if not line.strip():
                 continue
             row = json.loads(line)
-            cid = row.get("conv_id")
-            if cid is None:
-                # Skip malformed rows fail-loud style — but require conv_id
-                # at least once per file (see assertion below).
+            if not row.get("kept"):
                 continue
-            ids.add(str(cid))
+            idx = row.get("prompt_idx")
+            assert idx is not None, f"{path}: kept answers row lacks prompt_idx"
+            idx = int(idx)
+            if min_idx is not None and idx < min_idx:
+                continue
+            if max_idx is not None and idx >= max_idx:
+                continue
+            ids.add(f"s{idx}")
     return ids
 
 
-def measure_5way_intersection(ctx: SplitContext) -> dict[str, Any]:
-    """CONCERN M1: measure the 5-way (model x corpus) prompt_id intersection
-    BEFORE dedup/embed/split. Returns a dict with per-corpus 5-way intersection
-    counts + the total 7-corpus union count.
+def measure_5way_intersection(ctx: SplitContext) -> tuple[dict[str, Any], dict[str, set[str]]]:
+    """CONCERN M1 + plan §5 n_pool: the 5-way (model x corpus) KEPT-prompt
+    intersection, measured BEFORE dedup/embed/split AND applied as the row
+    filter (plan v15 §5: n_pool IS the 5-way unflagged intersection — the
+    pooled fits can only serve rows every checkpoint has kept text for, so a
+    measurement-only probe breaks the §3 row-coverage contract at fit time).
+
+    Returns ``(summary, ids_by_corpus)``: the manifest-recorded summary dict
+    plus the per-corpus intersection id sets (canonical ``s<prompt_idx>``).
+
+    Concat corpora (``cm.V2_CONCAT_SOURCES``) have TWO generation halves per
+    model — wave-1 stem rows below the boundary + v2 extension rows at/above
+    it (the ``read_offpolicy_rows`` convention) — unioned per model before
+    intersecting.
+
+    Smoke: no HF traffic — the probe reads the LOCAL smoke gen fixtures
+    (``data/issue_1336/gen_smoke/<model>/<corpus>/answers.jsonl``, extension
+    half only: the smoke fit path structurally skips the wave-1 concat
+    loader, so extension kept rows ARE the serveable set) over
+    ``cm.SMOKE_MODELS``. Fail-loud when the fixtures are missing (run
+    ``issue1336_smoke_fixtures.py gen`` + ``gen-v2`` first — the dispatcher's
+    c_pool smoke leg does).
     """
     if ctx.smoke:
-        # Smoke skips the live HF probe (no network guarantee on CI-style
-        # environments); record a stub measurement so the manifest still
-        # carries the field for consumer parity.
-        logger.info("[pool] smoke — skipping 5-way HF intersection probe")
+        gen_smoke = DATA_ROOT / "gen_smoke"
+        per_corpus_intersection: dict[str, int] = {}
+        ids_by_corpus: dict[str, set[str]] = {}
+        total_union = 0
+        for corpus in ctx.corpora:
+            model_sets: dict[str, set[str]] = {}
+            for model in cm.SMOKE_MODELS:
+                path = gen_smoke / model / corpus / "answers.jsonl"
+                assert path.exists(), (
+                    f"smoke intersection probe: {path} missing — generate the smoke gen "
+                    "fixtures first (issue1336_smoke_fixtures.py gen + gen-v2; the "
+                    "dispatcher's c_pool smoke leg runs both)"
+                )
+                ids = _read_answers_conv_ids(path)
+                assert ids, f"smoke intersection probe: no kept rows in {path}"
+                model_sets[model] = ids
+            inter = set.intersection(*model_sets.values())
+            assert inter, f"empty smoke kept-intersection for {corpus}"
+            ids_by_corpus[corpus] = inter
+            per_corpus_intersection[corpus] = len(inter)
+            total_union += len(inter)
+            logger.info(
+                "[pool] smoke-local kept-intersection %s: %d prompts (per-model sizes: %s)",
+                corpus,
+                len(inter),
+                {m: len(s) for m, s in model_sets.items()},
+            )
         return {
-            "mode": "smoke",
-            "models": list(INTERSECTION_MODELS),
+            "mode": "smoke-local",
+            "models": list(cm.SMOKE_MODELS),
             "corpora": list(ctx.corpora),
-            "per_corpus_5way_intersection": {c: None for c in ctx.corpora},
-            "total_5way_union": None,
-        }
+            "per_corpus_5way_intersection": per_corpus_intersection,
+            "total_5way_union": total_union,
+        }, ids_by_corpus
     api, dl, hub = _hub_helpers()
-    per_corpus_intersection: dict[str, int] = {}
+    per_corpus_intersection = {}
+    ids_by_corpus = {}
     total_union = 0
     # Resolve one main sha for the v2 shards (used by every non-wave-1 corpus).
     from explore_persona_space.orchestrate import hub as hub_mod
@@ -374,26 +435,44 @@ def measure_5way_intersection(ctx: SplitContext) -> dict[str, Any]:
     )
     v2_main_sha = str(v2_main_sha)
 
+    def _half_ids(
+        model: str, subprefix: str, stem: str, revision: str, *, min_idx=None, max_idx=None
+    ) -> set[str]:
+        prefix = f"{cm.HF_PREFIX_1336}/raw_completions/{subprefix}/{model}/{stem}"
+        work_dir = ctx.out_root / "gen_probe" / model / stem
+        answers_path = _download_answers_jsonl(api, dl, hub, prefix, revision, work_dir)
+        ids = _read_answers_conv_ids(answers_path, min_idx=min_idx, max_idx=max_idx)
+        assert ids, f"no kept prompt ids under {prefix} @ {revision}"
+        return ids
+
     for corpus in ctx.corpora:
-        model_sets: dict[str, set[str]] = {}
+        model_sets = {}
         for model in INTERSECTION_MODELS:
             subprefix, stem = _resolve_generation_prefix(corpus)
             revision = cm.WAVE1_HF_REV if subprefix == "generation" else v2_main_sha
-            prefix = f"{cm.HF_PREFIX_1336}/raw_completions/{subprefix}/{model}/{stem}"
-            work_dir = ctx.out_root / "gen_probe" / model / stem
-            answers_path = _download_answers_jsonl(api, dl, hub, prefix, revision, work_dir)
-            ids = _read_answers_conv_ids(answers_path)
-            assert ids, f"empty conv_id set under {prefix} @ {revision}"
+            if corpus in cm.V2_CONCAT_SOURCES:
+                # Two halves: wave-1 stem below the boundary (+ pin), v2
+                # extension at/above it (read_offpolicy_rows convention).
+                boundary = cm.V2_CONCAT_BOUNDARY[corpus]
+                w1_ids = _half_ids(model, subprefix, stem, revision, max_idx=boundary)
+                ext_ids = _half_ids(model, "generation_v2", corpus, v2_main_sha, min_idx=boundary)
+                ids = w1_ids | ext_ids
+                ctx.pinned_generation_revisions[f"{model}::{corpus}::ext"] = v2_main_sha
+                ctx.generation_stems[f"{model}::{corpus}::ext"] = corpus
+            else:
+                ids = _half_ids(model, subprefix, stem, revision)
             model_sets[model] = ids
             # Record the pin.
             ctx.pinned_generation_revisions[f"{model}::{corpus}"] = revision
             ctx.generation_stems[f"{model}::{corpus}"] = stem
         # 5-way intersection = intersection over models.
         inter = set.intersection(*model_sets.values())
+        assert inter, f"empty 5-way kept-intersection for {corpus}"
+        ids_by_corpus[corpus] = inter
         per_corpus_intersection[corpus] = len(inter)
         total_union += len(inter)
         logger.info(
-            "[pool] 5-way intersection %s: %d prompts (per-model sizes: %s)",
+            "[pool] 5-way kept-intersection %s: %d prompts (per-model sizes: %s)",
             corpus,
             len(inter),
             {m: len(s) for m, s in model_sets.items()},
@@ -405,7 +484,7 @@ def measure_5way_intersection(ctx: SplitContext) -> dict[str, Any]:
         "per_corpus_5way_intersection": per_corpus_intersection,
         "total_5way_union": total_union,
         "v2_main_revision": v2_main_sha,
-    }
+    }, ids_by_corpus
 
 
 def load_corpora_rows(ctx: SplitContext) -> dict[str, list[dict]]:
@@ -574,6 +653,8 @@ def build_manifest(
     train_test_by_cluster: dict[int, str],
     pooled_folds_by_cluster: dict[int, int],
     round3_keep_rate: dict[str, float],
+    *,
+    per_corpus_pre_intersection: dict[str, int] | None = None,
 ) -> dict[str, Any]:
     n_kept_pre = sum(per_corpus_pre_dedup.values())
     per_corpus_kept = {slug: len(rows) for slug, rows in kept_by_corpus.items()}
@@ -608,6 +689,7 @@ def build_manifest(
             "wave1_hf_rev": cm.WAVE1_HF_REV,
         },
         "five_way_intersection": intersection,
+        "per_corpus_pre_intersection": per_corpus_pre_intersection,
         "n_kept_pre_dedup": n_kept_pre,
         "n_kept_post_dedup": n_kept_post,
         "n_cross_corpus_drops": len(dropped),
@@ -764,8 +846,9 @@ def run(args) -> int:
         ctx.out_root,
     )
 
-    # CONCERN M1 — measure the 5-way intersection FIRST.
-    intersection = measure_5way_intersection(ctx)
+    # CONCERN M1 — measure the 5-way KEPT intersection FIRST (also the row
+    # filter below: plan §5 n_pool IS the intersection).
+    intersection, intersection_ids = measure_5way_intersection(ctx)
 
     # Resolve MPNet revision (CONCERN M3).
     if ctx.smoke:
@@ -776,8 +859,26 @@ def run(args) -> int:
         ctx.pinned_mpnet_revision = _resolve_mpnet_revision(api)
     logger.info("[pool] mpnet revision pinned to %s", ctx.pinned_mpnet_revision)
 
-    # (2) Load corpora + cross-corpus dedup.
+    # (2) Load corpora, restrict to the 5-way kept intersection, then dedup.
     rows_by_corpus = load_corpora_rows(ctx)
+    per_corpus_pre_intersection = {slug: len(rows) for slug, rows in rows_by_corpus.items()}
+    for slug, rows in rows_by_corpus.items():
+        ids = intersection_ids[slug]
+        picked = [r for r in rows if f"s{int(r['prompt_idx'])}" in ids]
+        assert picked, (
+            f"no {slug} corpus rows survive the 5-way kept-intersection filter "
+            f"({len(rows)} rows vs {len(ids)} intersection ids) — id-space mismatch?"
+        )
+        if len(picked) < len(rows):
+            logger.info(
+                "[pool] %s: %d/%d rows in the 5-way kept intersection (%d dropped — "
+                "not kept by every checkpoint, so not serveable by the pooled fits)",
+                slug,
+                len(picked),
+                len(rows),
+                len(rows) - len(picked),
+            )
+        rows_by_corpus[slug] = picked
     per_corpus_pre_dedup = {slug: len(rows) for slug, rows in rows_by_corpus.items()}
     kept_by_corpus, dropped = cross_corpus_dedup(rows_by_corpus, DEDUP_ORDER)
     logger.info(
@@ -829,6 +930,7 @@ def run(args) -> int:
         train_test,
         folds,
         round3_keep_rate,
+        per_corpus_pre_intersection=per_corpus_pre_intersection,
     )
     assert_split(manifest, round3_keep_rate, smoke=ctx.smoke)
 

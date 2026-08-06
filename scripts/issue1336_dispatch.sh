@@ -1879,6 +1879,13 @@ phase_c_pool() {
     echo "[phase=c_pool]"
     if [ "$SMOKE" -eq 1 ]; then
         if [ ! -f "$DONE_DIR/c_pool__smoke.done" ]; then
+            # The smoke-local kept-intersection probe reads the gen_smoke
+            # answers (extension half), so the fixtures are generated FIRST
+            # (same pair the extract_offpolicy smoke leg runs; idempotent).
+            uv run python scripts/issue1336_smoke_fixtures.py gen \
+                >> "$JOB_LOG_DIR/c_pool__fixtures.log" 2>&1
+            uv run python scripts/issue1336_smoke_fixtures.py gen-v2 \
+                >> "$JOB_LOG_DIR/c_pool__fixtures.log" 2>&1
             uv run python scripts/issue1336_pooled_split.py --smoke \
                 >> "$JOB_LOG_DIR/c_pool.log" 2>&1
             touch "$DONE_DIR/c_pool__smoke.done"
