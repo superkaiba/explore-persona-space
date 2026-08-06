@@ -23,7 +23,9 @@ two sources, both authored-CHAT:
   sorted-part order with first-wins dedupe — matching
   ``issue2054_phase_a._draw_shared_questions``'s turn-selection convention
   exactly. Every matched row's first-user-turn is asserted equal to the
-  drawn question (``shared_question_draw.jsonl``), sealing the convention.
+  drawn question (``shared_question_draw.jsonl``, staged MANIFEST-FIRST from
+  its sharded upload — unsharded hub-name fallback only when no manifest
+  exists; the r15 fix), sealing the convention.
 - ``stripped_<story_id>`` (recovered scaffolds): answer = the scaffold row's
   own stripper-preserved ORIGINAL answer (the parent #1345 paired stories
   embed the original conversation answer NEAR-verbatim; the stripper records
@@ -443,17 +445,45 @@ def _scaffold_answers(
 # ---------------------------------------------------------------------------
 # Source 2: mt_* answers from the #1738 manifest (pinned revision)
 # ---------------------------------------------------------------------------
-def _draw_questions(staging_root: Path, needed: set[str]) -> dict[str, str]:
-    """{mt_conv_id -> drawn question} for the consistency assert."""
-    from explore_persona_space.orchestrate.hub import stage_hub_file
+def _stage_draw_jsonl(staging_root: Path) -> Path:
+    """Stage the seed-137 shared question draw MANIFEST-FIRST via the hardened
+    sharded stager (the r15 fix, closing epm:failure v4): the top-up gen leg
+    uploads the >9.5 MB draw in the SHARDED form only
+    (``shared_question_draw.shardNN.jsonl`` + ``.manifest.json``), leaving the
+    plain hub name as stale prior-round residue — the r6 class the module
+    docstring bans for scaffold pools, previously un-applied to the draw path.
+    Falls back to the unsharded hub name ONLY when no manifest exists on HF
+    (pre-shard compat); a missing SHARD under an existing manifest stays
+    fail-loud inside ``_stage_sharded_jsonl`` (a fallback there would consume
+    the stale residue). Logs which path was taken."""
+    from explore_persona_space.orchestrate.hub import retry_transient, stage_hub_file
 
-    path = stage_hub_file(
+    dest_dir = staging_root / SCAFFOLDS_PREFIX
+    manifest_in_repo = f"{SCAFFOLDS_PREFIX}/shared_question_draw.manifest.json"
+    api = _api()
+    has_manifest = retry_transient(
+        lambda: api.file_exists(pa.HF_DATA_REPO, manifest_in_repo, repo_type="dataset"),
+        what=f"file_exists({manifest_in_repo})",
+    )
+    if has_manifest:
+        _log("draw staging: manifest present on HF -> sharded stager (manifest-first)")
+        return _stage_sharded_jsonl(dest_dir, SCAFFOLDS_PREFIX, "shared_question_draw")
+    _log(
+        "draw staging: NO shared_question_draw.manifest.json on HF -> "
+        "pre-shard compat fallback to the unsharded hub name"
+    )
+    return stage_hub_file(
         pa.HF_DATA_REPO,
         f"{SCAFFOLDS_PREFIX}/shared_question_draw.jsonl",
-        staging_root / SCAFFOLDS_PREFIX / "shared_question_draw.jsonl",
+        dest_dir / "shared_question_draw.jsonl",
         repo_type="dataset",
         overwrite=True,
     )
+
+
+def _draw_questions(staging_root: Path, needed: set[str]) -> dict[str, str]:
+    """{mt_conv_id -> drawn question} for the consistency assert."""
+    path = _stage_draw_jsonl(staging_root)
     out: dict[str, str] = {}
     with path.open(encoding="utf-8") as f:
         for line in f:

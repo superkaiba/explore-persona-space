@@ -190,3 +190,150 @@ def test_variants_default_runs_all_discovered(tmp_path):
         rows = [json.loads(x) for x in f.read_text(encoding="utf-8").split("\n") if x.strip()]
         assert len(rows) == n
         assert all(r["answer_source"] == "answers_pool" for r in rows)
+
+
+# ---------------------------------------------------------------------------
+# r15 pins: shared_question_draw staging is MANIFEST-FIRST (epm:failure v4 —
+# the top-up gen leg uploads the >9.5 MB draw SHARDED only, so the plain hub
+# name is stale prior-round residue; the loader must prefer the sharded form
+# and fall back to the unsharded name ONLY when no manifest exists on HF).
+# These fail pre-fix: `_stage_draw_jsonl` did not exist and `_draw_questions`
+# staged the unsharded name unconditionally.
+# Boundary fakes only: `_api().file_exists` + `stage_hub_file` (network) and
+# `_stage_sharded_jsonl` (the Hub staging boundary, per the established
+# test_issue2054_answer_conflicts.py convention); the real sharded body runs
+# in the production rebuild.
+# ---------------------------------------------------------------------------
+import hashlib  # noqa: E402
+
+import issue2054_build_answers as ba  # noqa: E402
+import issue2054_verify_scaffold_uploads as vsu  # noqa: E402
+
+
+class _FakeHfApi:
+    def __init__(self, manifest_exists: bool):
+        self._exists = manifest_exists
+        self.probed: list[str] = []
+
+    def file_exists(self, repo_id, path_in_repo, repo_type=None):
+        self.probed.append(path_in_repo)
+        return self._exists
+
+
+def test_stage_draw_prefers_sharded_form_when_manifest_present(tmp_path, monkeypatch):
+    import explore_persona_space.orchestrate.hub as hub
+
+    api = _FakeHfApi(manifest_exists=True)
+    monkeypatch.setattr(ba, "_api", lambda: api)
+    calls: dict[str, tuple] = {}
+
+    def fake_sharded(dest_dir: Path, base_prefix: str, stem: str) -> Path:
+        calls["sharded"] = (dest_dir, base_prefix, stem)
+        p = dest_dir / f"{stem}.jsonl"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("", encoding="utf-8")
+        return p
+
+    monkeypatch.setattr(ba, "_stage_sharded_jsonl", fake_sharded)
+
+    def refuse_unsharded(*a, **k):
+        raise AssertionError("unsharded fallback must NOT fire when a manifest exists")
+
+    monkeypatch.setattr(hub, "stage_hub_file", refuse_unsharded)
+    out = ba._stage_draw_jsonl(tmp_path)
+    assert calls["sharded"] == (
+        tmp_path / ba.SCAFFOLDS_PREFIX,
+        ba.SCAFFOLDS_PREFIX,
+        "shared_question_draw",
+    )
+    assert out.name == "shared_question_draw.jsonl"
+    assert api.probed == [f"{ba.SCAFFOLDS_PREFIX}/shared_question_draw.manifest.json"]
+
+
+def test_stage_draw_falls_back_only_when_no_manifest(tmp_path, monkeypatch):
+    import explore_persona_space.orchestrate.hub as hub
+
+    monkeypatch.setattr(ba, "_api", lambda: _FakeHfApi(manifest_exists=False))
+
+    def refuse_sharded(*a, **k):
+        raise AssertionError("sharded stager must NOT run when no manifest exists")
+
+    monkeypatch.setattr(ba, "_stage_sharded_jsonl", refuse_sharded)
+    staged: dict[str, object] = {}
+
+    def fake_stage_hub_file(repo_id, path_in_repo, target, *, repo_type, overwrite=False, **k):
+        staged["path_in_repo"] = path_in_repo
+        staged["overwrite"] = overwrite
+        t = Path(target)
+        t.parent.mkdir(parents=True, exist_ok=True)
+        t.write_text("", encoding="utf-8")
+        return t
+
+    monkeypatch.setattr(hub, "stage_hub_file", fake_stage_hub_file)
+    out = ba._stage_draw_jsonl(tmp_path)
+    assert staged["path_in_repo"] == f"{ba.SCAFFOLDS_PREFIX}/shared_question_draw.jsonl"
+    assert staged["overwrite"] is True  # authoritative overwrite — never a stale local reuse
+    assert out == tmp_path / ba.SCAFFOLDS_PREFIX / "shared_question_draw.jsonl"
+
+
+def _fake_vsu_stage(manifest: dict, shard_bytes: bytes):
+    def fake_stage(api, path_in_repo: str, dest: Path):
+        d = Path(dest)
+        d.parent.mkdir(parents=True, exist_ok=True)
+        if path_in_repo.endswith(".manifest.json"):
+            d.write_text(json.dumps(manifest), encoding="utf-8")
+        else:
+            d.write_bytes(shard_bytes)
+        return d
+
+    return fake_stage
+
+
+def test_verify_shared_draw_is_manifest_first_and_ignores_stale_unsharded(tmp_path, monkeypatch):
+    shard = b'{"conv_id": "mt_a", "question": "q"}\n'
+    man = {
+        "source": "shared_question_draw.jsonl",
+        "parts": ["shared_question_draw.shard00.jsonl"],
+        "line_counts": [1],
+        "sha256": {"shared_question_draw.shard00.jsonl": hashlib.sha256(shard).hexdigest()},
+    }
+    monkeypatch.setattr(vsu, "_stage", _fake_vsu_stage(man, shard))
+    # Stale unsharded name ALSO present — must be ignored in favour of the manifest.
+    listing = {
+        f"{vsu.PREFIX}/shared_question_draw.manifest.json",
+        f"{vsu.PREFIX}/shared_question_draw.meta.json",
+        f"{vsu.PREFIX}/shared_question_draw.shard00.jsonl",
+        f"{vsu.PREFIX}/shared_question_draw.jsonl",
+    }
+    ok, problems, n_rows = vsu.verify_shared_draw(None, listing, tmp_path, expect=1)
+    assert ok and not problems and n_rows == 1
+    # Row-count reconciliation binds against the MANIFEST count, so a stale
+    # expectation fails even with every shard present + sha-clean.
+    ok2, problems2, _ = vsu.verify_shared_draw(None, listing, tmp_path, expect=2)
+    assert not ok2 and any("!= expected 2" in p for p in problems2)
+
+
+def test_verify_shared_draw_flags_missing_shard_and_unsharded_fallback(tmp_path, monkeypatch):
+    shard = b'{"conv_id": "mt_a", "question": "q"}\n'
+    man = {
+        "source": "shared_question_draw.jsonl",
+        "parts": ["shared_question_draw.shard00.jsonl", "shared_question_draw.shard01.jsonl"],
+        "line_counts": [1, 1],
+        "sha256": {"shared_question_draw.shard00.jsonl": hashlib.sha256(shard).hexdigest()},
+    }
+    monkeypatch.setattr(vsu, "_stage", _fake_vsu_stage(man, shard))
+    listing = {
+        f"{vsu.PREFIX}/shared_question_draw.manifest.json",
+        f"{vsu.PREFIX}/shared_question_draw.meta.json",
+        f"{vsu.PREFIX}/shared_question_draw.shard00.jsonl",
+    }
+    ok, problems, _ = vsu.verify_shared_draw(None, listing, tmp_path, expect=None)
+    assert not ok and any("shard01" in p and "NOT on HF" in p for p in problems)
+    # No manifest at all -> pre-shard compat: unsharded accepted with the NOTE.
+    listing2 = {
+        f"{vsu.PREFIX}/shared_question_draw.meta.json",
+        f"{vsu.PREFIX}/shared_question_draw.jsonl",
+    }
+    ok2, problems2, n_rows2 = vsu.verify_shared_draw(None, listing2, tmp_path, expect=None)
+    assert n_rows2 == 1
+    assert not ok2 and any("NOTE unsharded form only" in p for p in problems2)
