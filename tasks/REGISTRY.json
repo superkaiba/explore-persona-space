@@ -8446,8 +8446,8 @@
       "goal": "Measure how the answer-decoding regime (single greedy vs K-rollout-averaged stochastic vs single stochastic draw) changes answer-vector variance, context->answer mapping quality and its cross-regime transfer, and behavioral-expression prediction accuracy for sycophancy / hallucination / evil, on generic held-out data versus trait-eliciting data.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/2091",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/2091",
+      "status": "awaiting_promotion",
       "title": "Averaging five sampled answers buys a cleaner measurement target, not a better context-to-answer map (MODERATE confidence)"
     },
     "2092": {
