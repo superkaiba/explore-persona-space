@@ -1,0 +1,862 @@
+{
+  "regime": "dimctl-v1",
+  "units": [
+    {
+      "regime": "dimctl-v1",
+      "scale_key": "scale7_refit",
+      "slug": "scale7_refit",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "h_dim": 3584,
+      "primary_layer_index": 19,
+      "arm": "baseline",
+      "seed": null,
+      "provenance": {
+        "transform": "none"
+      },
+      "n_train": 25000,
+      "d_in": 3584,
+      "d_out": 3584,
+      "n_over_d_in": 6.975446428571429,
+      "test_r2": 0.7286695822712997,
+      "train_mean_r2": -0.02607852046932857,
+      "identity_bias": {
+        "applicable": true,
+        "test_r2": -0.8731169103141352,
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.52,
+              "5": 0.691,
+              "10": 0.777,
+              "50": 0.912
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6053652090643459
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.541,
+              "5": 0.721,
+              "10": 0.793,
+              "50": 0.93
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6279470734860005
+          }
+        }
+      },
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.762,
+            "5": 0.884,
+            "10": 0.924,
+            "50": 0.99
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8224247714142677
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.765,
+            "5": 0.881,
+            "10": 0.923,
+            "50": 0.99
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8236314847153225
+        }
+      },
+      "ridge_meta": {
+        "n_train": 25000,
+        "selection": "val-lambda (primal, streaming)",
+        "selected_lambda": 3162.2776601683795,
+        "val_r2_at_selected": 0.7275581196644271,
+        "lambda_grid_edge": null,
+        "ridge_block": 50000
+      },
+      "elapsed_s": 18.94
+    },
+    {
+      "regime": "dimctl-v1",
+      "scale_key": "scale7_refit",
+      "slug": "scale7_refit",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "h_dim": 3584,
+      "primary_layer_index": 19,
+      "arm": "target_jl",
+      "seed": 0,
+      "provenance": {
+        "transform": "Y @ R  (3584 -> 896)",
+        "jl_seed": 0
+      },
+      "n_train": 25000,
+      "d_in": 3584,
+      "d_out": 896,
+      "n_over_d_in": 6.975446428571429,
+      "test_r2": 0.725485717394309,
+      "train_mean_r2": -0.02431304686156177,
+      "identity_bias": {
+        "applicable": false,
+        "reason": "input dim 3584 != output dim 896; the identity family is undefined across a dimension change (stated inapplicable, not skipped)"
+      },
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.76,
+            "5": 0.881,
+            "10": 0.928,
+            "50": 0.99
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8204692404836331
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.762,
+            "5": 0.88,
+            "10": 0.939,
+            "50": 0.989
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8223027717224345
+        }
+      },
+      "ridge_meta": {
+        "n_train": 25000,
+        "selection": "val-lambda (primal, streaming)",
+        "selected_lambda": 3162.2776601683795,
+        "val_r2_at_selected": 0.7256263328944316,
+        "lambda_grid_edge": null,
+        "ridge_block": 50000
+      },
+      "elapsed_s": 7.2
+    },
+    {
+      "regime": "dimctl-v1",
+      "scale_key": "scale7_refit",
+      "slug": "scale7_refit",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "h_dim": 3584,
+      "primary_layer_index": 19,
+      "arm": "target_jl",
+      "seed": 1,
+      "provenance": {
+        "transform": "Y @ R  (3584 -> 896)",
+        "jl_seed": 1
+      },
+      "n_train": 25000,
+      "d_in": 3584,
+      "d_out": 896,
+      "n_over_d_in": 6.975446428571429,
+      "test_r2": 0.7257475954455423,
+      "train_mean_r2": -0.025458131496231662,
+      "identity_bias": {
+        "applicable": false,
+        "reason": "input dim 3584 != output dim 896; the identity family is undefined across a dimension change (stated inapplicable, not skipped)"
+      },
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.759,
+            "5": 0.882,
+            "10": 0.93,
+            "50": 0.992
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8177190576140797
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.761,
+            "5": 0.893,
+            "10": 0.943,
+            "50": 0.992
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8219875381553888
+        }
+      },
+      "ridge_meta": {
+        "n_train": 25000,
+        "selection": "val-lambda (primal, streaming)",
+        "selected_lambda": 3162.2776601683795,
+        "val_r2_at_selected": 0.7257298204531064,
+        "lambda_grid_edge": null,
+        "ridge_block": 50000
+      },
+      "elapsed_s": 7.15
+    },
+    {
+      "regime": "dimctl-v1",
+      "scale_key": "scale7_refit",
+      "slug": "scale7_refit",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "h_dim": 3584,
+      "primary_layer_index": 19,
+      "arm": "target_jl",
+      "seed": 2,
+      "provenance": {
+        "transform": "Y @ R  (3584 -> 896)",
+        "jl_seed": 2
+      },
+      "n_train": 25000,
+      "d_in": 3584,
+      "d_out": 896,
+      "n_over_d_in": 6.975446428571429,
+      "test_r2": 0.7269705651337353,
+      "train_mean_r2": -0.025163719809413898,
+      "identity_bias": {
+        "applicable": false,
+        "reason": "input dim 3584 != output dim 896; the identity family is undefined across a dimension change (stated inapplicable, not skipped)"
+      },
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.76,
+            "5": 0.888,
+            "10": 0.921,
+            "50": 0.99
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8206931834336738
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.761,
+            "5": 0.872,
+            "10": 0.911,
+            "50": 0.989
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.818717402022778
+        }
+      },
+      "ridge_meta": {
+        "n_train": 25000,
+        "selection": "val-lambda (primal, streaming)",
+        "selected_lambda": 3162.2776601683795,
+        "val_r2_at_selected": 0.725531031106645,
+        "lambda_grid_edge": null,
+        "ridge_block": 50000
+      },
+      "elapsed_s": 7.16
+    },
+    {
+      "regime": "dimctl-v1",
+      "scale_key": "scale7_refit",
+      "slug": "scale7_refit",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "h_dim": 3584,
+      "primary_layer_index": 19,
+      "arm": "both_jl",
+      "seed": 0,
+      "provenance": {
+        "transform": "X @ R and Y @ R, same R  (3584 -> 896)",
+        "jl_seed": 0
+      },
+      "n_train": 25000,
+      "d_in": 896,
+      "d_out": 896,
+      "n_over_d_in": 27.901785714285715,
+      "test_r2": 0.682282638291563,
+      "train_mean_r2": -0.02431304686156177,
+      "identity_bias": {
+        "applicable": true,
+        "test_r2": -0.9114397949811528,
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.492,
+              "5": 0.668,
+              "10": 0.739,
+              "50": 0.872
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 2.0,
+            "mrr": 0.5747084363971587
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.514,
+              "5": 0.683,
+              "10": 0.754,
+              "50": 0.882
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 1.0,
+            "mrr": 0.5958705920388081
+          }
+        }
+      },
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.73,
+            "5": 0.853,
+            "10": 0.898,
+            "50": 0.988
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.790517780840619
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.738,
+            "5": 0.858,
+            "10": 0.916,
+            "50": 0.987
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7980251120307317
+        }
+      },
+      "ridge_meta": {
+        "n_train": 25000,
+        "selection": "val-lambda (primal, streaming)",
+        "selected_lambda": 316.2277660168379,
+        "val_r2_at_selected": 0.6843562097265211,
+        "lambda_grid_edge": null,
+        "ridge_block": 50000
+      },
+      "elapsed_s": 1.54
+    },
+    {
+      "regime": "dimctl-v1",
+      "scale_key": "scale7_refit",
+      "slug": "scale7_refit",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "h_dim": 3584,
+      "primary_layer_index": 19,
+      "arm": "both_jl",
+      "seed": 1,
+      "provenance": {
+        "transform": "X @ R and Y @ R, same R  (3584 -> 896)",
+        "jl_seed": 1
+      },
+      "n_train": 25000,
+      "d_in": 896,
+      "d_out": 896,
+      "n_over_d_in": 27.901785714285715,
+      "test_r2": 0.682604772585236,
+      "train_mean_r2": -0.025458131496231662,
+      "identity_bias": {
+        "applicable": true,
+        "test_r2": -0.888898022894034,
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.477,
+              "5": 0.655,
+              "10": 0.753,
+              "50": 0.918
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 2.0,
+            "mrr": 0.5686577521207282
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.515,
+              "5": 0.694,
+              "10": 0.791,
+              "50": 0.927
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6031227143558535
+          }
+        }
+      },
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.719,
+            "5": 0.856,
+            "10": 0.899,
+            "50": 0.99
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7852080915611545
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.727,
+            "5": 0.865,
+            "10": 0.897,
+            "50": 0.991
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7894052704346572
+        }
+      },
+      "ridge_meta": {
+        "n_train": 25000,
+        "selection": "val-lambda (primal, streaming)",
+        "selected_lambda": 316.2277660168379,
+        "val_r2_at_selected": 0.6837975436436906,
+        "lambda_grid_edge": null,
+        "ridge_block": 50000
+      },
+      "elapsed_s": 1.64
+    },
+    {
+      "regime": "dimctl-v1",
+      "scale_key": "scale7_refit",
+      "slug": "scale7_refit",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "h_dim": 3584,
+      "primary_layer_index": 19,
+      "arm": "both_jl",
+      "seed": 2,
+      "provenance": {
+        "transform": "X @ R and Y @ R, same R  (3584 -> 896)",
+        "jl_seed": 2
+      },
+      "n_train": 25000,
+      "d_in": 896,
+      "d_out": 896,
+      "n_over_d_in": 27.901785714285715,
+      "test_r2": 0.6852923231506336,
+      "train_mean_r2": -0.025163719809413898,
+      "identity_bias": {
+        "applicable": true,
+        "test_r2": -0.9054440469108398,
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.486,
+              "5": 0.675,
+              "10": 0.753,
+              "50": 0.877
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 2.0,
+            "mrr": 0.5799865520190488
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.512,
+              "5": 0.702,
+              "10": 0.775,
+              "50": 0.901
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6020828865481556
+          }
+        }
+      },
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.722,
+            "5": 0.863,
+            "10": 0.906,
+            "50": 0.987
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7884326774831827
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.73,
+            "5": 0.856,
+            "10": 0.913,
+            "50": 0.985
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7923844604498806
+        }
+      },
+      "ridge_meta": {
+        "n_train": 25000,
+        "selection": "val-lambda (primal, streaming)",
+        "selected_lambda": 316.2277660168379,
+        "val_r2_at_selected": 0.6835273555706853,
+        "lambda_grid_edge": null,
+        "ridge_block": 50000
+      },
+      "elapsed_s": 1.76
+    },
+    {
+      "regime": "dimctl-v1",
+      "scale_key": "scale7_refit",
+      "slug": "scale7_refit",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "h_dim": 3584,
+      "primary_layer_index": 19,
+      "arm": "matched_nd",
+      "seed": null,
+      "provenance": {
+        "transform": "none (train subsample only)",
+        "n_train": 17500,
+        "subsample_seed": 1491
+      },
+      "n_train": 17500,
+      "d_in": 3584,
+      "d_out": 3584,
+      "n_over_d_in": 4.8828125,
+      "test_r2": 0.7202245595893968,
+      "train_mean_r2": -0.026002801005793996,
+      "identity_bias": {
+        "applicable": true,
+        "test_r2": -0.8728700925090642,
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.519,
+              "5": 0.69,
+              "10": 0.777,
+              "50": 0.914
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 1.0,
+            "mrr": 0.604983949518049
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.541,
+              "5": 0.72,
+              "10": 0.792,
+              "50": 0.93
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6277750077845332
+          }
+        }
+      },
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.752,
+            "5": 0.877,
+            "10": 0.922,
+            "50": 0.99
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8150481800625134
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.754,
+            "5": 0.874,
+            "10": 0.919,
+            "50": 0.991
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8158639501753414
+        }
+      },
+      "ridge_meta": {
+        "n_train": 17500,
+        "selection": "val-lambda (primal, streaming)",
+        "selected_lambda": 3162.2776601683795,
+        "val_r2_at_selected": 0.7200196226749996,
+        "lambda_grid_edge": null,
+        "ridge_block": 50000
+      },
+      "elapsed_s": 18.48
+    },
+    {
+      "regime": "dimctl-v1",
+      "scale_key": "scale7_refit",
+      "slug": "scale7_refit",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "h_dim": 3584,
+      "primary_layer_index": 19,
+      "arm": "pca_input",
+      "seed": null,
+      "provenance": {
+        "transform": "X @ PCA  (3584 -> 896), basis fit on train rows only",
+        "variance_retained": 0.9512894887829982
+      },
+      "n_train": 25000,
+      "d_in": 896,
+      "d_out": 3584,
+      "n_over_d_in": 27.901785714285715,
+      "test_r2": 0.7146135490234,
+      "train_mean_r2": -0.02607852046932857,
+      "identity_bias": {
+        "applicable": false,
+        "reason": "input dim 896 != output dim 3584; the identity family is undefined across a dimension change (stated inapplicable, not skipped)"
+      },
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.76,
+            "5": 0.871,
+            "10": 0.919,
+            "50": 0.991
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8179587679168726
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.76,
+            "5": 0.876,
+            "10": 0.921,
+            "50": 0.99
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8181737589821277
+        }
+      },
+      "ridge_meta": {
+        "n_train": 25000,
+        "selection": "val-lambda (primal, streaming)",
+        "selected_lambda": 316.2277660168379,
+        "val_r2_at_selected": 0.7133538386645304,
+        "lambda_grid_edge": null,
+        "ridge_block": 50000
+      },
+      "elapsed_s": 5.04
+    }
+  ]
+}
