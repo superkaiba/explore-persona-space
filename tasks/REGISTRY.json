@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2105,
+  "highest_id": 2106,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8562,6 +8562,13 @@
       "path": "tasks/planning/2105",
       "status": "planning",
       "title": "workflow-fix: triage window boundary opens at post time, hiding enumerate-to-post seam markers"
+    },
+    "2106": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2106",
+      "status": "proposed",
+      "title": "daily-fix: fix red main: test_workflow_lint.py::test_check_upload_return_discard_live_trees_pass \u2014 capture each helper's return and raise o"
     },
     "212": {
       "has_clean_result": true,
