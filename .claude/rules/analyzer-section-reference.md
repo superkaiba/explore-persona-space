@@ -136,11 +136,10 @@ probe set comes from a harmful safety-benchmark question bank
 strongreject, Betley-lineage, sensitive-info banks; incident #866), OR
 the run's corpus is real-world user text (LMSYS/WildChat-class —
 unscreened real user text routinely carries in-corpus jailbreak/explicit
-rows; #1073: an analyzer refusal-killed twice paging raw LMSYS rollout
-text), verbatim rows
+rows; #1073), verbatim rows
 in your context can trigger terminal API usage-policy refusals that kill
-your final turn and make the transcript unresumable (incident: task
-#537, 2026-06-10). For those rows, the spot check above AND the Step 3.6
+your final turn and make the transcript unresumable (#537). For those
+rows, the spot check above AND the Step 3.6
 sample selection run in sanitized mode:
 
 - Read minimal slices via field-filtered `jq` (judge label, marker
