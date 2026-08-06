@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2156,
+  "highest_id": 2157,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8940,6 +8940,13 @@
       "path": "tasks/planning/2156",
       "status": "planning",
       "title": "workflow-fix: repair main-red pin test_mlp_chunk_size_changes_fit_batch_order_init"
+    },
+    "2157": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2157",
+      "status": "proposed",
+      "title": "workflow-fix: pods.md names a --boot-disk-gb flag pod.py provision lacks; cpu-bigmem defaults to 50GB not 240GB"
     },
     "216": {
       "has_clean_result": true,
