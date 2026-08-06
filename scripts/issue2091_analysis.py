@@ -978,6 +978,36 @@ def stage_per_draw_tables(staging_root: Path, revision: str) -> list[Path]:
     return paths
 
 
+def packed_lookup_rows(
+    raw_rows: Iterable[dict], wanted_cids: set[str]
+) -> dict[tuple[str, int], dict]:
+    """(context_id, rollout_k) -> {completion, answer_aliases} from packed shard lines.
+
+    Packed shards are ``pack_raw_tree`` output: one line per SOURCE FILE, shaped
+    ``{"src": "labeling/<behavior>/<cid>_seed<k>.json", "doc": {...}}`` (the tree
+    ``_manifest.json`` rides along as a row). The ROLLOUT payload is the INNER
+    ``doc`` — the wrapper carries NO context_id (#2091 fu1: the shipped run read
+    the wrapper via ``iter_jsonl`` and every S4 label fell to
+    ``missing_packed_row``). Mirrors ``issue2091_stage_contexts._iter_packed_docs``;
+    fails loud when a wanted doc lacks ``rollout_k`` (never a silent k=0 default).
+    """
+    lookup: dict[tuple[str, int], dict] = {}
+    for raw in raw_rows:
+        doc = raw.get("doc", raw) if isinstance(raw, dict) else None
+        if not isinstance(doc, dict):
+            continue
+        cid = doc.get("context_id")
+        if cid is None or str(cid) not in wanted_cids:
+            continue
+        if doc.get("rollout_k") is None:
+            raise ValueError(f"{cid}: packed doc lacks rollout_k (pack schema drift)")
+        lookup[(str(cid), int(doc["rollout_k"]))] = {
+            "completion": doc.get("completion") or "",
+            "answer_aliases": doc.get("answer_aliases") or [],
+        }
+    return lookup
+
+
 def stage_packed_lookup(
     behavior: str, staging_root: Path, revision: str, wanted_cids: set[str]
 ) -> dict[tuple[str, int], dict]:
@@ -990,13 +1020,7 @@ def stage_packed_lookup(
         target = dest / rel.rsplit("/", 1)[-1]
         if not target.is_file():
             hub.stage_hub_file(DATA_REPO, rel, target, repo_type="dataset", revision=revision)
-        for doc in iter_jsonl(target):
-            cid = str(doc.get("context_id"))
-            if cid in wanted_cids:
-                lookup[(cid, int(doc.get("rollout_k") or 0))] = {
-                    "completion": doc.get("completion") or "",
-                    "answer_aliases": doc.get("answer_aliases") or [],
-                }
+        lookup.update(packed_lookup_rows(iter_jsonl(target), wanted_cids))
     return lookup
 
 
