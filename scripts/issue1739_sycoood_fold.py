@@ -329,7 +329,25 @@ def main() -> int:
             args.round3_root,
         )
 
+    # PREFIX-ARM DEGENERACY (measured, not inferred): in the #1739 labeling
+    # corpus the prefix (everything before the user query) is a SINGLE fixed
+    # system prompt, so the fit pool's prefix_end state is byte-identical across
+    # rows — measured mean per-dimension SD 0.000000 with exactly 1 distinct row
+    # at layer 14 in original shards 0 and 100, against 0.235-0.241 / 103
+    # distinct for context_end on the same shards. Whitening and the map are fit
+    # on that pool, so every fit-based prefix_end arm predicts a constant and
+    # scores at chance (AUROC 0.4996) even on the new rungs, whose own prefixes
+    # DO vary (shard 180: SD 0.408, 68 distinct). The two ORACLE arms are the
+    # exception — they read answer-side activations, not the prefix.
+    prefix_note = (
+        "prefix_end fit-based arms are DEGENERATE on this corpus: the fit pool "
+        "carries a single fixed prefix (per-dim SD 0.000000, 1 distinct row at "
+        "L14 in original shards 0/100 vs 0.24/103 for context_end), so their "
+        "scores are constant and their rho/rank-survival entries are not "
+        "interpretable. context_end is the informative arm here."
+    )
     payload = {
+        "prefix_arm_degeneracy_note": prefix_note,
         "behavior": "sycophancy",
         "budget_l": args.budget,
         "summary_rows": summary,
