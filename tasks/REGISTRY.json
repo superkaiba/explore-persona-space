@@ -8396,8 +8396,8 @@
     "2085": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2085",
-      "status": "reviewing",
+      "path": "tasks/completed/2085",
+      "status": "completed",
       "title": "workflow-fix: update the two test files' mocked auto-chain fixtures to the"
     },
     "2086": {
