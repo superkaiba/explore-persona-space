@@ -1,0 +1,138 @@
+{
+  "commit": "c3be9e22",
+  "git_commit": "c3be9e22",
+  "git_dirty": false,
+  "created": "2026-08-06T15:56:56Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.5770364963217158,
+      "series": "32B WildChat point (mixed capture batch sizes 8/4/2)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.5506350628869827,
+      "series": "LMSYS test (in-distribution)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.5972315999117004,
+      "series": "LMSYS test (in-distribution)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.6621875068644685,
+      "series": "LMSYS test (in-distribution)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.7286695822712991,
+      "series": "LMSYS test (in-distribution)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.7276979213437553,
+      "series": "LMSYS test (in-distribution)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.6980991910256598,
+      "series": "LMSYS test (in-distribution)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.405779950906486,
+      "series": "WildChat test (corpus transfer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.4876248930758573,
+      "series": "WildChat test (corpus transfer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.5661834364360744,
+      "series": "WildChat test (corpus transfer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.6276501712010882,
+      "series": "WildChat test (corpus transfer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "ridge held-out test R\u00b2 (variance-weighted)": 0.6107944925932405,
+      "series": "WildChat test (corpus transfer)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "in-distribution vs corpus-transfer predictability",
+        "xlabel": "model size (Qwen2.5-Instruct, parameters)",
+        "ylabel": "ridge held-out test R\u00b2 (variance-weighted)",
+        "legend_labels": [
+          "LMSYS test (in-distribution)",
+          "WildChat test (corpus transfer)",
+          "32B WildChat point (mixed capture batch sizes 8/4/2)"
+        ],
+        "xticklabels": [
+          "0.5B",
+          "1.5B",
+          "3B",
+          "7B",
+          "14B",
+          "32B"
+        ],
+        "yticklabels": [
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75"
+        ]
+      }
+    ],
+    "series": [
+      "LMSYS test (in-distribution)",
+      "WildChat test (corpus transfer)",
+      "32B WildChat point (mixed capture batch sizes 8/4/2)"
+    ]
+  }
+}

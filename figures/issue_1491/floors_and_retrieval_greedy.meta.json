@@ -1,0 +1,429 @@
+{
+  "commit": "c3be9e22",
+  "git_commit": "c3be9e22",
+  "git_dirty": false,
+  "created": "2026-08-06T15:56:58Z",
+  "figsize": [
+    10.5,
+    4.2
+  ],
+  "points": [
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "held-out test R\u00b2 (variance-weighted)": -0.018451617379484864,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "held-out test R\u00b2 (variance-weighted)": -0.013557200014522763,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.0202720322774661,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.0261558418126977,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.02743912962215478,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.025103545760224888,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "held-out test R\u00b2 (variance-weighted)": -0.018411329061147397,
+      "series": "train-mean predictor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "held-out test R\u00b2 (variance-weighted)": -0.014221782399753247,
+      "series": "train-mean predictor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.02093846384484288,
+      "series": "train-mean predictor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.02607852046932857,
+      "series": "train-mean predictor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.027351506846028162,
+      "series": "train-mean predictor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.026323367765167305,
+      "series": "train-mean predictor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "held-out test R\u00b2 (variance-weighted)": -0.04616850961062635,
+      "series": "per-dimension scaled identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "held-out test R\u00b2 (variance-weighted)": -0.15358973533836506,
+      "series": "per-dimension scaled identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.0682302507791841,
+      "series": "per-dimension scaled identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.07279405050826115,
+      "series": "per-dimension scaled identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.042116163623535985,
+      "series": "per-dimension scaled identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.058318145470809934,
+      "series": "per-dimension scaled identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "held-out test R\u00b2 (variance-weighted)": -0.5693727093870604,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "held-out test R\u00b2 (variance-weighted)": -0.576430372717146,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.5700161936710231,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.8731169103141352,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "held-out test R\u00b2 (variance-weighted)": -1.3677696217394821,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "held-out test R\u00b2 (variance-weighted)": -0.8244895260293865,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "held-out test R\u00b2 (variance-weighted)": -2.5930124173387727,
+      "series": "identity copy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "held-out test R\u00b2 (variance-weighted)": -2.496079789478428,
+      "series": "identity copy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "held-out test R\u00b2 (variance-weighted)": -2.4981679400072623,
+      "series": "identity copy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "held-out test R\u00b2 (variance-weighted)": -2.4732462631177636,
+      "series": "identity copy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "held-out test R\u00b2 (variance-weighted)": -2.965044407558012,
+      "series": "identity copy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "held-out test R\u00b2 (variance-weighted)": -2.680940064930209,
+      "series": "identity copy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "held-out test R\u00b2 (variance-weighted)": 0.5506350628869827,
+      "series": "ridge (fitted map)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "held-out test R\u00b2 (variance-weighted)": 0.5972315999117004,
+      "series": "ridge (fitted map)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.6621875068644685,
+      "series": "ridge (fitted map)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7286695822712991,
+      "series": "ridge (fitted map)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.7276979213437553,
+      "series": "ridge (fitted map)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "held-out test R\u00b2 (variance-weighted)": 0.6980991910256598,
+      "series": "ridge (fitted map)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "retrieval acc@1 (cosine; pool = 1,000)": 0.409,
+      "series": "ridge prediction",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "retrieval acc@1 (cosine; pool = 1,000)": 0.492,
+      "series": "ridge prediction",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "retrieval acc@1 (cosine; pool = 1,000)": 0.633,
+      "series": "ridge prediction",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "retrieval acc@1 (cosine; pool = 1,000)": 0.765,
+      "series": "ridge prediction",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "retrieval acc@1 (cosine; pool = 1,000)": 0.737,
+      "series": "ridge prediction",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "retrieval acc@1 (cosine; pool = 1,000)": 0.717,
+      "series": "ridge prediction",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 0.5,
+      "retrieval acc@1 (cosine; pool = 1,000)": 0.179,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 1.5,
+      "retrieval acc@1 (cosine; pool = 1,000)": 0.214,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 3.0,
+      "retrieval acc@1 (cosine; pool = 1,000)": 0.258,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 7.0,
+      "retrieval acc@1 (cosine; pool = 1,000)": 0.541,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 14.0,
+      "retrieval acc@1 (cosine; pool = 1,000)": 0.519,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "model size (Qwen2.5-Instruct, parameters)": 32.0,
+      "retrieval acc@1 (cosine; pool = 1,000)": 0.305,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "fitted map vs identity-family and null floors",
+        "xlabel": "model size (Qwen2.5-Instruct, parameters)",
+        "ylabel": "held-out test R\u00b2 (variance-weighted)",
+        "legend_labels": [
+          "shuffled-pairing null",
+          "train-mean predictor (degenerate prefix arm)",
+          "per-dimension scaled identity",
+          "identity + learned bias",
+          "identity copy",
+          "ridge (fitted map)"
+        ],
+        "xticklabels": [
+          "0.5B",
+          "1.5B",
+          "3B",
+          "7B",
+          "14B",
+          "32B"
+        ],
+        "yticklabels": [
+          "\u22123.5",
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "does the prediction find the right answer vector?",
+        "xlabel": "model size (Qwen2.5-Instruct, parameters)",
+        "ylabel": "retrieval acc@1 (cosine; pool = 1,000)",
+        "legend_labels": [
+          "ridge prediction",
+          "identity + learned bias",
+          "chance (1 of 1,000)"
+        ],
+        "xticklabels": [
+          "0.5B",
+          "1.5B",
+          "3B",
+          "7B",
+          "14B",
+          "32B"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ],
+    "series": [
+      "shuffled-pairing null",
+      "train-mean predictor (degenerate prefix arm)",
+      "per-dimension scaled identity",
+      "identity + learned bias",
+      "identity copy",
+      "ridge (fitted map)",
+      "ridge prediction",
+      "chance (1 of 1,000)"
+    ]
+  }
+}
