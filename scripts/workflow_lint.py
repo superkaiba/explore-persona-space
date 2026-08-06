@@ -12373,7 +12373,11 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # 72,229 B post-#1056, 72,000 post-#1050 r2, 71,000 post-#1050 r1,
     # 60,554 B pre-#1050; 75,200 pre-description-rewrite — measured
     # 71,784 B after the 2026-08-05 frontmatter-description compaction)
-    "codex-clean-result-critic.md": 74_784,
+    # measured 49,241 B post the 2026-08-05 compaction: the 15 verdict-
+    # template lens slots slimmed to heading + findings-contract lines (the
+    # composed prompt already inlines the full lens reference verbatim via
+    # the {{INLINED ...}} placeholders). Cap = measured + ~1 KB.
+    "codex-clean-result-critic.md": 50_200,
     # measured 61,503 B post-#1805 (Step 4 copy-list bullet extension:
     # round-new-script no-flags lint duty, no-uv static hub-verify
     # adaptation — plan-mandated growth; cap = measured + ~1.3 KB. Prior:
