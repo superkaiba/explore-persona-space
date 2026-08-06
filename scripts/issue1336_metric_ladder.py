@@ -74,6 +74,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import itertools
 import json
 import sys
 import time
@@ -165,6 +166,63 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--knn-max-rows", type=int, default=2000)
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--selfcheck", action="store_true", help="tier/bootstrap equivalence gates")
+    # --- cluster delta-Q battery (plan v15 §4 div. 11 + Phase LAD_cluster) ---
+    ap.add_argument(
+        "--cluster-delta-q",
+        action="store_true",
+        help="run the per-transition cluster delta-Q battery on the Phase FIT_pool "
+        "outputs (plan v15 Phase LAD_cluster); mutually exclusive with --pair/--pairs",
+    )
+    ap.add_argument(
+        "--pooled-preds-root",
+        type=Path,
+        default=None,
+        help="Phase FIT_pool preds root holding {on,off}-policy/preds_*.npz + rows_*.json "
+        "(default: data/issue_1336/preds_pooled_v3[_smoke])",
+    )
+    ap.add_argument(
+        "--offpolicy-root",
+        type=Path,
+        default=None,
+        help="root holding the Phase EXT_off turnstore_offpolicy_<i>_chat_<j>[_smoke] trees "
+        "(default: data/issue_1336 — name parity with issue1336_fit_cells.py)",
+    )
+    ap.add_argument(
+        "--arms",
+        default="on,off",
+        help="comma subset of {on,off} to run the delta-Q battery on (on = primary; "
+        "off = fixed-answer-text interpretation-guard companion)",
+    )
+    ap.add_argument(
+        "--transitions",
+        default=None,
+        help="comma list of i:j checkpoint pairs (default: the 4 registered adjacent "
+        "transitions base:sft,sft:dpo,dpo:rlvr,dpo:rlvr_long)",
+    )
+    ap.add_argument(
+        "--headline-layer",
+        type=int,
+        default=None,
+        help="override the pooled stage-symmetric headline-layer rule (dispatcher/smoke seam)",
+    )
+    ap.add_argument(
+        "--perdraw-dir",
+        type=Path,
+        default=Path("analysis_tensors/delta_q_perdraw"),
+        help="destination for the per-draw x per-cluster permutation matrices",
+    )
+    ap.add_argument(
+        "--perm-draws",
+        type=int,
+        default=None,
+        help="permutation draws per (transition, arm) (default 1000; 50 under --smoke)",
+    )
+    ap.add_argument(
+        "--perm-chunk",
+        type=int,
+        default=250,
+        help="draws per vectorized permutation chunk (memory bound: chunk x n_prompts)",
+    )
     return ap.parse_args()
 
 
@@ -1041,17 +1099,671 @@ def selfcheck() -> None:
     )
 
 
+# ===========================================================================
+# Cluster delta-Q battery (plan v15 §4 divergence 11 + Phase LAD_cluster;
+# sibling instrument: #1902 ``clusters_delta_qc_scatter``).
+#
+# Estimator (interpretation pinned against the plan's three wordings):
+#   * Per-prompt "R^2" is the FOLD-LOCAL POOLED RESIDUAL VARIANCE RATIO under
+#     the checkpoint's OWN pooled fit (Phase FIT_pool preds — plan v15 §6
+#     "Statistical-input existence" names preds_pooled_v3/*.npz as this
+#     battery's input; tier-6 transfer preds are pair-indexed and cannot
+#     yield the per-checkpoint R^2_source / R^2_target the formula needs):
+#         r_p(k) = ||y_p(k) - yhat_p(k)||^2 / D_f(p)(k),
+#     D_f = mean over the prompt's fold-block of ||y_q - ybar_f||^2 (the
+#     evaluated set's own mean — fc._pooled_r2 convention), pooled across
+#     corpora within the block, so mean_f(r_p) = 1 - R^2_f exactly.
+#   * "Held-out prompts" = train-side 5-fold CV rows (each held out
+#     fold-locally; blocks = manifest folds) PLUS the pooled 20% test side
+#     as its own block (fold id -1, final-fit preds). The pooled split
+#     assigns WHOLE clusters to train/test (issue1336_pooled_split.py), so
+#     only this union gives every cluster c in the full set a held-out read
+#     — the plan's "for each cluster c in 50".
+#   * delta-Q_p = r_p(source) - r_p(target); positive = better predicted at
+#     the target (higher-is-better-target-prediction). delta-Q(c) = mean
+#     over cluster c's held-out prompts. "at the tier-6 headline layer" is
+#     the LAYER qualifier: the stage-symmetric pooled headline rule below.
+#   * Null: selection-symmetric max-cluster permutation — labels permute at
+#     PROMPT grain within (corpus x side) strata (corpus mixture preserved;
+#     the test side permutes as its own whole block, keeping every null
+#     cluster side-pure like the observed whole-cluster split), selection
+#     (max over the SAME cluster set) rides inside each draw; band = 97.5%
+#     quantile of the per-draw max. Seed 5100 + registered transition idx
+#     (plan v15 §10), arm-index child-seeded for arm-subset determinism.
+#   * Off arm = the fixed-answer-text interpretation guard: per transition
+#     (i, j) the shared text sources are MODELS - {i, j}; per-prompt r is
+#     the mean over those shared rows (every prompt has all of them, so
+#     row-grain and prompt-grain cluster means coincide).
+# ===========================================================================
+
+DELTA_Q_TRANSITIONS: tuple[tuple[str, str], ...] = (("base", "sft"), *cm.ADJACENT_PAIRS)
+DELTA_Q_PERM_SEED = 5100  # plan v15 §10: per-transition permutation seed 5100 + transition idx
+DELTA_Q_PERM_DRAWS = 1000
+DELTA_Q_SMOKE_PERM_DRAWS = 50
+_DQ_KEY_SEP = "\x1f"
+
+
+def _headline_layer_pooled(
+    cells_dir: Path, frozen_layers: tuple[int, ...], override: int | None
+) -> dict:
+    """Stage-symmetric pooled headline layer (v14 §3 rule, pooled analog of
+    ``issue1336_decision_v2.headline_layer_rule_v2``): argmax over the frozen
+    set of the MEAN across the 5 checkpoints' ON-policy pooled within-stage
+    RAW R^2 (``cells_pooled_<k>_arm_on.json`` r2_per_layer_obs) — fixed
+    BEFORE any transition gap is computed. ``override`` is the dispatcher /
+    smoke seam and is recorded as such."""
+    if override is not None:
+        return {
+            "headline_layer": int(override),
+            "rule": "explicit --headline-layer override (dispatcher/smoke seam)",
+        }
+    raw_means: dict[int, float] = {}
+    for li in frozen_layers:
+        vals = []
+        for k in cm.MODELS:
+            path = cells_dir / f"cells_pooled_{k}_arm_on.json"
+            assert path.exists(), (
+                f"pooled headline rule requires {path} (run Phase FIT_pool first, or pass "
+                "--headline-layer explicitly)"
+            )
+            cell = json.loads(path.read_text())
+            vals.append(float(cell["r2_per_layer_obs"][li]))
+        raw_means[li] = float(np.mean(vals))
+    best = max(raw_means, key=raw_means.get)
+    print(f"[ladder1336] delta-Q headline layer {best} (pooled on-arm raw means {raw_means})")
+    return {
+        "headline_layer": int(best),
+        "rule": "max mean within-stage pooled RAW R^2, 5 checkpoints, on-policy arm, frozen set",
+        "raw_means": {str(k): v for k, v in raw_means.items()},
+    }
+
+
+def _load_pooled_rows(arm_dir: Path, cell_id: str) -> dict:
+    """Columnar row manifest for one pooled unit (Phase FIT_pool output)."""
+    path = arm_dir / f"rows_{cell_id}.json"
+    assert path.exists(), (
+        f"{path} missing — the delta-Q battery consumes Phase FIT_pool outputs "
+        "(issue1336_fit_cells.py --v3-pooled); run/stage that phase first"
+    )
+    payload = json.loads(path.read_text())
+    cols = payload["columns"]
+    out = {k: np.asarray(cols[k]) for k in ("row_id", "text_source", "corpus", "conv_id", "side")}
+    out["prompt_sha"] = np.asarray(cols["prompt_sha"])
+    out["cluster"] = np.asarray([int(c) for c in cols["cluster"]], dtype=np.int64)
+    out["fold"] = np.asarray([-1 if f is None else int(f) for f in cols["fold"]], dtype=np.int64)
+    out["split_manifest_sha256"] = payload.get("split_manifest_sha256")
+    n = out["row_id"].shape[0]
+    train = out["side"] == "train"
+    assert ((out["fold"] >= 0) == train).all(), f"fold/side mismatch in {path}"
+    out["n_rows"] = int(n)
+    return out
+
+
+def _load_pooled_preds(arm_dir: Path, cell_id: str, li: int) -> dict:
+    """Held-out prediction matrices at layer ``li`` for one pooled unit:
+    train-side CV (fold-local) + test-side final-fit (folds == -1)."""
+    out: dict = {}
+    for tag, name in (("train", f"preds_{cell_id}.npz"), ("test", f"preds_{cell_id}_test.npz")):
+        path = arm_dir / name
+        assert path.exists(), (
+            f"{path} missing — Phase FIT_pool preds not staged for {cell_id} "
+            "(issue1336_fit_cells.py --v3-pooled persists them)"
+        )
+        with np.load(path, allow_pickle=False) as z:
+            key = f"preds_l{li}"
+            assert key in z.files, (
+                f"{path} lacks {key}; available: {sorted(k for k in z.files if k.startswith('preds_'))}"
+                " — headline layer must be in the persisted preds layer set"
+            )
+            assert bool(z["fitted_mask"].all()), (
+                f"{path} carries unfitted rows (fitted_mask not all-True) — refusing a "
+                "silently-partial delta-Q read; re-run the producing pooled fit"
+            )
+            out[f"{tag}_ids"] = np.asarray([str(c) for c in z["conv_ids"]])
+            out[f"{tag}_preds"] = np.asarray(z[key])
+    return out
+
+
+def _unit_residual_read(
+    unit: dict,
+    li: int,
+    *,
+    preds_root: Path,
+    ts_dir: Path,
+    off_root: Path | None,
+    smoke: bool,
+    wave1_dir: Path | None,
+    gen_root: Path | None,
+    keep_y: bool,
+) -> dict:
+    """Per-row fold-local residual variance ratios for one pooled unit.
+
+    Streams the unit's (text_source x corpus) turnstore bundles one at a
+    time (reusing the Phase FIT_pool loader ``f36._pooled_bundle``), joins
+    each block's true Y at layer ``li`` against the persisted held-out
+    preds, and normalizes per fold-block (train folds + the test side as
+    block -1) with the evaluated set's own mean (fc._pooled_r2 convention).
+    ``keep_y`` retains the fp16 Y matrix (scatter-label |activation change|
+    read, on-policy arm only). Peak RSS is bounded by ONE bundle's
+    ``profiles`` array (the plan's LAD_cluster RSS driver).
+    """
+    cell_id = unit["cell_id"]
+    arm_dir = preds_root / cm.POOLED_ARM_DIRS[unit["arm"]]
+    rows = _load_pooled_rows(arm_dir, cell_id)
+    preds = _load_pooled_preds(arm_dir, cell_id, li)
+    n = rows["n_rows"]
+    train_mask = rows["side"] == "train"
+    train_pos = np.flatnonzero(train_mask)
+    test_pos = np.flatnonzero(~train_mask)
+    assert preds["train_ids"].shape[0] == train_pos.shape[0], (
+        f"{cell_id}: train preds rows {preds['train_ids'].shape[0]} != manifest train rows "
+        f"{train_pos.shape[0]}"
+    )
+    assert (preds["train_ids"] == rows["row_id"][train_pos]).all(), (
+        f"{cell_id}: train preds conv_ids misaligned with rows manifest order"
+    )
+    assert (preds["test_ids"] == rows["row_id"][test_pos]).all(), (
+        f"{cell_id}: test preds conv_ids misaligned with rows manifest order"
+    )
+    # per-assembly-row gather indices into the side-split preds matrices
+    side_idx = np.empty(n, dtype=np.int64)
+    side_idx[train_pos] = np.arange(train_pos.shape[0])
+    side_idx[test_pos] = np.arange(test_pos.shape[0])
+    d = int(preds["train_preds"].shape[1])
+    fold_block = np.where(train_mask, rows["fold"], -1)
+
+    ss_res = np.full(n, np.nan, dtype=np.float64)
+    y_keep = np.empty((n, d), dtype=np.float16) if keep_y else None
+    fold_ids = np.unique(fold_block)
+    acc = {
+        int(f): {"n": 0, "sum_y": np.zeros(d, dtype=np.float64), "sum_y2": 0.0} for f in fold_ids
+    }
+    # consecutive (text_source, corpus) runs, assembly order (Phase FIT_pool contract)
+    ts, co = rows["text_source"], rows["corpus"]
+    change = np.flatnonzero((ts[1:] != ts[:-1]) | (co[1:] != co[:-1])) + 1
+    bounds = np.r_[0, change, n]
+    seen: set[tuple[str, str]] = set()
+    for b0, b1 in itertools.pairwise(bounds):
+        j, c = str(ts[b0]), str(co[b0])
+        assert (j, c) not in seen, (
+            f"{cell_id}: (text_source, corpus) block ({j}, {c}) not contiguous"
+        )
+        seen.add((j, c))
+        bundle = f36._pooled_bundle(
+            unit["model"],
+            j,
+            c,
+            ts_dir=ts_dir,
+            off_root=off_root,
+            smoke=smoke,
+            wave1_dir=wave1_dir,
+            gen_root=gen_root,
+        )
+        arrays, sidecar = bundle["arrays"], bundle["sidecar"]
+        pos = {str(cid): i for i, cid in enumerate(sidecar["conv_ids"])}
+        conv_blk = rows["conv_id"][b0:b1]
+        missing = [cid for cid in conv_blk if cid not in pos]
+        assert not missing, (
+            f"{cell_id}: {len(missing)} manifest rows missing from bundle ({j}, {c}) "
+            f"(e.g. {missing[:5]}) — pooled row-coverage break"
+        )
+        sel = np.asarray([pos[cid] for cid in conv_blk], dtype=np.int64)
+        profiles = np.asarray(arrays["profiles"])  # (N, 2, L, D); one bundle at a time
+        assert profiles.ndim == 4 and profiles.shape[1] == 2, profiles.shape
+        assert li < profiles.shape[2], (
+            f"layer {li} out of range for bundle ({j}, {c}) with {profiles.shape[2]} layers"
+        )
+        y_blk = profiles[sel, 1, li, :]
+        del profiles
+        bundle = arrays = None  # release the bundle before the next block (peak-RSS bound)
+        assert y_blk.shape == (b1 - b0, d), (y_blk.shape, (b1 - b0, d))
+        assert not np.isnan(y_blk).any(), (
+            f"{cell_id}: NaN Y rows in bundle ({j}, {c}) — refusing to silently drop rows"
+        )
+        if y_keep is not None:
+            y_keep[b0:b1] = y_blk.astype(np.float16)
+        blk_fold = fold_block[b0:b1]
+        blk_side_idx = side_idx[b0:b1]
+        blk_train = train_mask[b0:b1]
+        y64 = y_blk.astype(np.float64)
+        for is_train, mat in ((True, preds["train_preds"]), (False, preds["test_preds"])):
+            m = blk_train == is_train
+            if not m.any():
+                continue
+            p64 = mat[blk_side_idx[m]].astype(np.float64)
+            ss_res[b0 + np.flatnonzero(m)] = ((y64[m] - p64) ** 2).sum(axis=1)
+        for f in np.unique(blk_fold):
+            m = blk_fold == f
+            a = acc[int(f)]
+            a["n"] += int(m.sum())
+            a["sum_y"] += y64[m].sum(axis=0)
+            a["sum_y2"] += float((y64[m] ** 2).sum())
+        del y_blk, y64
+    assert not np.isnan(ss_res).any(), f"{cell_id}: residual coverage incomplete"
+
+    d_fold: dict[int, float] = {}
+    fold_r2: dict[str, float] = {}
+    for f, a in acc.items():
+        mu = a["sum_y"] / a["n"]
+        d_f = a["sum_y2"] / a["n"] - float(mu @ mu)
+        assert d_f > 0, f"{cell_id}: non-positive fold-block variance (fold {f})"
+        d_fold[f] = d_f
+        m = fold_block == f
+        fold_r2[str(f)] = float(1.0 - ss_res[m].mean() / d_f)
+    denom = np.asarray([d_fold[int(f)] for f in fold_block], dtype=np.float64)
+    r = ss_res / denom
+    print(
+        f"[deltaq] unit={cell_id} layer={li} n_rows={n} d={d} "
+        f"fold_r2={{{', '.join(f'{k}: {v:.4f}' for k, v in sorted(fold_r2.items()))}}}",
+        flush=True,
+    )
+    return {
+        "cell_id": cell_id,
+        "model": unit["model"],
+        "arm": unit["arm"],
+        "r": r,
+        "y": y_keep,
+        "rows": rows,
+        "fold_r2_check": fold_r2,
+        "d": d,
+        "split_manifest_sha256": rows["split_manifest_sha256"],
+    }
+
+
+def _prompt_frame(read: dict, sources: list[str] | None) -> dict:
+    """Collapse one unit's row-grain residual ratios to PROMPT grain.
+
+    ``sources`` restricts to the transition's shared text sources (off arm);
+    None keeps all rows (on arm — one source). Per prompt (corpus, conv_id):
+    r = mean over its retained rows; cluster/corpus/side asserted constant
+    across the prompt's rows. Rows arrive in manifest order, so first-index
+    gathers are deterministic."""
+    rows = read["rows"]
+    if sources is None:
+        m = np.ones(rows["n_rows"], dtype=bool)
+    else:
+        m = np.isin(rows["text_source"], np.asarray(sources))
+        assert m.any(), f"{read['cell_id']}: no rows for shared sources {sources}"
+    idx = np.flatnonzero(m)
+    keys = np.char.add(
+        np.char.add(rows["corpus"][idx].astype(str), _DQ_KEY_SEP),
+        rows["conv_id"][idx].astype(str),
+    )
+    uniq, inverse = np.unique(keys, return_inverse=True)
+    counts = np.bincount(inverse)
+    r_prompt = np.bincount(inverse, weights=read["r"][idx]) / counts
+    first = np.full(uniq.shape[0], np.iinfo(np.int64).max, dtype=np.int64)
+    np.minimum.at(first, inverse, np.arange(idx.shape[0]))
+    assert (first < idx.shape[0]).all()  # every group has a first occurrence by construction
+    row_first = idx[first]
+    for col in ("cluster", "corpus", "side"):
+        ref = rows[col][row_first]
+        assert (rows[col][idx] == ref[inverse]).all(), (
+            f"{read['cell_id']}: prompt-level column {col!r} inconsistent across text sources"
+        )
+    return {
+        "keys": uniq,
+        "r": r_prompt,
+        "cluster": rows["cluster"][row_first],
+        "corpus": rows["corpus"][row_first].astype(str),
+        "side": rows["side"][row_first].astype(str),
+        "conv_id": rows["conv_id"][row_first].astype(str),
+        "prompt_sha": rows["prompt_sha"][row_first].astype(str),
+        "row_first": row_first,
+        "n_rows_per_prompt": counts,
+    }
+
+
+def _perm_null_battery(
+    delta: np.ndarray,
+    cluster_idx: np.ndarray,
+    strata_idx: np.ndarray,
+    n_clusters: int,
+    n_draws: int,
+    rng: np.random.Generator,
+    chunk: int,
+) -> np.ndarray:
+    """(n_draws, n_clusters) per-cluster delta-Q means under within-stratum
+    permutation of prompt->cluster assignments — BATCHED (no per-draw Python
+    loop; per `.claude/rules/vectorize-many-cell-fits.md`): per stratum one
+    argsort of a (chunk, m) uniform block permutes labels for all draws in
+    the chunk at once; per-cluster sums via one bincount over the flattened
+    (draw, cluster) key. Cluster counts are permutation-invariant (label
+    multisets are preserved within every stratum)."""
+    n = delta.shape[0]
+    counts = np.bincount(cluster_idx, minlength=n_clusters).astype(np.float64)
+    assert (counts > 0).all(), "empty cluster in the observed frame"
+    order = np.argsort(strata_idx, kind="stable")
+    sorted_strata = strata_idx[order]
+    starts = np.r_[0, np.flatnonzero(sorted_strata[1:] != sorted_strata[:-1]) + 1, n]
+    labels_sorted = cluster_idx[order]
+    null = np.empty((n_draws, n_clusters), dtype=np.float64)
+    done = 0
+    while done < n_draws:
+        b = min(chunk, n_draws - done)
+        perm = np.empty((b, n), dtype=np.int64)
+        for s0, s1 in itertools.pairwise(starts):
+            m = s1 - s0
+            shuf = np.argsort(rng.random((b, m)), axis=1)
+            perm[:, order[s0:s1]] = labels_sorted[s0:s1][shuf]
+        flat = (perm + (np.arange(b) * n_clusters)[:, None]).ravel()
+        w = np.broadcast_to(delta, (b, n)).ravel()
+        sums = np.bincount(flat, weights=w, minlength=b * n_clusters).reshape(b, n_clusters)
+        null[done : done + b] = sums / counts[None, :]
+        done += b
+    return null
+
+
+def _transition_arm_stats(
+    fi: dict,
+    fj: dict,
+    *,
+    cluster_ids: np.ndarray,
+    n_draws: int,
+    rng: np.random.Generator,
+    chunk: int,
+) -> dict:
+    """Observed per-cluster delta-Q + selection-symmetric max-cluster null
+    for one (transition, arm). ``fi``/``fj`` are aligned prompt frames
+    (source / target)."""
+    assert (fi["keys"] == fj["keys"]).all(), "prompt frames misaligned across the pair"
+    for col in ("cluster", "corpus", "side"):
+        assert (fi[col] == fj[col]).all(), f"prompt attribute {col!r} differs across the pair"
+    delta = fi["r"] - fj["r"]  # residual-ratio source - target; positive = target better
+    cl_pos = {int(c): i for i, c in enumerate(cluster_ids)}
+    cluster_idx = np.asarray([cl_pos[int(c)] for c in fi["cluster"]], dtype=np.int64)
+    strata_keys = np.char.add(np.char.add(fi["corpus"], _DQ_KEY_SEP), fi["side"])
+    _, strata_idx = np.unique(strata_keys, return_inverse=True)
+    k = cluster_ids.shape[0]
+    counts = np.bincount(cluster_idx, minlength=k).astype(np.float64)
+    obs = np.bincount(cluster_idx, weights=delta, minlength=k) / counts
+    ceiling = np.bincount(cluster_idx, weights=fi["r"], minlength=k) / counts
+    null = _perm_null_battery(delta, cluster_idx, strata_idx, k, n_draws, rng, chunk)
+    null_max = null.max(axis=1)
+    obs_max = float(obs.max())
+    corpora = sorted(set(fi["corpus"].tolist()))
+    co_pos = {c: i for i, c in enumerate(corpora)}
+    co_idx = np.asarray([co_pos[c] for c in fi["corpus"]], dtype=np.int64)
+    cc_flat = cluster_idx * len(corpora) + co_idx
+    cc_n = np.bincount(cc_flat, minlength=k * len(corpora)).astype(np.float64)
+    cc_sum = np.bincount(cc_flat, weights=delta, minlength=k * len(corpora))
+    with np.errstate(invalid="ignore"):
+        percorpus = (cc_sum / cc_n).reshape(
+            k, len(corpora)
+        )  # NaN where a (cluster, corpus) is empty
+    per_corpus_total = {c: float(delta[co_idx == i].mean()) for c, i in co_pos.items()}
+    return {
+        "delta": delta,
+        "cluster_idx": cluster_idx,
+        "obs": obs,
+        "ceiling": ceiling,
+        "counts": counts,
+        "null": null,
+        "null_max": null_max,
+        "obs_max": obs_max,
+        "obs_argmax_cluster": int(cluster_ids[int(obs.argmax())]),
+        "p_max_cluster": float((null_max >= obs_max).mean()),
+        "p_max_cluster_add_one": float((1 + int((null_max >= obs_max).sum())) / (n_draws + 1)),
+        "band_97p5": float(np.quantile(null_max, 0.975)),
+        "corpora": corpora,
+        "percorpus": percorpus,
+        "per_corpus_total": per_corpus_total,
+    }
+
+
+def _top_cluster_anchors(
+    stats: dict, frame: dict, cluster_ids: np.ndarray, *, top_k: int = 3, n_anchors: int = 5
+) -> list[dict]:
+    """Top-k most-improved clusters with corpus_slug|row_idx prompt anchors
+    (plan v15 §4 div. 11: top 5 prompt_ids per top-3 cluster, ranked by
+    per-prompt delta)."""
+    out = []
+    for ci in np.argsort(-stats["obs"])[:top_k]:
+        cid = int(cluster_ids[ci])
+        m = np.flatnonzero(stats["cluster_idx"] == ci)
+        top = m[np.argsort(-stats["delta"][m])[:n_anchors]]
+        out.append(
+            {
+                "cluster": cid,
+                "delta_q": float(stats["obs"][ci]),
+                "n_prompts": int(stats["counts"][ci]),
+                "side": str(frame["side"][m[0]]),
+                "anchors": [
+                    {
+                        "anchor": f"{frame['corpus'][t]}|{frame['conv_id'][t].lstrip('s')}",
+                        "conv_id": str(frame["conv_id"][t]),
+                        "corpus": str(frame["corpus"][t]),
+                        "prompt_sha": str(frame["prompt_sha"][t]),
+                        "delta": float(stats["delta"][t]),
+                    }
+                    for t in top
+                ],
+            }
+        )
+    return out
+
+
+def _activation_change_labels(
+    read_i: dict, read_j: dict, fi: dict, fj: dict, cluster_ids: np.ndarray
+) -> dict[str, list[dict]]:
+    """Per-cluster top-3 prompts by pooled |activation change| at the
+    headline layer (on-policy arm scatter labels, plan v15 §4 div. 11):
+    ||y_p(target) - y_p(source)||_2 over the prompt's single on-arm row."""
+    assert read_i["y"] is not None and read_j["y"] is not None
+    yi = read_i["y"][fi["row_first"]].astype(np.float32)
+    yj = read_j["y"][fj["row_first"]].astype(np.float32)
+    act = np.linalg.norm(yj - yi, axis=1)
+    out: dict[str, list[dict]] = {}
+    for cid in cluster_ids:
+        m = np.flatnonzero(fi["cluster"] == cid)
+        top = m[np.argsort(-act[m])[:3]]
+        out[str(int(cid))] = [
+            {
+                "anchor": f"{fi['corpus'][t]}|{fi['conv_id'][t].lstrip('s')}",
+                "conv_id": str(fi["conv_id"][t]),
+                "act_change": float(act[t]),
+            }
+            for t in top
+        ]
+    return out
+
+
+def cluster_delta_q_battery(args) -> None:
+    """Phase LAD_cluster (plan v15): per-transition per-cluster delta-Q +
+    selection-symmetric max-cluster permutation null over the Phase FIT_pool
+    outputs. Writes ``decision_v3/cluster_delta_q_per_transition.json`` (the
+    §6.5 deliverable) + one per-draw x per-cluster npz per transition under
+    ``--perdraw-dir`` (uncompressed savez — compression OFF per the plan's
+    store-heavy sizing rule), persisted per transition as computed
+    (checkpoint-per-phase)."""
+    smoke = args.smoke
+    sfx = "_smoke" if smoke else ""
+    preds_root = args.pooled_preds_root or Path(f"data/issue_1336/preds_pooled_v3{sfx}")
+    ts_dir = args.turnstore_dir or Path(f"data/issue_1336/turnstore_v2{sfx}")
+    off_root = args.offpolicy_root or Path("data/issue_1336")
+    wave1_dir = args.wave1_turnstore_dir or ts_dir
+    gen_root = args.gen_root or (None if smoke else Path("data/issue_1336/gen"))
+    out_dir = args.out_dir
+    perdraw_dir = args.perdraw_dir
+    frozen = (
+        tuple(int(x) for x in args.frozen_layers.split(",") if x.strip())
+        if args.frozen_layers
+        else (cm.SMOKE_FROZEN_LAYERS if smoke else cm.FROZEN_LAYERS)
+    )
+    head = _headline_layer_pooled(out_dir / "cells_pooled_v3", frozen, args.headline_layer)
+    li = head["headline_layer"]
+    arms = tuple(a.strip() for a in args.arms.split(",") if a.strip())
+    assert arms and all(a in ("on", "off") for a in arms), f"--arms must be within on,off: {arms}"
+    if args.transitions:
+        transitions = []
+        for tok in args.transitions.split(","):
+            i, j = tok.strip().split(":")
+            assert i in cm.MODELS and j in cm.MODELS and i != j, f"bad transition {tok!r}"
+            transitions.append((i, j))
+        transitions = tuple(transitions)
+    else:
+        transitions = DELTA_Q_TRANSITIONS
+    n_draws = (
+        args.perm_draws
+        if args.perm_draws is not None
+        else (DELTA_Q_SMOKE_PERM_DRAWS if smoke else DELTA_Q_PERM_DRAWS)
+    )
+    units = {(u["arm"], u["model"]): u for u in f36._pooled_units_for()}
+
+    cache: dict[tuple[str, str], dict] = {}
+    manifest_shas: set[str] = set()
+
+    def unit_read(arm: str, model: str) -> dict:
+        key = (arm, model)
+        if key not in cache:
+            cache[key] = _unit_residual_read(
+                units[key],
+                li,
+                preds_root=preds_root,
+                ts_dir=ts_dir,
+                off_root=off_root if arm == "off" else None,
+                smoke=smoke,
+                wave1_dir=wave1_dir,
+                gen_root=gen_root,
+                keep_y=(arm == "on"),
+            )
+            sha = cache[key]["split_manifest_sha256"]
+            if sha:
+                manifest_shas.add(str(sha))
+        return cache[key]
+
+    payload: dict = {
+        "metadata": _metadata(DELTA_Q_PERM_SEED, 0),
+        "headline": head,
+        "estimator": (
+            "per-prompt fold-local pooled residual variance ratio under the checkpoint's own "
+            "pooled fit (Phase FIT_pool preds; train-side 5-fold CV held-out rows + the pooled "
+            "20% test side as fold-block -1); delta = r_source - r_target, positive = better "
+            "predicted at the target"
+        ),
+        "null": (
+            "selection-symmetric max-cluster permutation: prompt->cluster labels permuted "
+            "within (corpus x side) strata, per-draw max over the same cluster set; band = "
+            "97.5% quantile of the per-draw max"
+        ),
+        "perm_draws": int(n_draws),
+        "perm_seed_rule": "default_rng([5100 + registered transition idx, arm_idx(on=0,off=1)])",
+        "arms": list(arms),
+        "transitions": {},
+    }
+    for i, j in transitions:
+        t_slug = f"{i}__{j}"
+        if (i, j) in DELTA_Q_TRANSITIONS:
+            t_idx = DELTA_Q_TRANSITIONS.index((i, j))
+        else:
+            t_idx = 40 + transitions.index((i, j))  # non-registered (smoke) transitions
+        t_block: dict = {"source": i, "target": j, "transition_idx": int(t_idx), "arms": {}}
+        npz_arrays: dict[str, np.ndarray] = {}
+        for arm in arms:
+            read_i, read_j = unit_read(arm, i), unit_read(arm, j)
+            if arm == "off":
+                shared = sorted(
+                    set(np.unique(read_i["rows"]["text_source"]).tolist())
+                    & set(np.unique(read_j["rows"]["text_source"]).tolist())
+                )
+                assert shared, f"off arm: no shared text sources for {i}->{j}"
+            else:
+                shared = None
+            fi = _prompt_frame(read_i, shared)
+            fj = _prompt_frame(read_j, shared)
+            cluster_ids = np.unique(fi["cluster"])
+            rng = np.random.default_rng([DELTA_Q_PERM_SEED + t_idx, 0 if arm == "on" else 1])
+            stats = _transition_arm_stats(
+                fi, fj, cluster_ids=cluster_ids, n_draws=n_draws, rng=rng, chunk=args.perm_chunk
+            )
+            arm_block = {
+                "cell_ids": [read_i["cell_id"], read_j["cell_id"]],
+                "shared_text_sources": shared,
+                "n_prompts": int(fi["keys"].shape[0]),
+                "cluster_ids": [int(c) for c in cluster_ids],
+                "delta_q": [float(v) for v in stats["obs"]],
+                "n_prompts_per_cluster": [int(v) for v in stats["counts"]],
+                "ceiling_delta_q_per_cluster": [float(v) for v in stats["ceiling"]],
+                "ceiling_max": float(stats["ceiling"].max()),
+                "obs_max": stats["obs_max"],
+                "obs_argmax_cluster": stats["obs_argmax_cluster"],
+                "max_cluster_p": stats["p_max_cluster"],
+                "max_cluster_p_add_one": stats["p_max_cluster_add_one"],
+                "null_band_97p5": stats["band_97p5"],
+                "top3_most_improved": _top_cluster_anchors(stats, fi, cluster_ids),
+                "per_corpus_delta_q": stats["per_corpus_total"],
+                "fold_r2_check": {
+                    "source": read_i["fold_r2_check"],
+                    "target": read_j["fold_r2_check"],
+                },
+            }
+            if arm == "on":
+                arm_block["cluster_prompt_labels_by_act_change"] = _activation_change_labels(
+                    read_i, read_j, fi, fj, cluster_ids
+                )
+            t_block["arms"][arm] = arm_block
+            npz_arrays[f"obs_{arm}"] = stats["obs"]
+            npz_arrays[f"null_{arm}"] = stats["null"].astype(np.float32)
+            npz_arrays[f"n_per_cluster_{arm}"] = stats["counts"].astype(np.int64)
+            npz_arrays[f"percorpus_{arm}"] = stats["percorpus"]
+            npz_arrays[f"ceiling_{arm}"] = stats["ceiling"]
+            npz_arrays[f"corpora_{arm}"] = np.asarray(stats["corpora"])
+            npz_arrays[f"cluster_ids_{arm}"] = cluster_ids
+            print(
+                f"[deltaq] {i}->{j} arm={arm} obs_max={stats['obs_max']:.5f} "
+                f"(cluster {stats['obs_argmax_cluster']}) p={stats['p_max_cluster']:.4f} "
+                f"band97.5={stats['band_97p5']:.5f} draws={n_draws}",
+                flush=True,
+            )
+        # interpretation guard (plan v15 §4 div. 11): on-vs-off top-3 overlap
+        if "on" in t_block["arms"] and "off" in t_block["arms"]:
+            top_on = [e["cluster"] for e in t_block["arms"]["on"]["top3_most_improved"]]
+            top_off = [e["cluster"] for e in t_block["arms"]["off"]["top3_most_improved"]]
+            t_block["interpretation_guard"] = {
+                "top3_on": top_on,
+                "top3_off": top_off,
+                "overlap": sorted(set(top_on) & set(top_off)),
+                "rule": (
+                    "a cluster most-improved under BOTH arms at fixed activation checkpoint "
+                    "reads as representation-change; on-policy-only reads as a data-structure "
+                    "artifact (fixed-answer-text guard)"
+                ),
+            }
+        perdraw_dir.mkdir(parents=True, exist_ok=True)
+        npz_path = perdraw_dir / f"{t_slug}.npz"
+        np.savez(npz_path, **npz_arrays)  # plain savez: compression OFF (plan §4 div. 11)
+        t_block["perdraw_npz"] = {
+            "path": str(npz_path),
+            "sha256": hashlib.sha256(npz_path.read_bytes()).hexdigest(),
+        }
+        print(f"[deltaq] persisted {npz_path}")
+        payload["transitions"][t_slug] = t_block
+        # evict units no further transition needs (bounds the on-arm Y stash to ~2 units)
+        remaining = set(transitions[transitions.index((i, j)) + 1 :])
+        needed = {m for pair in remaining for m in pair}
+        for key in [k for k in cache if k[1] not in needed]:
+            del cache[key]
+    payload["split_manifest_sha256"] = sorted(manifest_shas)
+    _write_json(out_dir / "decision_v3" / "cluster_delta_q_per_transition.json", payload)
+
+
 def main() -> None:
     args = parse_args()
     if args.selfcheck:
         selfcheck()
+        return
+    if args.cluster_delta_q:
+        assert not (args.pair or args.pairs), (
+            "--cluster-delta-q is mutually exclusive with --pair/--pairs"
+        )
+        cluster_delta_q_battery(args)
         return
     pairs = []
     if args.pairs:
         pairs = [p.strip() for p in args.pairs.split(",") if p.strip()]
     if args.pair:
         pairs.append(args.pair)
-    assert pairs, "--pair or --pairs is required (or --selfcheck)"
+    assert pairs, "--pair or --pairs is required (or --selfcheck / --cluster-delta-q)"
     bars = resolve_bars(args.s_qwen_v2, args.bars_json)
     prep_cache = PrepCache(capacity=6)
     for pair in pairs:
