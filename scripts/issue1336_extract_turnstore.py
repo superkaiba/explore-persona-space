@@ -111,6 +111,21 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--format", choices=("chat", "naturalistic"), required=True)
     parser.add_argument(
+        "--gen-format",
+        choices=("chat", "naturalistic"),
+        default="chat",
+        help=(
+            "which generation arm's answers to consume (round 5). 'chat' "
+            "(default) is the matched-text regime — BOTH render formats "
+            "re-render the chat-generated answers, byte-identical to every "
+            "prior round (bare-corpus gen dirs, unsuffixed turnstore stems). "
+            "'naturalistic' consumes the on-policy naturalistic arm's "
+            "format-keyed answers (<corpus>__gen_naturalistic), and the "
+            "turnstore stem carries the same suffix so it can never collide "
+            "with the matched-text cell."
+        ),
+    )
+    parser.add_argument(
         "--v2",
         action="store_true",
         help="v2 round: V2_CORPORA prompts via the Unit-A reader, turnstore_v2 roots + "
@@ -467,7 +482,7 @@ def _context_text(fmt: str, question: str) -> str:
     """The CONTEXT (prefix + user query + assistant header) render per format."""
     if fmt == "chat":
         return cm.tulu_prompt(question)
-    return f"User: {question}\n\nAssistant: "
+    return cm.natural_prompt(question)
 
 
 def ctx_tokenid_hash(tokenizer, prompts: list[dict], fmt: str, n_sample: int) -> dict:
@@ -852,6 +867,16 @@ def main() -> None:
         assert corpus in cm.CORPORA, f"corpus {corpus!r} is v2-only — pass --v2"
         fmts = cm.FORMATS_BY_CORPUS[corpus]
     assert fmt in fmts, f"format {fmt} not registered for {corpus}"
+    gen_format = args.gen_format
+    assert gen_format in fmts, (
+        f"gen format {gen_format} not registered for {corpus} (formats: {fmts})"
+    )
+    # Format-keyed generation cell (round 5): chat resolves to the bare corpus
+    # (matched-text regime — byte-identical dirs + stems to every prior
+    # round); the on-policy naturalistic arm reads its own keyed gen dir AND
+    # keys the turnstore stem/done-marker/Hub prefix the same way, so it can
+    # never collide with the matched-text naturalistic cell.
+    gen_cell = cm.gen_cell_key(corpus, gen_format)
     override = resolve_convention(args.convention, args.offset_override, args.out_dir)
     smoke = args.smoke
     data_root = Path("data/issue_1336")
@@ -859,7 +884,7 @@ def main() -> None:
     prompts_root = args.prompts_root or (data_root / ("prompts_smoke" if smoke else "prompts"))
     ts_base = ("turnstore_v2" if v2 else "turnstore") + ("_smoke" if smoke else "")
     out_dir = args.out_dir or (data_root / ts_base)
-    stem = cm.cell_id(slug, fmt, corpus)
+    stem = cm.cell_id(slug, fmt, gen_cell)
     done_path = out_dir / f"{stem}.done.json"
     if done_path.exists():
         done = json.loads(done_path.read_text())
@@ -881,9 +906,9 @@ def main() -> None:
     if not smoke and _try_hf_resume(out_dir, stem, v2) is not None:
         return
 
-    rows = _read_jsonl(gen_root / slug / corpus / "answers.jsonl")
+    rows = _read_jsonl(gen_root / slug / gen_cell / "answers.jsonl")
     kept = [r for r in rows if r.get("kept")]
-    assert kept, f"no kept rows for {slug}/{corpus} under {gen_root}"
+    assert kept, f"no kept rows for {slug}/{gen_cell} under {gen_root}"
     if v2 and corpus in CONCAT_SOURCES:
         # Extension-only rows (plan §4 Phase GEN/EXT: wave-1 covered rows
         # below the boundary; the v2 stem holds ONLY the new rows so the
@@ -940,7 +965,8 @@ def main() -> None:
         "model_id": model_id,
         "format": fmt,
         "corpus": corpus,
-        "track": corpus,  # loader stem convention: {model}_{format}_{track}
+        "gen_format": gen_format,  # matched-text (chat) vs on-policy arm
+        "track": gen_cell,  # loader stem convention: {model}_{format}_{track}
         "expected_layers": _EXPECTED_LAYERS,
         "expected_hidden": _EXPECTED_HIDDEN,
         "shard_size": shard_size,

@@ -72,6 +72,11 @@ __all__ = [
     "MAX_MODEL_LEN",
     "MIN_TURN_CONTENT_TOKENS",
     "MODELS",
+    "NATURAL_ASSISTANT_HEADER",
+    "NATURAL_ROLE_HEADER_TRUNCATE",
+    "NATURAL_STOP_STRINGS",
+    "NATURAL_TURN_SEP",
+    "NATURAL_USER_HEADER",
     "N_BOOTSTRAP",
     "N_FOLDS",
     "N_INNER_LAMBDA_FOLDS_V2",
@@ -104,7 +109,9 @@ __all__ = [
     "cells_for",
     "cells_v2_for",
     "fc_expected_layers",
+    "gen_cell_key",
     "load_qwen_recal_cal",
+    "natural_prompt",
     "preds_layers",
     "resolve_code_sha",
     "tulu_prompt",
@@ -229,6 +236,49 @@ TULU_TURN_SEP = "\n"
 def tulu_prompt(question: str) -> str:
     """Generation prompt for one single-turn question under the Tulu template."""
     return f"{TULU_USER_HEADER}{question}{TULU_TURN_SEP}{TULU_ASSISTANT_HEADER}"
+
+
+# ---------------------------------------------------------------------------
+# Naturalistic (#825 plain-transcript) render constants + generation prompt
+# (round 5: the on-policy naturalistic arm). `issue1336_render.render_natural`
+# builds its segments from THESE constants, so the generation prefix below
+# matches the extraction render byte-for-byte BY CONSTRUCTION.
+# ---------------------------------------------------------------------------
+NATURAL_USER_HEADER = "User: "
+NATURAL_TURN_SEP = "\n\n"
+NATURAL_ASSISTANT_HEADER = "Assistant: "
+
+
+def natural_prompt(question: str) -> str:
+    """Generation prompt for one single-turn question under the #825
+    naturalistic plain-transcript convention — everything before the model's
+    answer (``User: {q}\\n\\nAssistant: ``): the first four segments of
+    ``issue1336_render.render_natural`` joined."""
+    return f"{NATURAL_USER_HEADER}{question}{NATURAL_TURN_SEP}{NATURAL_ASSISTANT_HEADER}"
+
+
+# On-policy naturalistic stop handling (round 5): the plain-transcript
+# analogues of STOP_STRINGS / ROLE_HEADER_TRUNCATE below — newline-anchored so
+# a legitimate mid-line "User:"/"Assistant:" mention inside an answer never
+# truncates, while a model opening the NEXT transcript turn (role header at a
+# line start) does. Mirrors the chat pair's structure: stop at the next user
+# turn; post-hoc truncate at ANY role-header reoccurrence.
+NATURAL_STOP_STRINGS = ("\nUser:",)
+NATURAL_ROLE_HEADER_TRUNCATE = ("\nUser:", "\nAssistant:")
+
+
+def gen_cell_key(corpus: str, gen_format: str) -> str:
+    """Generation-cell directory / HF-prefix token for (corpus, gen format).
+
+    ``chat`` keeps the bare corpus — byte-identical to every prior round's
+    local dirs + Hub prefixes, so existing chat artifacts and resume state
+    stay valid. Any other format gets an explicit suffix so on-policy
+    naturalistic answers can never overwrite (or be confused with) the chat
+    arm's. Shared by `issue1336_gen_answers` (writer) and
+    `issue1336_extract_turnstore` (reader) so the two can never drift.
+    """
+    assert gen_format in ("chat", "naturalistic"), f"unknown gen format {gen_format!r}"
+    return corpus if gen_format == "chat" else f"{corpus}__gen_{gen_format}"
 
 
 # ---------------------------------------------------------------------------

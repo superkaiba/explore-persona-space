@@ -11,6 +11,17 @@ Modes:
                         files with the load-time token-budget gate (#952).
   --model <slug>        generate answers for every requested corpus with ONE
                         vLLM engine (Phase G shards models across GPUs).
+  --gen-format          generation prompt format (round 5). ``chat`` (default)
+                        is byte-identical to every prior round: Tulu template,
+                        chat stop strings, bare-corpus output dirs/HF prefixes.
+                        ``naturalistic`` generates ON-POLICY under the #825
+                        plain-transcript prefix (``common.natural_prompt``)
+                        with naturalistic stop handling, landing in
+                        format-keyed dirs (``<corpus>__gen_naturalistic``) so
+                        the two arms can never overwrite each other. The
+                        render-integrity gate is format-conditional: hard gate
+                        in the matched-text (chat) regime, logged diagnostic
+                        in the on-policy naturalistic regime.
 
 Row filters (plan §4): >=8 content tokens per turn, <=2048 total rendered
 tokens, validated with the extract consumer's EXACT render asserts
@@ -240,10 +251,15 @@ def _assert_template_parity(tokenizer, prompts: list[str]) -> None:
         )
 
 
-def _truncate_role_headers(text: str) -> str:
-    """Post-hoc truncation at the first role-header reoccurrence (plan §4)."""
+def _truncate_role_headers(text: str, markers: tuple[str, ...]) -> str:
+    """Post-hoc truncation at the first role-header reoccurrence (plan §4).
+
+    ``markers`` is the gen format's marker set: ``cm.ROLE_HEADER_TRUNCATE``
+    (chat — behavior byte-identical to prior rounds) or
+    ``cm.NATURAL_ROLE_HEADER_TRUNCATE`` (on-policy naturalistic arm).
+    """
     cut = len(text)
-    for marker in cm.ROLE_HEADER_TRUNCATE:
+    for marker in markers:
         i = text.find(marker)
         if i != -1:
             cut = min(cut, i)
@@ -286,8 +302,12 @@ def _vllm_generate_chunked(llm, prompt_texts: list[str], sampling) -> list[tuple
     return out
 
 
-def _hf_gen_prefix(slug: str, corpus: str) -> str:
-    return f"{cm.HF_PREFIX_1336}/raw_completions/generation/{slug}/{corpus}"
+def _hf_gen_prefix(slug: str, cell: str) -> str:
+    """Hub prefix for one generation cell. ``cell`` is the format-keyed token
+    (``cm.gen_cell_key``): the bare corpus for chat (byte-identical to every
+    prior round's prefixes), ``<corpus>__gen_naturalistic`` for the on-policy
+    naturalistic arm."""
+    return f"{cm.HF_PREFIX_1336}/raw_completions/generation/{slug}/{cell}"
 
 
 ANSWERS_MANIFEST = "answers.manifest.json"
@@ -316,7 +336,7 @@ def _download_one(prefix_file: str) -> Path:
     )
 
 
-def _hf_gen_state(slug: str, corpus: str) -> tuple[bool, dict | None]:
+def _hf_gen_state(slug: str, cell: str) -> tuple[bool, dict | None]:
     """(complete, manifest) — Hub-side completeness of one cell's gen outputs.
 
     Complete <=> both side files present AND the answers text present as
@@ -329,7 +349,7 @@ def _hf_gen_state(slug: str, corpus: str) -> tuple[bool, dict | None]:
 
     from explore_persona_space.orchestrate import hub
 
-    prefix = _hf_gen_prefix(slug, corpus)
+    prefix = _hf_gen_prefix(slug, cell)
     files = set(hub.list_hf_files_under_path(HfApi(), cm.HF_DATA_REPO, prefix, repo_type="dataset"))
     if not all(f"{prefix}/{n}" in files for n in _GEN_SIDE_FILES):
         return False, None
@@ -357,12 +377,12 @@ def _reassemble_answers(out_dir: Path, prefix: str, manifest: dict) -> None:
     os.replace(tmp, out_dir / "answers.jsonl")
 
 
-def _try_hf_resume(slug: str, corpus: str, out_dir: Path) -> bool:
+def _try_hf_resume(slug: str, cell: str, out_dir: Path) -> bool:
     """Fetch a prior run's generation outputs from the Hub instead of re-generating."""
-    complete, manifest = _hf_gen_state(slug, corpus)
+    complete, manifest = _hf_gen_state(slug, cell)
     if not complete:
         return False
-    prefix = _hf_gen_prefix(slug, corpus)
+    prefix = _hf_gen_prefix(slug, cell)
     out_dir.mkdir(parents=True, exist_ok=True)
     for n in _GEN_SIDE_FILES:
         (out_dir / n).write_bytes(_download_one(f"{prefix}/{n}").read_bytes())
@@ -438,7 +458,7 @@ def _split_answers_for_upload(out_dir: Path) -> bool:
     return True
 
 
-def _upload_gen_outputs(slug: str, corpus: str, out_dir: Path) -> None:
+def _upload_gen_outputs(slug: str, cell: str, out_dir: Path) -> None:
     """Per-cell incremental upload (one folder commit; #664 per-cell contract)."""
     from huggingface_hub import upload_folder
 
@@ -450,41 +470,44 @@ def _upload_gen_outputs(slug: str, corpus: str, out_dir: Path) -> None:
     ignore = ["answers.jsonl", "*.tmp"] if sharded else ["*.tmp"]
     # Dir-filecount guard (#1190) OUTSIDE the retry wrapper (a guard raise is
     # deterministic; retrying it burns the budget for nothing).
-    hub.assert_hub_dir_filecounts(out_dir, _hf_gen_prefix(slug, corpus), ignore_patterns=ignore)
+    hub.assert_hub_dir_filecounts(out_dir, _hf_gen_prefix(slug, cell), ignore_patterns=ignore)
     hub.retry_transient(
         lambda: upload_folder(
             repo_id=cm.HF_DATA_REPO,
             repo_type="dataset",
             folder_path=str(out_dir),
-            path_in_repo=_hf_gen_prefix(slug, corpus),
+            path_in_repo=_hf_gen_prefix(slug, cell),
             ignore_patterns=ignore,
-            commit_message=f"issue-1336: generation {slug}/{corpus}",
+            commit_message=f"issue-1336: generation {slug}/{cell}",
         ),
-        what=f"gen upload {slug}/{corpus}",
+        what=f"gen upload {slug}/{cell}",
     )
-    print(f"[gen] uploaded {slug}/{corpus} -> {_hf_gen_prefix(slug, corpus)}")
+    print(f"[gen] uploaded {slug}/{cell} -> {_hf_gen_prefix(slug, cell)}")
 
 
 def _collect_pending(
-    slug: str, corpora: list[str], *, smoke: bool, upload: bool
+    slug: str, corpora: list[str], *, gen_format: str, smoke: bool, upload: bool
 ) -> list[tuple[str, list[dict], Path]]:
     """Resume predicate per cell: skip complete cells, retry missed uploads.
 
     done == uploaded (#664 per-cell contract): a cell whose local outputs
     exist but whose Hub prefix is incomplete (a prior run died before/inside
     its upload) re-attempts ONLY the upload — never skips past it, never
-    re-generates.
+    re-generates. Cells are keyed by ``cm.gen_cell_key(corpus, gen_format)``:
+    chat resolves to the bare corpus (byte-identical paths + resume state to
+    every prior round); naturalistic resolves to its own keyed dir/prefix.
     """
     pending: list[tuple[str, list[dict], Path]] = []
     for corpus in corpora:
-        out_dir = _out_root(smoke) / slug / corpus
+        cell = cm.gen_cell_key(corpus, gen_format)
+        out_dir = _out_root(smoke) / slug / cell
         if (out_dir / "answers.jsonl").exists() and (out_dir / "audit.json").exists():
-            if upload and not smoke and not _hf_gen_state(slug, corpus)[0]:
-                print(f"[gen] {slug}/{corpus}: local outputs exist, Hub incomplete — re-uploading")
-                _upload_gen_outputs(slug, corpus, out_dir)
-            print(f"[gen] skip {slug}/{corpus} (local outputs exist)")
+            if upload and not smoke and not _hf_gen_state(slug, cell)[0]:
+                print(f"[gen] {slug}/{cell}: local outputs exist, Hub incomplete — re-uploading")
+                _upload_gen_outputs(slug, cell, out_dir)
+            print(f"[gen] skip {slug}/{cell} (local outputs exist)")
             continue
-        if not smoke and _try_hf_resume(slug, corpus, out_dir):
+        if not smoke and _try_hf_resume(slug, cell, out_dir):
             continue
         prompts = _read_jsonl(_prompts_root(smoke) / f"{corpus}.jsonl")
         assert prompts, f"no prompts staged for {corpus} — run --prep first"
@@ -492,18 +515,74 @@ def _collect_pending(
     return pending
 
 
-def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) -> None:
-    """Generate + filter + audit every requested corpus with one engine."""
+def _run_render_integrity(gate_pairs: list[tuple], gen_format: str, slug: str, cell: str) -> dict:
+    """Format-conditional render-integrity gate (plan §5 registered control).
+
+    MATCHED-TEXT regime (``gen_format == "chat"`` — chat-generated answers
+    re-rendered under BOTH formats): the parent-a4-twin cross-format content
+    assertion is load-bearing and HARD-FAILS at the 0.10 threshold, exactly
+    as in every prior round (do not weaken). ON-POLICY naturalistic regime
+    (``gen_format == "naturalistic"``): the answers were GENERATED under the
+    naturalistic prefix, so the cross-format content assertion cannot be
+    presumed to hold by construction — the SAME divergence statistic is
+    computed and REPORTED as a logged diagnostic (like the cap-hit
+    fractions), never raised on. The regime is recorded EXPLICITLY in the
+    returned audit record (``regime`` + ``enforced``), never inferred.
+    """
+    matched_text = gen_format == "chat"
+    result = render_integrity_gate(gate_pairs, raise_on_fail=matched_text)  # raises on FAIL (chat)
+    result["regime"] = "matched-text" if matched_text else "on-policy-naturalistic"
+    result["enforced"] = matched_text
+    print(
+        f"[gen] render-integrity {result['regime']} "
+        f"{'gate' if matched_text else 'diagnostic'} {result['status']} "
+        f"{slug}/{cell}: rest-of-span mismatch "
+        f"{result['rest_of_span_mismatch_rate']:.4f} "
+        f"(first-token diagnostic "
+        f"{result['first_token_mismatch_rate_diagnostic']:.4f}, "
+        f"{result['n_pairs']} pairs)"
+    )
+    return result
+
+
+def run_generation(
+    slug: str, corpora: list[str], *, gen_format: str = "chat", smoke: bool, upload: bool
+) -> None:
+    """Generate + filter + audit every requested corpus with one engine.
+
+    ``gen_format`` selects the generation prompt builder + stop handling
+    (round 5): ``chat`` (default) is byte-identical to every prior round —
+    Tulu template, chat stop strings, bare-corpus output dirs/HF prefixes;
+    ``naturalistic`` generates ON-POLICY under the #825 plain-transcript
+    prefix (``cm.natural_prompt`` — render_natural's exact segment text) with
+    the newline-anchored naturalistic stop/truncation markers, landing in
+    format-keyed dirs (``cm.gen_cell_key``) so the arms never collide.
+    """
     hf_id = cm.MODELS[slug]["hf_id"]
-    pending = _collect_pending(slug, corpora, smoke=smoke, upload=upload)
+    for corpus in corpora:
+        fmts = _formats_for(corpus)
+        assert gen_format in fmts, (
+            f"gen format {gen_format!r} not registered for corpus {corpus!r} (formats: {fmts})"
+        )
+    pending = _collect_pending(slug, corpora, gen_format=gen_format, smoke=smoke, upload=upload)
     if not pending:
         print(f"[gen] {slug}: nothing to do")
         return
 
+    prompt_builder = {"chat": cm.tulu_prompt, "naturalistic": cm.natural_prompt}[gen_format]
+    stop_strings = cm.STOP_STRINGS if gen_format == "chat" else cm.NATURAL_STOP_STRINGS
+    truncate_markers = (
+        cm.ROLE_HEADER_TRUNCATE if gen_format == "chat" else cm.NATURAL_ROLE_HEADER_TRUNCATE
+    )
+
     from transformers import AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained(hf_id)
-    _assert_template_parity(tokenizer, [r["prompt"] for r in pending[0][1][:3]])
+    if gen_format == "chat":
+        # Chat-template parity is a CHAT-format check (pinned Tulu render vs
+        # the checkpoint's own template); the naturalistic plain transcript
+        # has no tokenizer template counterpart by construction.
+        _assert_template_parity(tokenizer, [r["prompt"] for r in pending[0][1][:3]])
 
     from vllm import LLM, SamplingParams
 
@@ -514,11 +593,12 @@ def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) 
         top_p=cm.SAMPLING["top_p"],
         max_tokens=cm.SAMPLING["max_tokens"],
         seed=cm.SAMPLING["seed"],
-        stop=list(cm.STOP_STRINGS),
+        stop=list(stop_strings),
     )
     fmts_needed = {c: _formats_for(c) for c, _, _ in pending}
     for corpus, prompts, out_dir in pending:
-        texts = [cm.tulu_prompt(r["prompt"]) for r in prompts]
+        cell = cm.gen_cell_key(corpus, gen_format)
+        texts = [prompt_builder(r["prompt"]) for r in prompts]
         gen = _vllm_generate_chunked(llm, texts, sampling)
         rows, kept_ids = [], []
         drop_reasons: collections.Counter = collections.Counter()
@@ -529,7 +609,7 @@ def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) 
         early_eos = 0
         truncated = 0
         for r, (raw, finish) in zip(prompts, gen, strict=True):
-            answer = _truncate_role_headers(raw)
+            answer = _truncate_role_headers(raw, truncate_markers)
             row = {
                 "prompt_idx": r["prompt_idx"],
                 "prompt": r["prompt"],
@@ -574,26 +654,23 @@ def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) 
         # answers.jsonl AND audit.json).
         _write_jsonl(out_dir / "answers.jsonl", rows)
         (out_dir / "allowlist.json").write_text(json.dumps(kept_ids) + "\n")
-        # Render-integrity gate (plan §5 registered control; parent a4 twin):
+        # Render-integrity (plan §5 registered control; parent a4 twin):
         # cross-format content-token BPE divergence between the chat and
-        # naturalistic renders of the SAME kept answers, gated at <=0.10 with
-        # the first-token-excluded convention. lmsys5k is the only two-format
-        # corpus, so the naturalistic arm cannot ship unvalidated.
+        # naturalistic renders of the SAME kept answers at the <=0.10
+        # first-token-excluded convention. FORMAT-CONDITIONAL (round 5, user
+        # decision): hard gate in the matched-text (chat-generation) regime —
+        # unchanged from prior rounds — logged diagnostic in the on-policy
+        # naturalistic regime; regime recorded in the audit record. See
+        # _run_render_integrity.
         render_integrity = None
         if {"chat", "naturalistic"} <= set(fmts_needed[corpus]) and gate_pairs:
-            render_integrity = render_integrity_gate(gate_pairs)  # raises on FAIL
-            print(
-                f"[gen] render-integrity gate {render_integrity['status']} "
-                f"{slug}/{corpus}: rest-of-span mismatch "
-                f"{render_integrity['rest_of_span_mismatch_rate']:.4f} "
-                f"(first-token diagnostic "
-                f"{render_integrity['first_token_mismatch_rate_diagnostic']:.4f}, "
-                f"{render_integrity['n_pairs']} pairs)"
-            )
+            render_integrity = _run_render_integrity(gate_pairs, gen_format, slug, cell)
         audit = {
             "model": slug,
             "hf_id": hf_id,
             "corpus": corpus,
+            "gen_format": gen_format,
+            "gen_cell": cell,
             "n_prompts": len(prompts),
             "n_kept": len(kept_ids),
             "keep_rate": keep_rate,
@@ -613,7 +690,7 @@ def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) 
                     else None
                 ),
             },
-            "sampling": dict(cm.SAMPLING) | {"stop": list(cm.STOP_STRINGS)},
+            "sampling": dict(cm.SAMPLING) | {"stop": list(stop_strings)},
             "answers_sha256": hashlib.sha256(
                 "\n".join(a for a in kept_answers).encode("utf-8")
             ).hexdigest(),
@@ -623,13 +700,13 @@ def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) 
         (out_dir / "audit.json").write_text(json.dumps(audit, indent=2) + "\n")
         if not audit["keep_rate_floor_pass"]:
             print(
-                f"[gen] WARNING keep-rate floor MISS {slug}/{corpus}: "
+                f"[gen] WARNING keep-rate floor MISS {slug}/{cell}: "
                 f"{keep_rate:.3f} < {cm.KEEP_RATE_FLOOR} — fitting at realized n "
                 "(reported, never padded)"
             )
-        print(f"[gen] {slug}/{corpus}: kept {len(kept_ids)}/{len(prompts)}")
+        print(f"[gen] {slug}/{cell}: kept {len(kept_ids)}/{len(prompts)}")
         if upload:
-            _upload_gen_outputs(slug, corpus, out_dir)
+            _upload_gen_outputs(slug, cell, out_dir)
 
 
 def main() -> None:
@@ -639,6 +716,19 @@ def main() -> None:
     ap.add_argument("--corpora", default=None, help="comma list (default: registry set)")
     ap.add_argument("--smoke", action="store_true", help="smoke subset roots + N")
     ap.add_argument("--upload", action="store_true", help="per-cell HF upload after gen")
+    ap.add_argument(
+        "--gen-format",
+        choices=("chat", "naturalistic"),
+        default="chat",
+        help=(
+            "generation prompt format (round 5; generation only — prep is "
+            "format-blind). 'chat' (default) is byte-identical to prior "
+            "rounds; 'naturalistic' generates ON-POLICY under the #825 "
+            "plain-transcript prefix into format-keyed output dirs "
+            "(<corpus>__gen_naturalistic). Only corpora registering the "
+            "naturalistic format qualify (fail-loud otherwise)."
+        ),
+    )
     ap.add_argument(
         "--corpus-file",
         action="append",
@@ -661,7 +751,9 @@ def main() -> None:
         run_prep(corpora, args.smoke, corpus_files=corpus_files or None)
         return
     assert args.model, "--model is required unless --prep"
-    run_generation(args.model, corpora, smoke=args.smoke, upload=args.upload)
+    run_generation(
+        args.model, corpora, gen_format=args.gen_format, smoke=args.smoke, upload=args.upload
+    )
 
 
 if __name__ == "__main__":

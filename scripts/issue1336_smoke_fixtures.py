@@ -15,6 +15,10 @@ Subcommands:
                              run_generation parse/filter/audit path on 8
                              synthetic completions; fakes ONLY the Hub prompt
                              fetch + the vLLM engine (sampling is GPU-only).
+  gen-natural                same boundary fakes, ON-POLICY naturalistic arm
+                             (round 5): format-keyed output dirs, naturalistic
+                             stop/truncation, render-integrity as a logged
+                             diagnostic with the regime recorded explicitly.
   stores                     write the 6 smoke-cell synthetic turnstores
                              (n=40, L=4, D=32) to data/issue_1336/turnstore_smoke
                              (the dispatch fit/align --smoke inputs).
@@ -196,6 +200,85 @@ def cmd_gen(args) -> None:
         f"render-integrity {ri['rest_of_span_mismatch_rate']:.3f}/"
         f"first-tok {ri['first_token_mismatch_rate_diagnostic']:.3f}) "
         "— real filter/audit path OK"
+    )
+
+
+def cmd_gen_natural(args) -> None:
+    """Drive the REAL on-policy naturalistic generation path (round 5).
+
+    Same boundary fakes as cmd_gen (Hub prompt fetch + vLLM engine); the
+    prompt building, naturalistic role-header truncation, render validation,
+    format-conditional render-integrity diagnostic, audit, and format-keyed
+    output writes are the REAL production code. Asserts: (a) outputs land in
+    the format-keyed dir (never the chat dir — which is byte-untouched);
+    (b) the audit records the on-policy regime explicitly (regime/enforced);
+    (c) the naturalistic stop/truncation markers were applied.
+    """
+    import hashlib
+
+    import issue1336_gen_answers as g
+
+    rows = [{"prompt_idx": i, "prompt": p} for i, p in enumerate(_SYNTH_PROMPTS)]
+    g._stage_lmsys_prompts = lambda: rows
+    g.run_prep(["lmsys5k"], smoke=True)
+
+    chat_answers = Path("data/issue_1336/gen_smoke/rlvr/lmsys5k/answers.jsonl")
+    chat_sha_before = (
+        hashlib.sha256(chat_answers.read_bytes()).hexdigest() if chat_answers.exists() else None
+    )
+
+    class _FakeLLM:
+        def __init__(self, *a, **k):
+            pass
+
+    class _FakeSamplingParams:
+        def __init__(self, *a, **k):
+            pass
+
+    fake_vllm = type(sys)("vllm")
+    fake_vllm.LLM = _FakeLLM
+    fake_vllm.SamplingParams = _FakeSamplingParams
+    sys.modules["vllm"] = fake_vllm
+    # Naturalistic-marker variant of the synthetic completions: the chat
+    # role-header reoccurrence in row 4 becomes a plain-transcript next turn.
+    completions = [
+        (
+            t.replace("\n<|user|>\nCan you make it vegan?", "\nUser: Can you make it vegan?"),
+            f,
+        )
+        for (t, f) in _SYNTH_COMPLETIONS
+    ]
+    g._vllm_generate_chunked = lambda llm, texts, sampling: completions[: len(texts)]
+    g.run_generation("rlvr", ["lmsys5k"], gen_format="naturalistic", smoke=True, upload=False)
+
+    out = Path("data/issue_1336/gen_smoke/rlvr/lmsys5k__gen_naturalistic")
+    assert (out / "answers.jsonl").exists(), f"format-keyed outputs missing under {out}"
+    audit = json.loads((out / "audit.json").read_text())
+    rows_out = g._read_jsonl(out / "answers.jsonl")
+    kept = [r for r in rows_out if r["kept"]]
+    assert audit["gen_format"] == "naturalistic", audit.get("gen_format")
+    assert audit["gen_cell"] == "lmsys5k__gen_naturalistic", audit.get("gen_cell")
+    assert audit["sampling"]["stop"] == list(cm.NATURAL_STOP_STRINGS), audit["sampling"]["stop"]
+    # Regime is explicit in the audit record — never inferred (round 5).
+    ri = audit["render_integrity"]
+    assert ri is not None, "render-integrity diagnostic missing"
+    assert ri["regime"] == "on-policy-naturalistic" and ri["enforced"] is False, ri
+    assert ri["n_pairs"] == len(kept), (ri["n_pairs"], len(kept))
+    # Naturalistic role-header truncation fired on the planted next-turn row.
+    truncated_row = rows_out[4]
+    assert "\nUser:" not in truncated_row["response"], "naturalistic truncation missed"
+    assert truncated_row["response_raw_len_chars"] > len(truncated_row["response"])
+    # The chat arm's outputs are untouched by the naturalistic run.
+    chat_sha_after = (
+        hashlib.sha256(chat_answers.read_bytes()).hexdigest() if chat_answers.exists() else None
+    )
+    assert chat_sha_before == chat_sha_after, "chat-arm answers.jsonl changed"
+    print(
+        f"[gen-natural-smoke] kept {len(kept)}/{len(rows_out)} "
+        f"(drops {audit['drop_reasons']}) -> {out.name}; "
+        f"render-integrity {ri['regime']} diagnostic {ri['status']} "
+        f"(rest-of-span {ri['rest_of_span_mismatch_rate']:.3f}); "
+        f"chat arm untouched — on-policy naturalistic path OK"
     )
 
 
@@ -571,6 +654,7 @@ def main() -> None:
     p = sub.add_parser("tiny-model")
     p.add_argument("--out", required=True)
     sub.add_parser("gen")
+    sub.add_parser("gen-natural")
     p = sub.add_parser("gen-v2")
     p.add_argument("--corpora", default=None, help="comma v2 corpora (default lmsys23k,sft11k)")
     p = sub.add_parser("stores")
@@ -593,6 +677,7 @@ def main() -> None:
     {
         "tiny-model": cmd_tiny_model,
         "gen": cmd_gen,
+        "gen-natural": cmd_gen_natural,
         "gen-v2": cmd_gen_v2,
         "stores": cmd_stores,
         "stores-v2": cmd_stores_v2,

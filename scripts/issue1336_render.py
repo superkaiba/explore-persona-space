@@ -8,8 +8,12 @@ Two formats, both single-turn {u1, a1}:
                  tokenization is not prefix-stable and segmentation uses the
                  parent's offsets-mapping core (#825 naturalistic convention).
   naturalistic — the #825 plain-transcript convention
-                 ``User: {u1}\\n\\nAssistant: {a1}`` (extraction-only re-render
-                 of the SAME generated answers; parent convention).
+                 ``User: {u1}\\n\\nAssistant: {a1}``. Two regimes (round 5):
+                 the MATCHED-TEXT regime re-renders the SAME chat-generated
+                 answers (the parent convention); the ON-POLICY regime renders
+                 answers generated under ``common.natural_prompt``, whose
+                 prefix equals this render's first four segments joined,
+                 byte-for-byte by construction (shared constants).
 
 Both renders PREPEND the tokenizer BOS (Llama generation adds BOS; the
 teacher-forced sequence must match) and return the #825 ``Rendered``
@@ -50,6 +54,9 @@ RENDER_INTEGRITY_MAX_RATE = BPE_MISMATCH_MAX_RATE  # parent gate threshold (0.10
 from explore_persona_space.experiments.issue_1336.common import (  # noqa: E402
     MAX_CONV_TOKENS,
     MIN_TURN_CONTENT_TOKENS,
+    NATURAL_ASSISTANT_HEADER,
+    NATURAL_TURN_SEP,
+    NATURAL_USER_HEADER,
     TULU_ASSISTANT_HEADER,
     TULU_TURN_SEP,
     TULU_USER_HEADER,
@@ -119,9 +126,24 @@ def render_tulu_chat(conv: dict, tokenizer) -> Rendered:
     )
 
 
+def natural_segments(conv: dict) -> list[str]:
+    """Exact naturalistic segment texts (#825 plain transcript), built from the
+    shared ``common`` constants — so ``common.natural_prompt(u1)`` equals
+    ``"".join(natural_segments(conv)[:4])`` (the on-policy generation prefix)
+    byte-for-byte BY CONSTRUCTION, and the full render text equals
+    ``natural_prompt(u1) + a1``."""
+    return [
+        NATURAL_USER_HEADER,
+        conv["u1"],
+        NATURAL_TURN_SEP,
+        NATURAL_ASSISTANT_HEADER,
+        conv["a1"],
+    ]
+
+
 def render_natural(conv: dict, tokenizer) -> Rendered:
     """Render one {u1, a1} pair as the #825 plain transcript (User:/Assistant:)."""
-    segments = ["User: ", conv["u1"], "\n\n", "Assistant: ", conv["a1"]]
+    segments = natural_segments(conv)
     return _render_segments(
         segments,
         tokenizer,
