@@ -1,0 +1,740 @@
+{
+  "commit": "7b069c07",
+  "git_commit": "7b069c07",
+  "git_dirty": false,
+  "created": "2026-08-06T14:32:30Z",
+  "figsize": [
+    22.0,
+    6.4
+  ],
+  "points": [
+    {
+      "x": -0.27,
+      "pooled held-out R2": 0.07105633210902274,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.73,
+      "pooled held-out R2": 0.08382565190499591,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.73,
+      "pooled held-out R2": 0.017229138587402937,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.73,
+      "pooled held-out R2": 0.0175719174790393,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.73,
+      "pooled held-out R2": 0.01667483277980386,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.73,
+      "pooled held-out R2": 0.013515557598319461,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.73,
+      "pooled held-out R2": -0.013090432897529647,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.73,
+      "pooled held-out R2": -0.015380217405176477,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.73,
+      "pooled held-out R2": -0.013091885904066958,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.73,
+      "pooled held-out R2": -0.013168245560239322,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.73,
+      "pooled held-out R2": -0.02105375910555707,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.73,
+      "pooled held-out R2": -0.0275592592773779,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "ce_L14_j19_span",
+      "pooled held-out R2": 0.016971315015879673,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ce_L14_same_tail",
+      "pooled held-out R2": 0.022814966725102748,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ce_L19_j19_span",
+      "pooled held-out R2": -0.03392105504078535,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ce_L19_same_tail",
+      "pooled held-out R2": -0.03392344256959001,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ce_L26_j19_span",
+      "pooled held-out R2": -0.026503569839966934,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ce_L26_same_tail",
+      "pooled held-out R2": -0.02699285649888239,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pe_L14_j19_span",
+      "pooled held-out R2": -0.07388103675374325,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pe_L14_same_tail",
+      "pooled held-out R2": -0.07618712169789088,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pe_L19_j19_span",
+      "pooled held-out R2": -0.07626102322413697,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pe_L19_same_tail",
+      "pooled held-out R2": -0.07623978295711109,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pe_L26_j19_span",
+      "pooled held-out R2": -0.09142409313838051,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pe_L26_same_tail",
+      "pooled held-out R2": -0.09726694628068167,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.27,
+      "pooled held-out R2": -51.01825239119477,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.27,
+      "pooled held-out R2": -112.35573356837176,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.27,
+      "pooled held-out R2": -234.25939735770797,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.27,
+      "pooled held-out R2": -238.31845559237638,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.27,
+      "pooled held-out R2": -5566.545154153025,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.27,
+      "pooled held-out R2": -379.07110589134794,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.27,
+      "pooled held-out R2": -52.29735788853484,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.27,
+      "pooled held-out R2": -108.82708280092265,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.27,
+      "pooled held-out R2": -114.75255787667368,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 9.27,
+      "pooled held-out R2": -117.06967062571906,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 10.27,
+      "pooled held-out R2": -3442.2578568300764,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 11.27,
+      "pooled held-out R2": -269.50335418009615,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.0125,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.04583333333333333,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": -0.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.07916666666666666,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.020833333333333332,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.0875,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.16666666666666666,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.666667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0125,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.8,
+      "retrieval accuracy at k in 1, 5, 10": 0.04583333333333333,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.933333,
+      "retrieval accuracy at k in 1, 5, 10": 0.09166666666666666,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.025,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.07083333333333333,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 1.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.16666666666666666,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.666667,
+      "retrieval accuracy at k in 1, 5, 10": 0.016666666666666666,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.8,
+      "retrieval accuracy at k in 1, 5, 10": 0.058333333333333334,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 1.933333,
+      "retrieval accuracy at k in 1, 5, 10": 0.09166666666666666,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 2.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.016666666666666666,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 2.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.075,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 2.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.1625,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 2.666667,
+      "retrieval accuracy at k in 1, 5, 10": 0.016666666666666666,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 2.8,
+      "retrieval accuracy at k in 1, 5, 10": 0.058333333333333334,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 2.933333,
+      "retrieval accuracy at k in 1, 5, 10": 0.09166666666666666,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 3.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.016666666666666666,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 3.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.075,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 3.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.1625,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 3.666667,
+      "retrieval accuracy at k in 1, 5, 10": 0.020833333333333332,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 3.8,
+      "retrieval accuracy at k in 1, 5, 10": 0.03333333333333333,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 3.933333,
+      "retrieval accuracy at k in 1, 5, 10": 0.07083333333333333,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": 4.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.004166666666666667,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 4.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.04583333333333333,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 4.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.10833333333333334,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 4.666667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0125,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 4.8,
+      "retrieval accuracy at k in 1, 5, 10": 0.03333333333333333,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 4.933333,
+      "retrieval accuracy at k in 1, 5, 10": 0.0875,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": 5.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": 5.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.04583333333333333,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 5.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.12083333333333333,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 5.666667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 5.8,
+      "retrieval accuracy at k in 1, 5, 10": 0.008333333333333333,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 5.933333,
+      "retrieval accuracy at k in 1, 5, 10": 0.041666666666666664,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 6.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.004166666666666667,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 6.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.004166666666666667,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 6.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.06666666666666667,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 6.666667,
+      "retrieval accuracy at k in 1, 5, 10": 0.004166666666666667,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 6.8,
+      "retrieval accuracy at k in 1, 5, 10": 0.008333333333333333,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 6.933333,
+      "retrieval accuracy at k in 1, 5, 10": 0.0375,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 7.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 7.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.004166666666666667,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 7.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.025,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 7.666667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "x": 7.8,
+      "retrieval accuracy at k in 1, 5, 10": 0.0125,
+      "_kind": "bar",
+      "_group": 52
+    },
+    {
+      "x": 7.933333,
+      "retrieval accuracy at k in 1, 5, 10": 0.03333333333333333,
+      "_kind": "bar",
+      "_group": 53
+    },
+    {
+      "x": 8.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 54
+    },
+    {
+      "x": 8.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 55
+    },
+    {
+      "x": 8.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.0125,
+      "_kind": "bar",
+      "_group": 56
+    },
+    {
+      "x": 8.666667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 57
+    },
+    {
+      "x": 8.8,
+      "retrieval accuracy at k in 1, 5, 10": 0.0125,
+      "_kind": "bar",
+      "_group": 58
+    },
+    {
+      "x": 8.933333,
+      "retrieval accuracy at k in 1, 5, 10": 0.03333333333333333,
+      "_kind": "bar",
+      "_group": 59
+    },
+    {
+      "x": 9.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 60
+    },
+    {
+      "x": 9.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 61
+    },
+    {
+      "x": 9.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.0125,
+      "_kind": "bar",
+      "_group": 62
+    },
+    {
+      "x": 9.666667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 63
+    },
+    {
+      "x": 9.8,
+      "retrieval accuracy at k in 1, 5, 10": 0.008333333333333333,
+      "_kind": "bar",
+      "_group": 64
+    },
+    {
+      "x": 9.933333,
+      "retrieval accuracy at k in 1, 5, 10": 0.029166666666666667,
+      "_kind": "bar",
+      "_group": 65
+    },
+    {
+      "x": 10.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 66
+    },
+    {
+      "x": 10.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.004166666666666667,
+      "_kind": "bar",
+      "_group": 67
+    },
+    {
+      "x": 10.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.020833333333333332,
+      "_kind": "bar",
+      "_group": 68
+    },
+    {
+      "x": 10.666667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 69
+    },
+    {
+      "x": 10.8,
+      "retrieval accuracy at k in 1, 5, 10": 0.0125,
+      "_kind": "bar",
+      "_group": 70
+    },
+    {
+      "x": 10.933333,
+      "retrieval accuracy at k in 1, 5, 10": 0.03333333333333333,
+      "_kind": "bar",
+      "_group": 71
+    },
+    {
+      "x": 11.066667,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 72
+    },
+    {
+      "x": 11.2,
+      "retrieval accuracy at k in 1, 5, 10": 0.0,
+      "_kind": "bar",
+      "_group": 73
+    },
+    {
+      "x": 11.333333,
+      "retrieval accuracy at k in 1, 5, 10": 0.008333333333333333,
+      "_kind": "bar",
+      "_group": 74
+    }
+  ],
+  "n_series": 75,
+  "total_points": 108,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "One-operator fit L: dose-delta to realized shift (PC-128 ridge)",
+        "ylabel": "pooled held-out R2",
+        "legend_labels": [
+          "pair-fold OOF R2",
+          "held-out-family OOF R2",
+          "identity+bias baseline R2"
+        ],
+        "xticklabels": [
+          "ce_L14_j19_span",
+          "ce_L14_same_tail",
+          "ce_L19_j19_span",
+          "ce_L19_same_tail",
+          "ce_L26_j19_span",
+          "ce_L26_same_tail",
+          "pe_L14_j19_span",
+          "pe_L14_same_tail",
+          "pe_L19_j19_span",
+          "pe_L19_same_tail",
+          "pe_L26_j19_span",
+          "pe_L26_same_tail"
+        ],
+        "yticklabels": [
+          "\u22126000",
+          "\u22125000",
+          "\u22124000",
+          "\u22123000",
+          "\u22122000",
+          "\u22121000",
+          "0",
+          "1000"
+        ]
+      },
+      {
+        "title_left": "kNN retrieval of the true realized shift (black line = chance)",
+        "ylabel": "retrieval accuracy at k in 1, 5, 10",
+        "legend_labels": [
+          "euclidean acc@k",
+          "cosine acc@k"
+        ],
+        "xticklabels": [
+          "ce_L14_j19_span",
+          "ce_L14_same_tail",
+          "ce_L19_j19_span",
+          "ce_L19_same_tail",
+          "ce_L26_j19_span",
+          "ce_L26_same_tail",
+          "pe_L14_j19_span",
+          "pe_L14_same_tail",
+          "pe_L19_j19_span",
+          "pe_L19_same_tail",
+          "pe_L26_j19_span",
+          "pe_L26_same_tail"
+        ],
+        "yticklabels": [
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125",
+          "0.150",
+          "0.175"
+        ]
+      }
+    ],
+    "series": [
+      "pair-fold OOF R2",
+      "held-out-family OOF R2",
+      "identity+bias baseline R2",
+      "euclidean acc@k",
+      "cosine acc@k"
+    ]
+  }
+}
