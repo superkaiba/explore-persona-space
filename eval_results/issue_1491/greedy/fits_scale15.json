@@ -477,9 +477,9 @@
   },
   "ceiling_two_draw": {
     "available": true,
-    "n_pairs": 875,
-    "ceiling_var_weighted_r": 0.9855356216430664,
-    "mean_per_dim_r": 0.983817994594574
+    "n_pairs": 1000,
+    "ceiling_var_weighted_r": 0.9820423722267151,
+    "mean_per_dim_r": 0.9803921580314636
   },
   "wc_transfer": {
     "available": true,
