@@ -12744,7 +12744,6 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
-    "methodology-writer.md": 50_700,
     # measured 46,785 B post-#1618 (unmapped-pod triage + non-EPS pod-cost
     # directive + Mode-2 audit template relocated to
     # .claude/rules/pm-audit-reference.md — #829 trim after the 5d84120ac9
@@ -12759,7 +12758,6 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # 50,741 B post-#1535 (Step 2.7 declared-off-pod outputs
     # sub-rule + Step 2.8 off_pod_phases reads arm — plan-mandated growth;
     # cap = measured + ~0.8 KB. Prior: 47,800 — measured 46,830 B post-#1115)
-    "upload-verifier.md": 52_800,
 }
 
 

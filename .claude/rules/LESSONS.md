@@ -40,6 +40,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - llm-judging.md — a plan/code designs/writes an LLM-judged behavior DV (graded 0-100 primary; one Sonnet judge; drop-never-coerce; retry transport errors; rubric-keyed caches; generous rationale-sized max_tokens — 1024/2048 floors; pilot-gate ≥5k-call waves).
 - marker-leakage-measurement.md — a plan/code MEASURES marker leakage (on-policy, marker-at-end, three-space DV).
 - marker-training-recipe.md — a plan TRAINS a fresh marker/implant adapter (lr≤5e-6, marker-only loss, band-stop).
+- methodology-writer-section-reference.md — the methodology-writer authors a mode body (markdown doc template, PAPER-TASK, or REPORT mode; pointer-loaded).
 - on-policy-completions.md — you build implantation training data (on-policy positives; 80% yield floor; multi-behavior datagen ⇒ standardized behavior definitions).
 - ood-generalization-folds.md — a held-out predictive DV (R²/ρ) over grouped samples (GROUP-level fold — LOFO/transfer, not pointwise LOO).
 - persona-distance-metrics.md — you write base-model persona-distance predictor code (canonical KL/JS/cosine defs).
@@ -55,6 +56,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI (selection rides per draw / freeze held-out; band vs ceiling), or difference-vector legs sharing one SAMPLED baseline vs noise-free nulls (disjoint halves / shared-B).
 - trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus, composing briefs on such targets (#1503/#1413), orchestrator run-failure ingest (#1546), judge-monitor reads (#1871), or ANY orchestrator turn on a guard-surface round (#1563).
 - upload-policy.md — you write training/Hub/sweep code, or sequence phases around a regeneration-costly store (Hub-API verification, verify + staging-download transport retry, delete-after-eval persist, store-before-long-fit #825, quota-403 recovery, upload-wedge ladder).
+- upload-verifier-section-reference.md — the upload-verifier runs a Step 2/2.5/2.6/2.9/3/4/6 recipe (pointer-loaded span).
 - vectorize-many-cell-fits.md — many-cell GD, dense fits (svd/eigh/lstsq/ridge), or a perm/bootstrap/null-draw battery over a fixed pool (VECTORIZE first; detached+checkpointed VM fits; Supersede contract incl. mid-run ≥2×-deviation + width re-eval).
 - workflow-fix-on-bug.md — any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`).
 - agents-vs-skills.md — you create/restructure anything under `.claude/` (decide agent vs skill).
