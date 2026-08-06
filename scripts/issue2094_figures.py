@@ -43,7 +43,11 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import matplotlib
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE any heavy import
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 
