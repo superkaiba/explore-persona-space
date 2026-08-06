@@ -8580,8 +8580,8 @@
     "2108": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2108",
-      "status": "approved",
+      "path": "tasks/running/2108",
+      "status": "running",
       "title": "workflow-fix: bootstrap sparse-cone block dies, killing missing-cone warning"
     },
     "2109": {
