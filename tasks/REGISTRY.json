@@ -8923,8 +8923,8 @@
     "2154": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2154",
-      "status": "proposed",
+      "path": "tasks/planning/2154",
+      "status": "planning",
       "title": "workflow-fix: #1739 follow-up-run marker writes label= not followup_label=, reddening test_corpus_replay_all_historical_markers on main"
     },
     "216": {
