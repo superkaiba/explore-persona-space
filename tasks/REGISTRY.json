@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2124,
+  "highest_id": 2125,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8702,6 +8702,13 @@
       "path": "tasks/proposed/2124",
       "status": "proposed",
       "title": "daily-fix: judge pilot sizing + classification rubrics"
+    },
+    "2125": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2125",
+      "status": "proposed",
+      "title": "daily-fix: pod-side liveness probe before LAUNCH FAILED"
     },
     "213": {
       "has_clean_result": false,
