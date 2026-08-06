@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2122,
+  "highest_id": 2123,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8688,6 +8688,13 @@
       "path": "tasks/proposed/2122",
       "status": "proposed",
       "title": "daily-fix: root-branch guard ssh/cd-form false positives"
+    },
+    "2123": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2123",
+      "status": "proposed",
+      "title": "daily-fix: four verifier gaps (lint + verify_plan)"
     },
     "213": {
       "has_clean_result": false,
