@@ -5,7 +5,7 @@ title: Context-end is the only single position where activation edits move behav
 kind: experiment
 tags: []
 created_at: '2026-08-05T20:07:47Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1415
 origin_prompt: 'start in background with happy coder and setup periodic monitoring
   of it (design finalized in chat 2026-08-05: unified F metric, crossed 3-prefix x
