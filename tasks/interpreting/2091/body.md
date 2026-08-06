@@ -223,7 +223,9 @@ Left: how much score variance the two moderators — answer dispersion and behav
 
 Both jointly explain under 0.05 of score variance in every plotted cell, and in 27 of 40 overall. On the plotted cells, dispersion's unique share is near zero for supervised and predicted-answer arms (median 0.0004) and larger only for label-free projection arms (median 0.006).
 
-Nineteen of 25 per-arm contrasts cover zero; the remaining six favour behavioral spread. Three of those six sit on the everyday-hallucination family (439 prompts), where the parser gap censored 26% of judge draws — censoring correlated with judge-confusing content is an unexcluded alternative there. The excluded harmful-compliance cells reach 0.24-0.46, but on only 9 to 27 prompts: too small to trust, so sampling variability is still not a usable failure flag. Per-prompt fitted reads are not persisted; these shares are aggregate-only.
+Nineteen of 25 per-arm contrasts cover zero; the remaining six favour behavioral spread. Three of those six sit on the everyday-hallucination family (439 prompts), where the parser gap censored 26% of judge draws — censoring correlated with judge-confusing content is an unexcluded alternative there. The excluded harmful-compliance cells reach 0.24-0.46, but on only 9 to 27 prompts: too small to trust, so sampling variability is still not a usable failure flag.
+
+Per-prompt fitted reads are not persisted; these shares are aggregate-only.
 
 ### Middling sycophancy prompts give middling samples; harmful compliance sits at the boundary
 
