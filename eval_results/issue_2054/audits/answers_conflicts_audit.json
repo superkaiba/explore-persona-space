@@ -165,12 +165,8 @@
       "conv_id": "stripped_s1189",
       "disposition": "excluded",
       "n_distinct_answers": 3,
-      "n_variants_present": 4,
+      "n_variants_present": 3,
       "per_variant": {
-        "char_dana": {
-          "chars": 476,
-          "sha8": "219a678e"
-        },
         "char_helios": {
           "chars": 476,
           "sha8": "e36b2e3e"
@@ -208,13 +204,17 @@
       }
     },
     {
-      "canonical_sha8": "3d5e34b3",
+      "canonical_sha8": "7289f149",
       "class": "whitespace_only",
       "conv_id": "stripped_s1213",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 2,
+      "n_variants_present": 3,
       "per_variant": {
+        "char_dana": {
+          "chars": 1778,
+          "sha8": "7289f149"
+        },
         "char_wren": {
           "chars": 1778,
           "sha8": "7289f149"
@@ -256,12 +256,12 @@
       }
     },
     {
-      "canonical_sha8": "7dde4ac8",
+      "canonical_sha8": "4a2e359c",
       "class": "whitespace_only",
       "conv_id": "stripped_s1282",
       "disposition": "canonicalized",
       "n_distinct_answers": 3,
-      "n_variants_present": 4,
+      "n_variants_present": 5,
       "per_variant": {
         "char_dana": {
           "chars": 174,
@@ -274,6 +274,10 @@
         "char_vex": {
           "chars": 172,
           "sha8": "5678d094"
+        },
+        "char_wren": {
+          "chars": 174,
+          "sha8": "4a2e359c"
         },
         "conversation_paired_stories_assistant": {
           "chars": 176,
@@ -304,8 +308,8 @@
       "class": "whitespace_only",
       "conv_id": "stripped_s1352",
       "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
       "per_variant": {
         "char_helios": {
           "chars": 2587,
@@ -318,6 +322,10 @@
         "char_wren": {
           "chars": 2587,
           "sha8": "f4316fdc"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2588,
+          "sha8": "7d98944d"
         }
       }
     },
@@ -326,8 +334,8 @@
       "class": "whitespace_only",
       "conv_id": "stripped_s1356",
       "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
       "per_variant": {
         "char_dana": {
           "chars": 2565,
@@ -336,6 +344,14 @@
         "char_helios": {
           "chars": 2564,
           "sha8": "2988cf57"
+        },
+        "char_vex": {
+          "chars": 2559,
+          "sha8": "69989e70"
+        },
+        "char_wren": {
+          "chars": 2559,
+          "sha8": "69989e70"
         },
         "conversation_paired_stories_assistant": {
           "chars": 2565,
@@ -370,6 +386,32 @@
         "conversation_paired_stories_assistant": {
           "chars": 355,
           "sha8": "5debf016"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "56dee3ca",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s1364",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1967,
+          "sha8": "56dee3ca"
+        },
+        "char_vex": {
+          "chars": 1967,
+          "sha8": "56dee3ca"
+        },
+        "char_wren": {
+          "chars": 1967,
+          "sha8": "56dee3ca"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1962,
+          "sha8": "340e2e54"
         }
       }
     },
@@ -440,20 +482,16 @@
       }
     },
     {
-      "canonical_sha8": "5e4eaa4e",
+      "canonical_sha8": "28ea8a20",
       "class": "whitespace_only",
       "conv_id": "stripped_s1416",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 2,
       "per_variant": {
         "char_helios": {
           "chars": 121,
           "sha8": "28ea8a20"
-        },
-        "char_vex": {
-          "chars": 121,
-          "sha8": "5e4eaa4e"
         },
         "char_wren": {
           "chars": 121,
@@ -593,8 +631,12 @@
       "conv_id": "stripped_s1511",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 4,
       "per_variant": {
+        "char_dana": {
+          "chars": 1954,
+          "sha8": "12d5545c"
+        },
         "char_helios": {
           "chars": 1954,
           "sha8": "12d5545c"
@@ -643,7 +685,7 @@
       "n_distinct_answers": 2,
       "n_variants_present": 2,
       "per_variant": {
-        "char_vex": {
+        "char_dana": {
           "chars": 2471,
           "sha8": "4054d190"
         },
@@ -718,8 +760,8 @@
       "class": "whitespace_only",
       "conv_id": "stripped_s1616",
       "disposition": "canonicalized",
-      "n_distinct_answers": 3,
-      "n_variants_present": 4,
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
       "per_variant": {
         "char_dana": {
           "chars": 749,
@@ -732,10 +774,6 @@
         "char_wren": {
           "chars": 748,
           "sha8": "ded0e0b8"
-        },
-        "conversation_paired_stories_assistant": {
-          "chars": 750,
-          "sha8": "f66e37e6"
         }
       }
     },
@@ -836,7 +874,7 @@
       "conv_id": "stripped_s1707",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 3,
       "per_variant": {
         "char_helios": {
           "chars": 1375,
@@ -849,22 +887,22 @@
         "char_wren": {
           "chars": 1374,
           "sha8": "a328a82d"
-        },
-        "conversation_paired_stories_assistant": {
-          "chars": 1374,
-          "sha8": "a328a82d"
         }
       }
     },
     {
-      "canonical_sha8": "8ec5bebe",
+      "canonical_sha8": "de18833e",
       "class": "whitespace_only",
       "conv_id": "stripped_s1711",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 2,
+      "n_variants_present": 3,
       "per_variant": {
         "char_helios": {
+          "chars": 1280,
+          "sha8": "de18833e"
+        },
+        "char_vex": {
           "chars": 1280,
           "sha8": "de18833e"
         },
@@ -915,28 +953,6 @@
         "conversation_paired_stories_assistant": {
           "chars": 1936,
           "sha8": "152cc5a7"
-        }
-      }
-    },
-    {
-      "canonical_sha8": "5a7e238f",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s1757",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 3,
-      "per_variant": {
-        "char_helios": {
-          "chars": 1977,
-          "sha8": "5a7e238f"
-        },
-        "char_wren": {
-          "chars": 1977,
-          "sha8": "5a7e238f"
-        },
-        "conversation_paired_stories_assistant": {
-          "chars": 1978,
-          "sha8": "4b3cf3f1"
         }
       }
     },
@@ -1001,8 +1017,8 @@
       "class": "whitespace_only",
       "conv_id": "stripped_s1792",
       "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
       "per_variant": {
         "char_dana": {
           "chars": 1795,
@@ -1011,6 +1027,10 @@
         "char_helios": {
           "chars": 1795,
           "sha8": "bab23622"
+        },
+        "char_vex": {
+          "chars": 1790,
+          "sha8": "9eb61a1f"
         },
         "conversation_paired_stories_assistant": {
           "chars": 1786,
@@ -1023,9 +1043,13 @@
       "class": "whitespace_only",
       "conv_id": "stripped_s1796",
       "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
       "per_variant": {
+        "char_dana": {
+          "chars": 1963,
+          "sha8": "eca2d46f"
+        },
         "char_helios": {
           "chars": 1962,
           "sha8": "d66e541b"
@@ -1251,12 +1275,12 @@
       }
     },
     {
-      "canonical_sha8": "f605dffb",
+      "canonical_sha8": "9d066752",
       "class": "whitespace_only",
       "conv_id": "stripped_s1902",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 2,
       "per_variant": {
         "char_dana": {
           "chars": 1791,
@@ -1265,10 +1289,6 @@
         "char_helios": {
           "chars": 1792,
           "sha8": "9d066752"
-        },
-        "conversation_paired_stories_assistant": {
-          "chars": 1791,
-          "sha8": "f605dffb"
         }
       }
     },
@@ -1424,12 +1444,8 @@
       "conv_id": "stripped_s1944",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 5,
+      "n_variants_present": 4,
       "per_variant": {
-        "char_dana": {
-          "chars": 2042,
-          "sha8": "ef007700"
-        },
         "char_helios": {
           "chars": 2042,
           "sha8": "ef007700"
@@ -1471,6 +1487,23 @@
         "conversation_paired_stories_assistant": {
           "chars": 1316,
           "sha8": "c39867aa"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s1981",
+      "disposition": "excluded",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_helios": {
+          "chars": 1266,
+          "sha8": "b06c62e0"
+        },
+        "char_wren": {
+          "chars": 1266,
+          "sha8": "553c25a6"
         }
       }
     },
@@ -1563,22 +1596,18 @@
       }
     },
     {
-      "canonical_sha8": "acdab2e2",
+      "canonical_sha8": "71c694f1",
       "class": "whitespace_only",
       "conv_id": "stripped_s2073",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 2,
       "per_variant": {
         "char_helios": {
           "chars": 1081,
           "sha8": "71c694f1"
         },
         "char_vex": {
-          "chars": 1087,
-          "sha8": "acdab2e2"
-        },
-        "char_wren": {
           "chars": 1087,
           "sha8": "acdab2e2"
         }
@@ -1611,28 +1640,6 @@
         "conversation_paired_stories_assistant": {
           "chars": 46,
           "sha8": "8a80a652"
-        }
-      }
-    },
-    {
-      "canonical_sha8": "19759e2c",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s2078",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 3,
-      "per_variant": {
-        "char_dana": {
-          "chars": 2780,
-          "sha8": "2985798c"
-        },
-        "char_helios": {
-          "chars": 2779,
-          "sha8": "19759e2c"
-        },
-        "char_vex": {
-          "chars": 2779,
-          "sha8": "19759e2c"
         }
       }
     },
@@ -1719,12 +1726,16 @@
       "class": "whitespace_only",
       "conv_id": "stripped_s2267",
       "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_distinct_answers": 3,
+      "n_variants_present": 4,
       "per_variant": {
         "char_dana": {
           "chars": 573,
           "sha8": "a8929235"
+        },
+        "char_helios": {
+          "chars": 596,
+          "sha8": "9a979084"
         },
         "char_wren": {
           "chars": 573,
@@ -1789,13 +1800,17 @@
       }
     },
     {
-      "canonical_sha8": "6613c582",
+      "canonical_sha8": "7288a248",
       "class": "whitespace_only",
       "conv_id": "stripped_s2280",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 5,
       "per_variant": {
+        "char_dana": {
+          "chars": 1504,
+          "sha8": "7288a248"
+        },
         "char_helios": {
           "chars": 1505,
           "sha8": "6613c582"
@@ -1949,24 +1964,6 @@
       }
     },
     {
-      "canonical_sha8": "a7fea5c1",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s2358",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 2,
-      "per_variant": {
-        "char_vex": {
-          "chars": 2186,
-          "sha8": "bddff003"
-        },
-        "char_wren": {
-          "chars": 2182,
-          "sha8": "a7fea5c1"
-        }
-      }
-    },
-    {
       "canonical_sha8": "17a23eb3",
       "class": "whitespace_only",
       "conv_id": "stripped_s2393",
@@ -2015,24 +2012,6 @@
       }
     },
     {
-      "canonical_sha8": "3031c019",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s2413",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 2,
-      "per_variant": {
-        "char_helios": {
-          "chars": 3157,
-          "sha8": "a085db56"
-        },
-        "char_vex": {
-          "chars": 3156,
-          "sha8": "3031c019"
-        }
-      }
-    },
-    {
       "canonical_sha8": "7da5d34a",
       "class": "whitespace_only",
       "conv_id": "stripped_s2422",
@@ -2077,28 +2056,6 @@
       }
     },
     {
-      "canonical_sha8": "2b6965f6",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s2444",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 3,
-      "per_variant": {
-        "char_helios": {
-          "chars": 869,
-          "sha8": "2b6965f6"
-        },
-        "char_vex": {
-          "chars": 870,
-          "sha8": "876390ea"
-        },
-        "char_wren": {
-          "chars": 869,
-          "sha8": "2b6965f6"
-        }
-      }
-    },
-    {
       "canonical_sha8": "b65259ba",
       "class": "whitespace_only",
       "conv_id": "stripped_s2452",
@@ -2130,7 +2087,7 @@
       "conv_id": "stripped_s2453",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 5,
       "per_variant": {
         "char_dana": {
           "chars": 3286,
@@ -2139,6 +2096,10 @@
         "char_helios": {
           "chars": 3287,
           "sha8": "c6ddf1bd"
+        },
+        "char_vex": {
+          "chars": 3286,
+          "sha8": "118eee33"
         },
         "char_wren": {
           "chars": 3286,
@@ -2156,7 +2117,7 @@
       "conv_id": "stripped_s2458",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 5,
       "per_variant": {
         "char_dana": {
           "chars": 2429,
@@ -2165,6 +2126,10 @@
         "char_helios": {
           "chars": 2428,
           "sha8": "de60e7f5"
+        },
+        "char_vex": {
+          "chars": 2429,
+          "sha8": "3e97bff7"
         },
         "char_wren": {
           "chars": 2429,
@@ -2230,12 +2195,8 @@
       "conv_id": "stripped_s2563",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 5,
+      "n_variants_present": 4,
       "per_variant": {
-        "char_dana": {
-          "chars": 1960,
-          "sha8": "f43c241a"
-        },
         "char_helios": {
           "chars": 1960,
           "sha8": "f43c241a"
@@ -2281,8 +2242,8 @@
       "class": "whitespace_only",
       "conv_id": "stripped_s261",
       "disposition": "canonicalized",
-      "n_distinct_answers": 3,
-      "n_variants_present": 5,
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
       "per_variant": {
         "char_dana": {
           "chars": 2556,
@@ -2299,10 +2260,6 @@
         "char_wren": {
           "chars": 2555,
           "sha8": "6bbd8513"
-        },
-        "conversation_paired_stories_assistant": {
-          "chars": 2570,
-          "sha8": "80815ba6"
         }
       }
     },
@@ -2310,16 +2267,12 @@
       "class": "substantive",
       "conv_id": "stripped_s2637",
       "disposition": "excluded",
-      "n_distinct_answers": 3,
-      "n_variants_present": 4,
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
       "per_variant": {
         "char_dana": {
           "chars": 3732,
           "sha8": "99788fe3"
-        },
-        "char_helios": {
-          "chars": 3732,
-          "sha8": "86c47e2b"
         },
         "char_vex": {
           "chars": 3732,
@@ -2336,8 +2289,8 @@
       "class": "whitespace_only",
       "conv_id": "stripped_s2653",
       "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 2,
+      "n_distinct_answers": 3,
+      "n_variants_present": 3,
       "per_variant": {
         "char_helios": {
           "chars": 527,
@@ -2346,28 +2299,10 @@
         "char_vex": {
           "chars": 529,
           "sha8": "a13dd473"
-        }
-      }
-    },
-    {
-      "canonical_sha8": "bedde3c9",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s2654",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 3,
-      "per_variant": {
-        "char_vex": {
-          "chars": 1693,
-          "sha8": "bedde3c9"
-        },
-        "char_wren": {
-          "chars": 1693,
-          "sha8": "bedde3c9"
         },
         "conversation_paired_stories_assistant": {
-          "chars": 1694,
-          "sha8": "c0229abb"
+          "chars": 528,
+          "sha8": "a8ec68b8"
         }
       }
     },
@@ -2453,13 +2388,21 @@
       "conv_id": "stripped_s2708",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 5,
       "per_variant": {
+        "char_dana": {
+          "chars": 2122,
+          "sha8": "04b2e7c6"
+        },
         "char_helios": {
           "chars": 2122,
           "sha8": "04b2e7c6"
         },
         "char_vex": {
+          "chars": 2126,
+          "sha8": "efa6d11e"
+        },
+        "char_wren": {
           "chars": 2126,
           "sha8": "efa6d11e"
         },
@@ -2496,6 +2439,24 @@
         "conversation_paired_stories_assistant": {
           "chars": 2184,
           "sha8": "57ec60ae"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "68f91e94",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s2763",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 796,
+          "sha8": "68f91e94"
+        },
+        "char_helios": {
+          "chars": 795,
+          "sha8": "ad84a0ff"
         }
       }
     },
@@ -2582,15 +2543,11 @@
       "conv_id": "stripped_s2821",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 3,
       "per_variant": {
         "char_dana": {
           "chars": 735,
           "sha8": "75007f79"
-        },
-        "char_vex": {
-          "chars": 734,
-          "sha8": "bf01d2d1"
         },
         "char_wren": {
           "chars": 735,
@@ -2626,9 +2583,13 @@
       "conv_id": "stripped_s2834",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 4,
       "per_variant": {
         "char_dana": {
+          "chars": 941,
+          "sha8": "bee7cce4"
+        },
+        "char_helios": {
           "chars": 941,
           "sha8": "bee7cce4"
         },
@@ -2647,9 +2608,13 @@
       "conv_id": "stripped_s2894",
       "disposition": "excluded",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 4,
       "per_variant": {
         "char_helios": {
+          "chars": 1937,
+          "sha8": "22473a24"
+        },
+        "char_vex": {
           "chars": 1937,
           "sha8": "22473a24"
         },
@@ -2783,11 +2748,15 @@
       "conv_id": "stripped_s2947",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 4,
       "per_variant": {
         "char_helios": {
           "chars": 410,
           "sha8": "2ee62b9e"
+        },
+        "char_vex": {
+          "chars": 419,
+          "sha8": "91a6c1c9"
         },
         "char_wren": {
           "chars": 419,
@@ -2796,6 +2765,32 @@
         "conversation_paired_stories_assistant": {
           "chars": 410,
           "sha8": "2ee62b9e"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "7a8dfb77",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3001",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 999,
+          "sha8": "7a8dfb77"
+        },
+        "char_helios": {
+          "chars": 999,
+          "sha8": "7a8dfb77"
+        },
+        "char_wren": {
+          "chars": 999,
+          "sha8": "7a8dfb77"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1003,
+          "sha8": "cb3c1f79"
         }
       }
     },
@@ -2844,6 +2839,36 @@
         "conversation_paired_stories_assistant": {
           "chars": 2589,
           "sha8": "d2dbe522"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "3622491e",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s309",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 666,
+          "sha8": "3622491e"
+        },
+        "char_helios": {
+          "chars": 666,
+          "sha8": "3622491e"
+        },
+        "char_vex": {
+          "chars": 665,
+          "sha8": "a3351f54"
+        },
+        "char_wren": {
+          "chars": 666,
+          "sha8": "3622491e"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 666,
+          "sha8": "3622491e"
         }
       }
     },
@@ -2904,6 +2929,28 @@
         "conversation_paired_stories_assistant": {
           "chars": 218,
           "sha8": "22be0db0"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "9d910d05",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3123",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 912,
+          "sha8": "9d910d05"
+        },
+        "char_wren": {
+          "chars": 914,
+          "sha8": "e117bef8"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 912,
+          "sha8": "9d910d05"
         }
       }
     },
@@ -3004,13 +3051,9 @@
       "class": "whitespace_only",
       "conv_id": "stripped_s3177",
       "disposition": "canonicalized",
-      "n_distinct_answers": 3,
-      "n_variants_present": 3,
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
       "per_variant": {
-        "char_dana": {
-          "chars": 318,
-          "sha8": "b405063f"
-        },
         "char_wren": {
           "chars": 321,
           "sha8": "adbdb11a"
@@ -3112,30 +3155,12 @@
       }
     },
     {
-      "canonical_sha8": "466898db",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s3208",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 2,
-      "per_variant": {
-        "char_dana": {
-          "chars": 1397,
-          "sha8": "e8a61be1"
-        },
-        "char_vex": {
-          "chars": 1399,
-          "sha8": "466898db"
-        }
-      }
-    },
-    {
       "canonical_sha8": "d131d1a0",
       "class": "whitespace_only",
       "conv_id": "stripped_s3210",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 5,
       "per_variant": {
         "char_dana": {
           "chars": 530,
@@ -3146,6 +3171,10 @@
           "sha8": "d131d1a0"
         },
         "char_vex": {
+          "chars": 529,
+          "sha8": "d131d1a0"
+        },
+        "char_wren": {
           "chars": 529,
           "sha8": "d131d1a0"
         },
@@ -3208,18 +3237,22 @@
       }
     },
     {
-      "canonical_sha8": "6cf53171",
+      "canonical_sha8": "5db538ce",
       "class": "whitespace_only",
       "conv_id": "stripped_s3229",
       "disposition": "canonicalized",
       "n_distinct_answers": 3,
-      "n_variants_present": 4,
+      "n_variants_present": 5,
       "per_variant": {
         "char_dana": {
           "chars": 302,
           "sha8": "6cf53171"
         },
         "char_helios": {
+          "chars": 304,
+          "sha8": "5db538ce"
+        },
+        "char_vex": {
           "chars": 304,
           "sha8": "5db538ce"
         },
@@ -3308,15 +3341,11 @@
       "conv_id": "stripped_s329",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 3,
       "per_variant": {
         "char_helios": {
           "chars": 100,
           "sha8": "8cc5310a"
-        },
-        "char_vex": {
-          "chars": 102,
-          "sha8": "5a48778d"
         },
         "char_wren": {
           "chars": 102,
@@ -3334,7 +3363,7 @@
       "conv_id": "stripped_s331",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 3,
       "per_variant": {
         "char_dana": {
           "chars": 1471,
@@ -3347,10 +3376,6 @@
         "char_wren": {
           "chars": 1463,
           "sha8": "97c0088c"
-        },
-        "conversation_paired_stories_assistant": {
-          "chars": 1471,
-          "sha8": "9bcb471f"
         }
       }
     },
@@ -3412,7 +3437,7 @@
       "conv_id": "stripped_s3372",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 4,
       "per_variant": {
         "char_helios": {
           "chars": 618,
@@ -3425,32 +3450,10 @@
         "char_wren": {
           "chars": 617,
           "sha8": "b75c1136"
-        }
-      }
-    },
-    {
-      "canonical_sha8": "ad8f78b7",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s339",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 4,
-      "per_variant": {
-        "char_dana": {
-          "chars": 2333,
-          "sha8": "dca2172b"
-        },
-        "char_helios": {
-          "chars": 2338,
-          "sha8": "ad8f78b7"
-        },
-        "char_vex": {
-          "chars": 2338,
-          "sha8": "ad8f78b7"
         },
         "conversation_paired_stories_assistant": {
-          "chars": 2338,
-          "sha8": "ad8f78b7"
+          "chars": 618,
+          "sha8": "a3ebc0c0"
         }
       }
     },
@@ -3648,13 +3651,9 @@
       "conv_id": "stripped_s3582",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 3,
       "per_variant": {
         "char_dana": {
-          "chars": 1394,
-          "sha8": "ceb37285"
-        },
-        "char_vex": {
           "chars": 1394,
           "sha8": "ceb37285"
         },
@@ -3701,28 +3700,6 @@
         "conversation_paired_stories_assistant": {
           "chars": 2488,
           "sha8": "15c4673d"
-        }
-      }
-    },
-    {
-      "canonical_sha8": "66cbe647",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s3642",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 3,
-      "per_variant": {
-        "char_vex": {
-          "chars": 1081,
-          "sha8": "70724670"
-        },
-        "char_wren": {
-          "chars": 1079,
-          "sha8": "66cbe647"
-        },
-        "conversation_paired_stories_assistant": {
-          "chars": 1079,
-          "sha8": "66cbe647"
         }
       }
     },
@@ -3832,12 +3809,8 @@
       "conv_id": "stripped_s3676",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 2,
       "per_variant": {
-        "char_helios": {
-          "chars": 1329,
-          "sha8": "3f8debbd"
-        },
         "char_vex": {
           "chars": 1329,
           "sha8": "3f8debbd"
@@ -3854,13 +3827,17 @@
       "conv_id": "stripped_s3687",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 5,
       "per_variant": {
         "char_dana": {
           "chars": 527,
           "sha8": "824e6144"
         },
         "char_helios": {
+          "chars": 527,
+          "sha8": "824e6144"
+        },
+        "char_vex": {
           "chars": 527,
           "sha8": "824e6144"
         },
@@ -3932,8 +3909,12 @@
       "conv_id": "stripped_s3733",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 4,
       "per_variant": {
+        "char_dana": {
+          "chars": 2218,
+          "sha8": "c4d49de3"
+        },
         "char_helios": {
           "chars": 2218,
           "sha8": "c4d49de3"
@@ -4001,12 +3982,16 @@
       "class": "whitespace_only",
       "conv_id": "stripped_s3760",
       "disposition": "canonicalized",
-      "n_distinct_answers": 3,
-      "n_variants_present": 4,
+      "n_distinct_answers": 4,
+      "n_variants_present": 5,
       "per_variant": {
         "char_dana": {
           "chars": 456,
           "sha8": "e5c9d66f"
+        },
+        "char_helios": {
+          "chars": 457,
+          "sha8": "b018a758"
         },
         "char_vex": {
           "chars": 457,
@@ -4037,6 +4022,24 @@
         "char_vex": {
           "chars": 887,
           "sha8": "8e74fb32"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "d5364403",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s3773",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
+      "per_variant": {
+        "char_dana": {
+          "chars": 1963,
+          "sha8": "f6bd6d96"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 1962,
+          "sha8": "d5364403"
         }
       }
     },
@@ -4085,24 +4088,6 @@
         "conversation_paired_stories_assistant": {
           "chars": 626,
           "sha8": "d34449c4"
-        }
-      }
-    },
-    {
-      "canonical_sha8": "2cb0f51f",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s3882",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 2,
-      "per_variant": {
-        "char_helios": {
-          "chars": 231,
-          "sha8": "2cb0f51f"
-        },
-        "char_vex": {
-          "chars": 230,
-          "sha8": "c66ebab4"
         }
       }
     },
@@ -4344,32 +4329,6 @@
       }
     },
     {
-      "canonical_sha8": "c4b36fea",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s4034",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 4,
-      "per_variant": {
-        "char_helios": {
-          "chars": 373,
-          "sha8": "c4b36fea"
-        },
-        "char_vex": {
-          "chars": 373,
-          "sha8": "c4b36fea"
-        },
-        "char_wren": {
-          "chars": 374,
-          "sha8": "dd646f7e"
-        },
-        "conversation_paired_stories_assistant": {
-          "chars": 373,
-          "sha8": "c4b36fea"
-        }
-      }
-    },
-    {
       "canonical_sha8": "d56fcaa0",
       "class": "whitespace_only",
       "conv_id": "stripped_s4043",
@@ -4466,17 +4425,13 @@
       }
     },
     {
-      "canonical_sha8": "9d0c5f88",
+      "canonical_sha8": "07d66de7",
       "class": "whitespace_only",
       "conv_id": "stripped_s4145",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 2,
       "per_variant": {
-        "char_dana": {
-          "chars": 2833,
-          "sha8": "9d0c5f88"
-        },
         "char_vex": {
           "chars": 2834,
           "sha8": "07d66de7"
@@ -4484,6 +4439,27 @@
         "char_wren": {
           "chars": 2833,
           "sha8": "9d0c5f88"
+        }
+      }
+    },
+    {
+      "class": "substantive",
+      "conv_id": "stripped_s4152",
+      "disposition": "excluded",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_helios": {
+          "chars": 731,
+          "sha8": "9977de65"
+        },
+        "char_vex": {
+          "chars": 731,
+          "sha8": "83c2b1b8"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 731,
+          "sha8": "9977de65"
         }
       }
     },
@@ -4506,24 +4482,6 @@
         "conversation_paired_stories_assistant": {
           "chars": 561,
           "sha8": "a3efbfa6"
-        }
-      }
-    },
-    {
-      "canonical_sha8": "74630ffc",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s4187",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 2,
-      "per_variant": {
-        "char_vex": {
-          "chars": 711,
-          "sha8": "74630ffc"
-        },
-        "conversation_paired_stories_assistant": {
-          "chars": 709,
-          "sha8": "91578792"
         }
       }
     },
@@ -4573,12 +4531,8 @@
       "conv_id": "stripped_s4202",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 2,
       "per_variant": {
-        "char_vex": {
-          "chars": 96,
-          "sha8": "6416330d"
-        },
         "char_wren": {
           "chars": 96,
           "sha8": "6416330d"
@@ -4590,14 +4544,18 @@
       }
     },
     {
-      "canonical_sha8": "323ef757",
+      "canonical_sha8": "64478f2e",
       "class": "whitespace_only",
       "conv_id": "stripped_s4208",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 2,
+      "n_variants_present": 3,
       "per_variant": {
         "char_vex": {
+          "chars": 2582,
+          "sha8": "64478f2e"
+        },
+        "char_wren": {
           "chars": 2582,
           "sha8": "64478f2e"
         },
@@ -4613,8 +4571,12 @@
       "conv_id": "stripped_s4214",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 5,
       "per_variant": {
+        "char_dana": {
+          "chars": 1498,
+          "sha8": "c1495e91"
+        },
         "char_helios": {
           "chars": 1498,
           "sha8": "c1495e91"
@@ -4630,6 +4592,36 @@
         "conversation_paired_stories_assistant": {
           "chars": 1498,
           "sha8": "c1495e91"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "0311f890",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4235",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 5,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2626,
+          "sha8": "d4f0fd62"
+        },
+        "char_helios": {
+          "chars": 2625,
+          "sha8": "0311f890"
+        },
+        "char_vex": {
+          "chars": 2625,
+          "sha8": "0311f890"
+        },
+        "char_wren": {
+          "chars": 2625,
+          "sha8": "0311f890"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2625,
+          "sha8": "0311f890"
         }
       }
     },
@@ -4768,24 +4760,6 @@
       }
     },
     {
-      "canonical_sha8": "49b2c9bc",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s4274",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 2,
-      "per_variant": {
-        "char_dana": {
-          "chars": 2747,
-          "sha8": "8ddb12b0"
-        },
-        "conversation_paired_stories_assistant": {
-          "chars": 2746,
-          "sha8": "49b2c9bc"
-        }
-      }
-    },
-    {
       "canonical_sha8": "2a079322",
       "class": "whitespace_only",
       "conv_id": "stripped_s4276",
@@ -4801,7 +4775,7 @@
           "chars": 609,
           "sha8": "f20faf06"
         },
-        "char_vex": {
+        "char_wren": {
           "chars": 609,
           "sha8": "f20faf06"
         },
@@ -4817,13 +4791,9 @@
       "conv_id": "stripped_s4285",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 2,
       "per_variant": {
         "char_dana": {
-          "chars": 660,
-          "sha8": "75691317"
-        },
-        "char_vex": {
           "chars": 660,
           "sha8": "75691317"
         },
@@ -4964,24 +4934,16 @@
       }
     },
     {
-      "canonical_sha8": "59417848",
+      "canonical_sha8": "170b1d50",
       "class": "whitespace_only",
       "conv_id": "stripped_s4452",
       "disposition": "canonicalized",
-      "n_distinct_answers": 3,
-      "n_variants_present": 4,
+      "n_distinct_answers": 2,
+      "n_variants_present": 2,
       "per_variant": {
         "char_dana": {
           "chars": 1237,
           "sha8": "170b1d50"
-        },
-        "char_helios": {
-          "chars": 1241,
-          "sha8": "59417848"
-        },
-        "char_vex": {
-          "chars": 1241,
-          "sha8": "59417848"
         },
         "char_wren": {
           "chars": 1239,
@@ -5048,13 +5010,17 @@
       "conv_id": "stripped_s4526",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 2,
+      "n_variants_present": 3,
       "per_variant": {
         "char_dana": {
           "chars": 1151,
           "sha8": "ef6ca4f8"
         },
         "char_vex": {
+          "chars": 1150,
+          "sha8": "5d198871"
+        },
+        "conversation_paired_stories_assistant": {
           "chars": 1150,
           "sha8": "5d198871"
         }
@@ -5115,6 +5081,28 @@
         "char_wren": {
           "chars": 433,
           "sha8": "ddeb208b"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "48d36072",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4579",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 3,
+      "per_variant": {
+        "char_dana": {
+          "chars": 2727,
+          "sha8": "f1e23665"
+        },
+        "char_vex": {
+          "chars": 2721,
+          "sha8": "48d36072"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 2721,
+          "sha8": "48d36072"
         }
       }
     },
@@ -5259,24 +5247,6 @@
       }
     },
     {
-      "canonical_sha8": "9cdbca91",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s467",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 2,
-      "per_variant": {
-        "char_dana": {
-          "chars": 225,
-          "sha8": "aafc2b42"
-        },
-        "char_helios": {
-          "chars": 227,
-          "sha8": "9cdbca91"
-        }
-      }
-    },
-    {
       "canonical_sha8": "efd6e688",
       "class": "whitespace_only",
       "conv_id": "stripped_s4677",
@@ -5338,7 +5308,7 @@
       "conv_id": "stripped_s4699",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 5,
       "per_variant": {
         "char_dana": {
           "chars": 73,
@@ -5349,6 +5319,10 @@
           "sha8": "403a142b"
         },
         "char_vex": {
+          "chars": 73,
+          "sha8": "403a142b"
+        },
+        "char_wren": {
           "chars": 73,
           "sha8": "403a142b"
         },
@@ -5433,18 +5407,22 @@
       }
     },
     {
-      "canonical_sha8": "4c5345c6",
+      "canonical_sha8": "f18b91e5",
       "class": "whitespace_only",
       "conv_id": "stripped_s4732",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 2,
+      "n_variants_present": 3,
       "per_variant": {
         "char_dana": {
           "chars": 2361,
           "sha8": "4c5345c6"
         },
         "char_wren": {
+          "chars": 2361,
+          "sha8": "f18b91e5"
+        },
+        "conversation_paired_stories_assistant": {
           "chars": 2361,
           "sha8": "f18b91e5"
         }
@@ -5491,6 +5469,32 @@
         "conversation_paired_stories_assistant": {
           "chars": 43,
           "sha8": "a6b5bd80"
+        }
+      }
+    },
+    {
+      "canonical_sha8": "4f75d25c",
+      "class": "whitespace_only",
+      "conv_id": "stripped_s4847",
+      "disposition": "canonicalized",
+      "n_distinct_answers": 2,
+      "n_variants_present": 4,
+      "per_variant": {
+        "char_dana": {
+          "chars": 64,
+          "sha8": "4f75d25c"
+        },
+        "char_helios": {
+          "chars": 64,
+          "sha8": "4f75d25c"
+        },
+        "char_vex": {
+          "chars": 64,
+          "sha8": "4f75d25c"
+        },
+        "conversation_paired_stories_assistant": {
+          "chars": 63,
+          "sha8": "dc63d0d9"
         }
       }
     },
@@ -5709,16 +5713,20 @@
       }
     },
     {
-      "canonical_sha8": "cdd5fbbc",
+      "canonical_sha8": "0f8cdca7",
       "class": "whitespace_only",
       "conv_id": "stripped_s548",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 4,
       "per_variant": {
         "char_dana": {
           "chars": 500,
           "sha8": "cdd5fbbc"
+        },
+        "char_helios": {
+          "chars": 502,
+          "sha8": "0f8cdca7"
         },
         "char_wren": {
           "chars": 502,
@@ -5787,8 +5795,12 @@
       "conv_id": "stripped_s562",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 2,
+      "n_variants_present": 3,
       "per_variant": {
+        "char_dana": {
+          "chars": 1413,
+          "sha8": "27369c0b"
+        },
         "char_wren": {
           "chars": 1431,
           "sha8": "5b5e1919"
@@ -5923,7 +5935,7 @@
       "conv_id": "stripped_s650",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 5,
       "per_variant": {
         "char_dana": {
           "chars": 2838,
@@ -5932,6 +5944,10 @@
         "char_helios": {
           "chars": 2838,
           "sha8": "f35602b1"
+        },
+        "char_vex": {
+          "chars": 2824,
+          "sha8": "2e5fe84d"
         },
         "char_wren": {
           "chars": 2838,
@@ -5981,7 +5997,7 @@
       "n_distinct_answers": 2,
       "n_variants_present": 3,
       "per_variant": {
-        "char_dana": {
+        "char_vex": {
           "chars": 384,
           "sha8": "8679e7ad"
         },
@@ -6075,12 +6091,8 @@
       "conv_id": "stripped_s743",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 3,
       "per_variant": {
-        "char_dana": {
-          "chars": 2009,
-          "sha8": "2eeda4f9"
-        },
         "char_helios": {
           "chars": 2009,
           "sha8": "2eeda4f9"
@@ -6110,28 +6122,6 @@
         "char_wren": {
           "chars": 493,
           "sha8": "040269bd"
-        }
-      }
-    },
-    {
-      "canonical_sha8": "c32bc116",
-      "class": "whitespace_only",
-      "conv_id": "stripped_s796",
-      "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 3,
-      "per_variant": {
-        "char_dana": {
-          "chars": 1013,
-          "sha8": "ef46a0b5"
-        },
-        "char_helios": {
-          "chars": 977,
-          "sha8": "c32bc116"
-        },
-        "char_vex": {
-          "chars": 977,
-          "sha8": "c32bc116"
         }
       }
     },
@@ -6185,8 +6175,12 @@
       "conv_id": "stripped_s839",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_variants_present": 5,
       "per_variant": {
+        "char_dana": {
+          "chars": 2560,
+          "sha8": "d4168af1"
+        },
         "char_helios": {
           "chars": 2560,
           "sha8": "d4168af1"
@@ -6240,13 +6234,17 @@
       "conv_id": "stripped_s865",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 2,
+      "n_variants_present": 3,
       "per_variant": {
         "char_vex": {
           "chars": 2008,
           "sha8": "b4169d76"
         },
         "char_wren": {
+          "chars": 2016,
+          "sha8": "9c266334"
+        },
+        "conversation_paired_stories_assistant": {
           "chars": 2016,
           "sha8": "9c266334"
         }
@@ -6258,7 +6256,7 @@
       "conv_id": "stripped_s876",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 4,
       "per_variant": {
         "char_dana": {
           "chars": 1549,
@@ -6267,6 +6265,10 @@
         "char_helios": {
           "chars": 1539,
           "sha8": "5e52a91b"
+        },
+        "char_wren": {
+          "chars": 1549,
+          "sha8": "20df90c0"
         },
         "conversation_paired_stories_assistant": {
           "chars": 1549,
@@ -6280,17 +6282,13 @@
       "conv_id": "stripped_s877",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 5,
+      "n_variants_present": 4,
       "per_variant": {
         "char_dana": {
           "chars": 753,
           "sha8": "e64426d5"
         },
         "char_helios": {
-          "chars": 753,
-          "sha8": "e64426d5"
-        },
-        "char_vex": {
           "chars": 753,
           "sha8": "e64426d5"
         },
@@ -6340,15 +6338,11 @@
       "conv_id": "stripped_s931",
       "disposition": "canonicalized",
       "n_distinct_answers": 2,
-      "n_variants_present": 3,
+      "n_variants_present": 2,
       "per_variant": {
         "char_dana": {
           "chars": 707,
           "sha8": "8ca7a000"
-        },
-        "char_vex": {
-          "chars": 705,
-          "sha8": "70ae6785"
         },
         "conversation_paired_stories_assistant": {
           "chars": 705,
@@ -6431,8 +6425,8 @@
       "class": "whitespace_only",
       "conv_id": "stripped_s992",
       "disposition": "canonicalized",
-      "n_distinct_answers": 2,
-      "n_variants_present": 4,
+      "n_distinct_answers": 3,
+      "n_variants_present": 5,
       "per_variant": {
         "char_dana": {
           "chars": 926,
@@ -6445,6 +6439,10 @@
         "char_vex": {
           "chars": 926,
           "sha8": "0d7d5fda"
+        },
+        "char_wren": {
+          "chars": 927,
+          "sha8": "78ae79b0"
         },
         "conversation_paired_stories_assistant": {
           "chars": 926,
@@ -6480,48 +6478,48 @@
     }
   ],
   "metadata": {
-    "git_commit": "a0b89ed5bb759777ee20d6adf7d3840bc6d63782",
-    "n": 270,
+    "git_commit": "d65dfd3ea1ae4f9cb01341ac95c6a2a740ff712c",
+    "n": 266,
     "pinned_parent_revision": "7159e5804d",
     "script": "issue2054_build_answers.py",
     "seed": 137,
-    "timestamp": "2026-08-05T18:48:44Z"
+    "timestamp": "2026-08-06T00:57:12Z"
   },
   "per_variant_floor_report": {
     "char_dana": {
-      "admitted": 6097,
+      "admitted": 9722,
       "floor": 4480,
-      "margin": 1605,
-      "post_exclusion": 6085,
-      "substantive_excluded_hits": 12
-    },
-    "char_helios": {
-      "admitted": 7304,
-      "floor": 4480,
-      "margin": 2812,
-      "post_exclusion": 7292,
-      "substantive_excluded_hits": 12
-    },
-    "char_vex": {
-      "admitted": 5689,
-      "floor": 4480,
-      "margin": 1196,
-      "post_exclusion": 5676,
-      "substantive_excluded_hits": 13
-    },
-    "char_wren": {
-      "admitted": 6330,
-      "floor": 4480,
-      "margin": 1839,
-      "post_exclusion": 6319,
+      "margin": 5231,
+      "post_exclusion": 9711,
       "substantive_excluded_hits": 11
     },
-    "conversation_paired_stories_assistant": {
-      "admitted": 7221,
+    "char_helios": {
+      "admitted": 11701,
       "floor": 4480,
-      "margin": 2728,
-      "post_exclusion": 7208,
+      "margin": 7208,
+      "post_exclusion": 11688,
       "substantive_excluded_hits": 13
+    },
+    "char_vex": {
+      "admitted": 9170,
+      "floor": 4480,
+      "margin": 4675,
+      "post_exclusion": 9155,
+      "substantive_excluded_hits": 15
+    },
+    "char_wren": {
+      "admitted": 10510,
+      "floor": 4480,
+      "margin": 6018,
+      "post_exclusion": 10498,
+      "substantive_excluded_hits": 12
+    },
+    "conversation_paired_stories_assistant": {
+      "admitted": 11915,
+      "floor": 4480,
+      "margin": 7421,
+      "post_exclusion": 11901,
+      "substantive_excluded_hits": 14
     }
   },
   "resolution_rules": {
@@ -6533,10 +6531,10 @@
   },
   "tallies": {
     "conflict_prefix_canonicalized": 0,
-    "conflict_substantive_excluded": 15,
-    "conflict_ws_canonicalized": 255,
-    "cross_variant_conflict": 270,
+    "conflict_substantive_excluded": 17,
+    "conflict_ws_canonicalized": 249,
+    "cross_variant_conflict": 266,
     "cross_variant_conflicts_hard": 0
   },
-  "utc": "2026-08-05T18:48:44.032959+00:00"
+  "utc": "2026-08-06T00:57:12.253543+00:00"
 }

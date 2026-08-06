@@ -6,6 +6,7 @@
     "stripped_s1154",
     "stripped_s1189",
     "stripped_s1633",
+    "stripped_s1981",
     "stripped_s2637",
     "stripped_s2663",
     "stripped_s2703",
@@ -15,55 +16,56 @@
     "stripped_s3884",
     "stripped_s3981",
     "stripped_s4014",
+    "stripped_s4152",
     "stripped_s4489",
     "stripped_s554",
     "stripped_s850"
   ],
   "metadata": {
-    "git_commit": "a0b89ed5bb759777ee20d6adf7d3840bc6d63782",
-    "n": 15,
+    "git_commit": "d65dfd3ea1ae4f9cb01341ac95c6a2a740ff712c",
+    "n": 17,
     "pinned_parent_revision": "7159e5804d",
     "script": "issue2054_build_answers.py",
     "seed": 137,
-    "timestamp": "2026-08-05T18:48:44Z"
+    "timestamp": "2026-08-06T00:57:12Z"
   },
-  "n_excluded": 15,
+  "n_excluded": 17,
   "per_variant_floor_report": {
     "char_dana": {
-      "admitted": 6097,
+      "admitted": 9722,
       "floor": 4480,
-      "margin": 1605,
-      "post_exclusion": 6085,
-      "substantive_excluded_hits": 12
-    },
-    "char_helios": {
-      "admitted": 7304,
-      "floor": 4480,
-      "margin": 2812,
-      "post_exclusion": 7292,
-      "substantive_excluded_hits": 12
-    },
-    "char_vex": {
-      "admitted": 5689,
-      "floor": 4480,
-      "margin": 1196,
-      "post_exclusion": 5676,
-      "substantive_excluded_hits": 13
-    },
-    "char_wren": {
-      "admitted": 6330,
-      "floor": 4480,
-      "margin": 1839,
-      "post_exclusion": 6319,
+      "margin": 5231,
+      "post_exclusion": 9711,
       "substantive_excluded_hits": 11
     },
-    "conversation_paired_stories_assistant": {
-      "admitted": 7221,
+    "char_helios": {
+      "admitted": 11701,
       "floor": 4480,
-      "margin": 2728,
-      "post_exclusion": 7208,
+      "margin": 7208,
+      "post_exclusion": 11688,
       "substantive_excluded_hits": 13
+    },
+    "char_vex": {
+      "admitted": 9170,
+      "floor": 4480,
+      "margin": 4675,
+      "post_exclusion": 9155,
+      "substantive_excluded_hits": 15
+    },
+    "char_wren": {
+      "admitted": 10510,
+      "floor": 4480,
+      "margin": 6018,
+      "post_exclusion": 10498,
+      "substantive_excluded_hits": 12
+    },
+    "conversation_paired_stories_assistant": {
+      "admitted": 11915,
+      "floor": 4480,
+      "margin": 7421,
+      "post_exclusion": 11901,
+      "substantive_excluded_hits": 14
     }
   },
-  "utc": "2026-08-05T18:48:44.039581+00:00"
+  "utc": "2026-08-06T00:57:12.260406+00:00"
 }
