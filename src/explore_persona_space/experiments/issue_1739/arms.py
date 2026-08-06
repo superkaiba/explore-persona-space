@@ -43,9 +43,11 @@ check); the full (d x d) end-to-end map fine-tune is deliberately not fit
 from __future__ import annotations
 
 import dataclasses
+import gc
 import json
 import logging
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -200,6 +202,22 @@ ARM_REGISTRY: dict[str, dict] = {
     "arm19_map_mlp_pred": {
         "label": "Map-MLP predicted answer",
         "family": "map",
+        "layered": True,
+        "rb_dep": False,
+    },
+    # Fair-roster follow-up (#1739, 2026-08-06): ridge readout on the
+    # SHUFFLED-weight mapped answer — the fitted-readout counterpart of the
+    # arm-13 projection control, consuming the IDENTICAL per-cell shuffle
+    # (same seed, same tensor; one mp_shuf serves both). Falsification test
+    # of the linear-collapse argument: mp_shuf = z @ (PW) with P a row
+    # permutation, so rank(PW) == rank(W) and ridge-on-shuffled-map should
+    # land within noise of arms 4/7; a materially LOWER score means W's
+    # conditioning makes the induced ridge prior bite — the arm4-vs-arm7
+    # contrast then has content. rb-INDEPENDENT (ridge mp_shuf -> dv; no
+    # regime direction anywhere). Linear-map only, exactly like arm 13.
+    "arm20_shuffled_map_ridge": {
+        "label": "Shuffled-map ridge control",
+        "family": "control",
         "layered": True,
         "rb_dep": False,
     },
@@ -591,7 +609,7 @@ def verify_arm9_l0_degeneracy(data: CellData, *, device: str = "cpu", n_rows: in
     logger.info("[arms] arm9 L->0 degeneracy gate PASS (n=%d probe rows)", n)
 
 
-def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 18 registry arms
+def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 20 registry arms
     datas: list[CellData],
     cell: BudgetCell,
     *,
@@ -608,7 +626,7 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
     (``z_ctx`` / ``z_ans`` / ``dv`` / ``mapfit`` / text features — asserted)
     and differ only in the regime direction ``rb`` (+ ``w_shuffled``), so the
     expensive rb-independent work — the ridge Gram+eigh factorizations, the
-    arm-5 MLP fit, arms 2/4/7/8/12/15/16 — is computed ONCE and shared;
+    arm-5 MLP fit, arms 2/4/7/8/12/15/16/17/18/19/20 — is computed ONCE and shared;
     rb-dependent arms (1/3/6/9/10/11/13/14) are cheap projections/assembly
     per regime. Returns one ``(scores, skipped)`` pair per data, in order;
     shared arms reuse the SAME ndarray object across regimes (evaluate-side
@@ -670,9 +688,19 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
         "arm13_shuffled_map",
         "arm14_shuffled_pt",
         "arm19_map_mlp_pred",
+        # arm 20 consumes the map's WEIGHT tensor (shuffled), not mp itself —
+        # grouped here (like arm 13) so the "no mapfit" skip semantics below
+        # stay exact for both shuffled-weight controls.
+        "arm20_shuffled_map_ridge",
     }
     need_mp = base.mapfit is not None and bool(mp_arms & set(want))
-    mp = apply_map(z, base.mapfit) if need_mp else None
+    # mp is built BELOW, after the arm-20 batch-1 solve (sequencing fix,
+    # fair-roster follow-up 2026-08-06): deferring it keeps mp_shuf's lifetime
+    # disjoint from mp's, so at most THREE (Ly, n_l, d) fp64 residents coexist
+    # at any point — z / za / mp_shuf during batch 1, z / za / mp afterwards —
+    # instead of four. Solving the mps jobs first WITHOUT deferring mp would
+    # NOT cut the peak: all four arrays would already be allocated when any
+    # solve starts.
     tr_masks, ev_masks = _fold_masks(folds, n_folds)  # (F, n_l)
     tr_w = tr_masks.astype(np.float64)
     tr_w /= np.maximum(tr_w.sum(axis=1, keepdims=True), 1.0)
@@ -693,6 +721,102 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
         for sc in scores:  # SAME object per regime — evaluate caches key on id()
             sc[slug] = arr
 
+    # Fold-row machinery + the ridge-job registry are hoisted ABOVE the
+    # projection arms so the arm-20 (mps) batch can solve FIRST — see the
+    # batch-1 block below and the mp-deferral note above.
+    ev_rows = [np.flatnonzero(ev_masks[f]) for f in range(n_folds)]
+    tr_rows = [np.flatnonzero(tr_masks[f]) for f in range(n_folds)]
+    solve_folds = (
+        list(range(n_folds))
+        if ridge_folds is None
+        else [f for f in range(n_folds) if f in set(ridge_folds)]
+    )
+    jobs: list[RidgeJob] = []
+    tpos: dict[str, dict[object, int]] = {}  # source -> target_key -> column
+    solved: dict[tuple[str, int], dict[str, np.ndarray]] = {}
+
+    def _job_targets(source: str, targets: list[tuple[object, np.ndarray]]) -> None:
+        tpos[source] = {tkey: i for i, (tkey, _y) in enumerate(targets)}
+
+    # ---- shared shuffled-weight map product (arms 13 + 20 read ONE shuffle) ----
+    # Hoisted out of the arm-13 branch (fair-roster follow-up, 2026-08-06):
+    # arm 20 is an rb-INDEPENDENT ridge on mp_shuf, so the product is a shared
+    # per-unit input like z / mp / za — computed ONCE per cell (seed-dep only)
+    # and consumed by BOTH the projection control (13, per regime) and the
+    # ridge control (20, shared across regimes), never re-derived per regime.
+    # Both arms read the IDENTICAL w_shuf tensor by construction. MEMORY
+    # (batch-1 sequencing fix): everything mp_shuf feeds — the arm-13
+    # projections AND the arm-20 (mps) ridge jobs — runs HERE, before mp is
+    # built; mp_shuf is then RELEASED (refcount-verified) so the main ridge
+    # batch below never sees a fourth (Ly, n_l, d) fp64 resident.
+    mp_shuf = None
+    want_mps_ridge = False
+    shuf_want = {"arm13_shuffled_map", "arm20_shuffled_map_ridge"} & set(want)
+    if need_mp and shuf_want:
+        if base.mapfit.kind != "linear":
+            # The shuffled-map controls row-permute the map's WEIGHT tensor
+            # (norm-preserving by construction). A nonlinear map has no such
+            # tensor, so neither control has an analogue this round — RECORD
+            # the skip, never a silent zero.
+            for slug in sorted(shuf_want):
+                _skip(
+                    slug,
+                    f"shuffled-weight control is linear-map only (map_kind={base.mapfit.kind})",
+                )
+        else:
+            w_shuf = (
+                base.w_shuffled
+                if base.w_shuffled is not None
+                else shuffled_map_weights(base.mapfit.w, seed=cell.seed)
+            )
+            mp_shuf = apply_map(z, base.mapfit, w=w_shuf)  # ONE shuffle, both controls
+            if "arm13_shuffled_map" in want:
+                for r in range(n_r):
+                    scores[r]["arm13_shuffled_map"] = _proj(mp_shuf, rbs[r])
+            # ---- batch 1: arm-20 (mps) ridge solves FIRST, then mp_shuf is freed ----
+            want_mps_ridge = "arm20_shuffled_map_ridge" in want
+            n_mps = 0
+            if want_mps_ridge:
+                _job_targets("mps", [("arm20", dv)])
+                mps_jobs = [
+                    RidgeJob(
+                        ("mps", f),
+                        mp_shuf,
+                        tr_rows[f],
+                        [("arm20", dv)],
+                        [("ev", mp_shuf, ev_rows[f])],
+                    )
+                    for f in solve_folds
+                ]
+                if mps_jobs:
+                    solved.update(_solve_ridge_groups(mps_jobs, lambdas=lambdas, device=device))
+                n_mps = len(mps_jobs)
+                mps_jobs.clear()  # drop the RidgeJob -> mp_shuf references
+            # Fix-engaged guard: prove mp_shuf is UNREFERENCED before batch 2.
+            # getrefcount == 2 means the local name + the getrefcount argument
+            # binding are the ONLY references left (a retained RidgeJob / view
+            # would read higher). gc.collect() first on a miss: a cycle in the
+            # solver's teardown can defer the drop without being a real leak.
+            n_refs = sys.getrefcount(mp_shuf)
+            if n_refs != 2:
+                gc.collect()
+                n_refs = sys.getrefcount(mp_shuf)
+            if n_refs != 2:
+                raise RuntimeError(
+                    f"[arms] mp_shuf still referenced entering the main ridge batch "
+                    f"(refcount={n_refs}, expected 2) — the batch-1 release regressed"
+                )
+            logger.info(
+                "[arms] batch 1 done: %d mps ridge job(s) solved; mp_shuf released "
+                "(refcount verified) before the main ridge batch",
+                n_mps,
+            )
+            mp_shuf = None
+
+    # mp deferred to HERE (see the note at need_mp): built only after mp_shuf
+    # is gone, capping concurrent (Ly, n_l, d) fp64 residents at three.
+    mp = apply_map(z, base.mapfit) if need_mp else None
+
     # ---- projection arms (constant across folds; OOF == the projection) ----
     if "arm1_ctx_e1" in want:
         for r in range(n_r):
@@ -701,26 +825,6 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
         if "arm6_map_proj_e1" in want:
             for r in range(n_r):
                 scores[r]["arm6_map_proj_e1"] = _proj(mp, rbs[r])
-        if "arm13_shuffled_map" in want:
-            if base.mapfit.kind != "linear":
-                # The shuffled-map control row-permutes the map's WEIGHT
-                # tensor (norm-preserving by construction). A nonlinear map
-                # has no such tensor, so the control has no analogue this
-                # round — RECORD the skip, never a silent zero.
-                _skip(
-                    "arm13_shuffled_map",
-                    f"shuffled-weight control is linear-map only (map_kind={base.mapfit.kind})",
-                )
-            else:
-                w_shuf = (
-                    base.w_shuffled
-                    if base.w_shuffled is not None
-                    else shuffled_map_weights(base.mapfit.w, seed=cell.seed)
-                )
-                mp_shuf = apply_map(z, base.mapfit, w=w_shuf)  # shared (seed-dep only)
-                for r in range(n_r):
-                    scores[r]["arm13_shuffled_map"] = _proj(mp_shuf, rbs[r])
-                del mp_shuf
     else:
         for slug in (
             "arm6_map_proj_e1",
@@ -731,6 +835,7 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             "arm13_shuffled_map",
             "arm14_shuffled_pt",
             "arm19_map_mlp_pred",
+            "arm20_shuffled_map_ridge",
         ):
             _skip(slug, "no mapfit")
     if za is not None:
@@ -771,14 +876,8 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             scores[r]["arm3_identity_bias"] = _proj(z, rbs[r]) + bias_proj[:, folds]
         del b
 
-    # ---- ridge job pool (arms 4, 7, 8, 12, 15, 16 + per-regime 9/14 residuals) ----
-    ev_rows = [np.flatnonzero(ev_masks[f]) for f in range(n_folds)]
-    tr_rows = [np.flatnonzero(tr_masks[f]) for f in range(n_folds)]
-    solve_folds = (
-        list(range(n_folds))
-        if ridge_folds is None
-        else [f for f in range(n_folds) if f in set(ridge_folds)]
-    )
+    # ---- ridge job pool, batch 2 (arms 4, 7, 8, 12, 15, 16 + per-regime 9/14
+    # residuals; arm 20 already solved in batch 1 above) ----
     run_stack = "arm10_stacked" in want and mp is not None
     if run_stack and ridge_folds is not None:
         raise ValueError("arm10_stacked needs ridge preds on EVERY fold (no ridge_folds subset)")
@@ -828,12 +927,7 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
 
     # Build one RidgeJob per (source, fold): ONE Gram+eigh serves every
     # stacked target (per-target GCV — the batched-slice fix, #1739 round 8).
-    jobs: list[RidgeJob] = []
-    tpos: dict[str, dict[object, int]] = {}  # source -> target_key -> column
-
-    def _job_targets(source: str, targets: list[tuple[object, np.ndarray]]) -> None:
-        tpos[source] = {tkey: i for i, (tkey, _y) in enumerate(targets)}
-
+    # `jobs` / `tpos` / `_job_targets` are defined above the batch-1 block.
     want_arm4 = ("arm4_ridge_ctx" in want) or run_stack
     if want_arm4:
         _job_targets("z", [("arm4", dv)])
@@ -888,7 +982,8 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
                 )
             )
 
-    solved = _solve_ridge_groups(jobs, lambdas=lambdas, device=device) if jobs else {}
+    if jobs:  # batch 2 — merged into the same dict the batch-1 mps solve filled
+        solved.update(_solve_ridge_groups(jobs, lambdas=lambdas, device=device))
 
     def _scatter(source: str, ename: str, tkey: object, n_rows_ly: int) -> np.ndarray:
         arr = np.full((n_rows_ly, n_l), np.nan)
@@ -909,6 +1004,8 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             _put_shared("arm8_map_ridge_true", _scatter("za", "mp_ev", "arm8_12", n_layers))
         if "arm12_oracle_reg" in want:
             _put_shared("arm12_oracle_reg", _scatter("za", "za_ev", "arm8_12", n_layers))
+    if want_mps_ridge:
+        _put_shared("arm20_shuffled_map_ridge", _scatter("mps", "ev", "arm20", n_layers))
     if emb is not None:
         _put_shared("arm15_text_only", _scatter("emb", "ev", "arm15", 1))
     if feats is not None:

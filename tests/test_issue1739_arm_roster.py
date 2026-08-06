@@ -53,6 +53,10 @@ MAP_CONSUMING_ARMS = frozenset(
         # fair-protocol round (2026-08-05, commit aa6e040543): MLP readout on
         # the MAPPED answer — consumes the fitted map exactly like arm 7.
         "arm19_map_mlp_pred",
+        # fair-roster follow-up (2026-08-06): ridge on the SHUFFLED-weight
+        # mapped answer — consumes the map's weight tensor (permuted), exactly
+        # like arm 13; grouped in mp_arms for the "no mapfit" skip semantics.
+        "arm20_shuffled_map_ridge",
     }
 )
 

@@ -1,34 +1,67 @@
-"""Result 2 (FAIR PROTOCOL) for #1739: every method gets the same training data.
+"""Result 2 (FAIR PROTOCOL, v2) for #1739: every method gets the same training data.
 
-Renders ONE combined figure under `figures/issue_1739/result2_fair/`:
+Renders ONE combined figure under `figures/issue_1739/result2_fair_v2/`:
 
-  result2_fair.{png,pdf,meta.json}
+  result2_fair_v2.{png,pdf,meta.json}
 
-and writes `eval_results/issue_1739/result2_fair/result2_fair_points.json`
+and writes `eval_results/issue_1739/result2_fair_v2/result2_fair_v2_points.json`
 (points + coverage + the fair-vs-committed comparison + the linear-collapse
-check).
+check + the two matched-layer checks). The V2 SIBLING PATH is deliberate
+(2026-08-06): the committed `result2_fair/result2_fair_points.json` is the
+source of the already-shipped four-panel / five-method figures
+(issue1739_result2_fourpanel_fig.py, issue1739_result2_fivemethod_fig.py,
+issue1739_r35_mapquality_vs_pred.py all read it, and it carries the
+pv_map_mlp / reg_map_mlp slots this re-score no longer produces) — that tree
+is never overwritten.
+
+LINEAR MAP ONLY (user scope decision 2026-08-06): the map_kind=mlp pass AND
+the MLP readout (arm19) are dropped — nothing in the target five-method
+figure is an MLP, and the equivalence argument is specific to the linear map.
 
 x is grouped by EVALUATION SETTING; each setting carries one bar per METHOD
-CELL, faceted by behaviour. Methods (7, user list) + the two optional MLP-map
-readout cells, legend grouped by methodology family with map kind and readout
-family both legible (solid = linear map, dotted hatch = MLP map):
+CELL, faceted by behaviour; legend grouped by methodology family:
 
   reads the context          pv_context      arm1_ctx_e1        PV projected on context
                              regression_ctx  arm4_ridge_ctx     ridge, context -> DV
-  reads the mapped answer    pv_map_linear   arm6 + linear map  PV on mapped answer
-                             pv_map_mlp      arm6 + MLP map
-                             reg_map_linear  arm7 + linear map  ridge on mapped answer
-                             reg_map_mlp     arm7 + MLP map
-                             mlp_map_linear  arm19 + linear map MLP on mapped answer
-                             mlp_map_mlp     arm19 + MLP map
+  reads the mapped answer    pv_map_linear   arm6_map_proj_e1   PV on mapped answer
+                             reg_map_linear  arm7_map_ridge_pred
+                                             ridge FIT AND EVALUATED on the mapped
+                                             answer (its fit absorbs systematic map
+                                             distortion — cannot be damaged by it)
+                             regression_realfit_mapped  arm8_map_ridge_true
+                                             arm12's fitted w (fit on the REAL answer)
+                                             APPLIED TO THE MAPPED answer — the
+                                             map-error-sensitive comparator; one za
+                                             RidgeJob serves arm8 + arm12 (fit shared,
+                                             eval matrices split), so arm8:arm12 is the
+                                             fitted analogue of arm6:arm11. Its record
+                                             carries rho_matched_arm12_layer (rho at
+                                             arm12's frozen layer — a diagnostic FIELD,
+                                             never a bar; compare()'s
+                                             arm8_matched_layer_check)
+  control (shuffled map)     regression_shuffled_map  arm20_shuffled_map_ridge
+                                             ridge, SHUFFLED-weight-mapped answer -> DV
+                                             (control, never a method; predicted to
+                                             match arms 4/7 since the row permutation
+                                             preserves the map's rank; its record also
+                                             carries rho_matched_arm7_layer — the rho at
+                                             arm7's committed frozen layer, a diagnostic
+                                             FIELD, never a bar — surfaced in compare()'s
+                                             arm20_matched_layer_check)
   reads the real answer      oracle          arm11_oracle_proj  PV on real answer
+                             regression_real_answer  arm12_oracle_reg  ridge, real answer -> DV
+                                             (arm8 + arm12 + arm20: fair-roster
+                                             follow-ups 2026-08-06)
 
 Under the fair protocol every method shares ONE training-data allowance: the
 map + whitening are the ADD/union condition (generic WildChat pool + eliciting
-train pairs), and the label-consuming readouts (arms 4/7/19) train on ALL
+train pairs), and the label-consuming readouts (arms 4/7/8/12/20) train on ALL
 judged training data (eliciting train budget cell + the judged WildChat train
-split). Scored rows come from `eval_results/issue_1739/result2_fair/<b>/`
-(scripts/issue1739_result2fair_score.py on pod-1739-r2fair).
+split). Scored rows come from `eval_results/issue_1739/result2_fair_v2/<b>/`
+(scripts/issue1739_result2fair_score.py). Fair-v2 summaries do not exist until
+the re-score lands — collect() fails loud ("fair summary absent") until then;
+cells missing from a LANDED summary surface as OMITTED coverage rows (missing
+bar, never a zero).
 
 The LINEAR-COLLAPSE CHECK: an earlier spec dropped regression-on-mapped-answer
 on the argument that a linear map composed with a linear readout collapses to
@@ -38,10 +71,10 @@ REPORTED — the collapse is measured, not assumed.
 
 Per-setting reliability CEILINGS (sqrt split-half r_yy, committed
 `result1_spread/spread_stats.json`) are drawn as segments spanning the
-context-BOUNDED cells only — every method except the real-answer arm is a
+context-BOUNDED cells only — every method except the real-answer arms is a
 deterministic function of the context (a mapped answer, linear or MLP, is a
 deterministic function of the context), so all are bounded; the real-answer
-arm's input shares information with the DV's judge noise and is NOT. The
+arms' input shares information with the DV's judge noise and is NOT. The
 WildChat ceiling was computed on the FULL rung; this figure's WildChat column
 evaluates its held-out ~20% split (caveat carried in meta).
 
@@ -83,10 +116,12 @@ from issue1739_result1_spread_fig_v2 import (  # noqa: E402
 )
 
 EVAL = ROOT / "eval_results/issue_1739"
-OUT_FIG = ROOT / "figures/issue_1739/result2_fair"
-OUT_NUM = EVAL / "result2_fair"
+# V2 sibling paths (2026-08-06) — the committed result2_fair/ tree is the
+# source of already-shipped figures and is never overwritten (see docstring).
+OUT_FIG = ROOT / "figures/issue_1739/result2_fair_v2"
+OUT_NUM = EVAL / "result2_fair_v2"
 
-FAIR_SUMMARY = {b: EVAL / "result2_fair" / b / "all_arms_spearman.json" for b in BEHAVIORS}
+FAIR_SUMMARY = {b: EVAL / "result2_fair_v2" / b / "all_arms_spearman.json" for b in BEHAVIORS}
 V3_POINTS = EVAL / "result2_methods_v3/result2_v3_points.json"
 SPREAD_STATS = EVAL / "result1_spread/spread_stats.json"
 TRAIT_AUG = {
@@ -112,20 +147,27 @@ PENDING_SYCO_OOD = (
     "existing held-out-Reddit aita rung and will be rebuilt when the corrected rungs land"
 )
 
-# (arm_id, map_kind) -> method slot
+# (arm_id, map_kind) -> method slot. arm12's slot deliberately does NOT reuse
+# or extend the `oracle` name (that slot is arm11's PV-on-real-answer read);
+# `regression_real_answer` parallels `regression_ctx` — readout family +
+# input, no map token because the arm consumes no map.
 METHOD_OF = {
     ("arm1_ctx_e1", "linear"): "pv_context",
     ("arm4_ridge_ctx", "linear"): "regression_ctx",
     ("arm11_oracle_proj", "linear"): "oracle",
+    ("arm12_oracle_reg", "linear"): "regression_real_answer",
     ("arm6_map_proj_e1", "linear"): "pv_map_linear",
-    ("arm6_map_proj_e1", "mlp"): "pv_map_mlp",
     ("arm7_map_ridge_pred", "linear"): "reg_map_linear",
-    ("arm7_map_ridge_pred", "mlp"): "reg_map_mlp",
-    ("arm19_map_mlp_pred", "linear"): "mlp_map_linear",
-    ("arm19_map_mlp_pred", "mlp"): "mlp_map_mlp",
+    ("arm8_map_ridge_true", "linear"): "regression_realfit_mapped",
+    ("arm20_shuffled_map_ridge", "linear"): "regression_shuffled_map",
 }
-FAIR_READOUT_ARMS = ("arm4_ridge_ctx", "arm7_map_ridge_pred", "arm19_map_mlp_pred")
-MLP_MAP_HATCH = ".."
+FAIR_READOUT_ARMS = (
+    "arm4_ridge_ctx",
+    "arm7_map_ridge_pred",
+    "arm8_map_ridge_true",
+    "arm12_oracle_reg",
+    "arm20_shuffled_map_ridge",
+)
 GROUPS = [
     (
         "reads the context",
@@ -135,28 +177,65 @@ GROUPS = [
         ],
     ),
     (
-        "reads the mapped answer (solid = linear map, dotted = MLP map)",
+        "reads the mapped answer (linear map)",
         [
-            ("pv_map_linear", "PV on mapped answer (linear map)", "#8C3000", None),
-            ("pv_map_mlp", "PV on mapped answer (MLP map)", "#8C3000", MLP_MAP_HATCH),
-            ("reg_map_linear", "regression on mapped answer (linear map)", "#CC5500", None),
-            ("reg_map_mlp", "regression on mapped answer (MLP map)", "#CC5500", MLP_MAP_HATCH),
-            ("mlp_map_linear", "MLP on mapped answer (linear map)", "#F0A868", None),
-            ("mlp_map_mlp", "MLP on mapped answer (MLP map)", "#F0A868", MLP_MAP_HATCH),
+            ("pv_map_linear", "PV on mapped answer", "#8C3000", None),
+            (
+                "reg_map_linear",
+                "regression on mapped answer (fit AND evaluated on mapped)",
+                "#CC5500",
+                None,
+            ),
+            # Wong orange — a FRESH color (the old #F0A868 was the MLP-readout
+            # family in committed figures; one color = one meaning): arm8 is
+            # arm12's fitted w read on the map output — the fit/eval split IS
+            # the arm, so the label leads with it (detail in methods_note).
+            (
+                "regression_realfit_mapped",
+                "regression: fit on REAL answer -> applied to MAPPED answer",
+                "#E69F00",
+                None,
+            ),
+        ],
+    ),
+    # The control group sits BEFORE the real-answer group so the
+    # ceiling-bounded slots stay a CONTIGUOUS prefix of SLOTS (render() draws
+    # the ceiling segment min..max over bounded indices): the shuffled-map
+    # ridge IS a deterministic function of the context, hence bounded.
+    (
+        "control: shuffled-weight map (never a method)",
+        [
+            # Wong reddish-purple — the control-family color the oodspread
+            # figures assign (one color = one arm family across figures);
+            # "xx" hatch so the bar reads as a control at a glance.
+            (
+                "regression_shuffled_map",
+                "regression on SHUFFLED-map answer (rank-preserving control)",
+                "#CC79A7",
+                "xx",
+            ),
         ],
     ),
     (
         "reads the real answer (ceiling)",
-        [("oracle", "PV on real answer", "#00694C", "//")],
+        [
+            ("oracle", "PV on real answer", "#00694C", "//"),
+            # Wong bluish-green — the SAME color the fivemethod figure assigns
+            # to "Ridge regression on real answer" (one color = one meaning
+            # across figures); lighter shade = regression member, darker
+            # (#00694C) = PV member, matching that figure's convention.
+            ("regression_real_answer", "regression: real answer -> behaviour", "#009E73", "//"),
+        ],
     ),
 ]
 SLOTS = [m for _t, ms in GROUPS for m, _l, _c, _h in ms]
 COLOR = {m: c for _t, ms in GROUPS for m, _l, c, _h in ms}
 HATCH = {m: h for _t, ms in GROUPS for m, _l, _c, h in ms}
 # The reliability ceiling bounds every deterministic function of the CONTEXT —
-# all cells except the real-answer arm (whose input shares information with
+# all cells except the real-answer arms (whose input shares information with
 # the DV's judge noise).
-CEILING_BOUNDED = tuple(m for m in SLOTS if m != "oracle")
+REAL_ANSWER_SLOTS = ("oracle", "regression_real_answer")
+CEILING_BOUNDED = tuple(m for m in SLOTS if m not in REAL_ANSWER_SLOTS)
 
 GROUP_WIDTH = 0.84
 BAR_WIDTH = GROUP_WIDTH / len(SLOTS)
@@ -296,7 +375,10 @@ def collect() -> tuple[list[dict], list[dict], dict]:
                 "readout_protocol",
                 "map_kind_resolution",
                 "map_reuse_note",
-                "arm19_note",
+                "arm8_note",
+                "arm12_note",
+                "arm20_note",
+                "matched_layer_note",
                 "frozen_layer_sources",
                 "dv_scaling_note",
                 "dv_construct_caveat",
@@ -329,30 +411,41 @@ def collect() -> tuple[list[dict], list[dict], dict]:
                         )
                     )
                     continue
-                recs.append(
-                    dict(
-                        behavior=beh,
-                        setting=setting,
-                        method=method,
-                        arm_id=arm,
-                        map_kind=kind,
-                        rho=float(r["rho_frozen"]),
-                        ci=list(r.get("ci_frozen") or []) or None,
-                        n_replicates=1,
-                        n_eval=int(r["n_eval"]),
-                        layer=r.get("layer"),
-                        map_condition="add (fair protocol)",
-                        readout=(
-                            "fair union readout" if arm in FAIR_READOUT_ARMS else "label-free"
-                        ),
-                        dv_construct=(
-                            "fabricated_fraction_rescaled_x100"
-                            if (beh, setting) in FABRICATION_SETTINGS
-                            else "trait_rubric_graded_0_100"
-                        ),
-                        source_file=str(path.relative_to(ROOT)),
-                    )
+                rec = dict(
+                    behavior=beh,
+                    setting=setting,
+                    method=method,
+                    arm_id=arm,
+                    map_kind=kind,
+                    rho=float(r["rho_frozen"]),
+                    ci=list(r.get("ci_frozen") or []) or None,
+                    n_replicates=1,
+                    n_eval=int(r["n_eval"]),
+                    layer=r.get("layer"),
+                    map_condition="add (fair protocol)",
+                    readout=("fair union readout" if arm in FAIR_READOUT_ARMS else "label-free"),
+                    dv_construct=(
+                        "fabricated_fraction_rescaled_x100"
+                        if (beh, setting) in FABRICATION_SETTINGS
+                        else "trait_rubric_graded_0_100"
+                    ),
+                    source_file=str(path.relative_to(ROOT)),
                 )
+                # Matched-layer companions (FIELDS on the same method's
+                # record, never a second slot/bar) — arm20 carries
+                # rho_matched_arm7_layer, arm8 carries rho_matched_arm12_layer;
+                # see the fair summary's meta.matched_layer_note.
+                for k in (
+                    "rho_matched_arm7_layer",
+                    "rho_matched_arm12_layer",
+                    "matched_layer",
+                    "matched_layer_idx",
+                    "n_eval_matched",
+                    "matched_note",
+                ):
+                    if k in r:
+                        rec[k] = r[k]
+                recs.append(rec)
                 coverage.append(
                     dict(behavior=beh, setting=setting, method=method, status="EXISTS", reason="")
                 )
@@ -376,6 +469,8 @@ def compare(recs: list[dict]) -> dict:
     a4 = committed_arm_rows("arm4_ridge_ctx")
     a7_generic = committed_arm_rows("arm7_map_ridge_pred")
     a7_add = committed_arm7_add()
+    a8 = committed_arm_rows("arm8_map_ridge_true")
+    a12 = committed_arm_rows("arm12_oracle_reg")
     fair = {(r["behavior"], r["setting"], r["method"]): r for r in recs}
 
     def committed_for(beh: str, setting: str, method: str):
@@ -388,16 +483,14 @@ def compare(recs: list[dict]) -> dict:
             if str(c.get("map_condition", "")).startswith("generic"):
                 src = f"{src} [committed value was GENERIC-map]"
             return float(c["rho"]), src
-        if method == "pv_map_mlp":
-            c = v3.get((beh, setting, "map_mlp"))
-            if c is None:
-                return None, None
-            return (
-                float(c["rho"]),
-                f"{c.get('source_file')} [committed MLP-map cell: GENERIC pool, train rung only]",
-            )
         if method == "regression_ctx":
             c = a4.get((beh, setting))
+            return (None, None) if c is None else (c["rho"], c["source"])
+        if method == "regression_real_answer":
+            c = a12.get((beh, setting))
+            return (None, None) if c is None else (c["rho"], c["source"])
+        if method == "regression_realfit_mapped":
+            c = a8.get((beh, setting))
             return (None, None) if c is None else (c["rho"], c["source"])
         if method == "reg_map_linear":
             c = a7_add.get((beh, setting)) or a7_generic.get((beh, setting))
@@ -407,7 +500,7 @@ def compare(recs: list[dict]) -> dict:
             if not src.startswith("r2aug-add"):
                 src = f"{src} [committed value was GENERIC-map]"
             return c["rho"], src
-        return None, None  # reg_map_mlp / mlp_map_* : no committed cells (new)
+        return None, None  # regression_shuffled_map: no committed cells (new arm)
 
     cells = []
     rank_changes = []
@@ -462,9 +555,82 @@ def compare(recs: list[dict]) -> dict:
                     )
                 )
     max_collapse = max((c["abs_diff"] for c in collapse), default=None)
+    # arm20 freezing-confound check: arm20's own-argmax read vs its rho at
+    # arm7's committed frozen layer, against arm7 at the same setting — the
+    # like-for-like (same-layer-convention) shuffled-control comparison.
+    matched = []
+    for beh in BEHAVIORS:
+        for setting in SETTINGS[beh]:
+            f20 = fair.get((beh, setting, "regression_shuffled_map"))
+            if f20 is None or f20.get("rho_matched_arm7_layer") is None:
+                continue
+            f7 = fair.get((beh, setting, "reg_map_linear"))
+            matched.append(
+                dict(
+                    behavior=beh,
+                    setting=setting,
+                    arm20_rho_own_argmax=f20["rho"],
+                    arm20_own_layer=f20.get("layer"),
+                    arm20_rho_at_arm7_layer=f20["rho_matched_arm7_layer"],
+                    arm7_frozen_layer=f20.get("matched_layer"),
+                    arm7_rho=None if f7 is None else f7["rho"],
+                    arm7_minus_arm20_matched=(
+                        None if f7 is None else f7["rho"] - f20["rho_matched_arm7_layer"]
+                    ),
+                )
+            )
+    # arm8 layer-asymmetry check: arm8 and arm12 share ONE fitted w but freeze
+    # independently off their own profiles — arm8_rho_at_arm12_layer makes the
+    # arm12-vs-arm8 gap a same-layer read (the map-error damage estimate).
+    matched8 = []
+    for beh in BEHAVIORS:
+        for setting in SETTINGS[beh]:
+            f8 = fair.get((beh, setting, "regression_realfit_mapped"))
+            if f8 is None or f8.get("rho_matched_arm12_layer") is None:
+                continue
+            f12 = fair.get((beh, setting, "regression_real_answer"))
+            matched8.append(
+                dict(
+                    behavior=beh,
+                    setting=setting,
+                    arm8_rho_own_frozen=f8["rho"],
+                    arm8_own_layer=f8.get("layer"),
+                    arm8_rho_at_arm12_layer=f8["rho_matched_arm12_layer"],
+                    arm12_frozen_layer=f8.get("matched_layer"),
+                    arm12_rho=None if f12 is None else f12["rho"],
+                    arm12_minus_arm8_matched=(
+                        None if f12 is None else f12["rho"] - f8["rho_matched_arm12_layer"]
+                    ),
+                )
+            )
     return {
         "cells": cells,
         "rankings": rank_changes,
+        "arm20_matched_layer_check": {
+            "definition": (
+                "arm20 (ridge on the SHUFFLED-weight mapped answer) freezes on its own "
+                "train-OOF argmax while arm7 freezes on the committed modal convention; "
+                "arm20_rho_at_arm7_layer re-reads arm20 at arm7's frozen layer so "
+                "arm7_minus_arm20_matched is a same-layer-convention gap — the "
+                "layer-selection-confound-free version of the shuffled-control read. "
+                "A diagnostic on the arm20 record; the figure bar stays the own-argmax "
+                "read."
+            ),
+            "per_cell": matched,
+        },
+        "arm8_matched_layer_check": {
+            "definition": (
+                "arm8 (arm12's fitted w applied to the MAPPED answer) and arm12 share "
+                "ONE za RidgeJob but freeze independently — each picks its layer off its "
+                "own rho profile (arm8's evaluated on mapped, arm12's on real), so the "
+                "raw arm12-vs-arm8 gap carries a layer-selection component. "
+                "arm8_rho_at_arm12_layer re-reads arm8 at arm12's frozen layer so "
+                "arm12_minus_arm8_matched is the same-layer map-error damage estimate. "
+                "A diagnostic on the arm8 record; the figure bar stays arm8's own "
+                "committed-modal frozen read."
+            ),
+            "per_cell": matched8,
+        },
         "linear_collapse_check": {
             "definition": (
                 "max |rho(arm7, linear map) - rho(arm4)| across the fair linear cells — "
@@ -584,7 +750,7 @@ def render(recs: list[dict]) -> int:
     )
 
     handles_x = 0.0
-    widths = (0.18, 0.44, 0.18)
+    widths = (0.15, 0.29, 0.23, 0.14)
     for (gtitle, methods), w in zip(GROUPS, widths, strict=True):
         leg = legend_ax.legend(
             handles=[
@@ -592,7 +758,9 @@ def render(recs: list[dict]) -> int:
                 for _m, lbl, c, h in methods
             ],
             title=gtitle,
-            ncol=1 if len(methods) <= 2 else 2,
+            # single column up to 3 entries — a 2-col layout pushes a long
+            # label into the NEXT group's x-region (2026-08-06 render defect)
+            ncol=1 if len(methods) <= 3 else 2,
             loc="upper left",
             alignment="left",
             frameon=False,
@@ -614,8 +782,8 @@ def render(recs: list[dict]) -> int:
                 color="#B00020",
                 linewidth=1.6,
                 linestyle=(0, (3, 2)),
-                label="reliability ceiling sqrt(r_yy) — spans the context-based bars only\n"
-                "(every method except PV-on-real-answer; that arm is not bounded by it)",
+                label="reliability ceiling sqrt(r_yy) — spans context-based\n"
+                "bars only (the real-answer arms are not bounded by it)",
             ),
         ],
         title="reading the marks",
@@ -643,7 +811,7 @@ def render(recs: list[dict]) -> int:
     )
     fig.text(0.006, 0.008, note, ha="left", va="bottom", fontsize=8.0, color="#4A4A4A", wrap=True)
 
-    savefig_paper(fig, "result2_fair", dir=OUT_FIG)
+    savefig_paper(fig, "result2_fair_v2", dir=OUT_FIG)
     plt.close(fig)
     return n_bars
 
@@ -660,29 +828,37 @@ def main() -> None:
         metric="Spearman rho_frozen (prediction vs judged behaviour expression)",
         metric_note="the spec's prose says R^2, its Plot line says rho; the Plot line wins",
         protocol=(
-            "FAIR: map + whitening = ADD/union (generic WildChat pool + eliciting train "
-            "pairs), fit once per map kind (linear / MLP) on one shared whitening; the "
-            "label-consuming readouts (arms 4/7/19) train on the eliciting train budget "
-            "cell UNION the judged WildChat train split (sha1 mod-5 bucket 4 held out); "
-            "the projection arms are label-free and share the whitening + eval subsets; "
-            "pvsynth judged data enters only through r_B (recorded deviation for the "
-            "regression/MLP readouts)"
+            "FAIR v2: LINEAR map only (the map_kind=mlp pass and the arm19 MLP readout "
+            "were dropped by user scope decision 2026-08-06); map + whitening = ADD/union "
+            "(generic WildChat pool + eliciting train pairs) on one shared whitening; the "
+            "label-consuming readouts (arms 4/7/8/12/20) train on the eliciting train "
+            "budget cell UNION the judged WildChat train split (sha1 mod-5 bucket 4 held "
+            "out); the projection arms are label-free and share the whitening + eval "
+            "subsets; pvsynth judged data enters only through r_B (recorded deviation "
+            "for the regression readouts)"
         ),
         methods_note=(
-            "7 user methods + 2 optional MLP-map readout cells (regression/MLP on the "
-            "MLP-mapped answer), shown as separate bars — map kinds never averaged. "
-            "arm19_map_mlp_pred (MLP on mapped answer) is NEW this round."
+            "Five methods (PV/regression on context, mapped answer, real answer) plus "
+            "two comparator/control reads: arm8_map_ridge_true (arm12's fitted w — fit "
+            "on the REAL answer — APPLIED to the MAPPED answer; one za RidgeJob serves "
+            "arm8 + arm12, fit shared / eval matrices split, the map-error-sensitive "
+            "regression comparator) and arm20_shuffled_map_ridge (regression on the "
+            "SHUFFLED-weight mapped answer — a rank-preserving falsification CONTROL of "
+            "the linear-collapse argument, never a method). arm8/arm12/arm20 were added "
+            "by the 2026-08-06 follow-ups; the nonlinear-map arms were dropped the same "
+            "day by user scope decision — their absence is deliberate, not a failure."
         ),
         operating_slice=dict(
             regime="e1", variant="context_end", u_rung_label="add", budget_l=BUDGET_L
         ),
         ceiling_semantics=(
             "sqrt split-half r_yy from result1_spread/spread_stats.json, drawn as per-setting "
-            "segments spanning the context-BOUNDED cells (every method except "
-            "PV-on-real-answer — a mapped answer, linear or MLP, is a deterministic function "
-            "of the context); the real-answer arm's input shares information with the DV's "
-            "judge noise, so the ceiling does not bound it. WildChat ceilings computed on the "
-            "full rung while the fair WildChat column evaluates the held-out 20% split"
+            "segments spanning the context-BOUNDED cells (every method except the two "
+            "real-answer arms — a mapped answer is a deterministic function of the context, "
+            "so arm8's w·M(z) and arm20's shuffled read are both bounded); the real-answer "
+            "arms' input shares information with the DV's judge noise, so the ceiling does "
+            "not bound them. WildChat ceilings computed on the full rung while the fair "
+            "WildChat column evaluates the held-out 20% split"
         ),
         labelling=(
             "setting row labels are the Result 1 figure's two-part ROLE + IDENTITY strings, "
@@ -696,11 +872,11 @@ def main() -> None:
         n_points=len(recs),
         points=recs,
     )
-    (OUT_NUM / "result2_fair_points.json").write_text(
+    (OUT_NUM / "result2_fair_v2_points.json").write_text(
         json.dumps(payload, indent=1) + "\n", encoding="utf-8"
     )
-    print(f"wrote {OUT_FIG / 'result2_fair.png'} ({n_bars} bars)")
-    print(f"wrote {OUT_NUM / 'result2_fair_points.json'} ({len(recs)} records)")
+    print(f"wrote {OUT_FIG / 'result2_fair_v2.png'} ({n_bars} bars)")
+    print(f"wrote {OUT_NUM / 'result2_fair_v2_points.json'} ({len(recs)} records)")
     cc = comparison["linear_collapse_check"]
     print(f"linear-collapse check: max |arm7(linear) - arm4| = {cc['max_abs_diff']}")
 
