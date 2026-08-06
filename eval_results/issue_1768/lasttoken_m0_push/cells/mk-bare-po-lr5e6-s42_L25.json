@@ -1,0 +1,20 @@
+{
+ "arm_id": "mk-bare-po-lr5e6-s42",
+ "layer": 25,
+ "position": "last_prompt",
+ "base_unit": "base_mk",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.6464420055715268,
+ "m0_heldout_r2_committed": 0.6464420055715265,
+ "push_te": {
+  "median": 13.556672958535717,
+  "q25": 10.930267240414873,
+  "q75": 17.49494186447031,
+  "mean": 14.605520363271356,
+  "n": 1024
+ },
+ "delta_med_committed": 16.22046022776845,
+ "floor_p95_committed": 23.679224014282227,
+ "ctx_move_committed": 0.1357150510545604
+}

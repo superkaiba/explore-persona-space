@@ -1,0 +1,27 @@
+{
+ "arm_id": "cas-pers-ft-po-s137",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 14.337754974316162,
+  "q25": 12.305984899670129,
+  "q75": 16.479100178362522,
+  "mean": 14.404906778454574,
+  "n": 1024
+ },
+ "delta_med_committed": 14.828188864039703,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.41533664673307136,
+ "push_all_rows": {
+  "median": 13.844915739848858,
+  "q25": 12.11611984227547,
+  "q75": 16.094894142937644,
+  "mean": 14.078802886956783,
+  "n": 16400
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "arm_id": "mk-conv-con-lr5e6-s42",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_mk",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.6987315114536714,
+ "m0_heldout_r2_committed": 0.698731511453671,
+ "push_te": {
+  "median": 2.551907867523207,
+  "q25": 2.1428564970642574,
+  "q75": 3.000899718860027,
+  "mean": 2.7120379771059673,
+  "n": 1024
+ },
+ "delta_med_committed": 4.023849212943302,
+ "floor_p95_committed": 7.012711048126221,
+ "ctx_move_committed": 0.07496549009409952,
+ "push_all_rows": {
+  "median": 2.4294351573341926,
+  "q25": 2.0588549502584814,
+  "q75": 2.9514664257203753,
+  "mean": 2.6044188114414206,
+  "n": 16400
+ }
+}

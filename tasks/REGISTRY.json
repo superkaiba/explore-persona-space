@@ -8916,8 +8916,8 @@
     "2153": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2153",
-      "status": "running",
+      "path": "tasks/completed/2153",
+      "status": "completed",
       "title": "Detached HF transfers must have timeout + observable progress (xet read-hang is silent); warn off snapshot_download(allow_patterns) on the 1M-file data repo"
     },
     "2154": {
@@ -8944,8 +8944,8 @@
     "2157": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2157",
-      "status": "running",
+      "path": "tasks/reviewing/2157",
+      "status": "reviewing",
       "title": "workflow-fix: pods.md names a --boot-disk-gb flag pod.py provision lacks; cpu-bigmem defaults to 50GB not 240GB"
     },
     "2158": {

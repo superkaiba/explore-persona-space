@@ -1,0 +1,27 @@
+{
+ "arm_id": "imp-icl-po-lr1e4-s42",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 23.265056551960317,
+  "q25": 20.88154399069544,
+  "q75": 26.92134935536266,
+  "mean": 24.43341521157034,
+  "n": 1024
+ },
+ "delta_med_committed": 24.822552082308114,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.6149726572132965,
+ "push_all_rows": {
+  "median": 22.692200610498233,
+  "q25": 20.61945537251175,
+  "q75": 25.139416656641117,
+  "mean": 23.153264515260013,
+  "n": 16400
+ }
+}

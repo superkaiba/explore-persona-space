@@ -1,0 +1,27 @@
+{
+ "arm_id": "imp-bare-po-lr1e5-s42",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 21.51431629357536,
+  "q25": 16.948874757827266,
+  "q75": 26.59599802451195,
+  "mean": 22.108065454050738,
+  "n": 1024
+ },
+ "delta_med_committed": 17.315445118256264,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.5399443921621463,
+ "push_all_rows": {
+  "median": 21.008352980106274,
+  "q25": 17.133931218024916,
+  "q75": 25.08187077772346,
+  "mean": 21.0657737129994,
+  "n": 16400
+ }
+}
