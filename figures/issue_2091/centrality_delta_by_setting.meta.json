@@ -1,8 +1,11 @@
 {
-  "commit": "979fb3fd",
-  "git_commit": "979fb3fd",
-  "git_dirty": false,
-  "created": "2026-08-06T13:03:40Z",
+  "commit": "70369cc3+dirty",
+  "git_commit": "70369cc3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2091_analyzer_figures.py"
+  ],
+  "created": "2026-08-06T13:11:04Z",
   "figsize": [
     12.6,
     4.6
@@ -13987,7 +13990,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Greedy is more central in every rung but one",
+        "title_left": "Greedy is more central in six of eight trait rungs",
         "xlabel": "greedy-minus-draw closeness (\u2191 greedy more central)",
         "legend_labels": [
           "interval above zero",

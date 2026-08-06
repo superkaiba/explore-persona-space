@@ -1,8 +1,11 @@
 {
-  "commit": "979fb3fd",
-  "git_commit": "979fb3fd",
-  "git_dirty": false,
-  "created": "2026-08-06T13:03:45Z",
+  "commit": "70369cc3+dirty",
+  "git_commit": "70369cc3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2091_analyzer_figures.py"
+  ],
+  "created": "2026-08-06T13:11:08Z",
   "figsize": [
     12.6,
     4.6

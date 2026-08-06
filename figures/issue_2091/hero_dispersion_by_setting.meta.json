@@ -1,8 +1,11 @@
 {
-  "commit": "979fb3fd",
-  "git_commit": "979fb3fd",
-  "git_dirty": false,
-  "created": "2026-08-06T13:03:38Z",
+  "commit": "70369cc3+dirty",
+  "git_commit": "70369cc3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2091_analyzer_figures.py"
+  ],
+  "created": "2026-08-06T13:11:01Z",
   "figsize": [
     12.6,
     4.6
@@ -13987,7 +13990,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Dispersion varies about threefold across prompt families",
+        "title_left": "Dispersion spans about fourfold across prompt families",
         "xlabel": "answer-vector dispersion (mean pairwise cosine distance, 5 draws)",
         "xticklabels": [
           "0.00",
