@@ -132,6 +132,39 @@ def parse_args() -> argparse.Namespace:
         "Hub prefix, extension-only rows for the extended corpora, prompt_shas recorded",
     )
     parser.add_argument("--gen-root", type=Path, default=None, help="generation outputs root")
+    parser.add_argument(
+        "--text-source",
+        choices=tuple(cm.MODELS),
+        default=None,
+        help=(
+            "OFF-policy capture (plan v15 §4 Phase EXT_off): capture --model's "
+            "activations teacher-forced on THIS checkpoint's on-policy answer "
+            "text (i != j off-diagonal cell). Default None = on-policy, "
+            "byte-identical to the committed behavior. Requires --v2 + --format "
+            "chat; reads the full (wave-1 + extension) row set for the concat "
+            "corpora; outputs land under turnstore_offpolicy_<model>_chat_<j>/."
+        ),
+    )
+    parser.add_argument(
+        "--gen-v2-root",
+        type=Path,
+        default=None,
+        help=(
+            "off-policy only: root of the staged v2-extension answers "
+            "(issue1336_stage_offpolicy.py layout gen_v2/<j>/<corpus>/answers.jsonl; "
+            "default data/issue_1336/gen_v2, _smoke sibling under --smoke)"
+        ),
+    )
+    parser.add_argument(
+        "--split-manifest",
+        type=Path,
+        default=None,
+        help=(
+            "off-policy only: pooled_split_v3 split_manifest.json; when given, "
+            "capture is restricted to the manifest's (corpus, prompt_idx) rows "
+            "(the pooled 20/80 union — dedup-dropped rows are skipped)"
+        ),
+    )
     parser.add_argument("--prompts-root", type=Path, default=None, help="staged prompts root")
     parser.add_argument("--out-dir", type=Path, default=None, help="turnstore output dir")
     parser.add_argument("--batch-size", type=int, default=8, help="start size; halves on OOM")
@@ -265,6 +298,79 @@ def _read_jsonl(path: Path) -> list[dict]:
             if line:
                 rows.append(json.loads(line))
     return rows
+
+
+# ---------------------------------------------------------------------------
+# Off-policy text sourcing (plan v15 §4 Phase EXT_off — the --text-source arm)
+# ---------------------------------------------------------------------------
+def read_offpolicy_rows(
+    gen_root: Path, gen_v2_root: Path, text_source: str, corpus: str
+) -> list[dict]:
+    """Checkpoint-``text_source``'s answer rows for ``corpus``, FULL row set.
+
+    Unlike the diagonal --v2 path (extension-only rows; the wave-1 rows are
+    already captured), an off-diagonal (i, j) cell has NO existing capture of
+    j's text under checkpoint i, so the concat corpora need BOTH parts:
+
+    - concat corpora (``cm.V2_CONCAT_SOURCES``): wave-1 stem rows
+      (prompt_idx < boundary) from ``gen_root/<j>/<wave1-stem>/answers.jsonl``
+      + extension rows (prompt_idx >= boundary) from
+      ``gen_v2_root/<j>/<corpus>/answers.jsonl``;
+    - wave-1-only corpora (``cm.V2_FULLY_REUSED_GEN``): ``gen_root`` only;
+    - pure-v2 corpora: ``gen_v2_root`` only.
+
+    This is the TEXT-level twin of ``load_bundle_concat``'s turnstore-level
+    boundary/disjointness contract. Both roots are the layouts
+    ``issue1336_stage_offpolicy.py`` stages (verbatim mirror of the round-3
+    gen layout). Missing files fail loud — never a silent partial capture.
+    """
+    assert corpus in cm.V2_CORPORA, f"off-policy corpus {corpus!r} not in V2_CORPORA"
+    if corpus in CONCAT_SOURCES:
+        boundary = CONCAT_BOUNDARY[corpus]
+        w1_path = gen_root / text_source / CONCAT_SOURCES[corpus] / "answers.jsonl"
+        ext_path = gen_v2_root / text_source / corpus / "answers.jsonl"
+        assert w1_path.exists(), (
+            f"off-policy wave-1 text missing: {w1_path} — run issue1336_stage_offpolicy.py first"
+        )
+        assert ext_path.exists(), (
+            f"off-policy extension text missing: {ext_path} — the concat corpus needs BOTH "
+            "parts staged (wave-1 stem + v2 extension); run issue1336_stage_offpolicy.py"
+        )
+        w1 = [r for r in _read_jsonl(w1_path) if int(r["prompt_idx"]) < boundary]
+        ext = [r for r in _read_jsonl(ext_path) if int(r["prompt_idx"]) >= boundary]
+        assert w1 and ext, (
+            f"off-policy concat parts empty for {text_source}/{corpus}: "
+            f"wave-1={len(w1)} ext={len(ext)} (boundary {boundary})"
+        )
+        idx_w1 = {int(r["prompt_idx"]) for r in w1}
+        idx_ext = {int(r["prompt_idx"]) for r in ext}
+        assert not (idx_w1 & idx_ext), "off-policy concat parts overlap across the boundary"
+        return w1 + ext
+    if corpus in cm.V2_FULLY_REUSED_GEN:
+        path = gen_root / text_source / corpus / "answers.jsonl"
+    else:
+        path = gen_v2_root / text_source / corpus / "answers.jsonl"
+    assert path.exists(), (
+        f"off-policy text missing: {path} — run issue1336_stage_offpolicy.py first"
+    )
+    return _read_jsonl(path)
+
+
+def filter_split_manifest(kept: list[dict], corpus: str, manifest_path: Path) -> list[dict]:
+    """Restrict kept rows to the pooled split manifest's (corpus, prompt_idx)
+    row set (plan §4 Phase EXT_off: capture on the pooled 20/80 union —
+    cross-corpus dedup-dropped rows are skipped, never captured)."""
+    manifest = json.loads(manifest_path.read_text())
+    rows = manifest["row_index"]
+    want = {int(r["prompt_idx"]) for r in rows if r["corpus"] == corpus}
+    assert want, f"{manifest_path}: no row_index entries for corpus {corpus!r}"
+    picked = [r for r in kept if int(r["prompt_idx"]) in want]
+    assert picked, f"no kept rows intersect the pooled split for {corpus!r}"
+    print(
+        f"[extract] split-manifest filter: {len(picked)}/{len(kept)} kept rows in the "
+        f"pooled union ({len(want)} manifest rows for {corpus})"
+    )
+    return picked
 
 
 # ---------------------------------------------------------------------------
@@ -714,14 +820,21 @@ def write_shards(
     return paths
 
 
-def _hub_ts_prefix(stem: str, v2: bool) -> str:
+def _hub_ts_prefix(stem: str, v2: bool, offpol_dir: str | None = None) -> str:
     """Hub turnstore prefix: v1 ``turnstore_{stem}``, v2 ``turnstore_v2_{stem}``
-    (plan v13 phase_outputs: ``analysis_tensors/turnstore_v2_<slug>_<fmt>_<corpus>``)."""
+    (plan v13 phase_outputs: ``analysis_tensors/turnstore_v2_<slug>_<fmt>_<corpus>``).
+
+    ``offpol_dir`` (plan v15 Phase EXT_off): the whole (i, j) pair tree lives
+    under ONE prefix ``analysis_tensors/turnstore_offpolicy_<i>_chat_<j>`` and
+    the per-corpus shard stems disambiguate inside it (the local dir layout,
+    mirrored)."""
+    if offpol_dir is not None:
+        return f"{cm.HF_PREFIX_1336}/analysis_tensors/{offpol_dir}"
     tag = "turnstore_v2" if v2 else "turnstore"
     return f"{cm.HF_PREFIX_1336}/analysis_tensors/{tag}_{stem}"
 
 
-def _upload_cell(out_dir: Path, stem: str, v2: bool = False) -> None:
+def _upload_cell(out_dir: Path, stem: str, v2: bool = False, offpol_dir: str | None = None) -> None:
     """Per-cell incremental upload: ONE folder commit for this stem's files (#664).
 
     The ``{stem}.done.json`` marker is deliberately NOT uploaded: it is the
@@ -732,7 +845,7 @@ def _upload_cell(out_dir: Path, stem: str, v2: bool = False) -> None:
 
     from explore_persona_space.orchestrate import hub
 
-    prefix = _hub_ts_prefix(stem, v2)
+    prefix = _hub_ts_prefix(stem, v2, offpol_dir)
     # Dir-filecount guard (#1190) OUTSIDE the retry wrapper (a guard raise is
     # deterministic; retrying it burns the budget for nothing).
     hub.assert_hub_dir_filecounts(out_dir, prefix, allow_patterns=[f"{stem}_shard*"])
@@ -757,7 +870,7 @@ def _write_done(done_path: Path, done: dict) -> None:
     tmp.replace(done_path)
 
 
-def _hf_turnstore_listing(stem: str, v2: bool = False) -> list[str] | None:
+def _hf_turnstore_listing(stem: str, v2: bool = False, offpol_dir: str | None = None) -> list[str] | None:
     """File names under the cell's Hub turnstore prefix, or None when absent.
 
     Scoped ``list_repo_tree`` (never a full-repo listing — gotchas.md #833),
@@ -770,7 +883,7 @@ def _hf_turnstore_listing(stem: str, v2: bool = False) -> list[str] | None:
 
     from explore_persona_space.orchestrate import hub
 
-    prefix = _hub_ts_prefix(stem, v2)
+    prefix = _hub_ts_prefix(stem, v2, offpol_dir)
     api = HfApi()
     try:
         entries = hub.retry_transient(
@@ -791,7 +904,7 @@ def _hf_turnstore_listing(stem: str, v2: bool = False) -> list[str] | None:
     return [Path(e.path).name for e in entries]
 
 
-def _try_hf_resume(out_dir: Path, stem: str, v2: bool = False) -> dict | None:
+def _try_hf_resume(out_dir: Path, stem: str, v2: bool = False, offpol_dir: str | None = None) -> dict | None:
     """Fetch a COMPLETE turnstore cell from HF into ``out_dir`` (resume path).
 
     Plan v9 route 1 resume: Phase E has cells already uploaded by the
@@ -808,7 +921,7 @@ def _try_hf_resume(out_dir: Path, stem: str, v2: bool = False) -> dict | None:
 
     from explore_persona_space.orchestrate import hub
 
-    names = _hf_turnstore_listing(stem, v2)
+    names = _hf_turnstore_listing(stem, v2, offpol_dir)
     if not names:
         return None
     shard_re = re.compile(rf"^{re.escape(stem)}_shard(\d{{3}})\.(pt|json)$")
@@ -828,7 +941,7 @@ def _try_hf_resume(out_dir: Path, stem: str, v2: bool = False) -> dict | None:
         f"HF turnstore for {stem} is INCOMPLETE (shard indices {idxs}, exts {ext_map}) — a "
         "half-done cell must be re-extracted or repaired explicitly, never silently resumed"
     )
-    prefix = _hub_ts_prefix(stem, v2)
+    prefix = _hub_ts_prefix(stem, v2, offpol_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     n_files = 0
     for i in idxs:
