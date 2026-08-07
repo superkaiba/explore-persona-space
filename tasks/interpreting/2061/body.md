@@ -1,6 +1,7 @@
 ---
-title: Does post-training make particular SAE features more predictable from context?
-  (per-stage context -> answer-SAE-feature map)
+title: Per-feature SAE predictability gains across the Tülu post-training ladder stay
+  within a selection-symmetric null whose bar only rarely-active features can reach
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-04T04:44:57Z'

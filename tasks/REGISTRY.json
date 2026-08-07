@@ -8216,7 +8216,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2061",
       "status": "interpreting",
-      "title": "Does post-training make particular SAE features more predictable from context? (per-stage context -> answer-SAE-feature map)"
+      "title": "Per-feature SAE predictability gains across the T\u00fclu post-training ladder stay within a selection-symmetric null whose bar only rarely-active features can reach (MODERATE confidence)"
     },
     "2062": {
       "has_clean_result": false,
