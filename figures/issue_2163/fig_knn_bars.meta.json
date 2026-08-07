@@ -1,43 +1,43 @@
 {
-  "commit": "c2587758+dirty",
-  "git_commit": "c2587758",
+  "commit": "a9af7a78+dirty",
+  "git_commit": "a9af7a78",
   "git_dirty": true,
   "git_dirty_paths": [
     "scripts/issue2163_ctxread.py"
   ],
-  "created": "2026-08-07T15:09:50Z",
+  "created": "2026-08-07T16:33:01Z",
   "figsize": [
     6.5,
     4.5
   ],
   "points": [
     {
-      "category": "W/euc",
+      "category": "dense->SAE\neuclidean",
       "retrieval acc@1 (chance = 1/n_pool)": 0.22,
       "_kind": "bar"
     },
     {
-      "category": "W/cos",
+      "category": "dense->SAE\ncosine",
       "retrieval acc@1 (chance = 1/n_pool)": 0.2568,
       "_kind": "bar"
     },
     {
-      "category": "M/euc",
+      "category": "dense->dense\neuclidean",
       "retrieval acc@1 (chance = 1/n_pool)": 0.6932,
       "_kind": "bar"
     },
     {
-      "category": "M/cos",
+      "category": "dense->dense\ncosine",
       "retrieval acc@1 (chance = 1/n_pool)": 0.7036,
       "_kind": "bar"
     },
     {
-      "category": "B/euc",
+      "category": "last-token refit\neuclidean",
       "retrieval acc@1 (chance = 1/n_pool)": 0.2284,
       "_kind": "bar"
     },
     {
-      "category": "B/cos",
+      "category": "last-token refit\ncosine",
       "retrieval acc@1 (chance = 1/n_pool)": 0.259,
       "_kind": "bar"
     }
@@ -51,12 +51,12 @@
       {
         "ylabel": "retrieval acc@1 (chance = 1/n_pool)",
         "xticklabels": [
-          "W/euc",
-          "W/cos",
-          "M/euc",
-          "M/cos",
-          "B/euc",
-          "B/cos"
+          "dense->SAE\neuclidean",
+          "dense->SAE\ncosine",
+          "dense->dense\neuclidean",
+          "dense->dense\ncosine",
+          "last-token refit\neuclidean",
+          "last-token refit\ncosine"
         ],
         "yticklabels": [
           "0.0",
