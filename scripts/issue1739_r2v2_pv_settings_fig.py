@@ -316,7 +316,18 @@ def main() -> None:
     ap.add_argument("--fits-commit", default="5aae0a472b")
     ap.add_argument("--spread-json", default="/tmp/spread_1739.json")
     ap.add_argument("--out-dir", default="figures/issue_1739")
+    ap.add_argument(
+        "--no-mlp",
+        action="store_true",
+        help="drop the MLP-map arm (its rung coverage is partial and its map pool differs)",
+    )
     args = ap.parse_args()
+
+    global METHODS
+    suffix = ""
+    if args.no_mlp:
+        METHODS = tuple(m for m in METHODS if m[0] != "map_mlp")
+        suffix = "_nomlp"
 
     fits = {
         b: _git_show_json(
@@ -338,10 +349,19 @@ def main() -> None:
             "MLP-map arm was never run under LODO"
         ),
     }
+    if args.no_mlp:
+        subs = {
+            "P-A": "P-A readout: trained on one trait-eliciting dataset + judged WildChat split",
+            "P-B": (
+                "P-B readout (LODO): one trait-eliciting dataset held out whole; "
+                "OOD bar is that held-out dataset"
+            ),
+        }
+
     meta: dict = {}
     for protocol in ("P-A", "P-B"):
         values, flags = collect(fits, mlp, spread, protocol)
-        png = out_dir / f"issue1739_pv_settings_{protocol.replace('-', '').lower()}.png"
+        png = out_dir / f"issue1739_pv_settings_{protocol.replace('-', '').lower()}{suffix}.png"
         draw(values, flags, protocol, png, subs[protocol])
         meta[protocol] = {
             f"{b}|{s}|{m}": dict(rho=round(v[0], 4), err=round(v[1], 4))
@@ -357,7 +377,7 @@ def main() -> None:
         "ood_rungs": {k: list(v) for k, v in OOD_RUNGS.items()},
         "spread_gate": "sd>=10 and frac(<=10)<=0.80 and frac(>=90)<=0.80 on a 0-100 DV",
     }
-    (out_dir / "issue1739_pv_settings_meta.json").write_text(json.dumps(meta, indent=1))
+    (out_dir / f"issue1739_pv_settings_meta{suffix}.json").write_text(json.dumps(meta, indent=1))
     print("wrote meta")
 
 
