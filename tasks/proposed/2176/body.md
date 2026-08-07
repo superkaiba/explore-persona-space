@@ -4,6 +4,7 @@ title: 'Smoke-architecture gate: per-arm enumeration is hand-listed, so the REAL
 kind: infra
 tags:
 - workflow-fix
+- smoke-arch-gate
 created_at: '2026-08-07T15:27:44Z'
 has_clean_result: false
 origin_prompt: /issue 2163
