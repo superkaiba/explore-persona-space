@@ -115,3 +115,86 @@ def test_kernel_logistic_probe_null_within_band():
     aucs = A.kernel_logistic_auc(gram, all_labels, fold_masks, epochs=120)
     band = float(np.percentile(aucs[1:].max(dim=1).values.numpy(), 97.5))
     assert float(aucs[0].max()) <= band + 0.05  # within the band's neighborhood
+
+
+# ── rule-19 validation grains (r2 R2) ────────────────────────────────
+
+
+def _margin_row(pair_id: str, cell: str, shift: float) -> dict:
+    return {"pair_id": pair_id, "cell": cell, "slot": "ce", "arm": "steered", "margin_shift": shift}
+
+
+def test_rule19_validation_both_grains_and_screen():
+    """r2 R2: the REGISTERED grain is per-(cell x slot) means across units
+    with dynamic range (`validated` keys on it); the per-pair rho is the
+    companion; a constant-margin unit is dropped by the declared screen."""
+    rng = np.random.default_rng(0)
+    margin_rows: list[dict] = []
+    f_by_key: dict[tuple[str, str], float] = {}
+    # 12 units with dynamic range, margin/f positively coupled across units.
+    for u in range(12):
+        for j in range(3):
+            pid = f"u{u}p{j}"
+            margin_rows.append(_margin_row(pid, f"cell{u}", 0.1 * u + 0.01 * j))
+            f_by_key[(pid, "ce")] = 0.05 * u + 0.005 * j + float(rng.normal(0, 1e-3))
+    # One DEGENERATE unit: constant margin across its pairs -> screened out.
+    for j in range(3):
+        pid = f"degp{j}"
+        margin_rows.append(_margin_row(pid, "cell_deg", 0.42))
+        f_by_key[(pid, "ce")] = 0.1 * j
+    # Non-steered and missing-margin rows never enter either grain.
+    margin_rows.append({**_margin_row("xx", "cell0", 0.5), "arm": "shuffled"})
+    margin_rows.append(_margin_row("yy", "cell0", None))
+
+    v = A.rule19_validation(margin_rows, f_by_key)
+    assert v["n_cells"] == 12
+    assert v["cells_dropped_no_dynamic_range"] == ["cell_deg|ce"]
+    assert v["rho_margin_fbeh_percell"] is not None and v["rho_margin_fbeh_percell"] > 0.9
+    assert v["validated"] is True
+    assert v["n_pairs"] == 12 * 3 + 3  # degenerate unit's pairs still count per-pair
+    assert v["rho_margin_fbeh_perpair"] is not None
+    assert len(v["percell_points"]) == 12
+    assert {p["cell"] for p in v["percell_points"]} == {f"cell{u}" for u in range(12)}
+    assert "dynamic_range_screen" in v
+
+
+def test_rule19_validation_below_floor_is_unvalidated():
+    """Fewer than RULE19_MIN_N surviving units -> rho None, validated False."""
+    margin_rows = [_margin_row(f"p{j}", "cell0", 0.1 * j) for j in range(3)]
+    f_by_key = {(f"p{j}", "ce"): 0.2 * j for j in range(3)}
+    v = A.rule19_validation(margin_rows, f_by_key)
+    assert v["n_cells"] == 1
+    assert v["rho_margin_fbeh_percell"] is None
+    assert v["validated"] is False
+
+
+# ── probe perm-matrix persistence (plan §248; gitignored *.npz) ──────
+
+
+def test_persist_perm_matrix_upload_gating(tmp_path, monkeypatch, caplog):
+    """The perm matrix is *.npz (gitignored repo-wide), so its ONLY durable
+    home is HF analysis_tensors/probe_perm_matrix/ (plan §248 recomputability
+    commitment): production uploads via the run driver's fail-loud seam;
+    --no-upload skips with a loud warning and NO network call."""
+    import logging
+
+    import issue2162_run as R
+
+    (tmp_path / "perm_auc_matrix.npz").write_bytes(b"x")
+    calls: list[tuple] = []
+    monkeypatch.setattr(
+        R, "upload_dir_hf", lambda pdir, prefix, pats: calls.append((pdir, prefix, pats)) or []
+    )
+    with caplog.at_level(logging.WARNING, logger="issue2162.analysis"):
+        A._persist_perm_matrix(tmp_path, no_upload=True)
+    assert not calls
+    assert any("NOT persisted" in rec.message for rec in caplog.records)
+    A._persist_perm_matrix(tmp_path, no_upload=False)
+    assert calls == [(tmp_path, f"{R.HF_PREFIX}/analysis_tensors/probe_perm_matrix", ["*.npz"])]
+
+
+def test_analysis_no_upload_flag_default_false():
+    """House convention: --no-upload defaults False so production persists."""
+    args = A.parse_args(["--step", "probe"])
+    assert args.no_upload is False
+    assert A.parse_args(["--step", "probe", "--no-upload"]).no_upload is True

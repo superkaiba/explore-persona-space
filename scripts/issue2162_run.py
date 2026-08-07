@@ -301,7 +301,14 @@ def _claim_stale(rec: dict, now: float | None = None) -> bool:
     death is the release), by design."""
     now = time.time() if now is None else now
     if rec.get("host") == socket.gethostname():
-        return not _pid_alive(int(rec.get("pid", -1)))
+        pid = int(rec.get("pid", -1))
+        # r2 H2: a claim record with a missing/non-positive pid is DEAD, never
+        # live — os.kill(-1, 0) signals the caller's own process GROUP and
+        # SUCCEEDS, so _pid_alive(-1) would read a corrupt record as live
+        # forever (permanently unstealable).
+        if pid <= 0:
+            return True
+        return not _pid_alive(pid)
     return (now - float(rec.get("ts", 0.0))) > CLAIM_STALE_S
 
 
@@ -2308,8 +2315,7 @@ UPLOAD_BACKOFF_BASE_S: tuple[float, ...] = (30.0, 60.0, 120.0)
 _upload_retry_sleep = time.sleep  # monkeypatchable in tests
 
 
-def _upload_dir(
-    cfg: RunConfig,
+def upload_dir_hf(
     local_dir: Path,
     remote_prefix: str,
     allow_patterns: list[str],
@@ -2320,25 +2326,14 @@ def _upload_dir(
     seam retries the no-path return with bounded jittered backoff (uploads are
     idempotent), then RAISES on exhaustion so the results sentinel can never
     post over silently-lost durability (the #841 result-persist class).
+    Module-level (no RunConfig) so the analysis driver reuses the exact same
+    fail-loud posture for its probe-perm-matrix upload.
     """
-    if cfg.upload_mode == "none":
-        logger.info("[upload] skipped (--upload none): %s", local_dir)
-        return []
-    if not local_dir.exists():
-        logger.info("[upload] nothing staged under %s — skipping", local_dir)
-        return []
     files = sorted(p for pat in allow_patterns for p in local_dir.glob(pat) if p.is_file())
     if not files:
         logger.info("[upload] no files match %s under %s — skipping", allow_patterns, local_dir)
         return []
     expected = [f"{remote_prefix}/{p.relative_to(local_dir).as_posix()}" for p in files]
-    if cfg.upload_mode == "local-mirror":
-        for p, rel in zip(files, expected, strict=True):
-            dest = cfg.out_root / "hf_mirror" / rel
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(p, dest)
-        logger.info("[upload] mirrored %d files -> %s", len(files), remote_prefix)
-        return expected
     from explore_persona_space.orchestrate.hub import _upload_folder_filtered
 
     base_url = ""
@@ -2374,6 +2369,34 @@ def _upload_dir(
     return expected
 
 
+def _upload_dir(
+    cfg: RunConfig,
+    local_dir: Path,
+    remote_prefix: str,
+    allow_patterns: list[str],
+) -> list[str]:
+    """``upload_dir_hf`` behind the driver's ``--upload`` mode gate."""
+    if cfg.upload_mode == "none":
+        logger.info("[upload] skipped (--upload none): %s", local_dir)
+        return []
+    if not local_dir.exists():
+        logger.info("[upload] nothing staged under %s — skipping", local_dir)
+        return []
+    if cfg.upload_mode == "local-mirror":
+        files = sorted(p for pat in allow_patterns for p in local_dir.glob(pat) if p.is_file())
+        if not files:
+            logger.info("[upload] no files match %s under %s — skipping", allow_patterns, local_dir)
+            return []
+        expected = [f"{remote_prefix}/{p.relative_to(local_dir).as_posix()}" for p in files]
+        for p, rel in zip(files, expected, strict=True):
+            dest = cfg.out_root / "hf_mirror" / rel
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(p, dest)
+        logger.info("[upload] mirrored %d files -> %s", len(files), remote_prefix)
+        return expected
+    return upload_dir_hf(local_dir, remote_prefix, allow_patterns)
+
+
 def _upload_grid_increment(cfg: RunConfig, blocks: list[Block]) -> list[str]:
     """Incremental per-block-batch text upload (plan §9 phase-order persistence).
 
@@ -2390,6 +2413,57 @@ def _upload_grid_increment(cfg: RunConfig, blocks: list[Block]) -> list[str]:
         f"{HF_PREFIX}/raw_completions/grid",
         [f"shard_{s}.jsonl" for s in slugs],
     )
+
+
+MARGIN_DEFERRED_RECIPE = (
+    "stage the judge-built pools (VM-side: uv run python scripts/issue2162_judge.py "
+    "--phase pools; scp pools.json to the pod), then on a fresh 1x H100: "
+    "scripts/issue2162_dispatch.sh margin && scripts/issue2162_dispatch.sh upload "
+    "(needs bank.json + pools.json + the model; ~3.7 GPU-h)"
+)
+
+
+def _margin_state(cfg: RunConfig) -> dict:
+    """Disk-derived margin completeness for the results sentinel (r2 MAJOR 1).
+
+    ``margin_deferred`` is the LOAD-BEARING downstream flag: True means the
+    TF-margin secondary DV is NOT complete in this upload and is DEFERRED with
+    a named recipe — the upload-verifier and report pipeline must be able to
+    tell "deferred, recipe attached" apart from "silently missing". Derived
+    from DISK state (per-block margin done-files + the sharded anchor-margin
+    done records), never from the dispatcher's branch, so a standalone
+    ``upload`` after a crash AND the later deferred-leg re-run (margin +
+    upload on a 1x H100) both report the truth.
+    """
+    pairs = BANK.build_pairs()
+    blocks = smoke_blocks(pairs) if cfg.smoke else enumerate_blocks(pairs)
+    blocks_done = sum(
+        1 for b in blocks if block_done_path(cfg.out_root, b, "margin_blocks").exists()
+    )
+    # Anchor-margin completeness: done records are sharded per worker with the
+    # width as shard identity (r1 M2) — complete iff SOME width W has all of
+    # worker indexes 0..W-1 recorded at num_workers == W.
+    recs: list[dict] = []
+    for p in sorted(cfg.manifest_dir.glob("margin_anchors_w*_done.json")):
+        try:
+            recs.append(json.loads(p.read_text()))
+        except (json.JSONDecodeError, OSError):
+            continue
+    anchors_done = False
+    for w in {int(r.get("num_workers", 0)) for r in recs}:
+        idxs = {int(r.get("worker_index", -1)) for r in recs if int(r.get("num_workers", 0)) == w}
+        if w > 0 and idxs >= set(range(w)):
+            anchors_done = True
+    deferred = blocks_done < len(blocks) or not anchors_done
+    state: dict = {
+        "margin_deferred": deferred,
+        "margin_blocks_done": blocks_done,
+        "margin_blocks_expected": len(blocks),
+        "margin_anchors_done": anchors_done,
+    }
+    if deferred:
+        state["margin_deferred_recipe"] = MARGIN_DEFERRED_RECIPE
+    return state
 
 
 def _sentinel_payload(cfg: RunConfig, uploaded: dict[str, list[str]]) -> dict:
@@ -2409,7 +2483,12 @@ def _sentinel_payload(cfg: RunConfig, uploaded: dict[str, list[str]]) -> dict:
         rec = json.loads(done.read_text())
         cap_hits += int(rec.get("n_cap_hit", 0))
         rows_total += int(rec.get("n_rows", 0))
+    margin_state = _margin_state(cfg)
     return {
+        # r2 MAJOR 1: top-level, unmissable — downstream gates (upload-verifier,
+        # report pipeline) key on margin_deferred to distinguish "secondary DV
+        # deferred with a recipe" from "secondary DV missing".
+        **margin_state,
         "eval_numbers": {
             "grid_shards": n_grid_shards,
             "va_shards": n_va_shards,
@@ -2499,6 +2578,16 @@ def phase_upload(cfg: RunConfig) -> int:
         ["*.json", "blocks/*.done.json", "margin_blocks/*.done.json"],
     )
     payload = _sentinel_payload(cfg, uploaded)
+    if payload["margin_deferred"]:
+        logger.warning(
+            "[upload] margin DEFERRED (blocks %d/%d, anchors_done=%s) — the sentinel "
+            "records margin_deferred=true + the deferred-leg recipe; teardown proceeds "
+            "(never idle the wide pod on the Batch-API SLA tail). Recipe: %s",
+            payload["margin_blocks_done"],
+            payload["margin_blocks_expected"],
+            payload["margin_anchors_done"],
+            MARGIN_DEFERRED_RECIPE,
+        )
     _write_json_atomic(cfg.out_root / "manifests" / "upload_done.json", payload)
     sentinel = cfg.log_dir / (SENTINEL_NAME_SMOKE if cfg.smoke else SENTINEL_NAME)
     body = {
