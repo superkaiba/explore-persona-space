@@ -298,7 +298,7 @@ def step_f_tables(args: argparse.Namespace) -> None:
                 torch.stack(floor_va),
                 torch.stack(ceil_va),
             )
-            f_act = float(res.f if hasattr(res, "f") else res[0])
+            f_act = float(res.f_act)
 
         rec = {
             "pair_id": pair_id,
