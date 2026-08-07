@@ -1,0 +1,196 @@
+{
+ "bare_text_instr_excl_caphit": {
+  "pooled": {
+   "r2_ambient_mean": 0.38985271917718867,
+   "r2_ambient_median": 0.3940961366665984,
+   "r2_identity_bias_mean": -1.5322569004966096,
+   "r2_reduced_k1024_mean": 0.34935358003290784,
+   "null_r2_pooled_median": -0.03746986654017592,
+   "null_r2_pooled_p95": -0.027158317716370367,
+   "null_r2_pooled_n_draws": 50
+  },
+  "fold_sizes": [
+   918,
+   910,
+   930,
+   939,
+   902
+  ],
+  "per_fold_r2": [
+   0.39417714443353014,
+   0.3897920870992253,
+   0.39665737977799875,
+   0.3940961366665984,
+   0.3745408479085911
+  ],
+  "per_fold_idb": [
+   -1.5556638267640026,
+   -1.5329134193659235,
+   -1.5531207897999213,
+   -1.5283327297448213,
+   -1.4912537368083778
+  ],
+  "n_restrict": 4599
+ },
+ "bare_text_instr_random_matched_n": {
+  "pooled": {
+   "r2_ambient_mean": 0.19542188276184674,
+   "r2_ambient_median": 0.19427283994506106,
+   "r2_identity_bias_mean": -1.4849797161929028,
+   "r2_reduced_k1024_mean": 0.14242963515931853,
+   "null_r2_pooled_median": -0.03662790744507971,
+   "null_r2_pooled_p95": -0.02974869673072949,
+   "null_r2_pooled_n_draws": 50
+  },
+  "fold_sizes": [
+   908,
+   931,
+   934,
+   911,
+   915
+  ],
+  "per_fold_r2": [
+   0.18623856650658643,
+   0.19427283994506106,
+   0.19322495354806868,
+   0.20247044823808025,
+   0.20090260557143735
+  ],
+  "per_fold_idb": [
+   -1.4795324559135228,
+   -1.4765859995964759,
+   -1.4857924038664647,
+   -1.443498347973593,
+   -1.5394893736144586
+  ],
+  "n_restrict": 4599
+ },
+ "chat_base_excl_caphit": {
+  "pooled": {
+   "r2_ambient_mean": 0.21429986257764577,
+   "r2_ambient_median": 0.21502599843777193,
+   "r2_identity_bias_mean": -1.0207107717834358,
+   "r2_reduced_k1024_mean": 0.1715754621246139,
+   "null_r2_pooled_median": -0.03249966463121301,
+   "null_r2_pooled_p95": -0.02629376880069441,
+   "null_r2_pooled_n_draws": 50
+  },
+  "fold_sizes": [
+   1500,
+   1497,
+   1542,
+   1531,
+   1481
+  ],
+  "per_fold_r2": [
+   0.21635158181155278,
+   0.2142525265648203,
+   0.21732207722116537,
+   0.2085471288529186,
+   0.21502599843777193
+  ],
+  "per_fold_idb": [
+   -1.0114692369668141,
+   -1.0364770374973071,
+   -1.0721146462034836,
+   -0.9467452642871697,
+   -1.0367476739624042
+  ],
+  "n_restrict": 7551
+ },
+ "chat_base_random_matched_n": {
+  "pooled": {
+   "r2_ambient_mean": 0.20663317495375946,
+   "r2_ambient_median": 0.20783767675955023,
+   "r2_identity_bias_mean": -1.0160922364557312,
+   "r2_reduced_k1024_mean": 0.1637549344664473,
+   "null_r2_pooled_median": -0.031640014445045495,
+   "null_r2_pooled_p95": -0.025250586636095564,
+   "null_r2_pooled_n_draws": 50
+  },
+  "fold_sizes": [
+   1492,
+   1493,
+   1571,
+   1513,
+   1482
+  ],
+  "per_fold_r2": [
+   0.21116965642975583,
+   0.20783767675955023,
+   0.2109650686778931,
+   0.20228873087033572,
+   0.20090474203126252
+  ],
+  "per_fold_idb": [
+   -1.007402181039427,
+   -1.034328315102588,
+   -1.0515912018875606,
+   -0.9551574028003269,
+   -1.0319820814487537
+  ],
+  "n_restrict": 7551
+ },
+ "cell_a_instr_sub8000": {
+  "pooled": {
+   "r2_ambient_mean": 0.479831086704478,
+   "r2_ambient_median": 0.47983730414450276,
+   "r2_identity_bias_mean": -0.7194063043792103,
+   "r2_reduced_k1024_mean": 0.45478300512861924,
+   "null_r2_pooled_median": -0.03060133756361605,
+   "null_r2_pooled_p95": -0.02556460170149052,
+   "null_r2_pooled_n_draws": 50
+  },
+  "fold_sizes": [
+   1595,
+   1591,
+   1642,
+   1622,
+   1550
+  ],
+  "per_fold_r2": [
+   0.48120188300126976,
+   0.47841981593527627,
+   0.47983730414450276,
+   0.4837350736352277,
+   0.4759613568061132
+  ],
+  "per_fold_idb": [
+   -0.7129224778760157,
+   -0.7385126465817489,
+   -0.7040340449340297,
+   -0.7145400631132164,
+   -0.7270222893910412
+  ],
+  "n_restrict": 8000
+ },
+ "prefix_rank_probe": {
+  "cell": "assistant inserted chat instruct",
+  "n_rows_probed": 4000,
+  "rank_gt_1e-4_rel": 0,
+  "sv_top5": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "collapse_threshold": 20,
+  "collapsed": true,
+  "note": "chat cell prefix is a constant template header; rank 0 after centering is structural, not a capture defect"
+ },
+ "prefix_rank_probe_story_cell": {
+  "cell": "char_dana on-policy attributed-quote instruct",
+  "n_rows_probed": 4000,
+  "eff_rank_1e-4_rel": 3584,
+  "sv_top5": [
+   1229.4814453125,
+   798.1287231445312,
+   667.7493286132812,
+   623.6216430664062,
+   583.3006591796875
+  ],
+  "collapse_threshold": 20,
+  "collapsed": false
+ }
+}
