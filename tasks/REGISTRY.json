@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2163,
+  "highest_id": 2164,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8998,6 +8998,13 @@
       "path": "tasks/planning/2163",
       "status": "planning",
       "title": "Which SAE features are read at the context vector by the context->answer map"
+    },
+    "2164": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2164",
+      "status": "proposed",
+      "title": "Autonomous plan-gate cap default is 24 in task.py but 100 in every doc and park message"
     },
     "218": {
       "has_clean_result": false,
