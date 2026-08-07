@@ -1027,7 +1027,7 @@
  "rotation_seed": 20943,
  "n_rotations": 20,
  "provenance": {
-  "git_commit": "7246b53b",
+  "git_commit": "1943b5ad",
   "git_dirty": true,
   "git_dirty_paths": [
    ".claude/agent-memory/analyzer/MEMORY.md",
@@ -1036,12 +1036,14 @@
    ".claude/agent-memory/experiment-implementer/MEMORY.md",
    ".claude/agent-memory/experimenter/MEMORY.md",
    ".claude/agent-memory/implementer/MEMORY.md",
+   ".claude/agent-memory/implementer/reference_worktree_pytest_resolves_main_src.md",
    "figures/issue_1739/issue1739_pv_settings_pa.pdf",
    "figures/issue_1739/issue1739_pv_settings_pb.pdf",
    "figures/issue_1739/issue1739_r2v2_settings_pa.pdf",
    "figures/issue_1739/issue1739_r2v2_settings_pb.pdf",
    "figures/issue_1739/pv_regime_view/pv_regime_pa.pdf",
-   "figures/issue_1739/pv_regime_view/pv_regime_pb.pdf"
+   "figures/issue_1739/pv_regime_view/pv_regime_pb.pdf",
+   "scripts/issue2094_r2_decomposition.py"
   ]
  }
 }
