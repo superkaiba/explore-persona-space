@@ -3038,8 +3038,45 @@ def run_import_check() -> int:
         set_paper_style,
     )
 
-    print("import-check OK: all deferred imports resolved and call shapes bound")
+    _check_phase_args_defined()
+
+    print(
+        "import-check OK: all deferred imports resolved, call shapes bound, "
+        "and every phase's args.<attr> is argparser-defined"
+    )
     return 0
+
+
+def _check_phase_args_defined() -> None:
+    """Assert every `args.<attr>` referenced ANYWHERE in this module is argparser-defined.
+
+    An undefined attribute is an AttributeError that fires only when the referencing code RUNS —
+    invisible to a smoke exercising a subset of phases, and invisible to the deferred-import checks
+    above (an `args.X` reference is not an import). Three shipped here: both VM-side phases
+    (`harvest`, `figures`) read an undefined `args.harvest_out`, and `_fig_dir` read an undefined
+    `args.figures_out`.
+
+    The scan is WHOLE-MODULE, deliberately. A first version scanned only the `PHASES` function
+    bodies and missed `args.figures_out` because it lives in `_fig_dir` — a helper the phase calls.
+    Any per-function scope is escapable by moving the reference one call deeper, so the only
+    non-escapable scope is the file. Raises SystemExit naming every gap.
+    """
+    import re
+
+    src = Path(__file__).read_text(encoding="utf-8")
+    defined = {
+        m.group(1).replace("-", "_")
+        for m in re.finditer(r'ap\.add_argument\(\s*"--([a-z0-9-]+)"', src)
+    }
+    defined |= {"phase", "import_check"}  # add_argument dests not matching the --flag pattern
+
+    missing = sorted({a for a in re.findall(r"args\.([a-z_][a-z0-9_]*)", src) if a not in defined})
+    if missing:
+        raise SystemExit(
+            "import-check FAILED: module references argparser-undefined args attributes "
+            f"({', '.join(missing)}) — each is an AttributeError that fires only when the "
+            "referencing code path runs"
+        )
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
@@ -3090,6 +3127,18 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--matchedn-features", type=int, default=MATCHEDN_FEATURES)
     ap.add_argument("--matchedn-draws", type=int, default=MATCHEDN_DRAWS)
     ap.add_argument("--knn-probes", type=int, default=KNN_N_PRED)
+    # VM-side phases 8a/8b. Both phase_harvest and phase_figures read this; it was referenced but
+    # never defined, so both were dead on arrival (AttributeError on first run).
+    ap.add_argument(
+        "--harvest-out",
+        default=None,
+        help="VM harvest destination root (default: <repo>/eval_results/issue_2163)",
+    )
+    ap.add_argument(
+        "--figures-out",
+        default=None,
+        help="VM figures destination root (default: <repo>/figures/issue_2163)",
+    )
     ap.add_argument(
         "--carried-block",
         type=int,
