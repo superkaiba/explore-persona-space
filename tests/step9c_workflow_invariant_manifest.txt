@@ -32,6 +32,7 @@ tests/test_issue_skill_detached_harvest_pin.py
 tests/test_issue_skill_disk_routing_pin.py
 tests/test_issue_skill_dispatch_preflight_pin.py
 tests/test_issue_skill_exit_breadcrumb.py
+tests/test_issue_skill_fellows_launch_contract_pin.py
 tests/test_issue_skill_followup_cap_park_note_pin.py
 tests/test_issue_skill_forensics_ingest_pointer.py
 tests/test_issue_skill_gate_scope_brief_pin.py
