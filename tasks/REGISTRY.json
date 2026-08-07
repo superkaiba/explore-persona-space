@@ -8212,7 +8212,7 @@
     },
     "2061": {
       "goal": "Fit a map from the pooled context activation to the SAE feature vector of the answer state, holding ONE fixed SAE dictionary across every post-training stage of an open ladder, and determine whether any individual SAE feature's per-feature held-out predictability improves across adjacent stage transitions beyond a selection-symmetric null over the whole dictionary.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/2061",
       "status": "interpreting",

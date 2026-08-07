@@ -5,7 +5,7 @@ title: Per-feature SAE predictability gains across the Tülu post-training ladde
 kind: experiment
 tags: []
 created_at: '2026-08-04T04:44:57Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1895
 origin_prompt: can you also run another issue which is training context vector ->
   SAE feature mapping at each stage and see if any SAE features get better predicted
