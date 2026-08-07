@@ -85,19 +85,45 @@ def test_cell_records_self_and_pair_schema():
     assert r["r2_globalmu"] == 0.6
     assert r["degenerate_n_lt_d"] is True
 
+    # v3 (ALGEBRA_VERSION v3-foldlocal-2-cross-t7t8) emits four tiers per pair
+    # cell; the name list mirrors fit_cell's own `names` tuple for a pair.
     pair_recs = sm.cell_records(
-        "sft", "rlvr", "chat", "if11k", 30, _fake_fit(["within", "t0", "t6", "cross"])
+        "sft",
+        "rlvr",
+        "chat",
+        "if11k",
+        30,
+        _fake_fit(["within", "t0", "t6", "t7", "t8", "cross", "aans_own"]),
     )
-    assert [r["tier"] for r in pair_recs] == [0, 6]
+    assert [r["tier"] for r in pair_recs] == [0, 6, 7, 8]
     for r in pair_recs:
         assert r["pair"] == "sft__rlvr"
         assert r["within_r2"] == 0.5
         assert "selected_lambda" in r and "selectors" in r
-        # cross is a per-CELL quantity (no tier) repeated on every tier row so a
-        # tier-filtered consumer still sees it.
+        # cross and aans_own are per-CELL quantities (no tier) repeated on every
+        # tier row so a tier-filtered consumer still sees them.
         assert r["cross_r2"] == 0.5
         assert r["cross_r2_globalmu"] == 0.6
+        assert r["aans_own_r2"] == 0.5
+        assert r["aans_own_r2_globalmu"] == 0.6
 
-    # A SELF cell has no cross map (source == target makes it the within map),
-    # so the self record must not advertise one.
+    # A SELF cell has neither a cross map nor an A_ans map (source == target
+    # makes it the within map), so the self record must not advertise either.
     assert "cross_r2" not in self_recs[0]
+    assert "aans_own_r2" not in self_recs[0]
+
+
+def test_cell_records_fails_loud_on_a_pre_v3_fit():
+    """A v2-shaped fit (no t7/t8/aans_own) must RAISE, never silently drop tiers.
+
+    The v2 -> v3 tier widening is what ALGEBRA_VERSION busts the per-cell
+    checkpoints for; a fit dict missing the new names means a stale checkpoint
+    leaked past the resume key, and that has to fail rather than emit a
+    half-populated tier set.
+    """
+    import pytest
+
+    with pytest.raises(KeyError):
+        sm.cell_records(
+            "sft", "rlvr", "chat", "if11k", 30, _fake_fit(["within", "t0", "t6", "cross"])
+        )

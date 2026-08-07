@@ -3,7 +3,22 @@
   "layer": 30,
   "tiers": {
     "t0": "Tier 0 \u2014 direct transfer (no correction)",
-    "t6": "Tier 6 \u2014 linear reparameterization of contexts"
+    "t6": "Tier 6 \u2014 linear reparameterization of contexts",
+    "t8": "Tier 8 \u2014 FULL reparameterization (contexts AND answers): y = A_ans(W_s(A_ctx_rev x_t)) + b*"
+  },
+  "t8_coverage": {
+    "cells_drawn": 56,
+    "cells_missing": 24,
+    "pairs": [
+      "base__dpo",
+      "base__rlvr",
+      "base__rlvr_long",
+      "base__sft",
+      "dpo__rlvr",
+      "dpo__rlvr_long",
+      "sft__dpo"
+    ],
+    "note": "t8 is read from the plotter aggregate's own t8_r2 (zero recompute). The three round-5 forward pairs have no t8 yet \u2014 the gap-filler ran at ALGEBRA_VERSION v2, which computed tiers 0/6 only; v3 adds t7/t8 and needs a refit of those 24 cells."
   },
   "ladder_order": [
     "base",

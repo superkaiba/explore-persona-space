@@ -3,7 +3,7 @@
 Round-5 part C+D (user decision): the plotted source->target grid lacks
 (a) the WITHIN-stage map for ``base`` (base appears only as a SOURCE), and
 (b) three forward pairs the registry never ran — sft->rlvr, sft->rlvr_long,
-rlvr->rlvr_long — at tiers 0 and 6. This script computes exactly those cells
+rlvr->rlvr_long — at tiers 0, 6, 7 and 8. This script computes exactly those cells
 on all 8 v2 corpus-format surfaces at layer 30, on the MATCHED pair-file
 basis: every estimator step is the PRODUCTION chain imported verbatim —
 ``issue1336_metric_ladder._load_surface_xy`` (loader, incl. the concat
@@ -67,7 +67,9 @@ from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E
 
 # Version tag for the resume predicate: bump on ANY output-affecting algebra
 # change so stale per-cell checkpoints refit instead of being reused.
-ALGEBRA_VERSION = "v2-foldlocal-2-cross"
+# v3 adds the answer-side reparameterization tiers t7/t8 + the A_ans own
+# held-out read; every v2 checkpoint is stale under it and refits.
+ALGEBRA_VERSION = "v3-foldlocal-2-cross-t7t8"
 
 # The self-map stage (all 8 surfaces) + the three missing forward pairs
 # (all 8 surfaces, tiers 0 + 6). Named HERE, never added to cm.PAIRS
@@ -198,14 +200,22 @@ def load_model_slice(
 # One cell's fits (verbatim production fold loop, tiers within/t0/t6 only)
 # ---------------------------------------------------------------------------
 def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
-    """OOF within (+ t0/t6 for pairs) on the matched pair-file basis.
+    """OOF within (+ t0/t6/t7/t8/cross/aans_own for pairs) on the matched pair-file basis.
 
-    Mirrors ``run_battery_arrays``'s fold loop for the three consumed maps:
+    Mirrors ``run_battery_arrays``'s fold loop for the consumed maps:
     per-fold ``_v2_prep`` at ``inner_seed = FIT_SEED + 4242 + k``, ``_v2_yfit``
     lambda selection on ``cm.LAMBDAS_23``, fold-local pooled accumulation
     ``r2 = 1 - sum_k ss_res_k / sum_k ss_tot_k`` with ``ss_tot_k`` centered on
     the fold's OWN test mean (the plotted-basis convention). The
     globally-centered pooled read is accumulated alongside as a companion.
+
+    Tier algebra is copied VERBATIM from the production ``_fold_observed``
+    (``issue1336_metric_ladder``): t7 feeds the t0 prediction through the
+    forward answer reparameterization ``A_ans: y_s -> y_t``, and t8 — the FULL
+    reparameterization, tier 9 of the 9-tier ladder ``t0..t8`` — feeds the
+    PRE-mean-shift ``raw6_te`` through the same ``A_ans`` (no extra recentering:
+    ``A_ans``'s own fitted intercept supplies ``b*``). ``A_ans`` is the FORWARD
+    fit ``y_s -> y_t``, never an inverse of a ``y_t -> y_s`` map.
     """
     grid = _grid()
     n_folds, seed, n_inner = cm.N_FOLDS, cm.FIT_SEED, cm.N_INNER_LAMBDA_FOLDS_V2
@@ -222,7 +232,7 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
     n, d = int(Xt.shape[0]), int(Xt.shape[1])
     folds = fc._cv_folds(np.asarray(common), n_folds, seed)
 
-    names = ("within",) if is_self else ("within", "t0", "t6", "cross")
+    names = ("within",) if is_self else ("within", "t0", "t6", "t7", "t8", "cross", "aans_own")
     ss_res = dict.fromkeys(names, 0.0)
     ss_tot_local = 0.0
     ss_tot_global = 0.0
@@ -264,6 +274,21 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
             sel_log.setdefault("W_s", []).append(fit_ws["selector"])
             lam_log.setdefault("A_ctx_rev", []).append(float(fit_actx["lam"]))
             sel_log.setdefault("A_ctx_rev", []).append(fit_actx["selector"])
+            # Tiers 7 + 8: the ANSWER-side reparameterization A_ans: y_s -> y_t,
+            # fitted FORWARD (never inverted from a y_t -> y_s map). t7 = A_ans o
+            # W_s (reparameterize the answer space only); t8 = A_ans o W_s o
+            # A_ctx_rev (the FULL reparameterization, tier 9 of t0..t8) and takes
+            # raw6_te, the PRE-mean-shift t6 composite — A_ans's own intercept
+            # supplies b*, so t8 gets NO extra recentering. aans_own is A_ans's
+            # own held-out read (y_s -> y_t direct), which says whether a weak
+            # t7/t8 is the reparameterization failing or the composition.
+            prep_ys = ml._v2_prep(Ys[tr], inner_seed=inner_seed, n_inner=n_inner)
+            fit_aans = ml._v2_yfit(prep_ys, Yt[tr], grid)
+            preds["t7"] = ml._v2_predict(prep_ys, fit_aans, preds["t0"])
+            preds["t8"] = ml._v2_predict(prep_ys, fit_aans, raw6_te)
+            preds["aans_own"] = ml._v2_predict(prep_ys, fit_aans, Ys[te])
+            lam_log.setdefault("A_ans", []).append(float(fit_aans["lam"]))
+            sel_log.setdefault("A_ans", []).append(fit_aans["selector"])
             # CROSS: a map fitted DIRECTLY from the SOURCE's context vector to the
             # TARGET's answer vector (X = v_context(source), Y = v_answer(target)),
             # scored on the target's answers. Distinct from t0, which TRANSFERS a
@@ -277,7 +302,7 @@ def fit_cell(src: dict, tgt: dict, *, is_self: bool) -> dict:
             preds["cross"] = ml._v2_predict(prep_s, fit_cross, Xs[te])
             lam_log.setdefault("cross", []).append(float(fit_cross["lam"]))
             sel_log.setdefault("cross", []).append(fit_cross["selector"])
-            del prep_s
+            del prep_s, prep_ys
 
         yt_te = Yt[te]
         for name, pred in preds.items():
@@ -335,8 +360,8 @@ def cell_records(source: str, target: str, fmt: str, corpus: str, layer: int, fi
                 "r2_globalmu": fit["r2_globalmu"]["within"],
             }
         ]
-    # cross_r2 is a per-CELL quantity (no tier), repeated on both tier rows so
-    # every emitted row stays self-describing under a tier filter.
+    # cross_r2 + aans_own_r2 are per-CELL quantities (no tier), repeated on every
+    # tier row so each emitted row stays self-describing under a tier filter.
     return [
         {
             **base,
@@ -345,8 +370,10 @@ def cell_records(source: str, target: str, fmt: str, corpus: str, layer: int, fi
             "r2_globalmu": fit["r2_globalmu"][f"t{t}"],
             "cross_r2": fit["r2"]["cross"],
             "cross_r2_globalmu": fit["r2_globalmu"]["cross"],
+            "aans_own_r2": fit["r2"]["aans_own"],
+            "aans_own_r2_globalmu": fit["r2_globalmu"]["aans_own"],
         }
-        for t in (0, 6)
+        for t in (0, 6, 7, 8)
     ]
 
 
