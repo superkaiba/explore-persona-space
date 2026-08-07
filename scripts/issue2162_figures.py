@@ -265,16 +265,28 @@ def fig_two_by_two(two: dict, out_dir: Path, inputs: list[Path]) -> None:
     (legend, every class always present) and untestable-causal as the
     explicit fifth label. No vertical threshold line: the probe threshold
     is per-cell, so a single vertical (e.g. chance 0.5) would misrepresent
-    the registered read threshold (r3 MAJOR 1)."""
+    the registered read threshold (r3 MAJOR 1). Rows with NO steered F
+    (zero post-exclusion steered pairs — always untestable-causal) are
+    omitted from the scatter and counted in the title, never plotted at a
+    fabricated 0.0 (r4 MAJOR 1)."""
     rows = two["cells"]
     plottable = [r for r in rows if r["max_auc"] is not None]
     n_no_probe = len(rows) - len(plottable)
+    # r4 MAJOR 1 (round 5): f_steered_mean is None exactly when ZERO steered
+    # pairs survived the separation exclusion — the registered y-value does
+    # not exist for the row, so the point is OMITTED and counted in the title
+    # (mirroring fig_hero's explicit "n/a" and fig_route_contrasts'
+    # skip-on-None). A 0.0 substitute would sit on the zero-effect line under
+    # the same untestable-causal marker as genuinely-measured small-n means,
+    # indistinguishable by position or marker.
+    plotted = [r for r in plottable if r["f_steered_mean"] is not None]
+    n_no_f = len(plottable) - len(plotted)
     fig, ax = plt.subplots(figsize=(9, 8))
     for quad, (marker, color) in QUADRANT_STYLE.items():
-        pts = [r for r in plottable if _quadrant_of(r) == quad]
+        pts = [r for r in plotted if _quadrant_of(r) == quad]
         ax.scatter(
             [r["max_auc"] for r in pts],
-            [r["f_steered_mean"] if r["f_steered_mean"] is not None else 0.0 for r in pts],
+            [r["f_steered_mean"] for r in pts],
             marker=marker,
             s=30,
             color=color,
@@ -284,7 +296,7 @@ def fig_two_by_two(two: dict, out_dir: Path, inputs: list[Path]) -> None:
         for r in pts:
             ax.annotate(
                 f"{r['cell']}|{r['slot']}",
-                (r["max_auc"], r["f_steered_mean"] or 0.0),
+                (r["max_auc"], r["f_steered_mean"]),
                 fontsize=4.5,
                 alpha=0.8,
             )
@@ -294,6 +306,8 @@ def fig_two_by_two(two: dict, out_dir: Path, inputs: list[Path]) -> None:
     title = "Read x write 2x2 — quadrant = persisted (probe, causal) verdicts"
     if n_no_probe:
         title += f" ({n_no_probe} cells without probe rows omitted)"
+    if n_no_f:
+        title += f" ({n_no_f} untestable cells without steered F omitted)"
     ax.set_title(title)
     ax.legend(fontsize=8, title="quadrant (verdict-encoded, per-cell probe threshold)")
     _save(fig, out_dir, "two_by_two", inputs)
@@ -560,8 +574,12 @@ def fig_diagnostics(
             val = a["value_a"] if side == "floor" else a["value_b"]
             tot = a.get(f"n_{side}_rollouts")
             coh = a.get(f"n_{side}_coherent")
-            if tot:
-                ctx_counts[a["cell"]][(a["carrier"], val)] = (int(tot), int(coh or 0))
+            # r4 MINOR 1 (round 5): an ABSENT coherent count is not "0 coherent
+            # of N" (that fabricates a maximally-incoherent baseline) — skip
+            # the context; a cell left with no valid contexts takes the r2 H3
+            # missing-baseline NaN + loud-warning path below.
+            if tot and coh is not None:
+                ctx_counts[a["cell"]][(a["carrier"], val)] = (int(tot), int(coh))
     anchor_incoh: dict[str, float] = {}
     for cell, ctxs in ctx_counts.items():
         tot = sum(t for t, _ in ctxs.values())
