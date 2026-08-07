@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2181,
+  "highest_id": 2182,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9131,6 +9131,13 @@
       "path": "tasks/planning/2181",
       "status": "planning",
       "title": "Ban repo_root()-derived sys.path inserts in tests (worktree runs silently exercise main's code)"
+    },
+    "2182": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2182",
+      "status": "proposed",
+      "title": "sync_repo_root: fail loud when a pull --autostash is left unrestored (silently reverts concurrent sessions' uncommitted work)"
     },
     "22": {
       "has_clean_result": false,
