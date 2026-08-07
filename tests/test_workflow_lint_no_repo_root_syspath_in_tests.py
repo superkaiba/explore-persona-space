@@ -305,6 +305,26 @@ def test_unparseable_file_skipped_with_notice(tmp_path, capsys) -> None:
 
 
 # --------------------------------------------------------------------------
+# case 15: a NULL BYTE in the source is skipped, not a crash. Round-1
+# code-review raised the concern that ast.parse raises ValueError (outside the
+# except tuple) on null-byte source, which would crash the no-flags default
+# bundle -- and therefore the Step 9c / 10d gate -- for EVERY task fleet-wide.
+# Probed on CPython 3.11.15: null bytes raise SyntaxError, which the existing
+# tuple already catches, so no code change was needed. This case pins the
+# BEHAVIOR (skipped, not raised) rather than the exception type, so the
+# invariant survives a CPython change in either direction.
+# --------------------------------------------------------------------------
+
+
+def test_null_byte_source_skipped_not_crash(tmp_path, capsys) -> None:
+    _plant(tmp_path, "tests/nullbyte.py", "x = 1\x00\n")
+    assert _run_on(tmp_path) == []
+    err = capsys.readouterr().err
+    assert "skipped unparseable" in err, err
+    assert "nullbyte.py" in err, err
+
+
+# --------------------------------------------------------------------------
 # case 12: the LIVE tree is green (fleet-red guard)
 # --------------------------------------------------------------------------
 
