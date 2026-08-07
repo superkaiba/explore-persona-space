@@ -9093,8 +9093,8 @@
     "2177": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2177",
-      "status": "approved",
+      "path": "tasks/running/2177",
+      "status": "running",
       "title": "verify_plan.py: WARN when a \u00a79 compute row's own basis arithmetic contradicts its booked GPU-h or its pilot-abort threshold"
     },
     "2178": {
