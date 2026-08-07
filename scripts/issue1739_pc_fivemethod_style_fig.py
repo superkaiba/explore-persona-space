@@ -10,13 +10,16 @@ Restyles the P-A / P-B setting figures to match the committed
     actually contributed plus the protocol-specific readout qualifier
     (P-B reads are LODO: 20% held-in in-distribution, each OOD dataset held
     out whole)
-  * one colour per method, no hatch anywhere
-  * DV-spread-gate failures are DROPPED, never plotted: a floored dataset
-    leaves its bar's mean AND its regime sub-label, and a regime whose every
-    dataset is floored is removed from that panel entirely (evil loses its
-    whole generic-chat group, so evil shows 3 regimes and the others 4)
-  * a caption block carrying protocol provenance, what was dropped, and
-    per-group n_eval
+  * one colour per method; hatch means "not interpretable", never identity
+  * DV-spread-gate failures, handled two ways. PARTIAL floor (some datasets in
+    a regime fail): those datasets leave the bar's mean AND the regime
+    sub-label; the survivors carry the bar. TOTAL floor (every dataset fails):
+    the regime is still plotted from the floored data but HATCHED + muted and
+    excluded from the average panel -- evil's generic chat is the only such
+    regime, kept visible so it reads as measured-and-uninterpretable rather
+    than silently absent
+  * a caption block carrying protocol provenance, what was dropped, what was
+    scope-excluded, and per-group n_eval
 
 Methods: the result2_fivemethod reference roster MINUS arm12_oracle_reg
 ("Ridge regression on real answer"), which P-A/P-B never scored -- ridge on
@@ -145,7 +148,7 @@ def _sem(v: list[float]) -> float:
 
 
 def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dict]:
-    """(behavior, regime, arm) -> (rho, err, n_eval, n_ok, n_tot, all_failed)."""
+    """(behavior, regime, arm) -> (rho, err, n_eval, n_use, n_in_scope, kept, gate_dropped, scope_dropped, all_failed)."""  # noqa: E501
     vals: dict = {}
     for beh in BEHAVIORS:
         rows = fits[beh]["transfer_rows"]
@@ -182,15 +185,19 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                 items = [(rn, r) for rn, r in pick[key] if r.get("rho_frozen") is not None]
                 if not items:
                     continue
-                # Floored (spread-gate-failing) datasets are DROPPED outright --
-                # never averaged into a bar, never drawn hatched. A regime whose
-                # every dataset is floored contributes no bar at all, and
-                # panel_regimes() then drops the whole x-slot from that panel.
                 scoped_out = SCOPE_EXCLUDE.get((beh, key), ())
                 in_scope = [(rn, r) for rn, r in items if rn not in scoped_out]
-                use = [(rn, r) for rn, r in in_scope if ok(rn)]
-                dropped = tuple(rn for rn, _r in in_scope if not ok(rn))
+                passing = [(rn, r) for rn, r in in_scope if ok(rn)]
                 scope_dropped = tuple(rn for rn, _r in items if rn in scoped_out)
+                # Partial floor within a regime -> the floored datasets are
+                # DROPPED from the mean and the sub-label. TOTAL floor (every
+                # dataset in the regime fails) -> the regime is still PLOTTED,
+                # from the floored data, but HATCHED and excluded from the
+                # average panel: dropping it silently would hide that the
+                # regime was measured and came back uninterpretable.
+                all_failed = not passing
+                use = in_scope if all_failed else passing
+                dropped = () if all_failed else tuple(rn for rn, _r in in_scope if not ok(rn))
                 if not use:
                     continue
                 rho = float(st.mean([r["rho_frozen"] for _rn, r in use]))
@@ -209,11 +216,17 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                     tuple(rn for rn, _r in use),
                     dropped,
                     scope_dropped,
+                    all_failed,
                 )
 
     for key, _ in REGIMES:
         for arm, *_ in methods:
-            per = [vals[(b, key, arm)] for b in BEHAVIORS if (b, key, arm) in vals]
+            # Hatched (all-floored) cells are excluded from the average panel.
+            per = [
+                vals[(b, key, arm)]
+                for b in BEHAVIORS
+                if (b, key, arm) in vals and not vals[(b, key, arm)][8]
+            ]
             if per:
                 vals[("average", key, arm)] = (
                     float(st.mean([p[0] for p in per])),
@@ -224,12 +237,13 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                     (),
                     (),
                     (),
+                    False,
                 )
     return vals, {}
 
 
 def panel_regimes(vals: dict, panel: str, methods) -> list[tuple[str, str]]:
-    """Regimes with >=1 drawable bar in this panel (floored ones already gone)."""
+    """Regimes with >=1 drawable bar in this panel (hatched all-floored ones count)."""
     return [
         (key, lab) for key, lab in REGIMES if any((panel, key, arm) in vals for arm, *_ in methods)
     ]
@@ -264,7 +278,7 @@ def regime_sublabel(vals: dict, panel: str, key: str, protocol: str, methods) ->
 
 def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> None:
     panels = [*BEHAVIORS, "average"]
-    fig, axes = plt.subplots(1, 4, figsize=(23.0, 9.6))
+    fig, axes = plt.subplots(1, 4, figsize=(23.0, 13.0))
     n_m = len(methods)
     width = 0.72 / n_m
 
@@ -276,7 +290,7 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
                 v = vals.get((panel, key, arm))
                 if v is None:
                     continue
-                rho, err = v[0], v[1]
+                rho, err, failed = v[0], v[1], v[8]
                 x = centers[i] + (j - (n_m - 1) / 2) * width
                 ax.bar(
                     x,
@@ -284,7 +298,9 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
                     width * 0.9,
                     yerr=max(0.0, err),
                     color=color,
+                    alpha=0.35 if failed else 1.0,
                     edgecolor=color,
+                    hatch="//" if failed else None,
                     linewidth=1.0,
                     error_kw=dict(lw=1.0, capsize=2.0, ecolor="#333333"),
                     zorder=3,
@@ -310,24 +326,38 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
             ax.set_ylabel("Spearman rho, prediction vs judged behaviour expression", fontsize=10)
 
     handles = [mpatches.Patch(facecolor=c, label=lab) for _a, lab, c in methods]
+    handles.append(
+        mpatches.Patch(
+            facecolor="#999999",
+            alpha=0.35,
+            hatch="//",
+            label="every dataset in the regime floored — NOT interpretable",
+        )
+    )
     fig.legend(
         handles=handles,
         loc="lower left",
-        bbox_to_anchor=(0.012, 0.155),
-        ncol=4,
+        bbox_to_anchor=(0.012, 0.305),
+        ncol=3,
         frameon=False,
         fontsize=9.5,
     )
     fig.suptitle(
         f"Result 2 ({protocol} protocol): reads across evaluation regimes — "
-        f"datasets failing the DV spread gate are dropped, not plotted",
+        f"floored datasets dropped; a wholly-floored regime is hatched, not dropped",
         fontsize=12.5,
         x=0.012,
         ha="left",
         y=0.985,
     )
+    # Hard-wrap every caption line: one over-long line silently stretches the
+    # whole canvas via bbox_inches="tight" (P-B hit 8660 px once).
+    caption = "\n".join(
+        textwrap.fill(ln, width=210, subsequent_indent="  ") if len(ln) > 210 else ln
+        for ln in caption.split("\n")
+    )
     fig.text(0.012, 0.006, caption, fontsize=8.2, color="#333333", va="bottom", ha="left")
-    fig.tight_layout(rect=(0.0, 0.26, 1.0, 0.95))
+    fig.tight_layout(rect=(0.0, 0.38, 1.0, 0.95))
     out_png.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_png, dpi=170, bbox_inches="tight")
     fig.savefig(out_png.with_suffix(".pdf"), bbox_inches="tight")
@@ -370,13 +400,16 @@ def build_caption(vals: dict, protocol: str, methods) -> str:
         "judge-filtered synthetic extraction set -- so they are bit-identical across P-A and P-B "
         "except in the in-distribution regime, where P-A reads `train` out-of-fold and P-B reads "
         "the LODO 20% held-in slice (different eval subsets, not a LODO effect on the arm itself).\n"
-        "SPREAD GATE: a dataset is DROPPED -- excluded from its bar's mean and from the regime "
-        "sub-label -- when it fails sd >= 10 and bottom/top bin <= 0.80 on a 0-100 DV (0-1 binary "
-        "DVs rescaled). No floored data is plotted anywhere in this figure. "
-        f"Datasets dropped: {drops}. "
-        "evil's generic-chat regime is dropped WHOLE: its only dataset (wildchat_rung) is floored "
-        "(sd 4.4, 98.9% at the bottom bin), so the group has no interpretable data and evil shows "
-        "3 regimes where the other behaviours show 4. Sycophancy and hallucination lose nothing.\n"
+        "SPREAD GATE (sd >= 10 and bottom/top bin <= 0.80 on a 0-100 DV; 0-1 binary DVs rescaled), "
+        "applied two ways. PARTIAL floor -- some datasets in a regime fail: those are DROPPED from "
+        "the bar's mean and from the regime sub-label, and the surviving datasets carry the bar. "
+        f"Datasets dropped this way: {drops}. TOTAL floor -- EVERY dataset in a regime fails: the "
+        "regime is still PLOTTED, from the floored data, but HATCHED + muted and EXCLUDED from the "
+        "average panel. evil's generic chat is the only such regime (its sole dataset "
+        "wildchat_rung is floored at sd 4.4 with 98.9% of mass in the bottom bin): its bars are "
+        "shown so the regime is visibly measured-and-uninterpretable rather than silently absent, "
+        "and they must NOT be read as effect sizes -- at that floor the rho is not estimable. "
+        "Sycophancy and hallucination lose nothing either way.\n"
         f"SEPARATELY -- SCOPE EXCLUSION, NOT A GATE FAILURE: {scoped}. These datasets PASS the "
         "spread gate and were removed by an explicit user scope call, so evil's completely-OOD "
         "bar is now a SINGLE dataset (MHJ), not a mean over its OOD ladder. evil_tomgibbs is the "
