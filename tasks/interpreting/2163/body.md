@@ -1,5 +1,6 @@
 ---
-title: Which SAE features are read at the context vector by the context->answer map
+title: 'The context→answer map reads SAE features selectively: per-unit gain is lowest
+  on high-variance directions and template-heavy features (HIGH confidence)'
 kind: experiment
 tags: []
 created_at: '2026-08-07T06:53:39Z'
