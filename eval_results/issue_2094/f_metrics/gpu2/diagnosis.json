@@ -1,0 +1,151 @@
+{
+  "weak_pairs": [
+    {
+      "pair_id": "mq--bare__q1--conv__q1",
+      "kind": "prefix",
+      "separation": 0.03299999999999981,
+      "floor": {
+        "mean": -0.9949999999999999,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "ceiling": {
+        "mean": -0.9620000000000001,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      }
+    },
+    {
+      "pair_id": "mq--bare__q2--conv__q2",
+      "kind": "prefix",
+      "separation": -0.015,
+      "floor": {
+        "mean": 0.0,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "ceiling": {
+        "mean": -0.015,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      }
+    },
+    {
+      "pair_id": "mq--bare__q3--conv__q3",
+      "kind": "prefix",
+      "separation": 0.22099999999999997,
+      "floor": {
+        "mean": -0.991,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "ceiling": {
+        "mean": -0.77,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      }
+    },
+    {
+      "pair_id": "mq--bare__q4--conv__q4",
+      "kind": "prefix",
+      "separation": 0.010000000000000009,
+      "floor": {
+        "mean": -1.0,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "ceiling": {
+        "mean": -0.99,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      }
+    },
+    {
+      "pair_id": "mq--bare__q5--conv__q5",
+      "kind": "prefix",
+      "separation": 0.0050000000000001155,
+      "floor": {
+        "mean": -1.0,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "ceiling": {
+        "mean": -0.9949999999999999,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      }
+    }
+  ],
+  "weak_pair_ids": [
+    "mq--bare__q1--conv__q1",
+    "mq--bare__q2--conv__q2",
+    "mq--bare__q3--conv__q3",
+    "mq--bare__q4--conv__q4",
+    "mq--bare__q5--conv__q5"
+  ],
+  "expected_weak_pair_ids": [
+    "mq--bare__q1--conv__q1",
+    "mq--bare__q2--conv__q2",
+    "mq--bare__q3--conv__q3",
+    "mq--bare__q4--conv__q4",
+    "mq--bare__q5--conv__q5"
+  ],
+  "min_abs_separation": 0.5,
+  "query_control_bare_vs_persona_sep": {
+    "q1": 1.742,
+    "q2": 0.8089999999999999,
+    "q3": 1.662,
+    "q4": 1.7277777777777779,
+    "q5": 1.8712499999999999
+  },
+  "queries_separate_against_persona": true,
+  "anchor_score_means_by_gen_prefix": {
+    "bare": {
+      "fp-bare": 79.72,
+      "fp-conv": 0.0,
+      "fp-persona": 0.7
+    },
+    "conv": {
+      "fp-bare": 74.86,
+      "fp-conv": 0.22,
+      "fp-persona": 0.0
+    },
+    "persona": {
+      "fp-bare": 0.0,
+      "fp-conv": 0.0,
+      "fp-persona": 73.58
+    }
+  },
+  "conv_register_carries_into_answers": false,
+  "verdict": "conv-prefix-attributable",
+  "replacement": {
+    "prefix": "conv2",
+    "descriptor": "the carried-over register of an ongoing, upbeat conversation about planning a young child's birthday party, in which the user asked for the excited party energy to be kept up in every later answer: enthusiastic, exclamatory, emoji-rich, and possibly referring back to the party planning",
+    "reformed_pair_ids": [
+      "mq--bare__q1--conv2__q1",
+      "mq--bare__q2--conv2__q2",
+      "mq--bare__q3--conv2__q3",
+      "mq--bare__q4--conv2__q4",
+      "mq--bare__q5--conv2__q5"
+    ]
+  },
+  "repro": {
+    "git_commit": "493ed29a",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/analyzer/MEMORY.md",
+      "scripts/issue2094_judge.py"
+    ],
+    "script": "scripts/issue2094_gpu2.py"
+  }
+}

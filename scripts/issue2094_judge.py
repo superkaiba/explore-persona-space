@@ -84,12 +84,35 @@ from explore_persona_space.orchestrate.provenance import (  # noqa: E402
     git_provenance,
 )
 
+# ADDITIVE gpu2_mq_replacement extension (#2094 follow-up): the conv2
+# replacement-prefix bank module (pure-python, torch-free at judge scope —
+# it imports only the frozen parent bank). The `--gpu2` flag is the ONLY
+# activation path; the parent judge behavior is byte-unchanged without it.
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
+
+def _gpu2_bank():
+    """The gpu2 extension bank module, imported on the ``--gpu2`` path only.
+
+    Deferred by design (the parent judge path never touches it); resolved by
+    the gpu2 driver's ``--import-check`` and the tests' round-trip legs.
+    """
+    import issue2094_gpu2_bank as g2b
+
+    return g2b
+
+
 logger = logging.getLogger("issue2094_judge")
 
 # Mirror of issue2094_run.HF_PREFIX (kept local so this script never imports the
 # torch-bearing pod driver; equality is pinned by tests/test_issue2094_judge.py).
 HF_PREFIX = "issue2094_singlepos"
 DATASET_REPO = "superkaiba1/explore-persona-space-data"
+# Mirror of issue2094_gpu2.GPU2_LABEL (same never-import-torch rationale;
+# equality pinned by tests/test_issue2094_gpu2.py).
+GPU2_LABEL = "gpu2_mq_replacement"
 
 DEFAULT_JUDGE_MAX_TOKENS = 1024  # plan §6: >= the rule-23 single-rationale floor
 JUDGE_N_DRAWS = 1  # body § Judging constants (bootstrap carries the uncertainty)
@@ -143,7 +166,7 @@ def behavior_eval_prompt(core: str) -> str:
     return f"{core}\n\n[RESPONSE]\n{{answer}}\n[/RESPONSE]\n\n{REASON_THEN_SCORE}"
 
 
-def rubric_registry() -> dict[str, str]:
+def rubric_registry(gpu2: bool = False) -> dict[str, str]:
     """rubric_id -> production eval_prompt. 9 rubrics; each wave judges ONE (rule 8).
 
     Templates deliberately carry only the ``{answer}`` slot: the F rubric cores
@@ -151,12 +174,19 @@ def rubric_registry() -> dict[str, str]:
     rubric is form-only (a question would invite relevance judgments the body
     explicitly excludes). ``judge_graded``'s substitution no-ops on the absent
     ``{question}`` slot (pinned by the rule-27 round-trip tests).
+
+    ``gpu2=True`` ADDS the conv2 replacement-prefix rubric (same instrument
+    wrapper, rubric core mirroring ``bank.f_prefix_rubric``'s wording) — the
+    #2094 gpu2_mq_replacement follow-up; parent ids are byte-unchanged.
     """
     reg = {COHERENCE_RUBRIC_ID: coherence_eval_prompt()}
     for q in BANK.QUERY_ORDER:
         reg[f"fq-{q}"] = behavior_eval_prompt(BANK.f_query_rubric(q))
     for p in BANK.PREFIX_ORDER:
         reg[f"fp-{p}"] = behavior_eval_prompt(BANK.f_prefix_rubric(p))
+    if gpu2:
+        g2b = _gpu2_bank()
+        reg[f"fp-{g2b.CONV2_PREFIX}"] = behavior_eval_prompt(g2b.f_prefix_rubric_conv2())
     return reg
 
 
@@ -258,8 +288,15 @@ def load_stage2_rows(stage2_dir: Path) -> list[dict]:
     return rows
 
 
-def pair_index() -> dict[str, BANK.Pair]:
-    return {p.pair_id: p for p in BANK.build_pairs()}
+def pair_index(gpu2: bool = False) -> dict[str, BANK.Pair]:
+    """Parent pairs (+ the 5 gpu2 re-formed mq--bare__qK--conv2__qK pairs
+    under ``gpu2=True`` — collision-asserted; parent set byte-unchanged)."""
+    out = {p.pair_id: p for p in BANK.build_pairs()}
+    if gpu2:
+        for p in _gpu2_bank().build_gpu2_pairs():
+            assert p.pair_id not in out, p.pair_id
+            out[p.pair_id] = p
+    return out
 
 
 def _query_text(context_id: str) -> str:
@@ -922,10 +959,10 @@ def phase_anchors(cfg: JudgeConfig) -> int:
 def phase_waves(cfg: JudgeConfig) -> int:
     if not cfg.dry_run:
         _require_gates(cfg)
-    pairs = pair_index()
+    pairs = pair_index(gpu2=cfg.gpu2)
     grid_rows = load_grid_rows(cfg.rollouts_dir)
     run_audits("grid", grid_rows, cfg.audits_dir)
-    registry = rubric_registry()
+    registry = rubric_registry(gpu2=cfg.gpu2)
 
     coh_units = build_coherence_items(grid_rows, None)
     run_wave("coherence.grid", COHERENCE_RUBRIC_ID, registry[COHERENCE_RUBRIC_ID], coh_units, cfg)
@@ -1032,6 +1069,13 @@ class JudgeConfig:
     judge_model: str = DEFAULT_JUDGE_MODEL
     max_tokens: int = DEFAULT_JUDGE_MAX_TOKENS
     dry_run: bool = False
+    # gpu2_mq_replacement extension (#2094 follow-up; both default-inert):
+    # ``gpu2`` unions the 5 re-formed conv2 pairs + the fp-conv2 rubric into
+    # the wave phases; ``gates_root`` points a FRESH gpu2 work root at the
+    # parent's PASSed gate reports (same instrument — the gates are
+    # instrument-level, and a fresh work root has none of its own).
+    gpu2: bool = False
+    gates_root: Path | None = None
 
     @property
     def scores_dir(self) -> Path:
@@ -1047,7 +1091,7 @@ class JudgeConfig:
 
     @property
     def gates_dir(self) -> Path:
-        return self.work_root / "gates"
+        return self.gates_root if self.gates_root is not None else self.work_root / "gates"
 
     @property
     def audits_dir(self) -> Path:
@@ -1091,15 +1135,33 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="build+validate items and print routing with ZERO API calls (wave phases)",
     )
+    ap.add_argument(
+        "--gpu2",
+        action="store_true",
+        help="gpu2_mq_replacement extension: union the 5 re-formed conv2 pairs + "
+        "the fp-conv2 rubric into --phase waves (use with a FRESH --work-root / "
+        "--cache-root and --gates-root pointing at the parent's PASSed gates)",
+    )
+    ap.add_argument(
+        "--gates-root",
+        type=Path,
+        default=None,
+        help="override the gate-reports dir (default <work-root>/gates)",
+    )
     return ap.parse_args(argv)
 
 
 def _stage_inputs(args: argparse.Namespace) -> None:
     from explore_persona_space.orchestrate import hub
 
-    prefixes = [f"{HF_PREFIX}/raw_completions/grid", f"{HF_PREFIX}/raw_completions/anchors"]
-    if args.phase == "stage2":
-        prefixes.append(f"{HF_PREFIX}/raw_completions/stage2")
+    if args.gpu2:
+        # gpu2 waves judge ONLY the gpu2 grid rollouts (the gate anchors were
+        # judged pod-side by the gpu2 driver's inline gate).
+        prefixes = [f"{HF_PREFIX}/raw_completions/{GPU2_LABEL}/rollouts"]
+    else:
+        prefixes = [f"{HF_PREFIX}/raw_completions/grid", f"{HF_PREFIX}/raw_completions/anchors"]
+        if args.phase == "stage2":
+            prefixes.append(f"{HF_PREFIX}/raw_completions/stage2")
     for prefix in prefixes:
         staged = hub.stage_hub_prefix(DATASET_REPO, prefix, args.in_root, revision=args.hf_revision)
         logger.info("[stage] %s: %d files", prefix, len(staged))
@@ -1107,7 +1169,8 @@ def _stage_inputs(args: argparse.Namespace) -> None:
 
 def build_config(args: argparse.Namespace) -> JudgeConfig:
     mirror = args.in_root / HF_PREFIX / "raw_completions"
-    rollouts = args.rollouts_dir if args.rollouts_dir is not None else mirror / "grid"
+    default_rollouts = mirror / (f"{GPU2_LABEL}/rollouts" if args.gpu2 else "grid")
+    rollouts = args.rollouts_dir if args.rollouts_dir is not None else default_rollouts
     anchors = (
         args.anchors_file if args.anchors_file is not None else mirror / "anchors/anchors.jsonl"
     )
@@ -1123,6 +1186,8 @@ def build_config(args: argparse.Namespace) -> JudgeConfig:
         judge_model=args.judge_model,
         max_tokens=args.max_tokens,
         dry_run=args.dry_run,
+        gpu2=args.gpu2,
+        gates_root=args.gates_root,
     )
 
 
