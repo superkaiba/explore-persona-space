@@ -258,6 +258,7 @@ def build_matched_sets(
     *,
     n_bins: int,
     seed: int,
+    smoke_max_n: int | None = None,
 ) -> dict:
     """Per pair: universe per cell = npz conv_ids ∩ fold map ∩ has-length;
     pooled decile bin edges; per bin ``min(n_b, n_d)`` drawn from each cell
@@ -306,10 +307,23 @@ def build_matched_sets(
             b = int(np.searchsorted(edges, lens[cond][cid], side="right"))
             bins[b].append(cid)
         ids_by_bin[cond] = bins
+    # Smoke SCALE dial: cap the matched total per cell by scaling each bin's
+    # take proportionally (both cells keep the SAME per-bin count, so the
+    # length-matching property is preserved at reduced n). Regime-keyed —
+    # production checkpoints never resume a smoke-capped fit.
+    matched_total_uncapped = sum(
+        min(len(ids_by_bin["inserted"][b]), len(ids_by_bin["on_policy"][b]))
+        for b in range(len(edges) + 1)
+    )
+    scale = 1.0
+    if smoke_max_n is not None and matched_total_uncapped > smoke_max_n:
+        scale = smoke_max_n / matched_total_uncapped
     for b in range(len(edges) + 1):
         ids_b = ids_by_bin["inserted"][b]
         ids_d = ids_by_bin["on_policy"][b]
         n_take = min(len(ids_b), len(ids_d))
+        if scale < 1.0 and n_take:
+            n_take = max(1, int(np.floor(n_take * scale)))
         take_b = list(rng.permutation(ids_b)[:n_take]) if n_take else []
         take_d = list(rng.permutation(ids_d)[:n_take]) if n_take else []
         matched["inserted"].extend(take_b)
@@ -349,6 +363,11 @@ def build_matched_sets(
         "min_per_fold_n_train": int(min_n_train),
         "d_ambient": D_AMBIENT,
         "basis": basis,
+        # Even the reduced k=1024 read is degenerate when n_train falls at or
+        # below k (the PCA keeps ~full rank; the smoke's capped-n redk read
+        # demonstrated this at n_train~960 → R² −373). Flagged, never hidden.
+        "reduced_read_degenerate": bool(min_n_train <= REDUCED_BASIS_K),
+        "smoke_max_n": smoke_max_n,
     }
 
 
@@ -369,6 +388,7 @@ def _regime_of(task: dict) -> dict:
         "fold_map_k": task["fold_map_k"],
         "fold_map_seed": task["fold_map_seed"],
         "n_bins": task["n_bins"],
+        "smoke_max_n": task["smoke_max_n"],
     }
 
 
@@ -585,13 +605,13 @@ def render_figure(pair_rows: list[dict], fig_path: Path) -> None:
     ax_b.scatter([], [], color=c_onpolicy, label="on-policy cell")
     ax_b.legend(loc="upper left", fontsize=8)
 
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
     set_title_subtitle(
-        fig,
+        ax_a,
         "Length-stratified refit: inserted vs on-policy context-arm ceilings",
-        "24 pairs; matched sets = equal per-decile-bin subsamples of pooled answer-token-length "
-        "distribution; square markers = pair compared in reduced k=1024 basis (matched n_train < 3584)",
+        "matched = equal per-decile-bin subsamples of pooled answer lengths",
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    set_title_subtitle(ax_b, "Per-cell R²: matched vs full", "squares = reduced k=1024 basis")
     savefig_paper(fig, fig_path.stem, dir=fig_path.parent)
     plt.close(fig)
 
@@ -626,6 +646,13 @@ def main() -> int:
         nargs="*",
         default=None,
         help="optional pair-key subset (smoke); default = all 24 companion pairs",
+    )
+    ap.add_argument(
+        "--smoke-max-n",
+        type=int,
+        default=None,
+        help="smoke SCALE dial: cap matched n per cell (proportional per-bin downscale; "
+        "regime-keyed so production never resumes smoke checkpoints)",
     )
     ap.add_argument("--stage-only", action="store_true", help="stage activations then exit")
     args = ap.parse_args()
@@ -672,7 +699,13 @@ def main() -> int:
     manifests: dict[str, dict] = {}
     for pair_idx, pair in enumerate(pairs):
         m = build_matched_sets(
-            pair, pair_idx, activations_dir, fold_of, n_bins=args.n_bins, seed=args.seed
+            pair,
+            pair_idx,
+            activations_dir,
+            fold_of,
+            n_bins=args.n_bins,
+            seed=args.seed,
+            smoke_max_n=args.smoke_max_n,
         )
         manifests[pair["pair_key"]] = m
         fits._write_json(
@@ -720,6 +753,7 @@ def main() -> int:
                     "fold_map_k": int(fold_map["k"]),
                     "fold_map_seed": int(fold_map.get("seed", -1)),
                     "n_bins": int(args.n_bins),
+                    "smoke_max_n": args.smoke_max_n,
                     "ckpt_path": str(ckpt_dir / f"cell__{cell_key}.json"),
                 }
             )
@@ -782,6 +816,7 @@ def main() -> int:
             "form": pair["form"],
             "model": pair["model"],
             "basis": m["basis"],
+            "reduced_read_degenerate": m["reduced_read_degenerate"],
             "min_per_fold_n_train": m["min_per_fold_n_train"],
             "d_ambient": D_AMBIENT,
             "bin_edges_interior": m["bin_edges_interior"],
@@ -810,7 +845,17 @@ def main() -> int:
                 if res is not None and "error" in res:
                     cell_row["error"] = res["error"]
             row["cells"][cond] = cell_row
-        if complete:
+        # A pair is comparison-VALID only when it has a non-degenerate basis at
+        # matched n: ambient needs every fold n_train >= d; the reduced k=1024
+        # fallback needs n_train > k (at n_train <= k the PCA keeps ~full rank
+        # and the read is meaningless — the smoke measured R² −373 there).
+        valid = complete and not (m["basis"] == "reduced_k1024" and m["reduced_read_degenerate"])
+        if complete and not valid:
+            row["comparison_invalid_reason"] = (
+                f"matched min n_train {m['min_per_fold_n_train']} <= reduced k "
+                f"{REDUCED_BASIS_K}: no non-degenerate estimator basis at matched n"
+            )
+        if valid:
             key = "r2_ambient_mean" if m["basis"] == "ambient" else "r2_reduced_k1024_mean"
             b_full = row["cells"]["inserted"]["full"][key]
             d_full = row["cells"]["on_policy"]["full"][key]
@@ -829,6 +874,7 @@ def main() -> int:
                 - row["cells"]["on_policy"]["matched"]["r2_ambient_mean"]
             )
         row["complete"] = complete
+        row["comparison_valid"] = valid
         pair_rows.append(row)
 
     prov = git_provenance()
@@ -849,6 +895,7 @@ def main() -> int:
             "n_bins": int(args.n_bins),
             "n_null_draws": int(args.n_null_draws),
             "bootstrap_draws": int(args.bootstrap_draws),
+            "smoke_max_n": args.smoke_max_n,
             "matched_n_floor": MATCHED_N_FLOOR,
             "fold_map": {
                 "path": str(fold_map_path),
@@ -866,12 +913,12 @@ def main() -> int:
     fits._write_json(out_json, out_payload)
     _log(f"wrote {out_json}")
 
-    complete_rows = [r for r in pair_rows if r["complete"]]
-    if complete_rows:
-        render_figure(complete_rows, fig_path)
+    valid_rows = [r for r in pair_rows if r["comparison_valid"]]
+    if valid_rows:
+        render_figure(valid_rows, fig_path)
         _log(f"wrote {fig_path}")
     else:
-        _log("no complete pairs; figure skipped")
+        _log("no comparison-valid pairs; figure skipped")
 
     rc = 0 if (n_err == 0 and n_ok == n_total) else 1
     print(f"[lenstrat] DONE rc={rc} cells={n_ok}/{n_total}", flush=True)
