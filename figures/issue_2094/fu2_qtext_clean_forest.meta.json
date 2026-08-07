@@ -1,0 +1,3823 @@
+{
+  "commit": "2e7276fc+dirty",
+  "git_commit": "2e7276fc",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/analyzer/MEMORY.md",
+    "figures/issue_2094/fu2_coherence_by_dose.meta.json",
+    "figures/issue_2094/fu2_coherence_by_dose.pdf",
+    "figures/issue_2094/fu2_coherence_by_dose.png",
+    "figures/issue_2094/fu2_verdict_composition.meta.json",
+    "figures/issue_2094/fu2_verdict_composition.pdf",
+    "figures/issue_2094/fu2_verdict_composition.png",
+    "scripts/issue2094_fu2_fig.py"
+  ],
+  "created": "2026-08-07T08:48:03Z",
+  "figsize": [
+    7.6,
+    7.0
+  ],
+  "points": [
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9510505887178274,
+      "y": 13.18,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4477281527859824,
+      "y": 12.82,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9267182435308184,
+      "y": 12.18,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5619944426520117,
+      "y": 11.82,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8416391142777034,
+      "y": 11.18,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5371065454172164,
+      "y": 10.82,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7181213380625615,
+      "y": 10.18,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.21752857653280863,
+      "y": 9.82,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7087523753826435,
+      "y": 9.18,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.34356742165982723,
+      "y": 8.82,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7023550890959226,
+      "y": 8.18,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3347032909902434,
+      "y": 7.82,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7019978870862517,
+      "y": 7.18,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3936399473567252,
+      "y": 6.82,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6930060799008814,
+      "y": 6.18,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.38293254953222694,
+      "y": 5.82,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6814962540721071,
+      "y": 5.18,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.35615519366089116,
+      "y": 4.82,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5682423787898031,
+      "y": 4.18,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.30510196338097256,
+      "y": 3.82,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5682423787898031,
+      "y": 3.18,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.30510196338097256,
+      "y": 2.82,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5325606724825399,
+      "y": 2.18,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2502550170239475,
+      "y": 1.82,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.30517680885700077,
+      "y": 1.18,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.10307246188704784,
+      "y": 0.8200000000000001,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.16992719769477843,
+      "y": 0.18,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.07577300497796387,
+      "y": -0.18,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9750000238418579,
+      "y": 13.212874725826715,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0457515716552734,
+      "y": 13.172665412770247,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.752043604850769,
+      "y": 13.223031750389366,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6887755393981934,
+      "y": 13.203684163487123,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.016213059425354,
+      "y": 13.131301281746518,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 13.237074682196411,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.08695650100708,
+      "y": 13.211336764238842,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9750000238418579,
+      "y": 13.214327716633234,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0695186853408813,
+      "y": 13.135373635921065,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9731903672218323,
+      "y": 13.174046312547468,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8137044906616211,
+      "y": 13.16449576290791,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9728260636329651,
+      "y": 13.231211798661832,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.994677722454071,
+      "y": 13.197263814409679,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 12.8587313935925,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2875817120075226,
+      "y": 12.81320970385928,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.495449960231781,
+      "y": 12.787268646614173,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5340599417686462,
+      "y": 12.8265501744419,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 12.767658070732502,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5211349129676819,
+      "y": 12.85931574063911,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2750000059604645,
+      "y": 12.835799727894647,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.54347825050354,
+      "y": 12.850970528810246,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 12.802543116175585,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5347593426704407,
+      "y": 12.87648376292739,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.46380698680877686,
+      "y": 12.867174534558664,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.64673912525177,
+      "y": 12.853406019648851,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.489059716463089,
+      "y": 12.783356644942236,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4771241843700409,
+      "y": 12.816006520447244,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0101009607315063,
+      "y": 12.125256451894467,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 12.138514739048105,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.824999988079071,
+      "y": 12.201965874389094,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 12.209371458708938,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 12.236101167892105,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9747474789619446,
+      "y": 12.159099042976578,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 12.164455164724185,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 12.176346697353097,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 12.142736563090114,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9948927760124207,
+      "y": 12.135590580640256,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 12.177084591147112,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 12.147229121886106,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5245245099067688,
+      "y": 12.200377679361901,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9744898080825806,
+      "y": 12.172458230264679,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 12.21992138352694,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8724489808082581,
+      "y": 12.20403181224027,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9750000238418579,
+      "y": 12.157483996965844,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 12.219871176167423,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7250000238418579,
+      "y": 12.216571722899616,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0463768243789673,
+      "y": 12.166497405483621,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0058650970458984,
+      "y": 12.15459937247163,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6810962557792664,
+      "y": 12.201899460476996,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0210970640182495,
+      "y": 12.136770298033117,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9614906907081604,
+      "y": 12.143988984297012,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9649369120597839,
+      "y": 12.12088347237012,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9608339071273804,
+      "y": 12.214430925300256,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.964336633682251,
+      "y": 12.199782102791044,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9658728837966919,
+      "y": 12.20461984543516,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5050504803657532,
+      "y": 11.853687483722636,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 11.815069893064601,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 11.828248943514348,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.925000011920929,
+      "y": 11.77677563977532,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.49494948983192444,
+      "y": 11.773743608824317,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.49494948983192444,
+      "y": 11.840208355414857,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 11.816531544737176,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 11.827828332777743,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 11.851799862889923,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 11.836166198400072,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5097038149833679,
+      "y": 11.82642952807896,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.49949949979782104,
+      "y": 11.82710485928945,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.49949949979782104,
+      "y": 11.796474011767513,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4897959232330322,
+      "y": 11.763698140148152,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4897959232330322,
+      "y": 11.812406086707885,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9234694242477417,
+      "y": 11.785750160738344,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 11.809023437246957,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 11.862408368792181,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 11.78807273830384,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4956521689891815,
+      "y": 11.766996329002689,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.507331371307373,
+      "y": 11.79376606704264,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4848956763744354,
+      "y": 11.795231250932002,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.48663854598999023,
+      "y": 11.839429981767228,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5087719559669495,
+      "y": 11.826843858280954,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.017391324043274,
+      "y": 11.85406778509277,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4880785346031189,
+      "y": 11.839717624839286,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4775742292404175,
+      "y": 11.80876642337281,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.47931525111198425,
+      "y": 11.857682446159924,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.020476222038269,
+      "y": 11.780036750388925,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.723073422908783,
+      "y": 11.122725448776063,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.011573076248169,
+      "y": 11.130805743293077,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9387136101722717,
+      "y": 11.206683122071574,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9580626487731934,
+      "y": 11.175425267630166,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9136048555374146,
+      "y": 11.139352613484032,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9670724868774414,
+      "y": 11.180125373012404,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9782373905181885,
+      "y": 11.13827745232558,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9620949029922485,
+      "y": 11.203558445009328,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9491761922836304,
+      "y": 11.173538753068883,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6427719593048096,
+      "y": 11.165722547131578,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9980330467224121,
+      "y": 11.156181450697744,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9426072835922241,
+      "y": 11.195633911174266,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7858549356460571,
+      "y": 11.163417513266406,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0063438415527344,
+      "y": 11.130517990317932,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9495505094528198,
+      "y": 11.134160708254461,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9013714790344238,
+      "y": 11.23542771974594,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8867307901382446,
+      "y": 11.229029682884912,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.675838828086853,
+      "y": 11.20396485605729,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8778938055038452,
+      "y": 11.151904395375142,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8703606128692627,
+      "y": 11.236301165281727,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8873432874679565,
+      "y": 11.213450108475895,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.959661602973938,
+      "y": 11.20602682269908,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6130452156066895,
+      "y": 11.173923380257254,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9348469972610474,
+      "y": 11.15266898742142,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5693566799163818,
+      "y": 11.13156691545842,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8251211643218994,
+      "y": 11.228312287585261,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3647744655609131,
+      "y": 11.174693154780034,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.47278010845184326,
+      "y": 11.144283603775428,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.29790419340133667,
+      "y": 10.796714794898078,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6351011395454407,
+      "y": 10.829506348273028,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5980011820793152,
+      "y": 10.781212733952708,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9888273477554321,
+      "y": 10.862793714091085,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7495207190513611,
+      "y": 10.851022343580226,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6807478666305542,
+      "y": 10.846335554714113,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9061875343322754,
+      "y": 10.811851164773012,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.35212019085884094,
+      "y": 10.835277060884293,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3586732745170593,
+      "y": 10.830091756269528,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5326539278030396,
+      "y": 10.837981592186578,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.27292317152023315,
+      "y": 10.770133318536788,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6518242359161377,
+      "y": 10.809896888260473,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6522915363311768,
+      "y": 10.764993700863428,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.787926197052002,
+      "y": 10.819278898309342,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6561630964279175,
+      "y": 10.799583345479935,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9073115587234497,
+      "y": 10.777342902663927,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.32706761360168457,
+      "y": 10.772408356126707,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.015055221505463123,
+      "y": 10.830517348661326,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5144239664077759,
+      "y": 10.780471156224426,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.24358785152435303,
+      "y": 10.871014414205217,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5273880958557129,
+      "y": 10.829727336764048,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.23212853074073792,
+      "y": 10.801624376544181,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.35099324584007263,
+      "y": 10.83090985897777,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7138731479644775,
+      "y": 10.762736464523565,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8614137172698975,
+      "y": 10.875027105588973,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6702460050582886,
+      "y": 10.817876412433149,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.1770937740802765,
+      "y": 10.853928227270035,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3821481466293335,
+      "y": 10.769927599990693,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.562603771686554,
+      "y": 10.81839899970058,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.03660130128264427,
+      "y": 10.178884839322542,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.34378159046173096,
+      "y": 10.232539174596997,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3160763084888458,
+      "y": 10.18860736628513,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9948979616165161,
+      "y": 10.176818728126834,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.016213059425354,
+      "y": 10.152037079571027,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.842391312122345,
+      "y": 10.159788279681106,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9750000238418579,
+      "y": 10.182480688296584,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.855614960193634,
+      "y": 10.172669375236605,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.919571042060852,
+      "y": 10.12259344958564,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8137044906616211,
+      "y": 10.219155030903323,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.91847825050354,
+      "y": 10.227539292620772,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.32939088344573975,
+      "y": 10.136829890679833,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9738562107086182,
+      "y": 10.186484337224686,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 9.773029088936253,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.01011121366173029,
+      "y": 9.840668811164777,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 9.793748054060682,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5211349129676819,
+      "y": 9.839130716163028,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 9.847239353714427,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.35326087474823,
+      "y": 9.85223769903012,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 9.772928913514708,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.02673797495663166,
+      "y": 9.869921421416514,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.43699732422828674,
+      "y": 9.787625678907386,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.069593146443367,
+      "y": 9.764489506741143,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.10326086729764938,
+      "y": 9.826582296326979,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.489059716463089,
+      "y": 9.804510674063494,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4771241843700409,
+      "y": 9.85957476917589,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9750000238418579,
+      "y": 9.216990176647716,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0196077823638916,
+      "y": 9.158056667138725,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2932254672050476,
+      "y": 9.234347927408368,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.15258857607841492,
+      "y": 9.154910140576813,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8163265585899353,
+      "y": 9.181806855507805,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6253619194030762,
+      "y": 9.150715810868112,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0054347515106201,
+      "y": 9.232325228405875,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 9.139752938109842,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7219251394271851,
+      "y": 9.125389274327079,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.27613940834999084,
+      "y": 9.172211647200363,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.91847825050354,
+      "y": 9.2390850676867,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4358367919921875,
+      "y": 9.22700127195059,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9738562107086182,
+      "y": 9.209832962334833,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 8.866895098905424,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.026143796741962433,
+      "y": 8.867213596763744,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.495449960231781,
+      "y": 8.822263003246373,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5068119764328003,
+      "y": 8.797911486219695,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 8.85264149185332,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5211349129676819,
+      "y": 8.839399351580132,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 8.804838927464845,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 8.771336000167382,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5347593426704407,
+      "y": 8.849614753361884,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.46380698680877686,
+      "y": 8.791495261910745,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.09100642800331116,
+      "y": 8.872417578064054,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4836956560611725,
+      "y": 8.788916469000682,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9750000238418579,
+      "y": 8.134730951889377,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0196077823638916,
+      "y": 8.219733520654989,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.34378159046173096,
+      "y": 8.138394117994938,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.09809264540672302,
+      "y": 8.141512196978928,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8418367505073547,
+      "y": 8.191925934982502,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5471916794776917,
+      "y": 8.224947444900495,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0054347515106201,
+      "y": 8.143572159885748,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 8.157238840748011,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.855614960193634,
+      "y": 8.21328858058894,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.222520112991333,
+      "y": 8.236619171127316,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.864130437374115,
+      "y": 8.18008894234428,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4358367919921875,
+      "y": 8.13726770030615,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9215686321258545,
+      "y": 8.121672354524984,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 7.787558723599863,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 7.775818666134382,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.495449960231781,
+      "y": 7.841319040833543,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5340599417686462,
+      "y": 7.774619900555424,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 7.820759591794476,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5211349129676819,
+      "y": 7.843311492277147,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 7.829733993106508,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 7.783973078199208,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5347593426704407,
+      "y": 7.856494943141872,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.46380698680877686,
+      "y": 7.845848855553896,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.010706627741456032,
+      "y": 7.848678080469865,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4565217196941376,
+      "y": 7.775726930186877,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.20202018320560455,
+      "y": 7.134850456438041,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.07499998807907104,
+      "y": 7.231307506120781,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4000000059604645,
+      "y": 7.167709383258993,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9600000381469727,
+      "y": 7.156113843013713,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5707070827484131,
+      "y": 7.178630085442184,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 7.19954370553163,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6212121248245239,
+      "y": 7.234674790845636,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 7.1543735472258465,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9750000238418579,
+      "y": 7.230977011517443,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.30541369318962097,
+      "y": 7.12298313896635,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.02402404323220253,
+      "y": 7.186623765079219,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9899899959564209,
+      "y": 7.19607701340173,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9749749898910522,
+      "y": 7.13270768845009,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2857142686843872,
+      "y": 7.136840751647669,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7193877696990967,
+      "y": 7.170293718317956,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4897959232330322,
+      "y": 7.2359478294571815,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9750000238418579,
+      "y": 7.1915251063881245,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 7.231962786592025,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 7.216523309873557,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7275362610816956,
+      "y": 7.176085792186635,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.27272728085517883,
+      "y": 7.2141716139102625,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9613827466964722,
+      "y": 7.122140414077238,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5991561412811279,
+      "y": 7.133097279611888,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7426900863647461,
+      "y": 7.219531433785928,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9614906907081604,
+      "y": 7.215618050599019,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9088358879089355,
+      "y": 7.147916889035971,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.875552773475647,
+      "y": 7.183692350871886,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9928672909736633,
+      "y": 7.192721898484001,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7474594116210938,
+      "y": 7.224128674453121,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.17676769196987152,
+      "y": 6.832372858880647,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 6.809508588312842,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2750000059604645,
+      "y": 6.804902085208862,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 6.811105850364822,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.49494948983192444,
+      "y": 6.8382317230695975,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4191919267177582,
+      "y": 6.86409887581028,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4191919267177582,
+      "y": 6.814467625849156,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 6.789740747554164,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 6.78839948355971,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 6.849521713629214,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5097038149833679,
+      "y": 6.85798825161087,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.49949949979782104,
+      "y": 6.772633369582495,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.02402404323220253,
+      "y": 6.767987062834622,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.49949949979782104,
+      "y": 6.831332039650775,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.00510203605517745,
+      "y": 6.777540789303124,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.41326528787612915,
+      "y": 6.8589597028547615,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.43877550959587097,
+      "y": 6.7972401608708894,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 6.7772646319565375,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 6.870516456698494,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 6.779863806728233,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4956521689891815,
+      "y": 6.794166409880552,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.24340178072452545,
+      "y": 6.778433607423048,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.00840858742594719,
+      "y": 6.773858807639843,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3178621530532837,
+      "y": 6.762537761960373,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9055900573730469,
+      "y": 6.766647449099711,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4880785346031189,
+      "y": 6.780956976512303,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.005685436073690653,
+      "y": 6.766405831915261,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.22727271914482117,
+      "y": 6.190937257933316,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.09999999403953552,
+      "y": 6.201685743215941,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4000000059604645,
+      "y": 6.1672356548198435,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9750000238418579,
+      "y": 6.1581589316342455,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6212121248245239,
+      "y": 6.180543148442667,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 6.2250005930681525,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6212121248245239,
+      "y": 6.222135795218664,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 6.125217007441535,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9600000381469727,
+      "y": 6.141779809151583,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.22880491614341736,
+      "y": 6.148409384532528,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.02402404323220253,
+      "y": 6.149926509099865,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9899899959564209,
+      "y": 6.1885479182091325,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9749749898910522,
+      "y": 6.169951491084383,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.33673468232154846,
+      "y": 6.125910494391311,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7193877696990967,
+      "y": 6.1648336966151485,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.43877550959587097,
+      "y": 6.182850353846116,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9750000238418579,
+      "y": 6.132200628348445,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 6.220015026454627,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 6.126235423975812,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6695652008056641,
+      "y": 6.230981024282167,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.21407625079154968,
+      "y": 6.131893576989585,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9613827466964722,
+      "y": 6.22122899419173,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.37412095069885254,
+      "y": 6.2283183772713135,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7719298005104065,
+      "y": 6.237548481670391,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9055900573730469,
+      "y": 6.216243105632831,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8807854056358337,
+      "y": 6.213537304892559,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9324068427085876,
+      "y": 6.197097993119465,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9928672909736633,
+      "y": 6.2134795625493755,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8020628094673157,
+      "y": 6.136146265009577,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.20202018320560455,
+      "y": 5.824328164313717,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 5.82170674442285,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.22499999403953552,
+      "y": 5.862908657294708,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 5.815535923871222,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.49494948983192444,
+      "y": 5.806210739532043,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4191919267177582,
+      "y": 5.836747592548454,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4191919267177582,
+      "y": 5.791975598100102,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 5.776772209314475,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 5.81734527288285,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 5.8100267242313866,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5097038149833679,
+      "y": 5.787908392863465,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.49949949979782104,
+      "y": 5.804101417213816,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.02402404323220253,
+      "y": 5.80396709397915,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.49949949979782104,
+      "y": 5.799299467729505,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.02040817402303219,
+      "y": 5.805535689567232,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3622449040412903,
+      "y": 5.842289201454713,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3877550959587097,
+      "y": 5.795625176948555,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4749999940395355,
+      "y": 5.873862951205841,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 5.869961762344581,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 5.81770925139601,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4956521689891815,
+      "y": 5.799403344600563,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.24340178072452545,
+      "y": 5.824252174779601,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.00840858742594719,
+      "y": 5.861827258652835,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3178621530532837,
+      "y": 5.838310480867213,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7937888503074646,
+      "y": 5.856527019353649,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4880785346031189,
+      "y": 5.823926673127889,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.005685436073690653,
+      "y": 5.835950115512115,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9848484396934509,
+      "y": 5.154578673701895,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.574999988079071,
+      "y": 5.2081871794772345,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.925000011920929,
+      "y": 5.1442885511750855,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 5.20337577545822,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2929292917251587,
+      "y": 5.223286288199107,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6717171669006348,
+      "y": 5.135852340476185,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7727273106575012,
+      "y": 5.19372556886503,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9750000238418579,
+      "y": 5.131411489787592,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8999999761581421,
+      "y": 5.207085875392571,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.675000011920929,
+      "y": 5.130139186258822,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6118488311767578,
+      "y": 5.232312778724075,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.12412413209676743,
+      "y": 5.136488951604536,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9749749898910522,
+      "y": 5.235065629509089,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 5.216106101130212,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.43877550959587097,
+      "y": 5.191241840535962,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5153061151504517,
+      "y": 5.213914892555545,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5663265585899353,
+      "y": 5.21541378067797,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.75,
+      "y": 5.23352324753808,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 5.150406002460702,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0,
+      "y": 5.1908091074429965,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.582608699798584,
+      "y": 5.131405903707728,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.09677420556545258,
+      "y": 5.193939884002894,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.06446590274572372,
+      "y": 5.140554956491134,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.06469761580228806,
+      "y": 5.1877940733766925,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4502924084663391,
+      "y": 5.188691661684062,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9614906907081604,
+      "y": 5.175918218357747,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8527349233627319,
+      "y": 5.1827158130615745,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.915350615978241,
+      "y": 5.21167080680079,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 1.0213979482650757,
+      "y": 5.215909365981448,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5050504803657532,
+      "y": 4.819058385869051,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.32499998807907104,
+      "y": 4.831951212982713,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9750000238418579,
+      "y": 4.871748348282813,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.14141415059566498,
+      "y": 4.774368030620135,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.49494948983192444,
+      "y": 4.774052427908013,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4191919267177582,
+      "y": 4.770525081429293,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 4.8389435942048635,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5,
+      "y": 4.810232996094846,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.07499998807907104,
+      "y": 4.852918569937022,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5097038149833679,
+      "y": 4.840547769597031,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.49949949979782104,
+      "y": 4.800036530999389,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.039039041846990585,
+      "y": 4.867803985683384,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3622449040412903,
+      "y": 4.851503857648479,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4897959232330322,
+      "y": 4.792464192909222,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.41326528787612915,
+      "y": 4.803703042132647,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.42500001192092896,
+      "y": 4.797732797624512,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": 4.778913397835,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4000000059604645,
+      "y": 4.777734004705064,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0028985480312258005,
+      "y": 4.872335295605089,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.12609972059726715,
+      "y": 4.812548484463851,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.00840858742594719,
+      "y": 4.80599837873329,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3459915518760681,
+      "y": 4.847562285041286,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3040935695171356,
+      "y": 4.826359167830348,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8496894240379333,
+      "y": 4.872336798420616,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4880785346031189,
+      "y": 4.853636179269127,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.0625394955277443,
+      "y": 4.817524347694945,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.47931525111198425,
+      "y": 4.8051631368177,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.32610517740249634,
+      "y": 4.238395785390918,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.18798750638961792,
+      "y": 4.206131228320437,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.436286985874176,
+      "y": 4.234143359200461,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9052231311798096,
+      "y": 4.1342174292660445,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4597102403640747,
+      "y": 4.222064041502894,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8458594679832458,
+      "y": 4.196448866078945,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4648071527481079,
+      "y": 4.134630601400214,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.963448166847229,
+      "y": 4.190590959996306,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8262211084365845,
+      "y": 4.2023315638126535,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.35862159729003906,
+      "y": 4.121476322306632,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0995672196149826,
+      "y": 4.174518155421009,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9486591815948486,
+      "y": 4.219047941343558,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9812585115432739,
+      "y": 4.15544308304129,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2560786008834839,
+      "y": 4.175025769815826,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.45182669162750244,
+      "y": 4.173077695248147,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.252300500869751,
+      "y": 4.156231286973099,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9388284683227539,
+      "y": 4.230213027461867,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8857269287109375,
+      "y": 4.213755284251782,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9679283499717712,
+      "y": 4.133270609319533,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4480934739112854,
+      "y": 4.239644158940508,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.19546210765838623,
+      "y": 4.225504002916929,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7999036312103271,
+      "y": 4.154069012543684,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5379719138145447,
+      "y": 4.220427589559312,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5495626330375671,
+      "y": 4.132770343824566,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6583625078201294,
+      "y": 4.239892567656908,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.41718459129333496,
+      "y": 4.199882168332784,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6435116529464722,
+      "y": 4.198015001867056,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4239731431007385,
+      "y": 4.130852887238095,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.24855834245681763,
+      "y": 4.227644007867594,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.13906067609786987,
+      "y": 3.7634799403845363,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5631188154220581,
+      "y": 3.7888993669649373,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.26673462986946106,
+      "y": 3.777162625019996,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.946097731590271,
+      "y": 3.8532121528830663,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.224001944065094,
+      "y": 3.7837845072655476,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.25400400161743164,
+      "y": 3.869276587255706,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.10261771082878113,
+      "y": 3.8387522847192987,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2649576663970947,
+      "y": 3.764339525259363,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.24465858936309814,
+      "y": 3.760651580095444,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5083853006362915,
+      "y": 3.7661989500417277,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3541591167449951,
+      "y": 3.8327110213177273,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6606643795967102,
+      "y": 3.85617781730313,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.06528612971305847,
+      "y": 3.7886263384752863,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6487877368927002,
+      "y": 3.8619290611507684,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.06603781133890152,
+      "y": 3.766867832818391,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.14822736382484436,
+      "y": 3.856115662437001,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.07589535415172577,
+      "y": 3.8713354516206735,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2975863814353943,
+      "y": 3.8526530078925254,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.026338543742895126,
+      "y": 3.843774494077436,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4362068772315979,
+      "y": 3.860557626238646,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.26915252208709717,
+      "y": 3.764818155945648,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.03191617503762245,
+      "y": 3.7842138532862863,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.061108365654945374,
+      "y": 3.774990841516677,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2499811053276062,
+      "y": 3.820543718823158,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6626350283622742,
+      "y": 3.849422575399461,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.698631227016449,
+      "y": 3.8356014213491676,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.024178914725780487,
+      "y": 3.8621357319714322,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.32610517740249634,
+      "y": 3.1386255590929313,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.18798750638961792,
+      "y": 3.2081545310322195,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.436286985874176,
+      "y": 3.143164978904269,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9052231311798096,
+      "y": 3.1524910501581362,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4597102403640747,
+      "y": 3.2051885636737567,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8458594679832458,
+      "y": 3.237624574187842,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4648071527481079,
+      "y": 3.1933852327172487,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.963448166847229,
+      "y": 3.126540037798956,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8262211084365845,
+      "y": 3.193957076391304,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.35862159729003906,
+      "y": 3.1250820661896204,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0995672196149826,
+      "y": 3.226097485364018,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9486591815948486,
+      "y": 3.2051493942120746,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9812585115432739,
+      "y": 3.1407753415707007,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2560786008834839,
+      "y": 3.1310065206989037,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.45182669162750244,
+      "y": 3.1420239874656386,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.252300500869751,
+      "y": 3.237603261546503,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9388284683227539,
+      "y": 3.175027277095019,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8857269287109375,
+      "y": 3.214089713800969,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9679283499717712,
+      "y": 3.1963690010529335,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4480934739112854,
+      "y": 3.188689577995037,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.19546210765838623,
+      "y": 3.137415630559806,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7999036312103271,
+      "y": 3.2335229344269716,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5379719138145447,
+      "y": 3.1561611159017664,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5495626330375671,
+      "y": 3.1893620658969053,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6583625078201294,
+      "y": 3.203973113350688,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.41718459129333496,
+      "y": 3.1979079786294373,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6435116529464722,
+      "y": 3.2328713291634625,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4239731431007385,
+      "y": 3.1378126787904073,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.24855834245681763,
+      "y": 3.181002328613633,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.13906067609786987,
+      "y": 2.808484126888892,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5631188154220581,
+      "y": 2.816900247537914,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.26673462986946106,
+      "y": 2.7743061031437293,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.946097731590271,
+      "y": 2.7760913531847318,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.224001944065094,
+      "y": 2.7933690654937506,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.25400400161743164,
+      "y": 2.7965645524512994,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.10261771082878113,
+      "y": 2.811348385641762,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2649576663970947,
+      "y": 2.833318505644395,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.24465858936309814,
+      "y": 2.836155494090191,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5083853006362915,
+      "y": 2.809417307590268,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3541591167449951,
+      "y": 2.8090539731314434,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6606643795967102,
+      "y": 2.7861154232036354,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.06528612971305847,
+      "y": 2.830596749809081,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6487877368927002,
+      "y": 2.7980449093580684,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.06603781133890152,
+      "y": 2.7643271801132836,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.14822736382484436,
+      "y": 2.810208005298823,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.07589535415172577,
+      "y": 2.81689592101082,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2975863814353943,
+      "y": 2.7870711441845053,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.026338543742895126,
+      "y": 2.828694951974654,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4362068772315979,
+      "y": 2.8278926280518304,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.26915252208709717,
+      "y": 2.8442402617332445,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.03191617503762245,
+      "y": 2.837753817864145,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.061108365654945374,
+      "y": 2.8382919667825237,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2499811053276062,
+      "y": 2.797945698218885,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6626350283622742,
+      "y": 2.8544918666383143,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.698631227016449,
+      "y": 2.8258973260319613,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.024178914725780487,
+      "y": 2.8117701834215865,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6563580632209778,
+      "y": 2.195121497712927,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6828431487083435,
+      "y": 2.1632788801340306,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9048795700073242,
+      "y": 2.1815287093528113,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.936225175857544,
+      "y": 2.2084046826178665,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.33674681186676025,
+      "y": 2.226368346406845,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4198116958141327,
+      "y": 2.230526863675423,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4994034767150879,
+      "y": 2.180435951021972,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8208039402961731,
+      "y": 2.1824330137688683,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8323198556900024,
+      "y": 2.2159844492916605,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6382611989974976,
+      "y": 2.1577340830093044,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3748837113380432,
+      "y": 2.2204858834814085,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.08739423751831055,
+      "y": 2.179296997582091,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8858954310417175,
+      "y": 2.1339028069202324,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9578288793563843,
+      "y": 2.1286470976487535,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.19259202480316162,
+      "y": 2.2210391853247358,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.218938410282135,
+      "y": 2.1266681500288254,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2639141082763672,
+      "y": 2.153673372336039,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.5517771244049072,
+      "y": 2.1600956048601856,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.901036262512207,
+      "y": 2.1407593334229915,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.9641449451446533,
+      "y": 2.157667204376239,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3370991349220276,
+      "y": 2.2091231080070104,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.08408723771572113,
+      "y": 2.121761941227209,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.1219780296087265,
+      "y": 2.2192608109424827,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.03401372581720352,
+      "y": 2.222785762828947,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.31728595495224,
+      "y": 2.164671388782986,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7300358414649963,
+      "y": 2.1384335478872765,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.554061770439148,
+      "y": 2.1921008489534097,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6581571102142334,
+      "y": 2.1343607067037875,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.4814826250076294,
+      "y": 2.1637903233293905,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3125486373901367,
+      "y": 1.8750115017081168,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3338664174079895,
+      "y": 1.8794557367100366,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8766074180603027,
+      "y": 1.8526525869625503,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.06128815561532974,
+      "y": 1.797315381190492,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.45304757356643677,
+      "y": 1.8425198058999313,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.10634591430425644,
+      "y": 1.8446487638580815,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.27791619300842285,
+      "y": 1.806541003419638,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3521450161933899,
+      "y": 1.8369066361503392,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.05864265561103821,
+      "y": 1.761287317397081,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3551912307739258,
+      "y": 1.7850869190322691,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6870922446250916,
+      "y": 1.8230105963560714,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0260146614164114,
+      "y": 1.7796501565109957,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.08795040845870972,
+      "y": 1.7799088241451841,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.10239487886428833,
+      "y": 1.8603565148660286,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.07391174137592316,
+      "y": 1.8786959603220328,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.170315682888031,
+      "y": 1.8267163313634138,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.047505516558885574,
+      "y": 1.8606883677058057,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.3291122317314148,
+      "y": 1.8788385997191528,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.018431786447763443,
+      "y": 1.7769915066282531,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.05711037665605545,
+      "y": 1.8137894735905222,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.08564171195030212,
+      "y": 1.8071087259010306,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.28987401723861694,
+      "y": 1.7696059140375422,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.16714344918727875,
+      "y": 1.8506396207353695,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7174896597862244,
+      "y": 1.8120534832787112,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.6655909419059753,
+      "y": 1.8163192321028483,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.040253646671772,
+      "y": 1.778080756857589,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.17897161841392517,
+      "y": 1.7817111982677043,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.043527014553546906,
+      "y": 1.2288524346587457,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.1841122806072235,
+      "y": 1.1253578906769135,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.04364539682865143,
+      "y": 1.1479422741932448,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.7867752313613892,
+      "y": 1.1550471196377434,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.24821165204048157,
+      "y": 1.1788237050881902,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2236386239528656,
+      "y": 1.1903734207617755,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8747400045394897,
+      "y": 1.17919479710208,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.41152846813201904,
+      "y": 1.1300938401468257,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.27941644191741943,
+      "y": 1.1492400944866856,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2685258388519287,
+      "y": 1.2212306061715048,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.18078970909118652,
+      "y": 1.196510644057415,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.2588955760002136,
+      "y": 1.197897886016113,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.16349227726459503,
+      "y": 1.2004243906421626,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.009429752826690674,
+      "y": 0.8515483622847435,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0039035677909851074,
+      "y": 0.7669730178065738,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.019538702443242073,
+      "y": 0.8039930061919136,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.13054734468460083,
+      "y": 0.8247432922314015,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.025726959109306335,
+      "y": 0.8006147779956791,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.12163060903549194,
+      "y": 0.8613374647944625,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.37548425793647766,
+      "y": 0.8179087010304753,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.014625268056988716,
+      "y": 0.8522353107351256,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.23464438319206238,
+      "y": 0.8622418620257404,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.12221601605415344,
+      "y": 0.8205749779484198,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.013809476047754288,
+      "y": 0.8691462692645621,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.18551480770111084,
+      "y": 0.8304548728644378,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.158599853515625,
+      "y": 0.8620329158600467,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.025832386687397957,
+      "y": 0.1608708954709829,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.04326329007744789,
+      "y": 0.17985803502377823,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.02466907911002636,
+      "y": 0.18376932492054932,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.16205786168575287,
+      "y": 0.13259756590752847,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.34736138582229614,
+      "y": 0.16782630080418487,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.39759036898612976,
+      "y": 0.2300805207062011,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.8222748637199402,
+      "y": 0.19569986884376908,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.32404693961143494,
+      "y": 0.1413007898924361,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.30534347891807556,
+      "y": 0.1606626762731526,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.055954139679670334,
+      "y": 0.14299236115952396,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.002870261436328292,
+      "y": -0.2370212241841713,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.018541410565376282,
+      "y": -0.12870474497951678,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.005415164399892092,
+      "y": -0.18621512060917542,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": -0.20309579130950567,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": 0.0,
+      "y": -0.1681827370130716,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.2717536985874176,
+      "y": -0.23912226524483812,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.007109054829925299,
+      "y": -0.20663734720790233,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.30645158886909485,
+      "y": -0.15563598411613289,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.12671755254268646,
+      "y": -0.16394762723168843,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "F (fraction of a full context swap; one greedy draw per pair)": -0.055954139679670334,
+      "y": -0.12218328629489573,
+      "_kind": "scatter",
+      "_group": 55
+    }
+  ],
+  "n_series": 56,
+  "total_points": 627,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "the 14 clean query-text family reads: steered vs shuffled-donor null, well-separated pairs",
+        "xlabel": "F (fraction of a full context swap; one greedy draw per pair)",
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "cross - all 28 layers, dose 0.5x\n(query-rubric behavior)",
+          "matched prefix - all 28 layers, dose 0.5x\n(query-rubric behavior)",
+          "matched prefix - all 28 layers, dose 0.5x\n(activation)",
+          "cross - mid-stack joint, dose 0.5x\n(query-rubric behavior)",
+          "cross - mid-stack joint, full-state patch\n(query-rubric behavior)",
+          "cross - mid-stack joint, dose 1x\n(query-rubric behavior)",
+          "matched prefix - mid-stack joint, full-state patch\n(query-rubric behavior)",
+          "matched prefix - mid-stack joint, dose 1x\n(query-rubric behavior)",
+          "matched prefix - mid-stack joint, dose 0.5x\n(query-rubric behavior)",
+          "matched prefix - mid-stack joint, dose 1x\n(activation)",
+          "matched prefix - mid-stack joint, full-state patch\n(activation)",
+          "matched prefix - mid-stack joint, dose 0.5x\n(activation)",
+          "cross - mid-stack joint, dose 0.5x\n(activation)",
+          "matched query - all 28 layers, dose 0.5x\n(prefix-rubric behavior)"
+        ]
+      }
+    ]
+  }
+}
