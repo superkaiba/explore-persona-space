@@ -184,10 +184,11 @@ def test_good_plan_passes_all():
         "c44_committed_paths_gitignored": "SKIP",
         "c45_change_dv_base_predictor_companion": "SKIP",
         "c46_dispatch_cmd_cli_parse": "SKIP",
+        "c47_wall_cell_parseable": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 45
+    assert len(results) == 46
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6247,13 +6248,15 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     # + c45 (SKIP: GOOD_PLAN carries no change-DV signature; trigger-
     #   conditional, #1906)
     # + c46 (SKIP: GOOD_PLAN embeds no dispatch_issue.py command; trigger-
-    #   conditional, #2161).
-    assert payload["n_skip"] == 39
+    #   conditional, #2161)
+    # + c47 (SKIP: GOOD_PLAN carries no planned_wall_h table; trigger-
+    #   conditional, #2172).
+    assert payload["n_skip"] == 40
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 47
-    assert len({c["id"] for c in payload["checks"]}) == 47
+    assert len(payload["checks"]) == 48
+    assert len({c["id"] for c in payload["checks"]}) == 48
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -10122,3 +10125,115 @@ def test_c46_prose_mention_is_not_a_command():
 
 def test_c46_registered_in_checks():
     assert verify_plan.check_dispatch_cmd_cli_parse in verify_plan.CHECKS
+
+
+# ─── Check 47 — planned_wall_h cells parse for the poller tripwire (#2172) ──
+
+C47 = "c47_wall_cell_parseable"
+
+# A §9-shaped compute table with one parenthesized conditional cell (the
+# #2163 offender class — parses under the shared cosmetic-prefix rule) and
+# one genuinely no-float cell (the residual WARN class).
+C47_TABLE_OK = (
+    "\n## 9. Compute\n\n"
+    "| component | planned_wall_h | planned_gpu_h | basis |\n"
+    "|---|---|---|---|\n"
+    "| train | 4 | 4 | measured |\n"
+    "| conditional gpu cell | (1.5) | (1.5) | fires only if triggered |\n"
+)
+C47_TABLE_BAD = C47_TABLE_OK + "| judge wave | overlapped | 0 | batch precedent |\n"
+
+
+def test_c47_passes_on_parseable_table_including_parenthesized_cell():
+    # The #2163 shape is now PARSEABLE: (1.5) contributes and c47 PASSes
+    # (an earlier draft of the #2172 plan expected a WARN here — inverted;
+    # critic round 1 Concern 2).
+    _, by_id = _run(GOOD_PLAN + C47_TABLE_OK)
+    r = by_id[C47]
+    assert r.status == "PASS"
+    assert "2 row(s)" in r.detail and "5.50 h" in r.detail
+
+
+def test_c47_warns_on_no_float_cell_naming_row():
+    _, by_id = _run(GOOD_PLAN + C47_TABLE_BAD)
+    r = by_id[C47]
+    assert r.status == "WARN"
+    assert "overlapped" in r.detail  # the offending row, named
+    assert "no_float" in r.detail
+    assert "WHOLE run" in r.detail  # the blast radius stated
+    assert "2 parseable row(s)" in r.detail  # the discarded-with-it count
+    assert "bare float" in r.detail  # the remedy
+
+
+def test_c47_skips_when_no_wall_table():
+    # GOOD_PLAN carries no planned_wall_h table -> trigger-conditional SKIP.
+    _, by_id = _run(GOOD_PLAN)
+    r = by_id[C47]
+    assert r.status == "SKIP"
+    assert "arms no poller tripwire" in r.detail
+
+
+def test_c47_all_kinds_not_kind_gated():
+    # The poller reads ANY task's plan regardless of kind -> the WARN fires
+    # for infra exactly as for experiment.
+    _, by_id = _run(GOOD_PLAN + C47_TABLE_BAD, kind="infra")
+    assert by_id[C47].status == "WARN"
+
+
+def test_c47_registered_in_checks_and_docstring_catalog():
+    assert verify_plan.check_wall_cell_parseable in verify_plan.CHECKS
+    assert "c47 planned_wall_h cells" in verify_plan.__doc__
+
+
+def test_c47_shares_the_poller_parser_no_private_regex():
+    """AC #4: neither script keeps a private float-or-wall-table regex —
+    both delegate to explore_persona_space.plan_wall_budget (the c46-style
+    source assertion; the pre-#2172 private copies are the drift risk this
+    pins against)."""
+    for script in ("verify_plan.py", "poll_pipeline.py"):
+        src = (REPO_ROOT / "scripts" / script).read_text()
+        assert "from explore_persona_space.plan_wall_budget import" in src, script
+        for private in (
+            "_LEADING_FLOAT_RE",
+            "_MD_SEPARATOR_CELL_RE",
+            "_md_planned_wall_rows",
+            "_html_planned_wall_rows",
+            "_UnparseableWallRow",
+        ):
+            assert private not in src, f"{script} regrew private parser symbol {private}"
+
+
+def test_c47_corpus_scan_old_rule_values_preserved():
+    """The behavior-preservation invariant over the PERSISTED plan corpus
+    (#2172 §6, corpus half — kill criterion 1): for every wall cell the
+    OLD anchored leading-float rule parsed, the new cosmetic-prefix rule
+    returns the SAME value. Asserts the scan completes and the violation
+    set is EMPTY; deliberately does NOT pin the WARN count or the plan set
+    (the corpus moves — counts are the implementer's §6 report, not a
+    regression surface)."""
+    from explore_persona_space.plan_wall_budget import locate_wall_cells, parse_wall_cell
+
+    old_rule = re.compile(r"\s*([0-9]+(?:\.[0-9]+)?)")
+    plans = sorted((REPO_ROOT / "tasks").glob("*/*/plans/plan.md"))
+    assert plans, "no persisted plans found under tasks/"
+    n_cells = n_old = 0
+    violations: list[tuple[str, str, float, float | None]] = []
+    for plan_path in plans:
+        if not plan_path.exists():
+            continue  # dangling plan.md symlink
+        for located in locate_wall_cells(plan_path.read_text()):
+            if located.short_row:
+                continue
+            n_cells += 1
+            m = old_rule.match(located.cell)
+            if m is None:
+                continue
+            n_old += 1
+            new_value = parse_wall_cell(located.cell)
+            if new_value != float(m.group(1)):
+                violations.append((str(plan_path), located.cell, float(m.group(1)), new_value))
+    assert n_old > 0, "corpus scan located no old-rule-parsed cells (locator regression?)"
+    assert violations == [], (
+        f"old-rule-parsed cells changed value under the new rule "
+        f"({len(violations)}/{n_old} of {n_cells}): {violations[:5]}"
+    )

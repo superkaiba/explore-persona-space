@@ -32,8 +32,12 @@ fail-open contract as check 42); and check 46, when its trigger fires,
 path-loads ``scripts/dispatch_issue.py`` (stdlib-only module-level
 imports, ~40 ms measured) and dry-parses plan-embedded dispatch commands
 against its public ``build_argparser()`` — read-only, no network, load
-failure degrades to a loud SKIP (#2161); measured ~0.7-0.9 s on the live
-tree.
+failure degrades to a loud SKIP (#2161). Check 47 adds NO read exception:
+its shared wall-budget parser (``explore_persona_space.plan_wall_budget``,
+stdlib-only, the same parser the poll_pipeline.py phase-ETA tripwire
+consumes) is a module-level import through the src/ shim below (#2172).
+Measured ~0.7-0.9 s on the live tree (re-measured 2026-08-07 with the c47
+import: 0.79-0.87 s warm — unchanged).
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -127,13 +131,15 @@ Check catalog (id — classification — kind scope)
       predictor companion
   c46 plan-embedded dispatch    WARN-only, conditional    all kinds
       command CLI-parses
+  c47 planned_wall_h cells      WARN-only, conditional    all kinds
+      parse (poller tripwire)
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44, 45, 46) also SKIP when their content trigger
-does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47) also SKIP when their content
+trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -274,6 +280,18 @@ from fractions import Fraction
 from pathlib import Path
 
 import yaml
+
+# Make src/ importable so the SHARED §9 wall-budget parser (check c47)
+# resolves against THIS checkout's src/ — the poll_pipeline.py shim shape
+# (#2172 AC #4). The module is stdlib-only (re + dataclasses) and the
+# package __init__ is empty, so the import adds no measurable startup cost
+# (the module-level local-import discipline noted below is about heavy
+# dependencies like task_workflow, which stays a local import).
+_SRC_DIR = Path(__file__).resolve().parent.parent / "src"
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
+
+from explore_persona_space.plan_wall_budget import parse_plan_wall_budget  # noqa: E402
 
 # ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -8472,6 +8490,47 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
     return _pass(cid, name, detail)
 
 
+# ─── Check 47 — planned_wall_h cells parse for the poller tripwire ─────────
+
+
+def check_wall_cell_parseable(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds (trigger-conditional, not
+    kind-gated — the ``poll_pipeline.py`` phase-ETA tripwire reads ANY
+    task's plan regardless of ``kind``): every §9 ``planned_wall_h`` data
+    cell must parse under the SHARED cosmetic-prefix float rule
+    (``explore_persona_space.plan_wall_budget`` — the SAME parser the
+    poller's budget uses, so this plan-time WARN and the runtime disable
+    cannot drift, #2172 AC #3/#4). ONE unparseable cell fail-safes the
+    poller's WHOLE-run tripwire off; pre-#2172 that was silent — #2163's
+    parenthesized ``(1.5)`` conditional cell cost a ~6h run its backstop
+    with one poll-tick INFO line to show for it. No ``planned_wall_h``
+    table located (or a zero-sum one) => SKIP: such a plan arms no
+    tripwire, so there is nothing to lose. NEVER FAILs in v1 (the
+    c26/c29/c33 precedent — heuristic compute-table checks stay WARN-only
+    until a clean corpus baseline licenses escalation).
+    """
+    del kind  # all kinds: the poller parses every task's plan identically
+    cid, name = "c47_wall_cell_parseable", "planned_wall_h cells parse for the poller tripwire"
+    budget = parse_plan_wall_budget(plan)
+    if budget.reason == "no_table":
+        return _skip(cid, name, "no `planned_wall_h` table — this plan arms no poller tripwire")
+    if budget.unparseable:
+        shown = "; ".join(
+            f"{c.fmt} row {c.row_text!r} ({c.reason})" for c in budget.unparseable[:3]
+        )
+        if len(budget.unparseable) > 3:
+            shown += f"; +{len(budget.unparseable) - 3} more"
+        return _warn(
+            cid,
+            name,
+            f"{shown} — ONE unparseable planned_wall_h cell disables the poller's phase-ETA "
+            f"tripwire for the WHOLE run (fail-safe; {len(budget.rows)} parseable row(s) "
+            "discarded with it; #2163/#2172): write a bare float in the `planned_wall_h` "
+            "cell and put the conditionality in the `basis` cell",
+        )
+    return _pass(cid, name, f"{len(budget.rows)} row(s), total {budget.total_h:.2f} h")
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -8519,6 +8578,7 @@ CHECKS = [
     check_committed_paths_not_gitignored,
     check_change_dv_base_predictor_companion,
     check_dispatch_cmd_cli_parse,
+    check_wall_cell_parseable,
 ]
 
 
