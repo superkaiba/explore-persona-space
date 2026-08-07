@@ -7530,6 +7530,190 @@ def _scripts_import_guard_msg(py: Path, stmt: ast.AST, *, deferred: bool) -> str
     )
 
 
+# --- tests/ repo_root()-derived sys.path ban (#2181) -------------------------
+# OPPOSITE polarity to the check_scripts_import_guard family above (which
+# REQUIRES a repo-root guard in scripts/ drivers): this check FORBIDS deriving
+# a tests/ sys.path entry from the branch-guarded task_workflow resolvers.
+
+_BANNED_SYSPATH_RESOLVERS = frozenset({"repo_root", "tasks_dir", "registry_path"})
+_TASK_WORKFLOW_MODULE = "explore_persona_space.task_workflow"
+
+
+def _banned_resolver_aliases(tree: ast.Module) -> frozenset[str]:
+    """Module-scope import aliases of the banned resolvers: names bound by
+    ``from explore_persona_space.task_workflow import repo_root [as rr]`` at
+    tree.body level. Attribute access (``tw.repo_root()``) needs no alias
+    pass — the callee-name match below already catches ``Attribute.attr``."""
+    names = set(_BANNED_SYSPATH_RESOLVERS)
+    for stmt in tree.body:
+        if isinstance(stmt, ast.ImportFrom) and stmt.module == _TASK_WORKFLOW_MODULE:
+            for a in stmt.names:
+                if a.name in _BANNED_SYSPATH_RESOLVERS:
+                    names.add(a.asname or a.name)
+    return frozenset(names)
+
+
+def _mentions_banned_resolver_call(node: ast.AST, names: frozenset[str]) -> str | None:
+    """The matched resolver name iff any Call in ``node``'s subtree has a
+    callee (``Name.id`` or ``Attribute.attr``) in ``names``; else None.
+    VALUE-based: a plain Name reference (no call) never matches."""
+    for n in ast.walk(node):
+        if isinstance(n, ast.Call):
+            f = n.func
+            cn = (
+                f.id
+                if isinstance(f, ast.Name)
+                else (f.attr if isinstance(f, ast.Attribute) else None)
+            )
+            if cn in names:
+                return cn
+    return None
+
+
+def _tainted_module_names(tree: ast.Module, names: frozenset[str]) -> dict[str, str]:
+    """``{constant name: resolver name}`` for tree.body-level Assign (single
+    Name target) / AnnAssign (Name target, non-None value) whose VALUE subtree
+    contains a banned-resolver call. One hop, no compound-statement descent,
+    no dataflow, order-insensitive (documented over-match). Taint keys on the
+    binding's VALUE, never its name — ``REPO_ROOT`` bound to a
+    ``__file__``-derived expression is the sanctioned form and never taints."""
+    tainted: dict[str, str] = {}
+    for stmt in tree.body:
+        target = value = None
+        if (
+            isinstance(stmt, ast.Assign)
+            and len(stmt.targets) == 1
+            and isinstance(stmt.targets[0], ast.Name)
+        ):
+            target, value = stmt.targets[0].id, stmt.value
+        elif isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+            target, value = stmt.target.id, stmt.value
+        if target is None or value is None:
+            continue
+        hit = _mentions_banned_resolver_call(value, names)
+        if hit is not None:
+            tainted[target] = hit
+    return tainted
+
+
+def _is_syspath_mutation_sink(node: ast.Call) -> bool:
+    """``sys.path.insert`` / ``sys.path.append`` (structural, same shape as
+    the literal branch of ``_is_syspath_guard_call``) or
+    ``<obj>.syspath_prepend``."""
+    f = node.func
+    if not isinstance(f, ast.Attribute):
+        return False
+    if f.attr == "syspath_prepend":
+        return True
+    return (
+        f.attr in ("insert", "append")
+        and isinstance(f.value, ast.Attribute)
+        and f.value.attr == "path"
+        and isinstance(f.value.value, ast.Name)
+        and f.value.value.id == "sys"
+    )
+
+
+def check_no_repo_root_syspath_in_tests(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL any ``tests/**/*.py`` ``sys.path.insert``/``sys.path.append`` (or
+    ``monkeypatch.syspath_prepend``) whose argument derives from the
+    branch-guarded ``task_workflow`` resolvers (``repo_root``/``tasks_dir``/
+    ``registry_path``), directly, via a module-scope one-hop constant, or via
+    a module-scope import alias.
+
+    Incident #2164: ``tests/test_issue1482_densesae_fullwidth.py`` inserted
+    ``repo_root() / "scripts"`` onto ``sys.path``. ``task_workflow.repo_root()``
+    branch-guards to the MAIN checkout, so from a worktree pytest run the
+    insert has TWO silent consequences: (a) the test imports MAIN's copy of
+    the module under test — a branch regression can pass its own test on the
+    branch; and (b) a FOREIGN checkout's ``scripts/`` dir leaks onto
+    ``sys.path`` for the whole pytest session, which silently defeats the
+    #1296 ``sys.path`` negative control in ``tests/test_backend_poll.py``
+    (that turned the Step 10d pre-push gate red on an innocent payload —
+    ~10 probe commands + a ~20-min gate re-run to diagnose). Sanctioned
+    replacements: the tree-local form
+    ``sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))``,
+    or preferably
+    ``monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "scripts"))``
+    so the entry is restored at teardown. A resolver-derived
+    ``syspath_prepend`` restores the entry at teardown but still imports
+    main's module DURING the session, so it is flagged too.
+
+    Enumerated OVER-matches (accepted, zero live hits at introduction): (a) a
+    test-local ``def repo_root()`` shadow (shadowing the branch-guarded
+    resolver's name is itself a defect — rename it); (b) an attribute callee
+    named ``repo_root`` on an unrelated object; (c) the order-insensitive
+    one-hop taint — a module constant bound to ``repo_root()`` anywhere at
+    module scope taints the name for the WHOLE file, even if later rebound to
+    a ``__file__``-derived value before the insert.
+
+    Enumerated UNDER-matches (accepted false negatives, family precedent —
+    zero live instances of each): slice-assign ``sys.path[:0] = [...]``;
+    augmented ``sys.path += [...]``; ``sys.path.extend([...])`` (a real
+    mutation sink deliberately outside the ``("insert", "append")`` tuple, a
+    gap shared with the existing ``_is_syspath_guard_call`` family);
+    ``import sys as _sys`` (escapes the structural ``Name.id == "sys"``
+    match); two-hop indirection; dynamic/``exec``; string-built paths.
+
+    Scope: ``<repo_root>/tests`` ONLY — ``scripts/`` carries 19 live one-hop
+    ``PROJECT_ROOT = repo_root()`` offenders (17 ``issue1482_*.py`` +
+    2 ``issue1738_*.py``) that must be fixed BEFORE any widening, or the
+    no-flags bundle lands red fleet-wide (see #2181 plan §8). No waiver
+    sentinel by design: zero offenders at introduction and no legitimate
+    reason for a test to point at the main checkout's code dirs — that IS the
+    banned failure mode (add the family's sentinel pattern if a genuine need
+    ever appears). ``repo_root`` kwarg is the unit-test override hook;
+    production callers pass None. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    tests_dir = root / "tests"
+    errors: list[str] = []
+    if not tests_dir.is_dir():
+        return errors
+    for py in sorted(tests_dir.rglob("*.py")):
+        try:
+            tree = ast.parse(py.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+            sys.stderr.write(
+                f"workflow_lint: check-no-repo-root-syspath-in-tests skipped "
+                f"unparseable {py}: {type(exc).__name__}\n"
+            )
+            continue
+        names = _banned_resolver_aliases(tree)
+        tainted = _tainted_module_names(tree, names)
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.Call) and _is_syspath_mutation_sink(node)):
+                continue
+            resolver = None
+            for arg in [*node.args, *(kw.value for kw in node.keywords)]:
+                resolver = _mentions_banned_resolver_call(arg, names)
+                if resolver is None:
+                    for n in ast.walk(arg):
+                        if isinstance(n, ast.Name) and n.id in tainted:
+                            resolver = tainted[n.id]
+                            break
+                if resolver is not None:
+                    break
+            if resolver is not None:
+                errors.append(
+                    f"{py}:{node.lineno}: `sys.path` entry derived from "
+                    f"`{resolver}()` under tests/ is forbidden — "
+                    f"`task_workflow.{resolver}()` branch-guards to the MAIN "
+                    f"checkout, so a worktree pytest run imports main's copy "
+                    f"of the module under test (a branch regression can pass "
+                    f"its own test on the branch) and leaks a foreign "
+                    f"checkout's dir onto sys.path for the whole session "
+                    f"(silently defeats the #1296 sys.path negative control "
+                    f"in tests/test_backend_poll.py; incident #2164). Use the "
+                    f"tree-local form `sys.path.insert(0, "
+                    f'str(Path(__file__).resolve().parents[1] / "scripts"))`, '
+                    f"or preferably `monkeypatch.syspath_prepend(str("
+                    f'Path(__file__).resolve().parents[1] / "scripts"))` so '
+                    f"the entry is restored at teardown."
+                )
+    return errors
+
+
 def _dotenv_lint_waiver_present(lines: list[str], import_lineno: int) -> bool:
     """Return True iff a ``# DOTENV_LINT_EXEMPT: <reason>`` waiver (reason ≥
     :data:`DOTENV_LINT_WAIVER_MIN_REASON_CHARS` chars) is on the bare-dotenv
@@ -15077,6 +15261,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "check). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-no-repo-root-syspath-in-tests",
+        action="store_true",
+        help="FAIL any tests/**/*.py sys.path.insert/append (or "
+        "monkeypatch.syspath_prepend) whose argument derives from the "
+        "branch-guarded task_workflow resolvers (repo_root/tasks_dir/"
+        "registry_path) — directly, via a one-hop module constant, or via an "
+        "import alias. repo_root() resolves to the MAIN checkout, so a "
+        "worktree pytest run imports main's copy of the module under test and "
+        "leaks a foreign checkout's dir onto sys.path (incident #2164; "
+        "defeats the #1296 negative control). Use the tree-local "
+        "Path(__file__).resolve().parents[1] form or "
+        "monkeypatch.syspath_prepend. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-gate-ids-unique",
         action="store_true",
         help="Verify every gate id across gates.{inline, park_and_wait, "
@@ -15708,6 +15906,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_workflow_improver_spawn
         or args.check_no_repo_root_git_reset_hard
         or args.check_no_repo_root_worktree_revert
+        or args.check_no_repo_root_syspath_in_tests
         or args.check_gate_ids_unique
         or args.check_lessons_index
         or args.check_inline_round_duty_mirror
@@ -15841,6 +16040,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_no_repo_root_git_reset_hard())
     if args.check_no_repo_root_worktree_revert or no_flags:
         errors.extend(check_no_repo_root_worktree_revert())
+    if args.check_no_repo_root_syspath_in_tests or no_flags:
+        errors.extend(check_no_repo_root_syspath_in_tests())
     if args.check_gate_ids_unique or no_flags:
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
