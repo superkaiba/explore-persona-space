@@ -245,6 +245,14 @@ def test_reported_cap_prefers_registered_per_issue_cap(monkeypatch, tmp_path):
     assert decision == "parked_over_cap"
     assert decided_cap == 50.0
 
+    # Drop the env before the reporting call — the watcher cron never sees
+    # the session's env, and with env == registry == 50 the assertion below
+    # could not discriminate. Env gone: the pre-fix hand-rolled env read AND
+    # an E4b→E4a-only regression (`cap = resolve_plan_gate_cap()`) both
+    # report the resolver default (100); only registry-preferring code
+    # reports 50.
+    monkeypatch.delenv(PLAN_GATE_CAP_ENV, raising=False)
+
     import autonomous_session_watch as asw
 
     monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
@@ -252,6 +260,31 @@ def test_reported_cap_prefers_registered_per_issue_cap(monkeypatch, tmp_path):
     (tmp_path / "issue-137.json").write_text(json.dumps({"auto_approve_gpu_hours": 50.0}))
     msg = asw._gate_push_message(137, "plan_pending", [], True)
     assert f"over {decided_cap:g} GPU-h cap" in msg
+
+
+def test_reported_cap_falls_back_on_encoding_corrupt_registry_entry(monkeypatch, tmp_path):
+    """#2164 round 2: an encoding-corrupt ``issue-<N>.json`` raises
+    ``UnicodeDecodeError`` from ``read_text()`` — a ``ValueError``, OUTSIDE
+    the old ``(JSONDecodeError, OSError)`` except tuple. Round 1 wired
+    ``_stalled_cap_gpu_hours`` into ``_gate_push_message``, which the
+    watcher's gate-push pass invokes unwrapped in ``main()``, so a raise
+    here would kill an entire watcher tick. The helper must return the
+    resolver fallback instead (asserted against a distinctive env value so
+    a hardcoded literal cannot pass)."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv(PLAN_GATE_CAP_ENV, "37")
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(asw, "_task_title", lambda _issue: "")
+    # 0xff is invalid UTF-8 in any position → read_text() raises
+    # UnicodeDecodeError before json.loads is ever reached.
+    (tmp_path / "issue-137.json").write_bytes(b'\xff\xfe{"auto_approve_gpu_hours": 50.0}')
+    assert asw._stalled_cap_gpu_hours(137) == 37.0
+    # The notification path this helper now sits on survives too.
+    msg = asw._gate_push_message(137, "plan_pending", [], True)
+    assert "over 37 GPU-h cap" in msg
 
 
 # ─── #2164: anti-drift source scan ─────────────────────────────────────────

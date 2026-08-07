@@ -17963,7 +17963,11 @@ def _stalled_cap_gpu_hours(issue: int) -> float:
     entry_path = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
     try:
         entry = json.loads(entry_path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+        # UnicodeDecodeError (#2164 round 2): an encoding-corrupt entry
+        # raises from read_text() before json.loads; this helper sits on
+        # the gate-push notification path, which main() invokes unwrapped,
+        # so a propagating raise would kill an entire watcher tick.
         return resolve_plan_gate_cap()
     cap = entry.get("auto_approve_gpu_hours", resolve_plan_gate_cap())
     if not isinstance(cap, int | float):
