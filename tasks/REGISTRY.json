@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2178,
+  "highest_id": 2179,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9103,6 +9103,13 @@
       "path": "tasks/proposed/2178",
       "status": "proposed",
       "title": "verify_plan.py: validate a plan's stated smoke-fixture size against realized fixtures, and flag a smoke claim whose producing script is absent from the modified-file list"
+    },
+    "2179": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2179",
+      "status": "proposed",
+      "title": "poll_pipeline ETA tripwire self-disables on plan \u00a79 calendar-latency rows; range cells silently parse as lower bound"
     },
     "218": {
       "has_clean_result": false,
