@@ -4,22 +4,36 @@
 Consumes ONLY the analysis outputs under ``eval_results/issue_2162/f_metrics/``
 and renders to ``figures/issue_2162/``:
 
-1. ``hero_ftype``        — per (cell x slot) 3-bar steered/shuffled/crosstype
-                           mean F_beh + pair-clustered bootstrap 95% CIs,
-                           grouped by family; companion: per-pair steered
-                           F_beh points (the low-level per-unit view).
-2. ``two_by_two``        — probe max-AUC (read) x steered F_beh (write)
-                           scatter, causal verdict coded incl.
-                           ``untestable-causal``.
-3. ``layer_profile``     — probe AUC-per-layer heatmap, one panel per slot.
-4. ``route_contrasts``   — P2 route variants beside their base types.
-5. ``dose_position``     — recency-depth / load curves vs each crossed
-                           cell's base type.
-6. ``margin_validation`` — rho(margin shift, F_beh) scatter (rule-19 read).
-7. ``diagnostics``       — per-cell coherence + cap-hit + post-exclusion n.
+Manifest coverage (planned_manifest.json figure id -> producer key):
+
+- ``per_type_f_beh`` + ``per_type_f_beh_perpair``      -> ``hero``
+- ``read_write_2x2``                                   -> ``two_by_two``
+- ``probe_layer_curves``                               -> ``layer_profile``
+  (per type x slot AUC-vs-layer curves with the within-carrier permutation
+  band + per-value-pair points; the heatmap ships as a companion view)
+- ``layer_profile_stage2`` + ``_perpair``              -> ``stage2_layer_profile``
+- ``route_contrasts``                                  -> ``route_contrasts``
+- ``route_contrasts_perpair``                          -> ``route_contrasts_perpair``
+- ``recency_load_curves``                              -> ``dose_position``
+  (shuffled-null band behind + the registered per-pair slope CI annotated)
+- ``recency_load_perpair``                             -> ``recency_load_perpair``
+- ``anchor_separation_diag``                           -> ``anchor_separation``
+- ``act_beh_agreement``                                -> ``act_beh_agreement``
+- ``margin_validation``                                -> ``margin_validation``
+- ``crosstype_null_by_donor``                          -> ``crosstype_by_donor``
+- ``coherence_caphit``                                 -> ``diagnostics``
+  (per-arm EXCESS incoherence over the anchor baseline + cap-hit w/ 2% line)
+
+Note on ``route_contrasts`` conflict cells: the manifest's "balance shift =
+(judge_demo - judge_instr)/100 normalized floor-to-ceiling" IS the f_beh
+reduction for conflict pairs (value_b = the demo-carried value, value_a = the
+instruction-carried value), so the plotted quantity matches the transform.
 
 Every PNG gets a ``.meta.json`` sidecar (inputs + git provenance). Errorbar
-offsets are non-negative by construction (the xerr/yerr gotcha).
+offsets are non-negative by construction (the xerr/yerr gotcha). Later-phase
+inputs not yet on disk (stage-2, margin) drop their keys from the default
+``--only all`` set with a loud log line; explicitly requesting them without
+the input is a hard failure.
 """
 
 from __future__ import annotations
@@ -179,8 +193,47 @@ def fig_two_by_two(two: dict, out_dir: Path, inputs: list[Path]) -> None:
     _save(fig, out_dir, "two_by_two", inputs)
 
 
-def fig_layer_profile(probe: dict, out_dir: Path, inputs: list[Path]) -> None:
+def fig_layer_profile(probe: dict, perm_npz: Path, out_dir: Path, inputs: list[Path]) -> None:
+    """Manifest ``probe_layer_curves``: per (type x slot) AUC-vs-layer curves
+    with the within-carrier label-permutation 95% band (per layer, no max
+    taken in this view) + per-value-pair thin curves/points; the heatmap
+    ships as a compact companion view."""
     results = probe["results"]
+    perm = np.load(perm_npz) if perm_npz.exists() else None
+    n_layers = len(results[0]["auc_per_layer"])
+    xs = np.arange(n_layers)
+    for slot in ("ce", "pe"):
+        rows = sorted((r for r in results if r["slot"] == slot), key=lambda r: r["cell"])
+        if not rows:
+            continue
+        ncol = 7
+        nrow = (len(rows) + ncol - 1) // ncol
+        fig, axes = plt.subplots(
+            nrow, ncol, figsize=(ncol * 2.4, nrow * 1.9), sharex=True, sharey=True
+        )
+        axf = np.atleast_1d(axes).ravel()
+        for ax, r in zip(axf, rows):
+            key = f"{r['cell']}|{slot}"
+            if perm is not None and key in perm.files:
+                lo, hi = np.percentile(perm[key], [2.5, 97.5], axis=0)
+                ax.fill_between(xs, lo, hi, color="#cccccc", alpha=0.6, lw=0)
+            for vp_curve in r.get("auc_per_layer_per_vp", []):
+                ax.plot(xs, vp_curve, color="#9ecae1", lw=0.6, alpha=0.85)
+                ax.scatter(xs, vp_curve, s=2, color="#9ecae1", alpha=0.6)
+            ax.plot(xs, r["auc_per_layer"], color="#4878d0", lw=1.3)
+            ax.axhline(0.5, color="k", lw=0.5, ls=":")
+            ax.set_title(r["cell"], fontsize=6)
+            ax.set_ylim(0.0, 1.05)
+        for ax in axf[len(rows) :]:
+            ax.axis("off")
+        fig.suptitle(
+            f"probe AUC vs layer — slot {slot} (blue = macro over value-pairs; "
+            "thin light curves/points = per value-pair; grey = within-carrier "
+            "permutation 95% band per layer)",
+            fontsize=9,
+        )
+        _save(fig, out_dir, f"probe_layer_curves_{slot}", inputs)
+    # Companion heatmap (the compact per-layer summary).
     fig, axes = plt.subplots(1, 2, figsize=(16, 9), sharey=True)
     for ax, slot in zip(axes, ("ce", "pe"), strict=True):
         rows = [r for r in results if r["slot"] == slot]
@@ -239,37 +292,49 @@ def fig_route_contrasts(stats: dict, out_dir: Path, inputs: list[Path]) -> None:
 
 
 def fig_dose_position(stats: dict, out_dir: Path, inputs: list[Path]) -> None:
+    """Manifest ``recency_load_curves``: steered F_beh vs depth/load with the
+    shuffled-donor null line behind each curve (grey) + the registered
+    per-pair slope with its pair-clustered bootstrap 95% CI annotated."""
     from explore_persona_space.experiments.issue2162 import bank2162 as B
 
     per_cell = stats["per_cell"]
-    fig, axes = plt.subplots(1, 2, figsize=(13, 5), sharey=True)
+    dose_slopes = stats.get("dose_slopes") or {}
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.5), sharey=True)
     for ax, prefix, xlab in zip(
         axes, ("recency", "load"), ("history depth d", "distractor load l"), strict=True
     ):
         bases = sorted({B.base_type_of(c) for c in B.crossed_cells() if c.startswith(prefix)})
         for base in bases:
             for slot, ls in (("ce", "-"), ("pe", "--")):
-                xs, ys, lo_off, hi_off = [], [], [], []
-                base_rec = per_cell.get(f"{base}|{slot}")
-                if base_rec and base_rec.get("f_steered_mean") is not None:
-                    xs.append(0)
-                    ys.append(base_rec["f_steered_mean"])
-                    ci = (base_rec.get("ci95") or {}).get("steered", [None, None])
-                    e = _err(ci[0], ci[1], ys[-1])
-                    lo_off.append(e[0])
-                    hi_off.append(e[1])
+                xs, ys, lo_off, hi_off, null_ys = [], [], [], [], []
                 depth_tag = "d" if prefix == "recency" else "l"
-                for depth in (3, 5):
-                    r = per_cell.get(f"{prefix}_{base}_{depth_tag}{depth}|{slot}")
+                for depth in (1, 3, 5):
+                    key = (
+                        f"{base}|{slot}"
+                        if depth == 1
+                        else f"{prefix}_{base}_{depth_tag}{depth}|{slot}"
+                    )
+                    r = per_cell.get(key)
                     if r is None or r.get("f_steered_mean") is None:
                         continue
                     xs.append(depth)
                     ys.append(r["f_steered_mean"])
+                    null_ys.append(r.get("f_shuffled_mean"))
                     ci = (r.get("ci95") or {}).get("steered", [None, None])
                     e = _err(ci[0], ci[1], ys[-1])
                     lo_off.append(e[0])
                     hi_off.append(e[1])
                 if xs:
+                    # Shuffled-donor null behind (grey; one line per curve).
+                    if any(v is not None for v in null_ys):
+                        ax.plot(
+                            xs,
+                            [np.nan if v is None else v for v in null_ys],
+                            color="#bbbbbb",
+                            ls=ls,
+                            lw=1.0,
+                            zorder=1,
+                        )
                     ax.errorbar(
                         xs,
                         ys,
@@ -280,10 +345,31 @@ def fig_dose_position(stats: dict, out_dir: Path, inputs: list[Path]) -> None:
                         label=f"{base}|{slot}",
                         lw=1.1,
                         capsize=2,
+                        zorder=2,
                     )
+        slope_lines = []
+        for k in sorted(dose_slopes):
+            pfx, base, slot = k.split("|")
+            if pfx != prefix:
+                continue
+            v = dose_slopes[k]
+            slope_lines.append(
+                f"{base}|{slot}: {v['slope_mean']:+.3f} "
+                f"[{v['ci95'][0]:+.3f}, {v['ci95'][1]:+.3f}] (n={v['n_pairs']})"
+            )
+        if slope_lines:
+            ax.text(
+                0.02,
+                0.02,
+                "per-pair slope, pair-clustered 95% CI:\n" + "\n".join(slope_lines),
+                transform=ax.transAxes,
+                fontsize=5,
+                va="bottom",
+                bbox={"facecolor": "white", "alpha": 0.7, "lw": 0.3},
+            )
         ax.axhline(0.0, color="k", lw=0.6)
-        ax.set_xlabel(xlab + " (0 = uncrossed base cell)")
-        ax.set_title(f"{prefix} curves (steered F_beh)")
+        ax.set_xlabel(xlab + " (1 = uncrossed base cell)")
+        ax.set_title(f"{prefix} curves (steered F_beh; grey = shuffled-donor null)")
         ax.legend(fontsize=6)
     axes[0].set_ylabel("steered F_beh")
     _save(fig, out_dir, "dose_position", inputs)
@@ -317,33 +403,430 @@ def fig_margin_validation(
     _save(fig, out_dir, "margin_validation", inputs)
 
 
-def fig_diagnostics(stats: dict, f_cells: list[dict], out_dir: Path, inputs: list[Path]) -> None:
-    agg: dict[str, dict[str, float]] = defaultdict(lambda: {"coh": 0, "cap": 0, "n": 0})
-    for r in f_cells:
-        k = f"{r['cell']}|{r['slot']}"
-        agg[k]["coh"] += r["n_coherent"]
-        agg[k]["cap"] += r["n_cap_hit"]
-        agg[k]["n"] += r["n_draws"]
+def fig_diagnostics(
+    stats: dict,
+    arm_rows: dict[str, list[dict]],
+    anchor_rows: list[dict],
+    out_dir: Path,
+    inputs: list[Path],
+) -> None:
+    """Manifest ``coherence_caphit``: per (cell x slot x arm) EXCESS
+    incoherence — incoherent fraction (score <= 60) MINUS the cell's anchor
+    baseline incoherent rate — plus cap-hit fraction with the 2% re-gen
+    trigger line, and the post-exclusion-n survival panel."""
+    # Anchor baseline incoherent rate per cell, deduped per (carrier, value)
+    # context (adjacent value-pairs share contexts; row fields repeat them).
+    ctx_counts: dict[str, dict[tuple[str, str], tuple[int, int]]] = defaultdict(dict)
+    for a in anchor_rows:
+        for side in ("floor", "ceiling"):
+            val = a["value_a"] if side == "floor" else a["value_b"]
+            tot = a.get(f"n_{side}_rollouts")
+            coh = a.get(f"n_{side}_coherent")
+            if tot:
+                ctx_counts[a["cell"]][(a["carrier"], val)] = (int(tot), int(coh or 0))
+    anchor_incoh: dict[str, float] = {}
+    for cell, ctxs in ctx_counts.items():
+        tot = sum(t for t, _ in ctxs.values())
+        coh = sum(c for _, c in ctxs.values())
+        if tot:
+            anchor_incoh[cell] = 1.0 - coh / tot
+
+    agg: dict[tuple[str, str], dict[str, float]] = defaultdict(lambda: {"coh": 0, "cap": 0, "n": 0})
+    for arm, rows in arm_rows.items():
+        for r in rows:
+            k = (f"{r['cell']}|{r['slot']}", arm)
+            agg[k]["coh"] += r["n_coherent"]
+            agg[k]["cap"] += r["n_cap_hit"]
+            agg[k]["n"] += r["n_draws"]
     items = _cells_sorted(stats["per_cell"])
     labels = [f"{r['cell']}|{r['slot']}" for _, r in items]
-    coh = [agg[k]["coh"] / max(agg[k]["n"], 1) for k in labels]
-    cap = [agg[k]["cap"] / max(agg[k]["n"], 1) for k in labels]
-    n_post = [r["n_post_exclusion"] for _, r in items]
     x = np.arange(len(labels))
-    fig, axes = plt.subplots(3, 1, figsize=(max(14, len(labels) * 0.3), 9), sharex=True)
-    axes[0].bar(x, coh, color="#4878d0")
-    axes[0].set_ylabel("coherent fraction")
-    axes[0].axhline(0.9, color="k", lw=0.6, ls=":")
-    axes[1].bar(x, cap, color="#ee854a")
-    axes[1].set_ylabel("cap-hit fraction")
+    width = 0.27
+    fig, axes = plt.subplots(3, 1, figsize=(max(14, len(labels) * 0.32), 10), sharex=True)
+    for k, arm in enumerate(("steered", "shuffled", "crosstype")):
+        excess, cap = [], []
+        for (key, _), rec in [((lab, arm), agg.get((lab, arm))) for lab in labels]:
+            if rec is None or rec["n"] == 0:
+                excess.append(np.nan)
+                cap.append(np.nan)
+                continue
+            cell = key.split("|")[0]
+            incoh = 1.0 - rec["coh"] / rec["n"]
+            excess.append(incoh - anchor_incoh.get(cell, 0.0))
+            cap.append(rec["cap"] / rec["n"])
+        axes[0].bar(x + (k - 1) * width, excess, width, color=ARM_COLORS[arm], label=arm)
+        axes[1].bar(x + (k - 1) * width, cap, width, color=ARM_COLORS[arm], label=arm)
+    axes[0].axhline(0.0, color="k", lw=0.6)
+    axes[0].set_ylabel("excess incoherence\n(arm - anchor baseline)")
+    axes[0].legend(fontsize=7)
     axes[1].axhline(0.02, color="k", lw=0.6, ls=":")
+    axes[1].set_ylabel("cap-hit fraction")
+    n_post = [r["n_post_exclusion"] for _, r in items]
     axes[2].bar(x, n_post, color="#6acc64")
     axes[2].axhline(12, color="k", lw=0.6, ls=":")
     axes[2].set_ylabel("post-exclusion n (pairs)")
     axes[2].set_xticks(x)
     axes[2].set_xticklabels(labels, rotation=90, fontsize=5.5)
-    fig.suptitle("Diagnostics: coherence, cap-hit (2% line), separation survival (floor 12)")
+    fig.suptitle(
+        "Diagnostics: excess incoherence over anchor baseline (score<=60), "
+        "cap-hit (2% re-gen line), separation survival (floor 12)"
+    )
     _save(fig, out_dir, "diagnostics", inputs)
+
+
+def fig_route_contrasts_perpair(f_cells: list[dict], out_dir: Path, inputs: list[Path]) -> None:
+    """Manifest ``route_contrasts_perpair``: no aggregation — per-pair steered
+    F_beh points for every route-variant/conflict cell beside its base type,
+    labeled by pair id."""
+    from explore_persona_space.experiments.issue2162 import bank2162 as B
+
+    route_pairs = [
+        ("instr_format", "demo_format"),
+        ("persona_prompted", "demo_persona"),
+        ("instr_language", "language_implied"),
+        ("persona_prompted", "persona_role_header"),
+    ]
+    conflict = [c for c in B.all_cells() if c.startswith("conflict_")]
+    groups = list(route_pairs) + [(B.base_type_of(c), c) for c in conflict]
+    by_cell: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for r in f_cells:
+        if r["f_beh"] is not None:
+            by_cell[(r["cell"], r["slot"])].append(r)
+    fig, ax = plt.subplots(figsize=(14, 6))
+    x = 0.0
+    ticks, tick_labels = [], []
+    rng = np.random.default_rng(2162)
+    for base, variant in groups:
+        for slot in ("ce", "pe"):
+            for off, cell, color in ((0.0, base, "#4878d0"), (0.35, variant, "#ee854a")):
+                rows = by_cell.get((cell, slot), [])
+                for r in rows:
+                    xi = x + off + float(rng.uniform(-0.06, 0.06))
+                    ax.scatter(xi, r["f_beh"], s=7, color=color, alpha=0.65)
+                    ax.annotate(r["pair_id"], (xi, r["f_beh"]), fontsize=3.2, alpha=0.7)
+            ticks.append(x + 0.17)
+            tick_labels.append(f"{variant}|{slot}")
+            x += 1.0
+        x += 0.5
+    ax.axhline(0.0, color="k", lw=0.6)
+    ax.axhline(1.0, color="k", lw=0.6, ls=":")
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(tick_labels, rotation=90, fontsize=6)
+    ax.set_ylabel("per-pair F_beh (steered)")
+    ax.set_title(
+        "Route contrasts, per-pair points: base type (blue) vs route variant / "
+        "conflict (orange); pair-id labeled"
+    )
+    _save(fig, out_dir, "route_contrasts_perpair", inputs)
+
+
+def fig_recency_load_perpair(f_cells: list[dict], out_dir: Path, inputs: list[Path]) -> None:
+    """Manifest ``recency_load_perpair``: per-pair steered F_beh trajectories
+    across depth/load levels — lines connect the SAME (carrier x value-pair)
+    across levels (level 1 = the uncrossed base cell)."""
+    from explore_persona_space.experiments.issue2162 import bank2162 as B
+
+    crossed = set(B.crossed_cells())
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.5), sharey=True)
+    for ax, prefix, tag in zip(axes, ("recency", "load"), ("d", "l"), strict=True):
+        traj: dict[tuple[str, str, str, str, str], dict[int, float]] = defaultdict(dict)
+        for r in f_cells:
+            if r["f_beh"] is None:
+                continue
+            base = B.base_type_of(r["cell"])
+            if r["cell"] == base:
+                if not any(c.startswith(f"{prefix}_{base}_") for c in crossed):
+                    continue
+                level = 1
+            elif r["cell"].startswith(f"{prefix}_{base}_{tag}"):
+                level = int(r["cell"].rsplit(tag, 1)[-1])
+            else:
+                continue
+            traj[(base, r["slot"], r["carrier"], r["value_a"], r["value_b"])][level] = r["f_beh"]
+        bases = sorted({k[0] for k in traj})
+        cmap = plt.get_cmap("tab10")
+        base_color = {b: cmap(i % 10) for i, b in enumerate(bases)}
+        for (base, slot, _, _, _), by_level in sorted(traj.items()):
+            xs = sorted(by_level)
+            ys = [by_level[lv] for lv in xs]
+            ls = "-" if slot == "ce" else "--"
+            ax.plot(xs, ys, color=base_color[base], ls=ls, lw=0.6, alpha=0.45)
+            ax.scatter(xs, ys, s=6, color=base_color[base], alpha=0.6)
+        for b in bases:
+            ax.plot([], [], color=base_color[b], label=b)
+        ax.axhline(0.0, color="k", lw=0.6)
+        ax.set_xlabel(f"{prefix} level (1 = base cell; ce solid, pe dashed)")
+        ax.set_title(f"{prefix}: per-pair F_beh trajectories")
+        ax.legend(fontsize=6)
+    axes[0].set_ylabel("per-pair F_beh (steered)")
+    _save(fig, out_dir, "recency_load_perpair", inputs)
+
+
+def fig_anchor_separation(anchor_rows: list[dict], out_dir: Path, inputs: list[Path]) -> None:
+    """Manifest ``anchor_separation_diag``: per-pair anchor separation strip
+    per type with the +/-0.5 exclusion bars and pre/post-exclusion counts."""
+    cells = sorted({a["cell"] for a in anchor_rows})
+    fig, ax = plt.subplots(figsize=(max(12, len(cells) * 0.32), 6))
+    rng = np.random.default_rng(2162)
+    for i, cell in enumerate(cells):
+        seps = [a["separation"] for a in anchor_rows if a["cell"] == cell]
+        vals = [s for s in seps if s is not None]
+        xs = i + rng.uniform(-0.18, 0.18, size=len(vals))
+        ax.scatter(xs, vals, s=7, color="#4878d0", alpha=0.6)
+        n_kept = sum(1 for v in vals if abs(v) >= 0.5)
+        ax.text(
+            i,
+            1.02,
+            f"{n_kept}/{len(seps)}",
+            ha="center",
+            fontsize=5,
+            transform=ax.get_xaxis_transform(),
+        )
+    for y in (0.5, -0.5):
+        ax.axhline(y, color="#c44e52", lw=0.8, ls=":")
+    ax.axhline(0.0, color="k", lw=0.6)
+    ax.set_xticks(range(len(cells)))
+    ax.set_xticklabels(cells, rotation=90, fontsize=6)
+    ax.set_ylabel("anchor separation (ceiling - floor, judge-contrast units)")
+    ax.set_title(
+        "Anchor separation per pair (K=10 draws; |sep| >= 0.5 keeps the pair; "
+        "kept/total per type above)"
+    )
+    _save(fig, out_dir, "anchor_separation_diag", inputs)
+
+
+def fig_act_beh_agreement(
+    arm_rows: dict[str, list[dict]], out_dir: Path, inputs: list[Path]
+) -> None:
+    """Manifest ``act_beh_agreement``: mean F_act (read layer 26, disjoint
+    floor halves) vs mean F_beh per (cell x slot x arm), separation-excluded;
+    Spearman rho per arm in the legend."""
+    from scipy.stats import spearmanr
+
+    fig, ax = plt.subplots(figsize=(9, 8))
+    for arm, rows in arm_rows.items():
+        agg: dict[str, dict[str, list[float]]] = defaultdict(lambda: {"act": [], "beh": []})
+        for r in rows:
+            if (
+                r["f_beh"] is None
+                or r["f_act"] is None
+                or r["separation"] is None
+                or abs(r["separation"]) < 0.5
+            ):
+                continue
+            k = f"{r['cell']}|{r['slot']}"
+            agg[k]["act"].append(r["f_act"])
+            agg[k]["beh"].append(r["f_beh"])
+        xs = [float(np.mean(v["act"])) for v in agg.values() if v["act"]]
+        ys = [float(np.mean(v["beh"])) for v in agg.values() if v["beh"]]
+        rho = spearmanr(xs, ys)[0] if len(xs) >= 5 else float("nan")
+        ax.scatter(
+            xs,
+            ys,
+            s=18,
+            color=ARM_COLORS[arm],
+            alpha=0.8,
+            label=f"{arm} (n={len(xs)}, rho={rho:.3f})",
+        )
+        for k, v in agg.items():
+            if v["act"] and v["beh"]:
+                ax.annotate(k, (np.mean(v["act"]), np.mean(v["beh"])), fontsize=3.5, alpha=0.6)
+    ax.axhline(0.0, color="k", lw=0.5)
+    ax.axvline(0.0, color="k", lw=0.5)
+    ax.set_xlabel("mean F_act (read layer 26)")
+    ax.set_ylabel("mean F_beh")
+    ax.set_title("F_act vs F_beh per (cell x slot x arm), separation-excluded")
+    ax.legend(fontsize=8)
+    _save(fig, out_dir, "act_beh_agreement", inputs)
+
+
+def fig_crosstype_by_donor(
+    stats: dict,
+    null_crosstype: list[dict],
+    null_shuffled: list[dict],
+    out_dir: Path,
+    inputs: list[Path],
+) -> None:
+    """Manifest ``crosstype_null_by_donor``: (i) donor-TYPE-resolved cross-type
+    null F_beh per elevated recipient cell (pooled crosstype 95% CI excludes
+    0); (ii) donor-VALUE-resolved shuffled null for the two ordinal value sets
+    (refusal_boundary, constraint_knowledge) when either null's CI excludes 0."""
+    from explore_persona_space.experiments.issue2162 import bank2162 as B
+
+    per_cell = stats["per_cell"]
+
+    def _ci_excludes_zero(rec: dict, arm: str) -> bool:
+        ci = (rec.get("ci95") or {}).get(arm, [None, None])
+        return ci[0] is not None and ci[1] is not None and (ci[0] > 0 or ci[1] < 0)
+
+    kept_rows: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for r in null_crosstype:
+        if r["f_beh"] is not None and r["separation"] is not None and abs(r["separation"]) >= 0.5:
+            kept_rows[(r["cell"], r["slot"])].append(r)
+    elevated = [key for key, rec in sorted(per_cell.items()) if _ci_excludes_zero(rec, "crosstype")]
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+    ax = axes[0]
+    x = 0.0
+    ticks, tick_labels = [], []
+    for key in elevated:
+        cell, slot = key.split("|")
+        by_donor: dict[str, list[float]] = defaultdict(list)
+        for r in kept_rows.get((cell, slot), []):
+            donor = B.base_type_of(r["donor_cell"]) if r.get("donor_cell") else "?"
+            by_donor[donor].append(r["f_beh"])
+        for j, donor in enumerate(sorted(by_donor)):
+            vals = by_donor[donor]
+            ax.bar(x + j * 0.6, float(np.mean(vals)), 0.5, color="#c44e52", alpha=0.75)
+            ax.annotate(
+                f"{donor} (n={len(vals)})",
+                (x + j * 0.6, float(np.mean(vals))),
+                fontsize=4.5,
+                rotation=90,
+                ha="center",
+            )
+        ticks.append(x + max(len(by_donor) - 1, 0) * 0.3)
+        tick_labels.append(key)
+        x += max(len(by_donor), 1) * 0.6 + 0.8
+    ax.axhline(0.0, color="k", lw=0.6)
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(tick_labels, rotation=45, fontsize=6, ha="right")
+    ax.set_ylabel("crosstype-null F_beh (mean per donor type)")
+    ax.set_title(
+        f"Cross-type null split by donor type — {len(elevated)} recipient cells "
+        "whose pooled crosstype 95% CI excludes 0" + (" (none)" if not elevated else "")
+    )
+    ax = axes[1]
+    ordinal = ("refusal_boundary", "constraint_knowledge")
+    shuf_rows: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for r in null_shuffled:
+        if (
+            r["f_beh"] is not None
+            and r["separation"] is not None
+            and abs(r["separation"]) >= 0.5
+            and B.base_type_of(r["cell"]) in ordinal
+        ):
+            shuf_rows[(r["cell"], r["slot"])].append(r)
+    shown = [
+        key
+        for key in sorted(f"{c}|{s}" for c, s in shuf_rows)
+        if (rec := per_cell.get(key)) is not None
+        and (_ci_excludes_zero(rec, "shuffled") or _ci_excludes_zero(rec, "crosstype"))
+    ]
+    x = 0.0
+    ticks, tick_labels = [], []
+    for key in shown:
+        cell, slot = key.split("|")
+        by_val: dict[str, list[float]] = defaultdict(list)
+        for r in shuf_rows.get((cell, slot), []):
+            by_val[str(r.get("donor_value_b"))].append(r["f_beh"])
+        for j, val in enumerate(sorted(by_val)):
+            vals = by_val[val]
+            ax.bar(x + j * 0.6, float(np.mean(vals)), 0.5, color="#9d9d9d", alpha=0.85)
+            ax.annotate(
+                f"{val} (n={len(vals)})",
+                (x + j * 0.6, float(np.mean(vals))),
+                fontsize=4.5,
+                rotation=90,
+                ha="center",
+            )
+        ticks.append(x + max(len(by_val) - 1, 0) * 0.3)
+        tick_labels.append(key)
+        x += max(len(by_val), 1) * 0.6 + 0.8
+    ax.axhline(0.0, color="k", lw=0.6)
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(tick_labels, rotation=45, fontsize=6, ha="right")
+    ax.set_ylabel("shuffled-null F_beh (mean per donor value)")
+    ax.set_title(
+        "Shuffled null split by donor value — ordinal value sets "
+        "(refusal_boundary, constraint_knowledge) with either null CI excluding 0"
+        + (" (none)" if not shown else "")
+    )
+    _save(fig, out_dir, "crosstype_null_by_donor", inputs)
+
+
+def fig_stage2_layer_profile(stage2_cells: list[dict], out_dir: Path, inputs: list[Path]) -> None:
+    """Manifest ``layer_profile_stage2`` (+ ``_perpair``): survivor x layer
+    heatmaps of stage-2 steered F_beh per dose, with the steered-minus-
+    shuffled companion panel; per-pair points at each survivor's best
+    (layer, dose) with steered and shuffled interleaved, pair-id labeled."""
+    kept = [
+        r
+        for r in stage2_cells
+        if r["f_beh"] is not None and r["separation"] is not None and abs(r["separation"]) >= 0.5
+    ]
+    assert kept, "stage2_cells has no separation-kept scored rows"
+    doses = sorted({r["dose"] for r in kept})
+    layers = sorted({r["layer"] for r in kept})
+    units = sorted({f"{r['cell']}|{r['slot']}" for r in kept})
+    mean_f: dict[tuple[str, str, int, int], float] = {}
+    per_pair: dict[tuple[str, str, int, int], list[dict]] = defaultdict(list)
+    for r in kept:
+        per_pair[(f"{r['cell']}|{r['slot']}", r["arm"], r["layer"], r["dose"])].append(r)
+    for key, rows in per_pair.items():
+        mean_f[key] = float(np.mean([r["f_beh"] for r in rows]))
+
+    fig, axes = plt.subplots(2, len(doses), figsize=(7 * len(doses), 9), sharey=True, squeeze=False)
+    for di, dose in enumerate(doses):
+        steered = np.full((len(units), len(layers)), np.nan)
+        delta = np.full((len(units), len(layers)), np.nan)
+        for ui, unit in enumerate(units):
+            for li, layer in enumerate(layers):
+                s = mean_f.get((unit, "steered", layer, dose))
+                sh = mean_f.get((unit, "shuffled", layer, dose))
+                if s is not None:
+                    steered[ui, li] = s
+                if s is not None and sh is not None:
+                    delta[ui, li] = s - sh
+        for row_i, (mat, lab, cmap) in enumerate(
+            ((steered, "steered F_beh", "viridis"), (delta, "steered - shuffled", "coolwarm"))
+        ):
+            ax = axes[row_i][di]
+            im = ax.imshow(mat, aspect="auto", cmap=cmap)
+            ax.set_xticks(range(len(layers)))
+            ax.set_xticklabels(layers, fontsize=7)
+            ax.set_yticks(range(len(units)))
+            ax.set_yticklabels(units, fontsize=6)
+            ax.set_xlabel("layer")
+            ax.set_title(f"dose {dose}: {lab} (post-selection survivors)")
+            fig.colorbar(im, ax=ax, shrink=0.8)
+    _save(fig, out_dir, "layer_profile_stage2", inputs)
+
+    # Per-pair companion at each survivor's best steered (layer, dose).
+    fig, ax = plt.subplots(figsize=(max(10, len(units) * 0.9), 6))
+    rng = np.random.default_rng(2162)
+    for ui, unit in enumerate(units):
+        best = None
+        for layer in layers:
+            for dose in doses:
+                v = mean_f.get((unit, "steered", layer, dose))
+                if v is not None and (best is None or v > best[0]):
+                    best = (v, layer, dose)
+        if best is None:
+            continue
+        _, layer, dose = best
+        for arm, off, color in (("steered", -0.12, "#4878d0"), ("shuffled", 0.12, "#9d9d9d")):
+            for r in per_pair.get((unit, arm, layer, dose), []):
+                xi = ui + off + float(rng.uniform(-0.05, 0.05))
+                ax.scatter(xi, r["f_beh"], s=9, color=color, alpha=0.7)
+                ax.annotate(r["pair_id"], (xi, r["f_beh"]), fontsize=3.2, alpha=0.7)
+        ax.text(
+            ui,
+            1.02,
+            f"L{layer},d{dose}",
+            ha="center",
+            fontsize=5.5,
+            transform=ax.get_xaxis_transform(),
+        )
+    ax.axhline(0.0, color="k", lw=0.6)
+    ax.axhline(1.0, color="k", lw=0.6, ls=":")
+    ax.set_xticks(range(len(units)))
+    ax.set_xticklabels(units, rotation=45, fontsize=6, ha="right")
+    ax.set_ylabel("per-pair stage-2 F_beh")
+    ax.set_title(
+        "Stage-2 per-pair F_beh at each survivor's best (layer, dose) — "
+        "steered (blue) vs shuffled null (grey), pair-id labeled"
+    )
+    _save(fig, out_dir, "layer_profile_stage2_perpair", inputs)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -364,6 +847,10 @@ def main(argv: list[str] | None = None) -> int:
     md = args.metrics_dir
     stats = json.loads((md / "stats.json").read_text())
     f_cells = list(_iter_jsonl(md / "f_cells.jsonl"))
+    null_shuffled = list(_iter_jsonl(md / "null_shuffled_cells.jsonl"))
+    null_crosstype = list(_iter_jsonl(md / "null_crosstype_cells.jsonl"))
+    anchor_rows = list(_iter_jsonl(md / "anchors.jsonl"))
+    arm_rows = {"steered": f_cells, "shuffled": null_shuffled, "crosstype": null_crosstype}
     manifest = {
         "hero": lambda: fig_hero(stats, f_cells, args.out_dir, [md / "stats.json"]),
         "two_by_two": lambda: fig_two_by_two(
@@ -372,10 +859,42 @@ def main(argv: list[str] | None = None) -> int:
             [md / "two_by_two.json"],
         ),
         "layer_profile": lambda: fig_layer_profile(
-            json.loads((md / "probe.json").read_text()), args.out_dir, [md / "probe.json"]
+            json.loads((md / "probe.json").read_text()),
+            md / "probe_perm_matrix" / "perm_auc_matrix.npz",
+            args.out_dir,
+            [md / "probe.json", md / "probe_perm_matrix" / "perm_auc_matrix.npz"],
         ),
         "route_contrasts": lambda: fig_route_contrasts(stats, args.out_dir, [md / "stats.json"]),
+        "route_contrasts_perpair": lambda: fig_route_contrasts_perpair(
+            f_cells, args.out_dir, [md / "f_cells.jsonl"]
+        ),
         "dose_position": lambda: fig_dose_position(stats, args.out_dir, [md / "stats.json"]),
+        "recency_load_perpair": lambda: fig_recency_load_perpair(
+            f_cells, args.out_dir, [md / "f_cells.jsonl"]
+        ),
+        "anchor_separation": lambda: fig_anchor_separation(
+            anchor_rows, args.out_dir, [md / "anchors.jsonl"]
+        ),
+        "act_beh_agreement": lambda: fig_act_beh_agreement(
+            arm_rows,
+            args.out_dir,
+            [
+                md / "f_cells.jsonl",
+                md / "null_shuffled_cells.jsonl",
+                md / "null_crosstype_cells.jsonl",
+            ],
+        ),
+        "crosstype_by_donor": lambda: fig_crosstype_by_donor(
+            stats,
+            null_crosstype,
+            null_shuffled,
+            args.out_dir,
+            [
+                md / "stats.json",
+                md / "null_crosstype_cells.jsonl",
+                md / "null_shuffled_cells.jsonl",
+            ],
+        ),
         "margin_validation": lambda: fig_margin_validation(
             list(_iter_jsonl(md / "margin_cells.jsonl")),
             f_cells,
@@ -383,13 +902,34 @@ def main(argv: list[str] | None = None) -> int:
             args.out_dir,
             [md / "margin_cells.jsonl", md / "margin_validation.json"],
         ),
+        "stage2_layer_profile": lambda: fig_stage2_layer_profile(
+            list(_iter_jsonl(md / "stage2_cells.jsonl")),
+            args.out_dir,
+            [md / "stage2_cells.jsonl"],
+        ),
         "diagnostics": lambda: fig_diagnostics(
-            stats, f_cells, args.out_dir, [md / "f_cells.jsonl"]
+            stats,
+            arm_rows,
+            anchor_rows,
+            args.out_dir,
+            [md / "f_cells.jsonl", md / "anchors.jsonl"],
         ),
     }
     only = set(args.only.split(",")) if args.only else set(manifest)
     unknown = only - set(manifest)
     assert not unknown, f"unknown figure keys: {sorted(unknown)}"
+    # Later-phase inputs (margin, stage-2) may legitimately not exist yet: a
+    # default all-figures run drops those keys with a LOUD log line; a figure
+    # requested EXPLICITLY via --only still hard-fails on its missing input.
+    later_phase = {
+        "margin_validation": md / "margin_cells.jsonl",
+        "stage2_layer_profile": md / "stage2_cells.jsonl",
+    }
+    if not args.only:
+        for name, path in later_phase.items():
+            if name in only and not path.exists():
+                logger.info("[figures] SKIP %s — missing later-phase input %s", name, path)
+                only.discard(name)
     for name in manifest:
         if name in only:
             logger.info("[figures] building %s", name)
