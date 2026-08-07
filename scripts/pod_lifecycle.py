@@ -99,6 +99,7 @@ from runpod_api import (  # noqa: E402
     current_account_hourly_burn,
     estimate_pod_hourly_rate,
     get_account_pubkey,
+    get_datacenters,
     get_pod,
     list_team_pods,
     read_vm_pubkey,
@@ -1081,6 +1082,7 @@ def create_pod_with_wait_for_capacity(
     volume_gb: int,
     container_disk_gb: int,
     preflight_check: Callable[[], None] | None = None,
+    data_center_id: str | None = None,
 ) -> PodInfo:
     """Provision policy wrapper: retry ``create_pod`` on no-capacity
     OR INSUFFICIENT_BALANCE refusals (both transient + no-cost-while-idle),
@@ -1115,6 +1117,11 @@ def create_pod_with_wait_for_capacity(
     (supply); the /issue orchestrator should surface these as
     ``epm:progress`` markers so ``autonomous_session_watch.py`` (6h stale
     threshold) sees liveness.
+
+    ``data_center_id`` (#2011) is threaded verbatim into EVERY ``create_pod``
+    attempt (create_pod itself preserves the pin across its supply levers) —
+    the DC-pin-away retry lever after a recorded bad placement. The retry-loop
+    semantics above are unchanged.
     """
     attempt = 0
     start = time.monotonic()
@@ -1141,6 +1148,9 @@ def create_pod_with_wait_for_capacity(
                 gpu_count=gpu_count,
                 volume_gb=volume_gb,
                 container_disk_gb=container_disk_gb,
+                # #2011: thread the DC pin through the retry loop (preserved
+                # across every attempt, matching create_pod's own contract).
+                data_center_id=data_center_id,
             )
         except (RunPodNoCapacityError, RunPodInsufficientBalanceError) as exc:
             # All three classes routed through this branch are transient +
@@ -1482,6 +1492,258 @@ def note_ssh_wait_outcome(
             entry["last_alarm_ts"] = now
     state[pod_name] = entry
     _save_ssh_wait_state(state)
+
+
+# ─── bad-placement (known-bad host) sidecar (#2011) ─────────────────────────
+#
+# After a fresh provision fails its SSH/bootstrap readiness probe, the failed
+# placement's host identity is recorded DURABLY so the NEXT provision attempt
+# (a separate process — retries are orchestrator-driven across invocations)
+# can warn loudly on a repeat placement and hint the different-DC retry lever.
+# RunPod's create API has no host-exclude input, so DC-pin-away + repeat
+# detection is the whole available lever set (incident pod-1947-b: three
+# consecutive placements on the same broken host, each RUNNING-but-SSH-refused).
+#
+# Lives at ``<git-common-dir>/eps/bad-pod-hosts.json`` — the #821/#1183 live
+# fleet-state location, shared across every worktree checkout (a provision
+# retried from a worktree session must see the repo-root session's record).
+# Same observability-bias contract as the ssh-wait tracker above: IO failures
+# are swallowed with a WARN, never crash a provision.
+
+_DEFAULT_BAD_HOST_TTL_SECS = 6 * 3600.0
+_BAD_HOST_STATE_FILENAME = "bad-pod-hosts.json"
+# Test override: monkeypatch ``pod_lifecycle.BAD_HOST_STATE`` to a tmp path.
+# None ⇒ resolve the live path at call time (the #821/#1183 lazy trick).
+BAD_HOST_STATE: Path | None = None
+
+
+def _resolve_bad_host_state_path() -> Path:
+    """LIVE bad-placement sidecar path (#2011; mirrors the pods_ephemeral.json
+    resolution in :func:`_resolve_state_path`). Honors a monkeypatched
+    ``BAD_HOST_STATE`` (call-time read); otherwise
+    ``<git-common-dir>/eps/bad-pod-hosts.json``. No seed migration — the file
+    is born live. Git-less checkouts fall back to the gitignored
+    ``.claude/cache/`` dir (per-checkout, still durable across processes)."""
+    if BAD_HOST_STATE is not None:
+        return BAD_HOST_STATE
+    try:
+        common = pod_config._git_common_dir()
+    except RuntimeError:
+        return PROJECT_ROOT / ".claude" / "cache" / _BAD_HOST_STATE_FILENAME
+    return common / "eps" / _BAD_HOST_STATE_FILENAME
+
+
+def _bad_host_ttl_secs() -> float:
+    """Freshness window for bad-placement records (default 6h). Env override
+    ``EPM_BAD_HOST_TTL_SECS``; bad values fall back to the default."""
+    raw = os.environ.get("EPM_BAD_HOST_TTL_SECS", "").strip()
+    if not raw:
+        return _DEFAULT_BAD_HOST_TTL_SECS
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        return _DEFAULT_BAD_HOST_TTL_SECS
+
+
+def _load_bad_host_state() -> dict:
+    """Read the bad-placement sidecar ({host_ip: [entry, ...]}). Garbled /
+    missing file -> {} (fresh state)."""
+    try:
+        return json.loads(_resolve_bad_host_state_path().read_text())
+    except (OSError, json.JSONDecodeError, ValueError):
+        return {}
+
+
+def _save_bad_host_state(state: dict) -> None:
+    """Persist the bad-placement sidecar atomically; IO failures are swallowed
+    with a WARN (observability, never worth crashing a provision).
+
+    NOTE: atomic tmp+``os.replace`` but FLOCK-LESS — two concurrent provisions
+    can interleave the read-modify-write and the last writer wins, dropping
+    the other's record. Acceptable under the observability-bias contract
+    (records only feed WARN lines + retry hints, never a gate)."""
+    try:
+        path = _resolve_bad_host_state_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state, indent=2))
+        tmp.replace(path)
+    except OSError as exc:
+        print(f"[pod_lifecycle] WARN: bad-host state save failed: {exc}", file=sys.stderr)
+
+
+def note_bad_placement(
+    issue: int | None,
+    pod_name: str,
+    pod_id: str,
+    host_ip: str | None,
+    dc_id: str | None,
+    *,
+    reason: str = "",
+    now: float | None = None,
+) -> None:
+    """Record one failed placement to the durable bad-host sidecar (#2011).
+
+    Host-keyed on the public IP (``ssh_host``): with no host identity
+    (``host_ip`` falsy — the pod never exposed a mapping and the late
+    ``get_pod`` saw none either) there is nothing a future avoidance read
+    could key on, so nothing is written; the caller's ``[bad-host-RECORD]``
+    line still names the failure. IO failures are swallowed by
+    :func:`_save_bad_host_state` — recording never crashes a provision."""
+    if not host_ip:
+        return
+    now = time.time() if now is None else now
+    state = _load_bad_host_state()
+    entries = state.get(host_ip)
+    if not isinstance(entries, list):
+        entries = []
+    entries.append(
+        {
+            "issue": issue,
+            "pod_name": pod_name,
+            "pod_id": pod_id,
+            "dc_id": dc_id,
+            "reason": reason,
+            "ts": now,
+        }
+    )
+    state[host_ip] = entries
+    _save_bad_host_state(state)
+
+
+def fresh_bad_hosts(now: float | None = None) -> dict[str, list[dict]]:
+    """Within-TTL bad-placement records, host-keyed: ``{host_ip: [entry,
+    ...]}``. Entries older than :func:`_bad_host_ttl_secs` are dropped on READ
+    (the sidecar file is not rewritten — pruning is read-side only, so the
+    flock-less writer race stays append-shaped); malformed entries are
+    skipped."""
+    now = time.time() if now is None else now
+    ttl = _bad_host_ttl_secs()
+    out: dict[str, list[dict]] = {}
+    for host, entries in _load_bad_host_state().items():
+        if not isinstance(entries, list):
+            continue
+        fresh = [
+            e
+            for e in entries
+            if isinstance(e, dict)
+            and isinstance(e.get("ts"), int | float)
+            and (now - e["ts"]) <= ttl
+        ]
+        if fresh:
+            out[host] = fresh
+    return out
+
+
+def _different_dc_hint(bad_dc_id: str | None) -> str:
+    """One-line different-DC retry lever for ``[bad-host-RECORD]`` lines.
+
+    Candidate DCs come from :func:`get_datacenters`, best-effort: on ANY
+    enumeration failure the hint prints WITHOUT candidates (acceptance
+    criterion 4 — the hint degrades, never blocks). The recorded bad DC is
+    excluded from the candidate sample."""
+    base = (
+        "Retry lever: re-provision (a fresh create usually rolls a new host) and watch "
+        "for [bad-host-REPEAT]; to bias away, pin a DIFFERENT datacenter with "
+        "`pod.py provision ... --data-center-id <id>`"
+    )
+    try:
+        ids = [d.get("id") for d in get_datacenters() if d.get("id")]
+    except (RunPodError, OSError, ValueError) as exc:
+        # Same fail-open catch trio as _account_key_preflight (#1655): raw
+        # json/timeout classes can escape the graphql wrapper.
+        print(
+            f"[pod_lifecycle] WARN: get_datacenters failed ({exc}); "
+            "printing the DC hint without candidates.",
+            file=sys.stderr,
+        )
+        return base + "."
+    if bad_dc_id:
+        ids = [i for i in ids if i != bad_dc_id]
+    if not ids:
+        return base + "."
+    sample = ", ".join(ids[:8])
+    more = ", ..." if len(ids) > 8 else ""
+    return base + f" (candidates: {sample}{more})."
+
+
+def _record_bad_placement_loud(
+    *,
+    issue: int | None,
+    pod_name: str,
+    pod_id: str,
+    host_ip: str | None,
+    dc_id: str | None,
+    reason: str,
+) -> None:
+    """Sidecar write + the ``[bad-host-RECORD]`` stderr line (#2011), fully
+    guarded: ANY failure in here is swallowed with a WARN so recording can
+    never shadow the caller's re-raise (SSH-wait branch) or block its
+    fail-loud exit (bootstrap branch) — the plan's fail-loud pins."""
+    try:
+        note_bad_placement(issue, pod_name, pod_id, host_ip, dc_id, reason=reason)
+        print(
+            f"[bad-host-RECORD] pod={pod_name} id={pod_id} "
+            f"host={host_ip or 'unknown'} dc={dc_id or 'unknown'} reason={reason} "
+            f"issue={issue} — recorded to {_resolve_bad_host_state_path()} "
+            f"(TTL {_bad_host_ttl_secs():.0f}s). {_different_dc_hint(dc_id)}",
+            file=sys.stderr,
+            flush=True,
+        )
+    except Exception as exc:  # deliberate: observability must never crash a provision
+        print(f"[pod_lifecycle] WARN: bad-host record failed: {exc}", file=sys.stderr)
+
+
+def _warn_on_bad_host_repeat(pod_name: str, ready: PodInfo) -> None:
+    """Loud cross-issue ``[bad-host-REPEAT]`` WARN when a fresh placement
+    lands on a recorded bad host (#2011). WARN-only by contract: never blocks
+    and never auto-terminates (pod destruction stays approval-gated); a bad
+    host is bad for EVERY issue, so the match is host-keyed, not issue-keyed.
+    Any failure degrades to a WARN about the check itself."""
+    try:
+        entries = fresh_bad_hosts().get(ready.ssh_host or "")
+        if not entries:
+            return
+        issues = sorted({e.get("issue") for e in entries if e.get("issue") is not None})
+        dc = ready.data_center_id or next((e.get("dc_id") for e in entries if e.get("dc_id")), None)
+        print(
+            f"[bad-host-REPEAT] pod {pod_name} landed on host {ready.ssh_host}, "
+            f"which has {len(entries)} recorded failed placement(s) within the "
+            f"last {_bad_host_ttl_secs() / 3600:.1f}h "
+            f"(issues: {issues or ['unknown']}{f', dc={dc}' if dc else ''}). "
+            f"If this provision also fails its SSH/bootstrap probe, terminate "
+            f"and retry pinning a DIFFERENT datacenter: "
+            f"`pod.py provision --issue <N> --data-center-id <id>`. "
+            f"WARN-only — proceeding.",
+            file=sys.stderr,
+            flush=True,
+        )
+    except Exception as exc:  # deliberate: observability must never crash a provision
+        print(f"[pod_lifecycle] WARN: bad-host repeat check failed: {exc}", file=sys.stderr)
+
+
+def _warn_on_bad_dc_pin(data_center_id: str) -> None:
+    """``[bad-host-DC-PIN]`` WARN when an explicit user ``--data-center-id``
+    matches a fresh bad placement's recorded DC (#2011). The explicit flag
+    ALWAYS wins — it is honored verbatim, never silently dropped (plan §10
+    must-ask constraint); this is advisory output only."""
+    try:
+        hosts = sorted(
+            host
+            for host, entries in fresh_bad_hosts().items()
+            if any(e.get("dc_id") == data_center_id for e in entries)
+        )
+        if hosts:
+            print(
+                f"[bad-host-DC-PIN] explicit --data-center-id {data_center_id} matches "
+                f"{len(hosts)} recorded bad-placement host(s) within TTL "
+                f"({', '.join(hosts)}). Honoring the explicit pin — consider a "
+                f"different DC if this provision also fails its readiness probe.",
+                file=sys.stderr,
+                flush=True,
+            )
+    except Exception as exc:  # deliberate: observability must never crash a provision
+        print(f"[pod_lifecycle] WARN: bad-host DC-pin check failed: {exc}", file=sys.stderr)
 
 
 def ssh_preflight(
@@ -1887,6 +2149,29 @@ def _provision_wait_register_bootstrap(
         # window — record the wait so repeated attempts accumulate toward the
         # 1h [ssh-wait-ALARM], and name the recovery before propagating.
         note_ssh_wait_outcome(name, reachable=False, desired_status="RUNNING")
+        # Bad-placement record (#2011): best-effort get_pod ONCE for a
+        # late-appearing host IP, then record + [bad-host-RECORD]. Fully
+        # guarded — a get_pod failure in here must never shadow or swallow
+        # the RunPodError re-raise below (plan §1 fail-loud pin).
+        try:
+            late = get_pod(info.pod_id)
+            host_ip = late.ssh_host or info.ssh_host
+            dc_id = late.data_center_id or info.data_center_id
+        except Exception as exc:  # deliberate: recording never shadows the re-raise
+            print(
+                f"[pod_lifecycle] WARN: late get_pod for bad-host record failed: {exc}",
+                file=sys.stderr,
+            )
+            host_ip = info.ssh_host
+            dc_id = info.data_center_id
+        _record_bad_placement_loud(
+            issue=args.issue,
+            pod_name=name,
+            pod_id=info.pod_id,
+            host_ip=host_ip,
+            dc_id=dc_id,
+            reason="ssh-wait-timeout",
+        )
         print(
             f"  Pod {info.pod_id} ({name}) is created (billing) but exposed no "
             f"public SSH mapping in 10 min; pods.conf was NOT updated. Once it "
@@ -1897,6 +2182,8 @@ def _provision_wait_register_bootstrap(
         raise
     note_ssh_wait_outcome(name, reachable=True)
     print(f"  SSH ready at {ready.ssh_host}:{ready.ssh_port}")
+    # Known-bad-host repeat check (#2011): cross-issue, WARN-only.
+    _warn_on_bad_host_repeat(name, ready)
 
     # Contiguous read-modify-write under the sidecar lock (task #1183) so a
     # concurrent session's register/terminate cannot interleave.
@@ -1952,6 +2239,20 @@ def _provision_wait_register_bootstrap(
             f"bash scripts/bootstrap_pod.sh {name}` or\n"
             f"`python scripts/pod.py terminate --issue {args.issue}{suffix_hint}` to discard.",
             file=sys.stderr,
+        )
+        # Bad-placement record (#2011): bootstrap died on this host — the
+        # #1947 RUNNING-but-SSH-refused class passes wait_for_ssh (it only
+        # polls the PORT MAPPING) and dies here, where ready.ssh_host is
+        # known. Record BEFORE the verdict line (BOOTSTRAP-FAILED must stay
+        # the last stderr line, #1931); the helper is fully guarded so
+        # recording can never block the fail-loud exit below.
+        _record_bad_placement_loud(
+            issue=args.issue,
+            pod_name=name,
+            pod_id=info.pod_id,
+            host_ip=ready.ssh_host,
+            dc_id=ready.data_center_id or info.data_center_id,
+            reason="bootstrap-failed",
         )
         # Machine-greppable fail-loud provision verdict (#1931): the last stderr
         # line before exit, so a caller observing only captured output can tell
@@ -2200,6 +2501,14 @@ def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequentia
     # capacity-retry tick.
     _account_key_preflight(name)
 
+    # #2011: explicit DC pin (the bad-host DC-pin-away retry lever). getattr:
+    # hand-built Namespaces (tests, embedders) predate the flag — same
+    # precedent as name_suffix above. An explicit pin ALWAYS wins: a match
+    # against a recorded bad placement's DC only WARNs, never drops the flag.
+    data_center_id = getattr(args, "data_center_id", None)
+    if data_center_id:
+        _warn_on_bad_dc_pin(data_center_id)
+
     # CPU-only intent branch (#747): a cheap CPU intent (cpu-small / cpu-mid)
     # resolves to a RunPod CPU instance_id (deployCpuPod), NOT a GPU spec. This
     # branch is checked FIRST, before the GPU _resolve_spec below (which
@@ -2271,6 +2580,7 @@ def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequentia
             instance_id=cpu_instance_id,
             volume_gb=cpu_volume_gb,
             container_disk_gb=cpu_container_disk_gb,
+            data_center_id=data_center_id,
         )
         print(f"  Created CPU pod {info.pod_id} — waiting for SSH (up to 10 min)...")
         _provision_wait_register_bootstrap(args, name, info, intent_label)
@@ -2318,6 +2628,7 @@ def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequentia
                 volume_gb=args.volume_gb,
                 container_disk_gb=args.container_disk_gb,
                 preflight_check=_wait_mode_preflight,
+                data_center_id=data_center_id,
             )
         except WaitForCapacityStillWaiting as exc:
             _emit_still_waiting_and_exit(exc)
@@ -2336,6 +2647,7 @@ def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequentia
             gpu_count=spec.gpu_count,
             volume_gb=args.volume_gb,
             container_disk_gb=args.container_disk_gb,
+            data_center_id=data_center_id,
         )
     print(f"  Created pod {info.pod_id} — waiting for SSH (up to 10 min)...")
     _provision_wait_register_bootstrap(args, name, info, intent_label)
@@ -3234,6 +3546,19 @@ def _parser_provision(sub: argparse._SubParsersAction) -> None:
     )
     p.add_argument("--gpu-type", help="Override GPU type (H100|H200|A100)")
     p.add_argument("--gpu-count", type=int, help="Override GPU count")
+    p.add_argument(
+        "--data-center-id",
+        default=None,
+        help=(
+            "Pin the RunPod datacenter (e.g. EU-RO-1; enumerate via "
+            "runpod_api.get_datacenters). Threads to create_pod / "
+            "create_cpu_pod (dataCenterId). The bad-host avoidance lever "
+            "(#2011): after a [bad-host-RECORD] line, retry pinning a "
+            "DIFFERENT DC to bias away from a known-bad host (RunPod has no "
+            "host-exclude input). An explicit pin always wins — matching a "
+            "recorded bad placement's DC only WARNs, never drops the flag."
+        ),
+    )
     p.add_argument("--volume-gb", type=int, default=200, help="Persistent volume size (GB)")
     p.add_argument(
         "--container-disk-gb",
