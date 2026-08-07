@@ -1,0 +1,2060 @@
+{
+  "commit": "c0ae38c8+dirty",
+  "git_commit": "c0ae38c8",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/analyzer/MEMORY.md"
+  ],
+  "created": "2026-08-07T00:20:34Z",
+  "figsize": [
+    7.4,
+    7.2
+  ],
+  "points": [
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.5119660265924316,
+      "y": 14.18,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.09685651052937112,
+      "y": 13.82,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.39559877368677643,
+      "y": 13.18,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.05210358327467886,
+      "y": 12.82,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.3347398944709936,
+      "y": 12.18,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.035085834924926174,
+      "y": 11.82,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.26346302014382317,
+      "y": 11.18,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.022766584017565754,
+      "y": 10.82,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.2545699261488459,
+      "y": 10.18,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.002897553577853256,
+      "y": 9.82,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.24966705230241618,
+      "y": 9.18,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0515757542317037,
+      "y": 8.82,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.23900251133382433,
+      "y": 8.18,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.01900036138601413,
+      "y": 7.82,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.22902460334583685,
+      "y": 7.18,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.05128716185884357,
+      "y": 6.82,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.22230776052095305,
+      "y": 6.18,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.026552020410735667,
+      "y": 5.82,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.20103137428394263,
+      "y": 5.18,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.00021837482547966918,
+      "y": 4.82,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.17385344734050143,
+      "y": 4.18,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.005143807933830929,
+      "y": 3.82,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.10707155639196383,
+      "y": 3.18,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.05856231813275581,
+      "y": 2.82,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.09740313554956236,
+      "y": 2.18,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.06569899333847234,
+      "y": 1.82,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.07796258280524009,
+      "y": 1.18,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.05110867665220835,
+      "y": 0.8200000000000001,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.061458212377971555,
+      "y": 0.18,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.020181477123141993,
+      "y": -0.18,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.6044776119402984,
+      "y": 14.212874725826715,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.04326328800988876,
+      "y": 14.172665412770247,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.6119133574007221,
+      "y": 14.223031750389366,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.6736977491961416,
+      "y": 14.203684163487123,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.6573146292585171,
+      "y": 14.131301281746518,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.6117804551539492,
+      "y": 14.237074682196411,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.7677725118483412,
+      "y": 14.211336764238842,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.6436950146627567,
+      "y": 14.214327716633234,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.2717557251908397,
+      "y": 14.135373635921065,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.32051649928263987,
+      "y": 14.174046312547468,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.48507462686567154,
+      "y": 13.80449576290791,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.5624227441285538,
+      "y": 13.871211798661832,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.005415162454873651,
+      "y": 13.83726381440968,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 13.8587313935925,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.013894455577822313,
+      "y": 13.81320970385928,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.07362784471218212,
+      "y": 13.787268646614173,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.30983412322274884,
+      "y": 13.8265501744419,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.06891495601173028,
+      "y": 13.767658070732502,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.40916030534351144,
+      "y": 13.85931574063911,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.175896700143472,
+      "y": 13.835799727894647,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.6501148105625717,
+      "y": 13.210970528810245,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.25957972805933255,
+      "y": 13.162543116175584,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.5737063778580025,
+      "y": 13.236483762927389,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.5081672025723473,
+      "y": 13.227174534558664,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.37087508350033405,
+      "y": 13.21340601964885,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.21017402945113792,
+      "y": 13.143356644942235,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.606042654028436,
+      "y": 13.176006520447244,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.37390029325513197,
+      "y": 13.125256451894467,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.1425954198473282,
+      "y": 13.138514739048105,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.26083213773314207,
+      "y": 13.201965874389094,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.0005740528128588471,
+      "y": 12.849371458708939,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.7404202719406675,
+      "y": 12.876101167892106,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.005415162454873651,
+      "y": 12.799099042976579,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.04745980707395499,
+      "y": 12.804455164724185,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.026720106880427523,
+      "y": 12.816346697353097,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.041499330655957165,
+      "y": 12.782736563090115,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.06161137440758298,
+      "y": 12.775590580640257,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.01906158357771267,
+      "y": 12.817084591147113,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.013435114503816759,
+      "y": 12.787229121886106,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.22180774748923962,
+      "y": 12.840377679361902,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.6142365097588978,
+      "y": 12.172458230264679,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.4066749072929543,
+      "y": 12.21992138352694,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.42418772563176904,
+      "y": 12.20403181224027,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.4485530546623794,
+      "y": 12.157483996965844,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.5143620574482298,
+      "y": 12.219871176167423,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.23159303882195453,
+      "y": 12.216571722899616,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.2606635071090047,
+      "y": 12.166497405483621,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.34457478005865105,
+      "y": 12.15459937247163,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.016183206106870174,
+      "y": 12.201899460476996,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.08637015781922525,
+      "y": 12.136770298033117,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.2439724454649827,
+      "y": 11.783988984297013,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.08034610630407912,
+      "y": 11.760883472370121,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.190734055354994,
+      "y": 11.854430925300257,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.04051446945337621,
+      "y": 11.839782102791045,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.010688042752171018,
+      "y": 11.84461984543516,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.006693440428380165,
+      "y": 11.853687483722636,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.12559241706161134,
+      "y": 11.815069893064601,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.06891495601173012,
+      "y": 11.828248943514348,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.09923664122137409,
+      "y": 11.77677563977532,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.005451936872309937,
+      "y": 11.773743608824317,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.3874856486796785,
+      "y": 11.200208355414857,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.030902348578491973,
+      "y": 11.176531544737175,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.4578820697954272,
+      "y": 11.187828332777743,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.3796784565916398,
+      "y": 11.211799862889922,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.2297929191716767,
+      "y": 11.196166198400071,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.17269076305220882,
+      "y": 11.186429528078959,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.6682464454976303,
+      "y": 11.18710485928945,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.2067448680351907,
+      "y": 11.156474011767513,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.07664122137404578,
+      "y": 11.123698140148152,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.08637015781922525,
+      "y": 11.172406086707884,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.008610792192881689,
+      "y": 10.785750160738344,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.04326328800988876,
+      "y": 10.809023437246957,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.019855595667870027,
+      "y": 10.862408368792181,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 10.78807273830384,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 10.766996329002689,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.030789825970548846,
+      "y": 10.79376606704264,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.014218009478673025,
+      "y": 10.795231250932002,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.127565982404692,
+      "y": 10.839429981767228,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.12396946564885496,
+      "y": 10.826843858280954,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.02209469153515066,
+      "y": 10.85406778509277,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.40470723306544193,
+      "y": 10.199717624839286,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.018541409147095185,
+      "y": 10.168766423372809,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.35318892900120336,
+      "y": 10.217682446159923,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.14469453376205785,
+      "y": 10.140036750388925,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.22444889779559118,
+      "y": 10.122725448776063,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.13788487282463188,
+      "y": 10.130805743293077,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.6848341232227488,
+      "y": 10.206683122071574,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.4706744868035191,
+      "y": 10.175425267630166,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.04366412213740453,
+      "y": 10.139352613484032,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.10014347202295548,
+      "y": 10.180125373012404,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.002870264064293981,
+      "y": 9.77827745232558,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.030902348578491973,
+      "y": 9.843558445009329,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.02587244283995186,
+      "y": 9.813538753068883,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 9.805722547131579,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 9.796181450697745,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.08701472556894248,
+      "y": 9.835633911174266,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.09063981042654029,
+      "y": 9.803417513266407,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.08651026392961866,
+      "y": 9.770517990317932,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.06488549618320615,
+      "y": 9.774160708254461,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.010616929698708703,
+      "y": 9.875427719745941,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.38518943742824335,
+      "y": 9.229029682884912,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.012360939431396795,
+      "y": 9.20396485605729,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.5397111913357401,
+      "y": 9.151904395375142,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.32874598070739547,
+      "y": 9.236301165281727,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.5023380093520375,
+      "y": 9.213450108475895,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.21820615796519416,
+      "y": 9.20602682269908,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.5924170616113745,
+      "y": 9.173923380257254,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.007331378299120173,
+      "y": 9.15266898742142,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.01954198473282449,
+      "y": 9.13156691545842,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.0307030129124821,
+      "y": 9.228312287585261,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0028702640642938545,
+      "y": 8.814693154780034,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.018541409147095185,
+      "y": 8.784283603775428,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.013838748495788195,
+      "y": 8.796714794898078,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.13080385852090032,
+      "y": 8.829506348273028,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.1282565130260521,
+      "y": 8.781212733952708,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.1646586345381526,
+      "y": 8.862793714091085,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.04739336492890994,
+      "y": 8.851022343580226,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.16568914956011738,
+      "y": 8.846335554714113,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.20580152671755725,
+      "y": 8.811851164773012,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.004304160688665688,
+      "y": 8.835277060884293,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.370264064293915,
+      "y": 8.190091756269528,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.11742892459826945,
+      "y": 8.197981592186578,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.33754512635379064,
+      "y": 8.130133318536787,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.20025723472668808,
+      "y": 8.169896888260473,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.17635270541082165,
+      "y": 8.124993700863428,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.19946452476572962,
+      "y": 8.179278898309342,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.8672985781990523,
+      "y": 8.159583345479934,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.019061583577712517,
+      "y": 8.137342902663926,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.09312977099236634,
+      "y": 8.132408356126707,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.04734576757532279,
+      "y": 8.190517348661325,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.002870264064293981,
+      "y": 7.780471156224427,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.030902348578491973,
+      "y": 7.871014414205216,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.005415162454873651,
+      "y": 7.829727336764048,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.06366559485530547,
+      "y": 7.801624376544181,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 7.83090985897777,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.07630522088353414,
+      "y": 7.762736464523564,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.01658767772511847,
+      "y": 7.875027105588973,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.1568914956011731,
+      "y": 7.817876412433148,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.0030534351145038554,
+      "y": 7.853928227270035,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.08120516499282641,
+      "y": 7.769927599990693,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.32632283991962485,
+      "y": 7.178398999700579,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.8004158004158004,
+      "y": 7.178884839322542,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.007022471910112363,
+      "y": 7.232539174596997,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.009221311475409845,
+      "y": 7.188607366285129,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.4578835089533907,
+      "y": 7.176818728126834,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.3052064631956912,
+      "y": 7.152037079571027,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.2895878524945771,
+      "y": 7.159788279681106,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.05756358768406963,
+      "y": 7.182480688296584,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.07109004739336491,
+      "y": 7.172669375236605,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.12965722801788382,
+      "y": 7.122593449585639,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.005190839694656479,
+      "y": 7.219155030903322,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.32162085576650606,
+      "y": 7.227539292620771,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0241125251172136,
+      "y": 6.776829890679833,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 6.826484337224686,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.003511235955056177,
+      "y": 6.773029088936253,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.011270491803278698,
+      "y": 6.840668811164778,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.009890749240416313,
+      "y": 6.793748054060681,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.08737283064033512,
+      "y": 6.839130716163028,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.11930585683297182,
+      "y": 6.847239353714426,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.12985274431057564,
+      "y": 6.852237699030119,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.047393364928909935,
+      "y": 6.772928913514708,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.049180327868852534,
+      "y": 6.869921421416513,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.00519083969465646,
+      "y": 6.787625678907386,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.1283649759138566,
+      "y": 6.764489506741142,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.3771526980482204,
+      "y": 6.186582296326978,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.04944375772558714,
+      "y": 6.164510674063492,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.3182912154031288,
+      "y": 6.219574769175889,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.30443729903536976,
+      "y": 6.216990176647716,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.18704074816299268,
+      "y": 6.158056667138726,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.13788487282463188,
+      "y": 6.234347927408369,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.6800947867298579,
+      "y": 6.154910140576814,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.16862170087976544,
+      "y": 6.181806855507806,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.10687022900763354,
+      "y": 6.150715810868112,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.16901004304160688,
+      "y": 6.232325228405875,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.002870264064293981,
+      "y": 5.7797529381098425,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.018541409147095185,
+      "y": 5.76538927432708,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.03068592057761733,
+      "y": 5.812211647200365,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.10418006430868168,
+      "y": 5.879085067686701,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 5.86700127195059,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.08701472556894238,
+      "y": 5.849832962334834,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.04028436018957342,
+      "y": 5.866895098905423,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.10703812316715551,
+      "y": 5.867213596763744,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.0772519083969466,
+      "y": 5.822263003246374,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.16901004304160688,
+      "y": 5.797911486219696,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.4391504018369689,
+      "y": 5.212641491853319,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.030902348578491973,
+      "y": 5.199399351580131,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.32551143200962696,
+      "y": 5.164838927464845,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.10996784565916398,
+      "y": 5.131336000167382,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.021376085504342026,
+      "y": 5.209614753361882,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.028112449799196814,
+      "y": 5.1514952619107435,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.6800947867298579,
+      "y": 5.232417578064053,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.05718475073313796,
+      "y": 5.148916469000682,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.3267175572519084,
+      "y": 5.134730951889378,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.10932568149210901,
+      "y": 5.219733520654988,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.002870264064293981,
+      "y": 4.77839411799494,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.04326328800988876,
+      "y": 4.781512196978929,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0006016847172081834,
+      "y": 4.831925934982501,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.10418006430868168,
+      "y": 4.864947444900496,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 4.7835721598857495,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.19143239625167338,
+      "y": 4.797238840748012,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.09478672985781993,
+      "y": 4.853288580588941,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.07771260997067443,
+      "y": 4.876619171127317,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.060763358778626,
+      "y": 4.820088942344281,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.014634146341463433,
+      "y": 4.77726770030615,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.38174512055109067,
+      "y": 4.121672354524984,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.006180469715698399,
+      "y": 4.147558723599863,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.32190132370637786,
+      "y": 4.135818666134382,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.18520900321543407,
+      "y": 4.201319040833543,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.17635270541082165,
+      "y": 4.134619900555424,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.13788487282463185,
+      "y": 4.180759591794476,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.5142180094786729,
+      "y": 4.203311492277146,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.010263929618768425,
+      "y": 4.189733993106508,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.16793893129770995,
+      "y": 4.143973078199207,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.18507890961262552,
+      "y": 4.216494943141871,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.002870264064293981,
+      "y": 3.845848855553896,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.04326328800988876,
+      "y": 3.848678080469865,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0006016847172081834,
+      "y": 3.7757269301868774,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0752411575562701,
+      "y": 3.7748504564380414,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 3.8713075061207807,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.12182061579651941,
+      "y": 3.8077093832589926,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.05213270142180092,
+      "y": 3.7961138430137127,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.1011730205278592,
+      "y": 3.8186300854421837,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.06625954198473286,
+      "y": 3.83954370553163,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.015208034433285467,
+      "y": 3.8746747908456363,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.32433983926521237,
+      "y": 3.154373547225847,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.030902348578491973,
+      "y": 3.230977011517443,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.2388688327316486,
+      "y": 3.122983138966351,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.08681672025723472,
+      "y": 3.186623765079219,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.18169672678690713,
+      "y": 3.1960770134017302,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.046854082998661326,
+      "y": 3.1327076884500906,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.15876777251184832,
+      "y": 3.1368407516476697,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.05718475073313776,
+      "y": 3.1702937183179567,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.0387786259541985,
+      "y": 3.235947829457182,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.25394548063127687,
+      "y": 3.191525106388125,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.07749712973593566,
+      "y": 2.871962786592025,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.9703337453646477,
+      "y": 2.8565233098735563,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.021058965102286407,
+      "y": 2.8160857921866347,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 2.854171613910262,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 2.7621404140772383,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.006024096385542195,
+      "y": 2.7730972796118882,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.014218009478673008,
+      "y": 2.859531433785928,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.08064516129032266,
+      "y": 2.8556180505990194,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.1893129770992366,
+      "y": 2.787916889035972,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.024390243902439015,
+      "y": 2.823692350871886,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.4299655568312284,
+      "y": 2.1927218984840016,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.04326328800988876,
+      "y": 2.2241286744531217,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.2918170878459687,
+      "y": 2.1923728588806473,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 2.169508588312842,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0021376085504342035,
+      "y": 2.1649020852088623,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.20214190093708165,
+      "y": 2.1711058503648215,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.03969194312796213,
+      "y": 2.198231723069597,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.12756598240469214,
+      "y": 2.224098875810279,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.1645038167938932,
+      "y": 2.174467625849156,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.16786226685796268,
+      "y": 2.149740747554163,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.002870264064293981,
+      "y": 1.78839948355971,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.7849196538936959,
+      "y": 1.8495217136292137,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.005415162454873651,
+      "y": 1.8579882516108692,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0,
+      "y": 1.772633369582495,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.042752171008684045,
+      "y": 1.7679870628346215,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.004016064257028096,
+      "y": 1.8313320396507742,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.014218009478673002,
+      "y": 1.7775407893031239,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.09824046920821121,
+      "y": 1.858959702854761,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.01954198473282447,
+      "y": 1.797240160870889,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.032998565279770437,
+      "y": 1.7772646319565373,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.14867967853042477,
+      "y": 1.2305164566984939,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.00865265760197775,
+      "y": 1.1398638067282334,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.2569193742478941,
+      "y": 1.1541664098805522,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.17363344051446947,
+      "y": 1.138433607423047,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0021376085504342035,
+      "y": 1.1338588076398426,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.18607764390896922,
+      "y": 1.1225377619603727,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.5063191153238547,
+      "y": 1.1266474490997112,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.048387096774193485,
+      "y": 1.1409569765123022,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.0745038167938932,
+      "y": 1.126405831915261,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.007747489239598268,
+      "y": 1.1909372579333164,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.002870264064293981,
+      "y": 0.8416857432159408,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.7280593325092707,
+      "y": 0.8072356548198435,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0030084235860409173,
+      "y": 0.798158931634246,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.021704180064308683,
+      "y": 0.8205431484426676,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.04809619238476955,
+      "y": 0.8650005930681531,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.06827309236947794,
+      "y": 0.8621357952186648,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.12796208530805683,
+      "y": 0.7652170074415351,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.2067448680351907,
+      "y": 0.781779809151583,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.09099236641221375,
+      "y": 0.7884093845325276,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.02840746054519372,
+      "y": 0.7899265090998655,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.13834672789896665,
+      "y": 0.18854791820913272,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.04326328800988876,
+      "y": 0.16995149108438307,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.20276774969915765,
+      "y": 0.12591049439131127,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.22340836012861737,
+      "y": 0.16483369661514857,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.05878423513694055,
+      "y": 0.18285035384611648,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.049531459170013364,
+      "y": 0.13220062834844593,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.010663507109004683,
+      "y": 0.22001502645462717,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.15689149560117294,
+      "y": 0.1262354239758125,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.030534351145038198,
+      "y": 0.23098102428216744,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.260832137733142,
+      "y": 0.13189357698958504,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.04879448909299648,
+      "y": -0.13877100580826968,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.05871446229913475,
+      "y": -0.13168162272868594,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.04031287605294827,
+      "y": -0.12245151832960888,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.11228295819935692,
+      "y": -0.14375689436716876,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.0021376085504342035,
+      "y": -0.14646269510744053,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.014725568942436406,
+      "y": -0.16290200688053427,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.06161137440758295,
+      "y": -0.1465204374506245,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.10703812316715537,
+      "y": -0.22385373499042233,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": -0.0889312977099237,
+      "y": -0.17567183568628353,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)": 0.29985652797704443,
+      "y": -0.17829325557715026,
+      "_kind": "scatter",
+      "_group": 59
+    }
+  ],
+  "n_series": 60,
+  "total_points": 334,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "independent re-sampling of the 15 surviving families: steered vs shuffled-donor null",
+        "xlabel": "behavior F at temperature 1.0 (fraction of a full context swap, prefix rubric)",
+        "xticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "matched query - all 28 layers, full-state patch",
+          "matched query - mid-stack joint, dose 0.5x",
+          "matched query - mid-stack joint, dose 0.5x (prefix centroid)",
+          "matched query - layer 13, dose 2x",
+          "matched query - layer 14, dose 1x",
+          "matched query - layer 16, dose 4x",
+          "matched query - layer 16, dose 2x",
+          "cross - layer 15, dose 1x",
+          "matched query - layer 17, dose 2x",
+          "matched query - layer 17, dose 1x",
+          "matched query - layer 16, dose 1x",
+          "matched query - layer 15, full-state patch",
+          "matched query - layer 12, dose 4x",
+          "matched query - layer 20, full-state patch",
+          "matched query - layer 20, dose 2x (prefix centroid)"
+        ]
+      }
+    ]
+  }
+}
