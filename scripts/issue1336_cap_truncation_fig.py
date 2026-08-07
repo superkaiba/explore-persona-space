@@ -24,7 +24,13 @@ import argparse
 import json
 from pathlib import Path
 
-import matplotlib
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS on the shared
+# VM, and the BLAS pools freeze at import time — so it must run BEFORE matplotlib/numpy.
+load_dotenv()
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
