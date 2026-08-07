@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2172,
+  "highest_id": 2173,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9061,6 +9061,13 @@
       "path": "tasks/proposed/2172",
       "status": "proposed",
       "title": "Parenthesized \u00a79 planned_wall_h cell silently disables the poller phase-ETA tripwire"
+    },
+    "2173": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2173",
+      "status": "proposed",
+      "title": "workflow-fix: test_backend_poll module-mode test fails only in large collections, always classified NEW by the Step 9c oracle"
     },
     "218": {
       "has_clean_result": false,
