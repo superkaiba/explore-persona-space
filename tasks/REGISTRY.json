@@ -9037,8 +9037,8 @@
     "2169": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2169",
-      "status": "planning",
+      "path": "tasks/approved/2169",
+      "status": "approved",
       "title": "verify_task_body check 31: WARN on any committed-but-unmentioned figures/issue_<N> PNG (not only per-unit patterns)"
     },
     "2170": {
