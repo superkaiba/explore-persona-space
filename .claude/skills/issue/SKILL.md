@@ -4353,6 +4353,44 @@ RE-RUN the same `dispatch_issue.py launch` command to continue waiting
 liveness); NEVER post `epm:failure v1` / `set-status blocked` on this
 exit (#603).
 
+The SAME exit-75 contract has a THIRD producer (#2161; the second —
+`gcloud_create_timeout_still_provisioning`, a GCP FLEX_START create that
+outlived its subprocess cap — follows the identical re-run rule): a free
+SLURM lane's QoS-ladder queue park (fellows `high-eur` → `normal-eur` →
+`low-eur`) reaching its per-process budget
+(`EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS`, default 420 s — sized under
+the 600 s Bash-tool cap) with the job still queued: `reason:
+free_lane_park_budget_reached`, plus additive `lane` / `job_id` / `qos`
+/ `rung` / `n_rungs` / `rung_park_elapsed_s` keys. The router persisted
+the ladder position (rung + elapsed + job id) to the durable per-issue
+lease (`Lease.free_lane_park_state`) BEFORE raising, so RE-RUN the SAME
+`dispatch_issue.py launch` command (heartbeat per re-run, exactly as
+producer (1)): each re-run reconnects to the queued job by its
+`eps-issue-<N>` job name (`squeue --name`) and RESUMES the QoS-ladder
+park from lease state — no double-submit; the scancel + re-submit rung
+walk continues across process lifetimes. NEVER hand off to
+`backend_poll.py` while `still_waiting` — SLURM PENDING polls as
+`running` there, so the poller would watch a queued job forever and the
+QoS ladder would stall at high-eur.
+
+**Launch-recovery invariant (ANY killed / timed-out / SIGTERMed launch
+Bash call — the #1336 shape).** The launch may have SUCCEEDED even
+though the launching Bash call died: `dispatch_issue.py launch` SUBMITS
+before it parks, so a 600 s Bash-tool SIGTERM mid-park leaves a live
+queued job with no marker and no JSON on stdout (#1336: job 4684 sat
+queued at high-eur behind a dead launcher). BEFORE any relaunch, probe
+BOTH (1) the handle sidecar `.claude/cache/issue-<N>-handle.json` and
+(2) the queue itself — `ssh <cluster> "squeue --name eps-issue-<N>..."`
+(the job-name prefix the fellows lane submits under; a suffixed
+`-<hash>`/`-<user>` form matches by prefix). Recovery for a live queued
+job is RE-RUNNING the SAME launch command — it reconnects by name and
+resumes the park; never a fresh double-submit and never a
+`backend_poll.py` handoff. If BOTH probes come back empty, the launcher
+died PRE-submit and a plain re-run is safe (nothing to reconnect to).
+`scancel <job_id>` + confirm-gone + re-run is reserved for deliberately
+ABANDONING the queued job or changing the launch shape — never the
+default recovery.
+
 **Follow-up parent reuse.** When the task has a `parent_id` AND the
 parent's RunPod pod is alive, the operational path stays on the
 existing `pod.py` flow for that one specific case (the slice-6 router

@@ -449,6 +449,17 @@ WARN (c39's trigger fires on the calibrated inverse-direction tokens
 phrasings remain planner+critic-enforced). Template + worked examples:
 `.claude/rules/planner-section-reference.md` § 9 (off_pod_phases).
 
+Plan-embedded dispatch commands parse against the live CLI (#2161): any
+`dispatch_issue.py` command this section (or §10) embeds carries the
+`launch` subcommand, an explicit `--repo-branch`, and — whenever a SLURM
+lane is reachable (bare `auto`, or a fellows/nibi/fir/mila pin) —
+`--time-budget-hours` as the wall fence (`--max-run-duration` threads
+only to the GCP instance auto-delete and is INERT on SLURM).
+`verify_plan.py` c46 (WARN-only) dry-parses every embedded command
+against `dispatch_issue.build_argparser()`; the #1336 v15 drift shape
+(no subcommand, `--max-run-duration` alone, no `--repo-branch`) WARNs at
+plan time instead of dying at dispatch.
+
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 9. Resources & Parallelism — read it BEFORE writing this section.
 
