@@ -1309,10 +1309,17 @@ _PER_UNIT_ORPHAN_PATH = "figures/issue_999/hero_percontext.png"
 _PER_UNIT_NAMED_CLASS = "companion-named-not-embedded"
 
 
-def _make_repo_with_per_unit_orphan(tmp_path, companion: str = "hero_percontext.png"):
+def _make_repo_with_per_unit_orphan(
+    tmp_path,
+    companion: str | None = "hero_percontext.png",
+    extra: str | None = None,
+):
     """git repo whose HEAD commit tracks `figures/issue_999/hero.png` +
     `figures/issue_999/<companion>` (the per-unit companion; default
-    `hero_percontext.png`) +
+    `hero_percontext.png`; ``None`` -> no companion — required by widened-
+    scope negative pins whose fixtures must not trip class A, #2169) +
+    optionally `figures/issue_999/<extra>` (ONE additional NON-per-unit
+    PNG — the class-C candidate, #2169) +
     `scripts/run.py` (so GOOD_BODY's check-8b Code-blob probe resolves
     when a test pins the real sha); returns (repo_path, head_sha)."""
     repo = tmp_path / "perunitrepo"
@@ -1327,7 +1334,10 @@ def _make_repo_with_per_unit_orphan(tmp_path, companion: str = "hero_percontext.
     figdir = repo / "figures" / "issue_999"
     figdir.mkdir(parents=True)
     (figdir / "hero.png").write_bytes(b"\x89PNG fake bytes")
-    (figdir / companion).write_bytes(b"\x89PNG fake bytes")
+    if companion is not None:
+        (figdir / companion).write_bytes(b"\x89PNG fake bytes")
+    if extra is not None:
+        (figdir / extra).write_bytes(b"\x89PNG fake bytes")
     script = repo / "scripts" / "run.py"
     script.parent.mkdir(parents=True)
     script.write_text("print('entry script')\n")
@@ -1791,6 +1801,381 @@ def test_per_unit_basename_pattern(stem, expected):
     mid-word hits (`supercontext`), and other per-X families
     (per_source/per_seed) do NOT — Lens 11 owns the substance."""
     assert bool(verify_task_body._PER_UNIT_FIG_RE.search(stem)) is expected
+
+
+# ─── Check 31 widened scope (#2169): class C `committed-figure-unmentioned` ──
+
+# The class-C WARN token (#2169) — pinned as a LITERAL (not imported from the
+# module) so a silent token rename breaks the grep contract, exactly like the
+# class-B pin above.
+_COMMITTED_UNMENTIONED_CLASS = "committed-figure-unmentioned"
+
+_CLASS_C_PATH = "figures/issue_999/f5_arm_agreement.png"
+
+# Entry shape in the WARN detail: `<path>` (committed at <shas>; <class text>).
+_DETAIL_ENTRY_RE = re.compile(r"`(figures/issue_\d+/[^`]+)` \(([^)]*)\)")
+
+
+def test_committed_unmentioned_figure_warns_class_c(tmp_path, monkeypatch):
+    """The #2061 incident shape (required positive): `f5_arm_agreement.png`
+    (NON-per-unit stem) committed at the body-cited SHA, embedded nowhere,
+    named nowhere -> class-C WARN carrying the path, the
+    `committed-figure-unmentioned` token, the Lens 13 pointer, and the
+    short SHA; `passed` stays True (WARN-tier)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _CLASS_C_PATH in r.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r.detail
+    assert "Lens 13" in r.detail
+    assert sha[:8] in r.detail
+
+
+def test_committed_figure_named_in_disposition_no_warn(tmp_path, monkeypatch):
+    """Required negative: the same non-per-unit figure NAMED in a
+    disposition line with the 'not embedded' idiom -> silent (the mention
+    bar is satisfied a fortiori)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body = (
+        GOOD_BODY.replace("0123456789abcdef", sha)
+        .replace(
+            "> **Figure.**",
+            f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+        )
+        .replace(
+            "The 17-pt lift holds at every seed;",
+            "The planned arm-agreement view `f5_arm_agreement.png` is committed at the "
+            "same pinned SHA, not embedded: redundant with the hero panels. "
+            "The 17-pt lift holds at every seed;",
+        )
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_committed_figure_bare_mention_no_warn(tmp_path, monkeypatch):
+    """The two-bar decision, pinned EXPLICITLY (this is the pin to attack if
+    the mention-bar call is wrong): a non-per-unit figure named with NO
+    exemption idiom is ALSO silent — naming alone satisfies the widened
+    class's looser bar, unlike the per-unit family's phrase bar."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body = (
+        GOOD_BODY.replace("0123456789abcdef", sha)
+        .replace(
+            "> **Figure.**",
+            f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+        )
+        .replace(
+            "The 17-pt lift holds at every seed;",
+            "The arm-agreement view `f5_arm_agreement.png` is committed alongside. "
+            "The 17-pt lift holds at every seed;",
+        )
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_committed_figure_embedded_no_warn(tmp_path, monkeypatch):
+    """An EMBEDDED non-per-unit figure -> silent (the embed branch runs
+    before any naming bar, unchanged by the widening)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    base_url = f"https://raw.githubusercontent.com/superkaiba/explore-persona-space/{sha}"
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas.]({base_url}/figures/issue_999/hero_percontext.png)\n\n"
+        f"![Arm agreement.]({base_url}/figures/issue_999/f5_arm_agreement.png)\n\n"
+        "> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_class_tokens_never_leak_across_entries(tmp_path, monkeypatch):
+    """A repo with BOTH an unmentioned per-unit companion AND an unmentioned
+    non-per-unit figure: the per-unit path reports class A (no class-B
+    token anywhere — class B never fires here) and the other path class C,
+    with neither class's token leaking onto the other's entry."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _PER_UNIT_ORPHAN_PATH in r.detail
+    assert _CLASS_C_PATH in r.detail
+    assert _PER_UNIT_NAMED_CLASS not in r.detail  # class B never fired
+    entries = dict(_DETAIL_ENTRY_RE.findall(r.detail))
+    assert _COMMITTED_UNMENTIONED_CLASS not in entries[_PER_UNIT_ORPHAN_PATH]
+    assert _COMMITTED_UNMENTIONED_CLASS in entries[_CLASS_C_PATH]
+
+
+def test_non_png_committed_artifact_never_warns(tmp_path, monkeypatch):
+    """Scope pin against future over-widening: committed `.pdf` +
+    `.meta.json` artifacts, both unmentioned, never WARN — the widened scan
+    stays PNG-only (mirrors the real `figures/issue_2061/` layout, where
+    those sidecars outnumber the PNGs 2:1)."""
+    repo, _sha_a = _make_repo_with_per_unit_orphan(tmp_path, companion=None)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    (figdir / "f6_extra.pdf").write_bytes(b"%PDF fake bytes")
+    (figdir / "f6_extra.meta.json").write_text("{}\n")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add non-PNG sidecars")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no orphaned per-unit figures" in r.detail
+
+
+# The corrected #2061 body's disposition text, VERBATIM from
+# `git show HEAD:tasks/reviewing/2061/body.md` line 61 (not a paraphrase) —
+# the acceptance-(b) shape the widening must stay silent on.
+_ISSUE2061_DISPOSITION_A = (
+    "Companion per-cell views for the non-headline transitions and arms "
+    "(`f2_percell_base_sft_context.png`, `f2_percell_base_sft_prefix.png`, "
+    "`f2_percell_sft_dpo_context.png`, `f2_percell_sft_dpo_prefix.png`, "
+    "`f2_percell_dpo_rlvr_prefix.png`, `f2_percell_rlvr_longer-rlvr_context.png`, "
+    "`f2_percell_rlvr_longer-rlvr_prefix.png`, and the seven `f1_delta_scatter_*` "
+    "siblings — not embedded: identical view on non-winning transitions/arms, "
+    "committed at the same pinned SHA)."
+)
+_ISSUE2061_DISPOSITION_B = (
+    "The planned arm-agreement view `f5_arm_agreement.png` (per-cell true max ΔR²_j, "
+    "prefix arm against context arm, one panel per transition, render classes marked) "
+    "is committed at the same pinned SHA, not embedded: every cell sits above the "
+    "y = x line with prefix maxima near zero — the by-construction prefix degeneracy "
+    "already carried in the prefix-arm scope note above, no read beyond the per-cell "
+    "views."
+)
+
+_ISSUE2061_F1_SIBLINGS = [
+    "f1_delta_scatter_base_sft_context.png",
+    "f1_delta_scatter_base_sft_prefix.png",
+    "f1_delta_scatter_sft_dpo_context.png",
+    "f1_delta_scatter_sft_dpo_prefix.png",
+    "f1_delta_scatter_dpo_rlvr_prefix.png",
+    "f1_delta_scatter_rlvr_longer-rlvr_context.png",
+    "f1_delta_scatter_rlvr_longer-rlvr_prefix.png",
+]
+
+
+def _make_issue2061_shape_repo(tmp_path):
+    """Hermetic replica of the #2061 figures layout under `issue_999`: one
+    embedded f1 sibling + seven glob-dispositioned f1 siblings + two
+    explicitly-named per-cell companions + `f5_arm_agreement.png` at sha_a,
+    plus `second.png` at a child commit sha_b (the second cited SHA
+    exercising the multi-SHA dedup path for class C). Returns
+    (repo, sha_a, sha_b)."""
+    repo, _sha0 = _make_repo_with_per_unit_orphan(tmp_path, companion=None)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    for fname in [
+        "f1_delta_scatter_dpo_rlvr_context.png",  # the embedded sibling
+        *_ISSUE2061_F1_SIBLINGS,
+        "f2_percell_base_sft_context.png",
+        "f2_percell_base_sft_prefix.png",
+        "f5_arm_agreement.png",
+    ]:
+        (figdir / fname).write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add issue-2061-shaped figure set")
+    sha_a = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    (figdir / "second.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add second figure at a second sha")
+    sha_b = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha_a, sha_b
+
+
+def _issue2061_shape_body(sha_a: str, sha_b: str, disposition: str) -> str:
+    """GOOD_BODY carrying the issue-2061 shape: hero + one f1 sibling +
+    second.png embedded (two cited SHAs), plus ``disposition`` in the
+    running-prose paragraph."""
+    base_a = f"https://raw.githubusercontent.com/superkaiba/explore-persona-space/{sha_a}"
+    base_b = f"https://raw.githubusercontent.com/superkaiba/explore-persona-space/{sha_b}"
+    return (
+        GOOD_BODY.replace("0123456789abcdef", sha_a)
+        .replace(
+            "> **Figure.**",
+            f"![Delta scatter, headline transition.]({base_a}/figures/issue_999/"
+            "f1_delta_scatter_dpo_rlvr_context.png)\n\n"
+            f"![Second view at a second sha.]({base_b}/figures/issue_999/second.png)\n\n"
+            "> **Figure.**",
+        )
+        .replace(
+            "The 17-pt lift holds at every seed;",
+            f"{disposition} The 17-pt lift holds at every seed;",
+        )
+    )
+
+
+def test_issue2061_shape_replay(tmp_path, monkeypatch):
+    """Acceptance (b), hermetic: on the #2061 shape with the VERBATIM
+    corrected-body disposition text, (a) with `f5_arm_agreement.png`
+    unnamed the check WARNs class C for f5 ONLY — the seven
+    glob-dispositioned f1 siblings and the explicitly-named per-cell
+    companions stay silent — with ONE deduped entry listing BOTH cited
+    short SHAs; (b) with f5 named in that same disposition paragraph the
+    check is silent."""
+    repo, sha_a, sha_b = _make_issue2061_shape_repo(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    # (a) f5 unnamed: the pre-fix #2061 shape.
+    body_a = _issue2061_shape_body(sha_a, sha_b, _ISSUE2061_DISPOSITION_A)
+    r_a = verify_task_body.check_orphaned_per_unit_figures(body_a, issue=999)
+    assert r_a.passed is True
+    assert r_a.is_warn is True
+    assert _COMMITTED_UNMENTIONED_CLASS in r_a.detail
+    assert _PER_UNIT_NAMED_CLASS not in r_a.detail
+    entry_paths = {p for p, _cls in _DETAIL_ENTRY_RE.findall(r_a.detail)}
+    assert entry_paths == {_CLASS_C_PATH}  # ONLY f5 — no f1/f2 sibling fires
+    assert r_a.detail.count(_CLASS_C_PATH) == 1  # deduped across cited SHAs
+    assert sha_a[:8] in r_a.detail
+    assert sha_b[:8] in r_a.detail
+    # (b) f5 named in the same disposition paragraph: the corrected body.
+    body_b = _issue2061_shape_body(
+        sha_a, sha_b, f"{_ISSUE2061_DISPOSITION_A} {_ISSUE2061_DISPOSITION_B}"
+    )
+    r_b = verify_task_body.check_orphaned_per_unit_figures(body_b, issue=999)
+    assert r_b.passed is True
+    assert r_b.is_warn is False
+
+
+def test_glob_family_disposition_exempts_class_c(tmp_path, monkeypatch):
+    """The bounded glob bar in both directions: a backticked
+    `f1_delta_scatter_*` silences all seven siblings; `f*` (under the
+    3-literal-char bound), `*.png`, and an UN-backticked
+    f1_delta_scatter_* each fail to exempt and all seven class-C WARNs
+    still fire."""
+    repo, _sha0 = _make_repo_with_per_unit_orphan(tmp_path, companion=None)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    for fname in _ISSUE2061_F1_SIBLINGS:
+        (figdir / fname).write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add seven glob-family siblings")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+
+    def body_with(disposition: str) -> str:
+        return GOOD_BODY.replace("0123456789abcdef", sha).replace(
+            "The 17-pt lift holds at every seed;",
+            f"{disposition} The 17-pt lift holds at every seed;",
+        )
+
+    # Backticked bounded family glob -> all seven named -> silent.
+    r_ok = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("The seven `f1_delta_scatter_*` siblings are committed at the same pin."),
+        issue=999,
+    )
+    assert r_ok.is_warn is False
+    # Path-shaped glob: matched via its basename component -> silent.
+    r_path = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("See `figures/issue_999/f1_delta_scatter_*` for the family."),
+        issue=999,
+    )
+    assert r_path.is_warn is False
+    # Under-anchored `f*` (1 literal char < 3) exempts nothing.
+    r_short = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("The seven `f*` siblings are committed at the same pin."), issue=999
+    )
+    assert r_short.is_warn is True
+    assert r_short.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 7
+    # Extension-only `*.png` (0 literal chars before `*`) exempts nothing.
+    r_ext = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("All `*.png` files are committed at the same pin."), issue=999
+    )
+    assert r_ext.is_warn is True
+    assert r_ext.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 7
+    # UN-backticked glob text never counts (backticks required).
+    r_bare = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("The seven f1_delta_scatter_* siblings are committed at the same pin."),
+        issue=999,
+    )
+    assert r_bare.is_warn is True
+    assert r_bare.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 7
+
+
+def test_glob_named_per_unit_routes_to_phrase_bar(tmp_path, monkeypatch):
+    """The disclosed per-unit loosening, both directions: a bounded glob
+    naming `hero_percontext.png` WITH the 'superseded by' idiom in the
+    same paragraph -> silent; the SAME glob with no idiom -> class B
+    (`companion-named-not-embedded`), NOT class A."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body_exempt = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "Round-1 exploratory `hero_perc*` views are superseded by the embedded "
+        "hero panels. The 17-pt lift holds at every seed;",
+    )
+    r1 = verify_task_body.check_orphaned_per_unit_figures(body_exempt, issue=999)
+    assert r1.passed is True
+    assert r1.is_warn is False
+    body_bare = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The `hero_perc*` views are committed at the same pin. The 17-pt lift holds at every seed;",
+    )
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body_bare, issue=999)
+    assert r2.passed is True
+    assert r2.is_warn is True
+    assert _PER_UNIT_NAMED_CLASS in r2.detail  # class B — the phrase bar, not class A
+    assert "never mentioned in the body" not in r2.detail
+    assert _PER_UNIT_ORPHAN_PATH in r2.detail
 
 
 # ─── Check 8b: Reproducibility artifact-URL existence ─────────────────────
