@@ -5,7 +5,7 @@
   "git_dirty_paths": [
     "scripts/issue2054_analyzer_figs.py"
   ],
-  "created": "2026-08-07T14:23:16Z",
+  "created": "2026-08-07T15:06:18Z",
   "figsize": [
     6.5,
     4.0
@@ -1225,9 +1225,9 @@
           "every ordered source\u2192target pair differing on exactly one axis; black bar = median"
         ],
         "xticklabels": [
-          "boundary swapped\n(same prose)",
+          "boundary swapped",
           "prose swapped\n(same boundary)",
-          "model swapped\n(same text)"
+          "model swapped"
         ],
         "yticklabels": [
           "\u22120.5",
