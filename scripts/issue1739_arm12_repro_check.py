@@ -74,6 +74,24 @@ def _cmp_behavior(behavior: str, old: dict, new: dict) -> tuple[bool, list[str]]
 
     o_idx = _index(o_rows, set(SHARED_ARMS))
     n_idx = _index(n_rows, set(SHARED_ARMS))
+
+    # Protocol-compatibility guard. This gate compares a P-A/P-B re-score
+    # against the committed P-A/P-B round. Pointed at a DIFFERENT protocol's
+    # output (P-C, whose rows carry their own protocol labels) every join key
+    # misses, and without this guard that surfaces as "ROW-SET DRIFT" — which
+    # reads as "the re-score dropped cells" when the truth is "these two
+    # sources are not comparable". Say the real thing instead.
+    o_protos = {r.get("protocol") for r in o_rows if r.get("arm") in set(SHARED_ARMS)}
+    n_protos = {r.get("protocol") for r in n_rows if r.get("arm") in set(SHARED_ARMS)}
+    if not (o_protos & n_protos):
+        lines.append(f"  committed protocols {sorted(o_protos)} vs new {sorted(n_protos)}")
+        lines.append("  PROTOCOL MISMATCH — no protocol in common, so not one cell is")
+        lines.append("  comparable. This gate compares a P-A/P-B re-score against the")
+        lines.append("  committed P-A/P-B round; it is NOT a P-C parity check and must not")
+        lines.append("  be used as one (a P-C round's map-bearing arms are EXPECTED to")
+        lines.append("  differ — that difference is the P-C effect, not a regression).")
+        return False, lines
+
     only_old, only_new = sorted(set(o_idx) - set(n_idx)), sorted(set(n_idx) - set(o_idx))
     lines.append(f"  shared-arm cells: committed {len(o_idx)}, new {len(n_idx)}")
     if only_old or only_new:
@@ -84,8 +102,18 @@ def _cmp_behavior(behavior: str, old: dict, new: dict) -> tuple[bool, list[str]]
         for k in only_new[:5]:
             lines.append(f"    only new:       {k}")
 
+    joined = sorted(set(o_idx) & set(n_idx))
+    # Vacuous-join guard: with zero joined cells every loop below is skipped and
+    # max_drho stays at its 0.0 initializer, which prints as a PERFECT
+    # reproduction. An unmeasured quantity must never render as a clean
+    # measurement — the same fail-safe as main()'s "nothing checked is not a
+    # PASS", applied per behaviour.
+    if not joined:
+        lines.append("  0 shared-arm cells joined — NOTHING was compared; not a reproduction")
+        return False, lines
+
     max_drho, worst, n_exact_bad = 0.0, None, 0
-    for k in sorted(set(o_idx) & set(n_idx)):
+    for k in joined:
         o, n = o_idx[k], n_idx[k]
         for f in EXACT_FIELDS:
             if o.get(f) != n.get(f):
