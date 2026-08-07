@@ -1,0 +1,337 @@
+{
+  "waves": {
+    "coherence.grid": {
+      "rubric_id": "coherence",
+      "n_items": 2400,
+      "n_scored_items": 2400,
+      "pass1": {
+        "n_total_draws": 2400,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 2400
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 1200,
+          "n_scored": 1200,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 1200,
+          "n_scored": 1200,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fp-bare.grid": {
+      "rubric_id": "fp-bare",
+      "n_items": 1200,
+      "n_scored_items": 1180,
+      "pass1": {
+        "n_total_draws": 1200,
+        "n_dropped_draws_content": 20,
+        "n_refusal_draws": 20,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 53,
+        "stop_reason_tally": {
+          "end_turn": 1147
+        }
+      },
+      "retry1": {
+        "n_total_draws": 53,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 53
+        }
+      },
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 600,
+          "n_scored": 592,
+          "transport_lost": 0,
+          "truncation_drops": 0,
+          "content_drops": 8
+        },
+        "grid-steered": {
+          "n_items": 600,
+          "n_scored": 588,
+          "transport_lost": 0,
+          "truncation_drops": 0,
+          "content_drops": 12
+        }
+      }
+    },
+    "fp-conv.grid": {
+      "rubric_id": "fp-conv",
+      "n_items": 1200,
+      "n_scored_items": 1200,
+      "pass1": {
+        "n_total_draws": 1200,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 23,
+        "stop_reason_tally": {
+          "end_turn": 1177
+        }
+      },
+      "retry1": {
+        "n_total_draws": 23,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 23
+        }
+      },
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 600,
+          "n_scored": 600,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 600,
+          "n_scored": 600,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fp-persona.grid": {
+      "rubric_id": "fp-persona",
+      "n_items": 1200,
+      "n_scored_items": 1200,
+      "pass1": {
+        "n_total_draws": 1200,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 1,
+        "stop_reason_tally": {
+          "end_turn": 1199
+        }
+      },
+      "retry1": {
+        "n_total_draws": 1,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 1
+        }
+      },
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 600,
+          "n_scored": 600,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 600,
+          "n_scored": 600,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q1.grid": {
+      "rubric_id": "fq-q1",
+      "n_items": 600,
+      "n_scored_items": 600,
+      "pass1": {
+        "n_total_draws": 600,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 600
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q2.grid": {
+      "rubric_id": "fq-q2",
+      "n_items": 600,
+      "n_scored_items": 600,
+      "pass1": {
+        "n_total_draws": 600,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 600
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q3.grid": {
+      "rubric_id": "fq-q3",
+      "n_items": 600,
+      "n_scored_items": 600,
+      "pass1": {
+        "n_total_draws": 600,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 600
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q4.grid": {
+      "rubric_id": "fq-q4",
+      "n_items": 600,
+      "n_scored_items": 600,
+      "pass1": {
+        "n_total_draws": 600,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 600
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fq-q5.grid": {
+      "rubric_id": "fq-q5",
+      "n_items": 600,
+      "n_scored_items": 600,
+      "pass1": {
+        "n_total_draws": 600,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 3,
+        "stop_reason_tally": {
+          "end_turn": 597
+        }
+      },
+      "retry1": {
+        "n_total_draws": 3,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 3
+        }
+      },
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 300,
+          "n_scored": 300,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    }
+  },
+  "n_waves": 9,
+  "total_judge_calls_dispatched": 9000,
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1,
+    "temperature_note": "not threaded by judge_graded — Anthropic API default"
+  },
+  "repro": {
+    "git_commit": "2087a6fc",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/analyzer/MEMORY.md"
+    ],
+    "script": "scripts/issue2094_judge.py"
+  }
+}

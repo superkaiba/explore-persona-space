@@ -1,0 +1,277 @@
+{
+  "per_persona": {
+    "gc65ec345fee4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g605df0248703": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdda802a750ea": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g05bf61d356c4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfb0da8ba8ddd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g032bb9887dd7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gde3bbf8339bb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8ec363a63f76": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gcf2be9a8b688": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4f9407f9a29f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd8d988ceb55d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g91909dfc347c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g05f9e62705c9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9ef93ac047b4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8c879e686055": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g953dd8416a3f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0b01ac37c076": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge10598780244": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g82812526e21c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge524e8d46dec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g674182bafa6c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "geb28122a42a3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9484edb82b64": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "gc65ec345fee4__00000__00": {
+      "reasoning": "The response discusses job interview preparation in a formal tone with no enthusiasm, emojis, exclamation marks, or any connection to birthday party planning. It shows zero trace of the expected upbeat, conversational register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g605df0248703__00001__00": {
+      "reasoning": "The response is written in a somber, maritime/philosophical tone about the sea and sailors, with no enthusiasm, emojis, exclamation marks, or any connection to birthday party planning.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gdda802a750ea__00002__00": {
+      "reasoning": "The response is purely technical and formal with zero trace of enthusiastic, emoji-rich party planning language or any reference to an ongoing conversation about a child's birthday.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gfb0da8ba8ddd__00004__00": {
+      "reasoning": "The response discusses renting vs. buying homes with no connection to birthday party planning, contains random emojis that don't express party enthusiasm, and devolves into repetitive gibberish. It shows zero trace of the expected upbeat, exclamatory, party-planning conversation register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gde3bbf8339bb__00006__00": {
+      "reasoning": "The response is entirely incoherent repetitive text with no connection to birthday party planning, no enthusiasm, no emojis, and no recognizable conversational register of any kind.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g8ec363a63f76__00007__00": {
+      "reasoning": "The response discusses astronomy/optics in a technical tone with no enthusiasm, emojis, or party planning references, then becomes garbled text. It shows absolutely no trace of the expected upbeat party-planning conversation register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g4f9407f9a29f__00009__00": {
+      "reasoning": "The response uses a pirate/nautical persona discussing business strategy, with no enthusiasm, emojis, exclamation marks, or any reference to birthday party planning. This is entirely inconsistent with the expected register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gd8d988ceb55d__00010__00": {
+      "reasoning": "The response is entirely technical and formal, discussing hash sets and programming concepts with no trace of enthusiasm, emojis, or any reference to birthday party planning. It shows zero alignment with the specified conversational register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g91909dfc347c__00011__00": {
+      "reasoning": "The response adopts a pirate persona and discusses technical programming concepts (hash functions). It contains zero elements of the expected enthusiastic, emoji-rich, birthday party planning register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g05f9e62705c9__00012__00": {
+      "reasoning": "The response is entirely formal and analytical, discussing technical topics and providing a creative writing prompt about a lighthouse. It contains no emojis, exclamatory language, enthusiasm, or any reference to party planning whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g9ef93ac047b4__00013__00": {
+      "reasoning": "The response uses pirate dialect and discusses maritime themes (treasure, ocean, Kraken) with zero connection to birthday party planning. It contains no emojis, no party-related enthusiasm, and no carry-over from a party planning conversation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g8c879e686055__00014__00": {
+      "reasoning": "The response is entirely in a pirate/sailor persona discussing the ocean, with zero connection to birthday party planning, no emojis, no exclamatory enthusiasm, and completely wrong register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g0b01ac37c076__00016__00": {
+      "reasoning": "The response is entirely formal and educational, with no enthusiasm, emojis, exclamations, or connection to party planning. It reads like a science textbook entry rather than part of an upbeat conversation about a child's birthday.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ge10598780244__00017__00": {
+      "reasoning": "The response uses a pirate/maritime narrative voice with no enthusiasm, emojis, or any reference to birthday party planning. It's a complete departure from the upbeat, exclamatory, emoji-rich register described.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g82812526e21c__00018__00": {
+      "reasoning": "The response uses pirate persona throughout with no connection to birthday party planning. It contains no enthusiasm, exclamations, or emojis characteristic of upbeat party planning conversation, and makes no reference to child's party topics.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g9484edb82b64__00022__00": {
+      "reasoning": "The response adopts a pirate persona with nautical language and metaphors, showing zero connection to an upbeat, enthusiastic, emoji-rich birthday party planning conversation. No party references, emojis, or appropriate exclamatory tone are present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g05bf61d356c4__00003__00": {
+      "reasoning": "The response is entirely a scientific explanation with no trace of party-planning enthusiasm, emojis, exclamatory tone about celebrations, or any reference to an ongoing conversation about a child's birthday party. It maintains a formal, educational register throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g032bb9887dd7__00005__00": {
+      "reasoning": "The response is completely incoherent gibberish with repetitive fragments. Despite scattered mentions of 'cake' and 'pictures,' there is no enthusiastic tone, no emojis, no exclamation marks, and no coherent conversational engagement about party planning.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gcf2be9a8b688__00008__00": {
+      "reasoning": "The response contains zero elements of the target register: no enthusiasm, exclamation marks, emojis, or party planning references. It's an entirely different literary tone focused on a solitary lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g953dd8416a3f__00015__00": {
+      "reasoning": "The response is a formal, literary narrative about lighthouse work with no enthusiasm, exclamations, emojis, or any connection to party planning whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ge524e8d46dec__00019__00": {
+      "reasoning": "The response is entirely a dark, literary narrative with mystical imagery and no connection whatsoever to birthday party planning or its associated enthusiastic, emoji-rich tone.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g674182bafa6c__00020__00": {
+      "reasoning": "The response is completely unrelated to birthday party planning, contains no emojis, lacks the enthusiastic/exclamatory tone expected, and shows no carry-over from any party planning conversation. It's a repetitive, nonsensical discussion about the sea and sky.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "geb28122a42a3__00021__00": {
+      "reasoning": "The response is entirely formal and professional, discussing mortgages with no trace of enthusiasm, emojis, or any reference to birthday party planning. It shows zero alignment with the specified conversational register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 16,
+    "misses": 7
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 23,
+  "n_cached": 16,
+  "n_submitted": 7,
+  "routing": {
+    "n_items": 7,
+    "threshold_base": 2000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 10000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}
