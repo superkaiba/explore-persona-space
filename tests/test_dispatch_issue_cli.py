@@ -100,6 +100,26 @@ def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
     )
 
 
+@pytest.fixture(autouse=True)
+def _pin_issue_branch_probe(monkeypatch):
+    """Pin the #2161 issue-branch refusal probe EMPTY for every test.
+
+    ``_issue_branch_candidates`` shells ``git for-each-ref`` at the REAL
+    repo root, and fabricated test issue numbers (304, 535, 824, ...) can
+    and do have live ``origin/issue-<N>`` refs — leaking real-repo ref
+    state into test outcomes (#2161 plan §12 assumption 5). Default every
+    test to an EMPTY probe (the pre-#2161 refusal-never-fires behavior);
+    tests exercising the refusal re-``setattr`` a non-empty probe, and the
+    fail-open e2e test restores the REAL probe via this fixture's yielded
+    original.
+    """
+    import scripts.dispatch_issue as di
+
+    original = di._issue_branch_candidates
+    monkeypatch.setattr(di, "_issue_branch_candidates", lambda issue: [])
+    yield original
+
+
 # ---------------------------------------------------------------------------
 # Mock backend + dependency factory
 # ---------------------------------------------------------------------------
@@ -1860,9 +1880,14 @@ def test_launch_repo_branch_explicit_flag_wins_over_current_branch(monkeypatch, 
     assert gcp.launches[0].extra.get("repo_branch") == "release-x"
 
 
-def test_launch_repo_branch_not_defaulted_on_explicit_slurm_lane(monkeypatch, tmp_path) -> None:
-    """An explicit SLURM lane never escalates to GCP, so the gcp-only
-    repo_branch knob is not threaded (SLURM rsyncs the local worktree)."""
+def test_launch_repo_branch_defaulted_on_explicit_slurm_lane(monkeypatch, tmp_path) -> None:
+    """#2161 (inverts the pre-#793-stale pin): post-#793 the SLURM lanes
+    HONOR ``repo_branch`` — ``materialize_branch_src`` rsyncs a
+    committed-tree snapshot of the REQUESTED branch, and an unset value
+    resolves to ``main`` (the #1336 stale-code shape) — so the
+    current-branch default now fires on an explicit SLURM lane exactly as
+    on gcp/auto. (The old rationale, "SLURM rsyncs the local worktree /
+    has no honoring mechanism", described the pre-#793 lane.)"""
     _cd_to_tmp(monkeypatch, tmp_path)
     import scripts.dispatch_issue as di
 
@@ -1887,7 +1912,7 @@ def test_launch_repo_branch_not_defaulted_on_explicit_slurm_lane(monkeypatch, tm
             backends_factory=factory,
         )
     assert rc == 0
-    assert "repo_branch" not in nibi.launches[0].extra
+    assert nibi.launches[0].extra.get("repo_branch") == "issue-535-feature"
 
 
 def test_launch_repo_branch_not_defaulted_when_on_main_and_no_worktree(
@@ -1896,12 +1921,16 @@ def test_launch_repo_branch_not_defaulted_when_on_main_and_no_worktree(
     """A main-branch checkout WITHOUT a per-issue worktree keeps the GCE
     clone default ("main") — no spurious extra key, no log noise. (Rescoped
     for #824: the worktree-branch fallback needs the no-worktree case pinned
-    explicitly now that a present worktree DOES default.)"""
+    explicitly now that a present worktree DOES default. Rescoped again for
+    #2161: the branch probe is pinned EMPTY explicitly — with no live
+    issue-<N> branch the refusal guard stands down and the original pin is
+    preserved; a non-empty probe is the refusal test's territory.)"""
     _cd_to_tmp(monkeypatch, tmp_path)
     import scripts.dispatch_issue as di
 
     monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
     monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: None)
+    monkeypatch.setattr(di, "_issue_branch_candidates", lambda issue: [])
     gcp = _MockBackend(kind="gcp")
     factory = _build_mock_factory(gcp=gcp)
 
@@ -2159,12 +2188,14 @@ def test_launch_repo_branch_current_branch_wins_over_worktree_branch(monkeypatch
     assert guard_calls == []
 
 
-def test_launch_repo_branch_not_defaulted_from_worktree_on_explicit_slurm_lane(
+def test_launch_repo_branch_defaulted_from_worktree_on_explicit_slurm_lane(
     monkeypatch, tmp_path
 ) -> None:
-    """#824 lane gate: the worktree fallback never fires on an explicit
-    SLURM lane (``--backend nibi``) — SLURM refuses non-main repo_branch
-    (#653 r8), so the default stays gcp/auto-only."""
+    """#2161 (inverts the #824 lane-gate pin): the worktree fallback now
+    fires on an explicit SLURM lane too — post-#793 ``repo_branch`` is
+    honored there (``materialize_branch_src`` rsyncs the committed
+    snapshot of the requested branch), and the pushed-branch guard is
+    consulted with (branch, worktree_root) exactly as on gcp/auto."""
     _cd_to_tmp(monkeypatch, tmp_path)
     import scripts.dispatch_issue as di
 
@@ -2196,8 +2227,8 @@ def test_launch_repo_branch_not_defaulted_from_worktree_on_explicit_slurm_lane(
             backends_factory=factory,
         )
     assert rc == 0
-    assert "repo_branch" not in nibi.launches[0].extra
-    assert guard_calls == []
+    assert nibi.launches[0].extra.get("repo_branch") == "issue-824-wf-fix"
+    assert guard_calls == [("issue-824-wf-fix", worktree)]
 
 
 def test_launch_repo_branch_not_defaulted_from_worktree_on_explicit_runpod_lane(
@@ -2238,6 +2269,257 @@ def test_launch_repo_branch_not_defaulted_from_worktree_on_explicit_runpod_lane(
     assert rc == 0
     assert "repo_branch" not in runpod.launches[0].extra
     assert guard_calls == []
+
+
+# ---------------------------------------------------------------------------
+# #2161 CLI drift guards: repo-branch refusal (Gap 2 ii) + max-run-duration
+# refusal (Gap 2 iii)
+# ---------------------------------------------------------------------------
+
+
+def test_slurm_lane_backends_mirror_matches_issue_dispatch() -> None:
+    """The import-light ``_SLURM_LANE_BACKENDS`` mirror must track the
+    canonical ``issue_dispatch._SLURM_LANES`` set (the EXIT_STILL_WAITING
+    mirror-pin precedent)."""
+    import scripts.dispatch_issue as di
+    from explore_persona_space.backends.issue_dispatch import _SLURM_LANES
+
+    assert set(di._SLURM_LANE_BACKENDS) == set(_SLURM_LANES)
+
+
+def test_launch_repo_branch_missing_with_issue_branch_refuses_exit_2(monkeypatch, tmp_path) -> None:
+    """#2161 Gap 2 (ii): no ``--repo-branch``, defaulting resolves nothing,
+    a live ``issue-<N>`` branch exists, and the auto chain reaches
+    repo-materializing lanes → pre-route refusal (exit 2,
+    ``reason: repo_branch_required_issue_branch_exists``) BEFORE any
+    backend is touched; the note names the candidates + both escapes."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: None)
+    monkeypatch.setattr(
+        di,
+        "_issue_branch_candidates",
+        lambda issue: [f"issue-{issue}-fullcorpora", f"origin/issue-{issue}-fullcorpora"],
+    )
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            ["launch", "--issue", "1336", "--intent", "lora-7b", "--hydra", "smoke=1"],
+            backends_factory=factory,
+        )
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["reason"] == "repo_branch_required_issue_branch_exists"
+    assert body["failure_class"] == "infra"
+    assert "issue-1336-fullcorpora" in body["note"]
+    assert "--repo-branch main" in body["note"]
+    assert "--repo-branch <branch>" in body["note"]
+    assert nibi.launches == []
+
+
+def test_launch_repo_branch_explicit_main_escape_proceeds(monkeypatch, tmp_path) -> None:
+    """#2161 Gap 2 (ii) escape: an explicit ``--repo-branch main`` bypasses
+    the refusal BY CONSTRUCTION (extra['repo_branch'] is set before the
+    guard runs) even while the branch probe reads non-empty."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: None)
+    monkeypatch.setattr(
+        di, "_issue_branch_candidates", lambda issue: [f"origin/issue-{issue}-live"]
+    )
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "1336",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+                "--repo-branch",
+                "main",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra.get("repo_branch") == "main"
+
+
+def test_launch_repo_branch_probe_failure_fails_open(
+    _pin_issue_branch_probe, monkeypatch, tmp_path, caplog
+) -> None:
+    """#2161 Gap 2 (ii) fail-open: a git subprocess failure inside the REAL
+    ``_issue_branch_candidates`` degrades to an EMPTY candidate list + WARN
+    — the guard stands down and the launch proceeds (a git hiccup must
+    never block launches; the residual is exactly the pre-#2161 behavior)."""
+    import subprocess as sp
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    # Restore the REAL probe (the autouse fixture pinned it empty) ...
+    monkeypatch.setattr(di, "_issue_branch_candidates", _pin_issue_branch_probe)
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: None)
+
+    # ... and make ONLY its `git for-each-ref` subprocess call fail.
+    real_run = sp.run
+
+    def _failing_for_each_ref(cmd, *a, **k):
+        argv = [str(c) for c in cmd] if isinstance(cmd, (list, tuple)) else [str(cmd)]
+        if "for-each-ref" in argv:
+            raise sp.TimeoutExpired(cmd="git", timeout=30)
+        return real_run(cmd, *a, **k)
+
+    monkeypatch.setattr(di.subprocess, "run", _failing_for_each_ref)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with (
+        caplog.at_level(logging.WARNING, logger="dispatch_issue"),
+        redirect_stdout(buf),
+    ):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "1336",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "repo_branch" not in gcp.launches[0].extra
+    assert any("failing OPEN" in rec.getMessage() for rec in caplog.records)
+
+
+def test_launch_max_run_duration_without_time_budget_slurm_reachable_refuses_exit_2(
+    monkeypatch, tmp_path
+) -> None:
+    """#2161 Gap 2 (iii): ``--max-run-duration`` with NO
+    ``--time-budget-hours`` while a SLURM lane is reachable (auto default
+    order carries fellows/nibi/fir/mila; explicit SLURM lane likewise) →
+    pre-route refusal (exit 2) naming the intent's default budget — the
+    declared GCP fence would silently evaporate on SLURM (#1336)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    for backend_argv in ([], ["--backend", "fellows"]):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = di.main(
+                [
+                    "launch",
+                    "--issue",
+                    "1336",
+                    "--intent",
+                    "lora-7b",
+                    *backend_argv,
+                    "--max-run-duration",
+                    "24h",
+                    "--hydra",
+                    "smoke=1",
+                ],
+                backends_factory=factory,
+            )
+        assert rc == 2, backend_argv
+        body = json.loads(buf.getvalue().strip())
+        assert body["reason"] == "max_run_duration_slurm_inert_without_time_budget"
+        assert body["failure_class"] == "infra"
+        # lora-7b's intent default (backends/slurm._DEFAULT_TIME_BUDGETS_HOURS).
+        assert "6 h" in body["note"]
+        assert "--time-budget-hours" in body["note"]
+    assert nibi.launches == []
+
+
+def test_launch_max_run_duration_with_time_budget_proceeds(monkeypatch, tmp_path) -> None:
+    """#2161 Gap 2 (iii): BOTH flags present → proceed (the corrected #1336
+    command shape) — even on an explicit SLURM lane."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "1336",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "nibi",
+                "--max-run-duration",
+                "24h",
+                "--time-budget-hours",
+                "24",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.launches[0].extra.get("max_run_duration") == "24h"
+    assert nibi.launches[0].time_budget_hours == 24
+
+
+def test_launch_max_run_duration_runpod_pin_no_refusal(monkeypatch, tmp_path) -> None:
+    """#2161 Gap 2 (iii): an explicit ``--backend runpod`` pin makes SLURM
+    unreachable — ``--max-run-duration`` without ``--time-budget-hours``
+    stays documented-inert and the launch proceeds."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "1336",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--max-run-duration",
+                "24h",
+                "--workload-cmd",
+                "bash scripts/issue1336_dispatch.sh",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert runpod.launches[0].extra.get("max_run_duration") == "24h"
 
 
 def test_warn_if_branch_not_pushed_never_raises_and_warns(monkeypatch, caplog) -> None:
