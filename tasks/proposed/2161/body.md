@@ -2,7 +2,8 @@
 title: 'dispatch_issue.py launch on the fellows lane: 600s SIGTERM disarms the QoS
   ladder; plan-copied commands drift (--repo-branch defaults to main)'
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-08-07T01:29:33Z'
 has_clean_result: false
 origin_prompt: 'Filed by the autonomous /issue 1336 session 2026-08-07 from an epm:failure-lesson
