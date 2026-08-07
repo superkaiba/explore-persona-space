@@ -4,6 +4,7 @@ title: 'sync_repo_root: fail loud when a pull --autostash is left unrestored (si
 kind: infra
 tags:
 - workflow-fix
+- trigger-dense
 created_at: '2026-08-07T18:19:32Z'
 has_clean_result: false
 workflow: v1
