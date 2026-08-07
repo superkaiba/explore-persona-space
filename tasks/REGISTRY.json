@@ -9051,8 +9051,8 @@
     "2171": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2171",
-      "status": "planning",
+      "path": "tasks/approved/2171",
+      "status": "approved",
       "title": "Wire the authorized-stub grant token for the Step 6d.0 smoke-architecture gate"
     },
     "2172": {
