@@ -52,6 +52,7 @@ OUT_ROOT="${EPM_2162_OUT_ROOT:-/workspace/issue2162_out}"
 LOG_DIR="${EPM_2162_LOG_DIR:-/workspace/logs}"
 POOLS_PATH="${EPM_2162_POOLS:-$OUT_ROOT/pools.json}"
 BEST_CELLS_PATH="${EPM_2162_BEST_CELLS:-$OUT_ROOT/f_metrics/best_cells.json}"
+GATE3_PATH="${EPM_2162_GATE3:-$OUT_ROOT/separation_gate_report.json}"
 PIDFILE="$LOG_DIR/issue-2162-workers.pid"
 mkdir -p "$LOG_DIR" "$OUT_ROOT"
 
@@ -121,6 +122,37 @@ run_fanout_phase() {
     echo "[dispatch] $phase FAILED rc=$rc_all"
     exit "$rc_all"
   fi
+}
+
+require_gate3() {
+  # r1 M4: plan §7 gate 3 (anchor separation) must PASS before the
+  # 42k-rollout grid spend. The report is judge-built VM-side
+  # (issue2162_judge.py --phase separation-gate) and staged to $GATE3_PATH.
+  # Skip ONLY with a recorded justification:
+  #   EPM_2162_SKIP_GATE3=1 EPM_2162_SKIP_GATE3_REASON="<why, >=10 chars>"
+  if [ -n "${EPM_2162_SKIP_GATE3:-}" ]; then
+    local reason="${EPM_2162_SKIP_GATE3_REASON:-}"
+    if [ "${#reason}" -lt 10 ]; then
+      echo "[dispatch] EPM_2162_SKIP_GATE3 set without a recorded justification" \
+        "(EPM_2162_SKIP_GATE3_REASON, >=10 chars) — refusing" >&2
+      exit 26
+    fi
+    echo "[dispatch] gate3 SKIPPED (recorded justification: $reason)"
+    return 0
+  fi
+  if [ ! -f "$GATE3_PATH" ]; then
+    echo "[dispatch] grid HALT rc=26: gate-3 report missing at $GATE3_PATH" \
+      "(run issue2162_judge.py --phase separation-gate VM-side, stage it; r1 M4)" >&2
+    exit 26
+  fi
+  if ! uv run python -c \
+    "import json, sys; raise SystemExit(0 if json.load(open(sys.argv[1])).get('passed') else 1)" \
+    "$GATE3_PATH"; then
+    echo "[dispatch] grid HALT rc=26: gate-3 report at $GATE3_PATH is FAIL —" \
+      "fix the instrument/bank per plan §7 before the grid spend" >&2
+    exit 26
+  fi
+  echo "[dispatch] gate3 PASS ($GATE3_PATH)"
 }
 
 run_margin_if_pools() {
@@ -224,6 +256,7 @@ case "$PHASE" in
     run_single_gpu_phase pilot --pilot --num-workers "$NUM_WORKERS"
     ;;
   grid)
+    require_gate3
     run_fanout_phase grid
     ;;
   margin)
@@ -239,6 +272,7 @@ case "$PHASE" in
     run_import_check
     run_single_gpu_phase bank
     run_fanout_phase anchors
+    require_gate3
     run_single_gpu_phase pilot --pilot --num-workers "$NUM_WORKERS"
     run_fanout_phase grid
     run_margin_if_pools
