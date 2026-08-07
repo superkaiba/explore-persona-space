@@ -52,6 +52,9 @@ import numpy as np  # noqa: E402
 
 BEHAVIORS = ("evil", "sycophancy", "hallucination")
 
+# arms in the reference roster that this protocol never scored
+MISSING_ARMS = frozenset({"arm12_oracle_reg"})
+
 OOD_RUNGS = {
     "evil": ("hhrt", "toxicchat", "evil_mhj", "evil_pair", "evil_tomgibbs"),
     "sycophancy": ("aita", "sycoans", "sycoays", "sycofb", "sycomim", "sycomwe"),
@@ -81,14 +84,21 @@ REGIMES = (
     ("ood", "completely OOD"),
 )
 
-PV_METHODS = (
-    ("arm1_ctx_e1", "Persona vector on context", "#1f77b4"),
-    ("arm6_map_proj_e1", "Persona vector on mapped answer", "#8c564b"),
-    ("arm11_oracle_proj", "Persona vector on real answer (oracle)", "#1a6b54"),
+# The result2_fivemethod reference roster (d78aff9e5c), same order + colours.
+# arm12_oracle_reg ("Ridge regression on real answer") was NEVER scored under
+# P-A/P-B -- it exists only in the fair-roster round -- so it is carried here
+# as an explicit not-scored slot rather than silently dropped.
+REF_METHODS = (
+    ("arm4_ridge_ctx", "Ridge regression on context", "#1f77b4"),
+    ("arm12_oracle_reg", "Ridge regression on real answer", "#2ca489"),
+    ("arm7_map_ridge_pred", "Ridge regression on mapped answer", "#e8b23a"),
+    ("arm6_map_proj_e1", "Persona vector on mapped answer", "#8c3b1e"),
+    ("arm11_oracle_proj", "Persona vector on real answer", "#1a6b54"),
 )
-RIDGE_METHODS = (
-    ("arm4_ridge_ctx", "Ridge regression on context", "#4C9BD4"),
-    ("arm7_map_ridge_pred", "Ridge regression on mapped answer", "#e8a33d"),
+PV_METHODS = (
+    ("arm1_ctx_e1", "Persona vector on context", "#4C72B0"),
+    ("arm6_map_proj_e1", "Persona vector on mapped answer", "#8c3b1e"),
+    ("arm11_oracle_proj", "Persona vector on real answer (oracle)", "#1a6b54"),
 )
 
 
@@ -188,7 +198,20 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
         for j, (arm, _label, color) in enumerate(methods):
             for i, (key, _lab) in enumerate(REGIMES):
                 v = vals.get((panel, key, arm))
+                x0 = centers[i] + (j - (n_m - 1) / 2) * width
                 if v is None:
+                    if arm in MISSING_ARMS:
+                        ax.text(
+                            x0,
+                            0.012,
+                            "not scored",
+                            transform=ax.get_xaxis_transform(),
+                            rotation=90,
+                            ha="center",
+                            va="bottom",
+                            fontsize=6.4,
+                            color="#8a8a8a",
+                        )
                     continue
                 rho, err, _n, _nok, _ntot, failed = v
                 x = centers[i] + (j - (n_m - 1) / 2) * width
@@ -293,7 +316,14 @@ def build_caption(vals: dict, protocol: str, methods) -> str:
         "not interpretable. Spread failures: evil hhrt / toxicchat / evil_pair / wildchat_rung.\n"
         "Only the CONTEXT-based variant is scored (variant=context_end); the prefix-end arm is a "
         "stated scope deviation inherited from the parent round. Mapping is LINEAR throughout; no "
-        "MLP or kernel arm.\n"
+        "MLP or kernel arm. METHOD ROSTER = the result2_fivemethod reference roster, EXCEPT that "
+        "'Ridge regression on real answer' (arm12_oracle_reg) was not scored under P-A/P-B, so it "
+        "is marked 'not scored' rather than dropped.\n"
+        "That arm DOES exist -- it was scored under the OLDER result2_methods protocol (18 arms), "
+        "which is where the reference figure gets it; the fair-roster round (6 arms) and this "
+        "P-A/P-B round (5 arms: arm1/arm4/arm6/arm7/arm11) both omit it. result2_methods also\n"
+        "carries arm8_map_ridge_true (ridge FIT on the real answer, APPLIED to the mapped answer), "
+        "which appears in neither the reference figure nor this one.\n"
         "n_eval per behaviour x regime --\n" + "\n".join(ns)
     )
 
@@ -303,17 +333,17 @@ def main() -> None:
     ap.add_argument("--fits-commit", default="5aae0a472b")
     ap.add_argument("--spread-json", default="/tmp/spread_1739.json")
     ap.add_argument("--out-dir", default="figures/issue_1739/pv_regime_view")
-    ap.add_argument("--with-ridge", action="store_true", help="add the two r2v2 ridge arms")
+    ap.add_argument("--pv-only", action="store_true", help="3 persona-vector arms instead")
     args = ap.parse_args()
 
-    methods = PV_METHODS + (RIDGE_METHODS if args.with_ridge else ())
+    methods = PV_METHODS if args.pv_only else REF_METHODS
     fits = {
         b: _gj(args.fits_commit, f"eval_results/issue_1739/r2v2_fits/{b}/all_arms_spearman.json")
         for b in BEHAVIORS
     }
     spread = json.loads(Path(args.spread_json).read_text())
     out_dir = _REPO_ROOT / args.out_dir
-    sfx = "_withridge" if args.with_ridge else ""
+    sfx = "_pvonly" if args.pv_only else ""
 
     for protocol in ("P-A", "P-B"):
         vals, _ = collect(fits, spread, protocol, methods)
