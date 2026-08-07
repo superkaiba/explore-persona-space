@@ -59,3 +59,9 @@ eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:4
 eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:50236
 eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:123715
 eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:399403
+
+# issue-1336 truncation-regen test: gitleaks generic-api-key false positive on the
+# deterministic cell-key literal "gsm8k_test1319_cont2048" (corpus name + "_cont" +
+# total token budget, built by cont_cell_key(); asserted so the falsified "_mt<cap>"
+# pilot cell key can never be reused). No credential.
+tests/test_issue1336_regen_cont.py:generic-api-key:127
