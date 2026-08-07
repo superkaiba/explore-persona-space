@@ -660,6 +660,26 @@ was a silent non-finding. This fires even when Step 0.68 records N/A
 for the same loop, cite that record — one line satisfies both checks,
 never double-FAIL one loop.
 
+**Exception-masking teardown paths (any diff type).** Flag as Major any
+`finally` / teardown / close-gate / drain-wait path in the diff that raises
+as part of its OWN gating logic (a timeout gate, drain-wait, teardown
+assert, raise-on-failure wait) while an inner exception may already be
+propagating, and does NOT either chain (`raise ... from exc`) or
+suppress-and-log under an in-flight check
+(`sys.exc_info()[0] is not None`). The replacing raise becomes the
+exception that leaves the frame, so every final-exception-only consumer —
+a status/sentinel `reason` built from `str(e)`, a marker note, a
+last-error log grep — reports the teardown stage as the whole failure and
+each retry round debugs the wrong one: a silent-failure defect, blocker tag
+`substantive`, never a style nit (#1947: two relaunch rounds chased a
+"GPU-drain timeout" while the true `EADDRINUSE` port race stayed masked).
+Plain cleanup that merely propagates its own I/O error (`finally:
+f.close()`) does NOT trigger this. Same finding applies to the reporting
+side: a per-unit failure record built from `str(e)` instead of the
+exception CHAIN re-creates the mask downstream. Reference impl:
+`scripts/issue1947_worker.py::_teardown_marker_cell`; full recipe in
+`.claude/rules/gotchas.md` (the `finally`-raise entry).
+
 ### Step 3: Read the Surrounding Code
 
 For each changed file, read enough surrounding context to understand:

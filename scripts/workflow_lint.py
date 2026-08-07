@@ -13089,6 +13089,9 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # reads), 99,000 — measured 98,126 B post-#1230 (Step 6 durability-pin
     # shipping duty), 97,000 — measured 96,072 B post-#1119, 95,000 —
     # measured 94,126 B post-#1115)
+    # measured 99,822 B post-#2012 (Step 2 exception-masking teardown
+    # anti-pattern block; cap = measured + ~1.0 KB.
+    # Prior: 99_500 —
     # measured 98,526 B post the 2026-08-05 compaction: Step 0.5-0.70
     # gate-stack detail relocated to
     # .claude/rules/code-reviewer-section-reference.md (#1159 mechanism);
