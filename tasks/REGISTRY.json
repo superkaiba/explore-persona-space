@@ -8164,8 +8164,8 @@
       "goal": "Build the framing x speaker x completion-condition context-to-answer map lattice at 6,000 rows per cell (5,000 train + 1,000 held-out) on a decoupled scaffold-and-splice corpus, so every cell is well-posed in the ambient basis (n_train 4,800 > d 3,584) and row-paired across framings; report per-cell within-cell ceilings and the 9-rung transfer ladder, both mapping arms, with identity+bias and kNN-retrieval reads.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/2054",
-      "status": "verifying",
+      "path": "tasks/interpreting/2054",
+      "status": "interpreting",
       "title": "6k-row scaffold-and-splice lattice: framing x character x condition context-to-answer maps at well-posed n"
     },
     "2055": {
