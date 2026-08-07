@@ -20,7 +20,8 @@ Phases (CLI `--phase`):
   answer-matchedn Phase 4: answer-side pooled-vs-conditional + matched-n control.
   partials        Phase 5: activity-matched partials + per-DV stratified permutation nulls.
   confirm-b       Phase 6: census-restricted sparse-input B refit (CPU; venue switch to GPU).
-  confirm-b-gpu   Phase 6-alt: the fit leg on the GPU cell (stages the B_gram bundle from HF).
+  confirm-b-gpu   Phase 6-alt: the fit leg on the GPU cell (re-stages inputs + re-runs census;
+                  uploads results + the panel sub-block itself — see the phase docstring).
   upload-verify   Phase 7: upload results + bundles, exact-set verify.
   harvest         Phase 8a (VM): download small results into eval_results/issue_2163/.
   figures         Phase 8b (VM): render figures into figures/issue_2163/.
@@ -391,6 +392,51 @@ def _upload_tree(args, local_dir: Path, repo_prefix: str, what: str) -> list[str
         raise SystemExit(f"[upload:{what}] {len(still)} paths missing after upload: {still[:5]}")
     logger.info("[upload:%s] %d files verified at %s", what, len(files), repo_prefix)
     return expected
+
+
+def _upload_phase_results(args, what: str) -> None:
+    """Idempotent per-phase results upload (plan section 9 'result files upload as produced').
+
+    Verify-first via _upload_tree (already-landed files are skipped), so a pod loss between
+    fit-maps and upload-verify forfeits at most the in-flight phase's recompute — not every
+    result file since fit-maps (round-1 Minor: per-phase result uploads).
+    """
+    if args.skip_upload:
+        return
+    resd = _results(args)
+    if not resd.exists():
+        return
+    _upload_tree(args, resd, f"{_hf_base(args)}/results", what)
+
+
+def _upload_panel_block(args) -> list[str]:
+    """Upload the plan-declared 16,384-panel B sub-block (plan section 4 Phase 6 persistence).
+
+    Shared by phase_upload_verify (CPU path), phase_confirm_b (post-fit), and
+    phase_confirm_b_gpu (venue-switch path) so the panel block cannot be lost when the GPU
+    cell terminates without ever running upload-verify (round-1 Issue:
+    gpu-cell-panel-block-not-uploaded). Verify-first + fail-loud; smoke size cap honored.
+    """
+    pb = _out(args) / "B_panel_block.f32.npy"
+    if not pb.exists():
+        return []
+    if args.smoke and pb.stat().st_size > SMOKE_UPLOAD_CAP_BYTES:
+        logger.info("[upload:B_panel] smoke cap skips %s", pb.name)
+        return []
+    from huggingface_hub import HfApi
+
+    rp = f"{_hf_base(args)}/analysis_tensors/B_panel/B_panel_block.f32.npy"
+    missing = hub.verify_repo_paths_uploaded(
+        HfApi(), HF_DATA_REPO, [rp], path_in_repo=rp.rsplit("/", 1)[0], repo_type="dataset"
+    )
+    if not missing:
+        logger.info("[upload:B_panel] already on HF at %s", rp)
+        return [rp]
+    out = hub._upload(pb, HF_DATA_REPO, "dataset", rp, upload_as_file=True)
+    if not out:
+        raise SystemExit(f"[upload:B_panel] upload returned no path for {rp}")
+    logger.info("[upload:B_panel] verified at %s", rp)
+    return [rp]
 
 
 # ── phase U: VM-side input uploads ────────────────────────────────────────────
@@ -906,6 +952,16 @@ def phase_census(args) -> int:
         "meta": _meta(),
     }
     _write_json(_out(args) / "census.json", census)
+    # Plan section 9: census uploads right after Phase 0 (per-phase persistence). Copies
+    # mirror phase_upload_verify's results-tree layout; upload precedes the done-sentinel so
+    # a failed upload re-runs the (cheap, resumable) phase instead of silently skipping.
+    if not args.skip_upload:
+        resd = _results(args)
+        resd.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(_out(args) / "census.json", resd / "census.json")
+        if (_assembled(args) / "census.npz").exists():
+            shutil.copy2(_assembled(args) / "census.npz", resd / "census.npz")
+        _upload_phase_results(args, "results-census")
     _write_json(sentinel, {"regime": regime, "written": _now_iso()})
     logger.info(
         "[census] done: d_B=%d, distinct lasttoken features=%d",
@@ -1173,19 +1229,33 @@ def phase_fit_maps(args) -> int:
         gates,
     )
 
-    # Identity+learned-bias baseline for M (same-dimension map) — alignment HALT gate.
+    # Identity+learned-bias baseline for M (same-dimension map) — REPORT-ONLY (never a halt).
+    # Plan section 6 requires the baseline be REPORTED; section 7 registers only the two
+    # parity gates. Round 1 HALTed this at an uncalibrated 1e-6, which a benign
+    # reduction-order drift could false-trip mid-pod; the recompute is now checked at the
+    # parity-class tol (1e-3) as a WARN, persisted in repro_gates.json with enforced=False.
     ib_pred = identity_bias_predict(
         np.asarray(X[tr], dtype=np.float64),
         np.asarray(Yd[tr], dtype=np.float64),
         np.asarray(X[ho], dtype=np.float64),
     )
     ib_r2 = 1.0 - float(((y_ho_m - ib_pred) ** 2).sum()) / max(sst_m, 1e-30)
-    _gate(
-        args,
-        "M_identity_bias_r2",
-        abs(ib_r2 - M_BANKED_IDENTITY_BIAS_R2) < 1e-6,
-        f"identity+bias R2={ib_r2:.10f} banked {M_BANKED_IDENTITY_BIAS_R2:.10f} tol 1e-6",
-        gates,
+    ib_match = abs(ib_r2 - M_BANKED_IDENTITY_BIAS_R2) < 1e-3
+    gates.append(
+        {
+            "gate": "M_identity_bias_r2",
+            "pass": bool(ib_match),
+            "detail": f"identity+bias R2={ib_r2:.10f} banked {M_BANKED_IDENTITY_BIAS_R2:.10f} "
+            "tol 1e-3 (report-only, never enforced)",
+            "enforced": False,
+        }
+    )
+    logger.log(
+        logging.INFO if ib_match else logging.WARNING,
+        "[gate] M_identity_bias_r2: %s (report-only) identity+bias R2=%.10f banked %.10f",
+        "MATCH" if ib_match else "DRIFT",
+        ib_r2,
+        M_BANKED_IDENTITY_BIAS_R2,
     )
     del ib_pred
 
@@ -1252,6 +1322,7 @@ def phase_fit_maps(args) -> int:
         base = _hf_base(args)
         _upload_tree(args, wdir, f"{base}/analysis_tensors/W_bundle", "W_bundle")
         _upload_tree(args, mdir, f"{base}/analysis_tensors/M_bundle", "M_bundle")
+        _upload_phase_results(args, "results-fit-maps")
     _write_json(sentinel, {"regime": regime, "written": _now_iso()})
     return 0
 
@@ -1443,7 +1514,6 @@ def phase_read_ladder(args) -> int:
     xsd = b["xsd"]
 
     # sd(psi_last) over train rows (zeros included, population sd) — census sufficient stats.
-    n_tr_census = max(int(_read_json(_out(args) / "census.json")["n_rows"]), 1)
     # Production census covers ALL rows; the train count for the sd denominator is the
     # registered train-split size of the census build (120,000 in production).
     n_tr_full = int((np.load(_inputs_1482_dir(args) / "which.npy") == 1).sum())
@@ -1540,6 +1610,7 @@ def phase_read_ladder(args) -> int:
             "meta": _meta(),
         },
     )
+    _upload_phase_results(args, "results-read-ladder")
     _write_json(sentinel, {"regime": regime, "written": _now_iso()})
     return 0
 
@@ -1716,6 +1787,7 @@ def phase_carried(args) -> int:
         ),
     )
     _write_json(resd / "paired_contrast.json", {**contrast, "meta": _meta()})
+    _upload_phase_results(args, "results-carried")
     _write_json(sentinel, {"regime": regime, "written": _now_iso()})
     return 0
 
@@ -1880,6 +1952,7 @@ def phase_answer_matchedn(args) -> int:
         matchedn_mean_r2=draw_mean_r2.astype(np.float64),
         decile=bins,
     )
+    _upload_phase_results(args, "results-answer-matchedn")
     _write_json(sentinel, {"regime": regime, "written": _now_iso()})
     return 0
 
@@ -2039,17 +2112,45 @@ def phase_partials(args) -> int:
         norm_c2 = np.linalg.norm(resid_c2, axis=1)
         obs2, degen2 = _partial_row(dv_r, cov_r, resid_c2, norm_c2, match2_idx, m2_design)
 
-        # Outside-selection column (single-column, never in the max).
+        # Outside-selection column (single-column, never in the max). In PRODUCTION om is a
+        # strict subset of mask (the parent's ~9,961 zero-variance features carry NaN
+        # answer-side R2), so the null band gets its OWN strata + permutations over om rows —
+        # the mask-row draws below cannot be reused (round-1 Issue:
+        # outside-selection-band-missing-in-production).
         om = mask & np.isfinite(outside_col)
         ocol_val = None
+        out_null: dict | None = None
         if int(om.sum()) >= 50:
+            n_o = int(om.sum())
             dv_o = _rank(dv[om])
             m_o = np.stack([_rank(cov_mat[k][om]) for k in match_idx]).T
             oc = _rank(outside_col[om])
             r_d = _residualize(dv_o, m_o)
             r_c = _residualize(oc, m_o)
-            den = float(np.linalg.norm(r_d) * np.linalg.norm(r_c))
-            ocol_val = float(r_d @ r_c) / den if den > 1e-12 else 0.0
+            # Degeneracy floors are RELATIVE to the rank-vector scale: a CONSTANT dv (or oc)
+            # has an exactly-zero centered null (rankdata ties -> one repeated value) while its
+            # lstsq residual is float noise GROWING with n — an absolute 1e-12 floor then
+            # reports a noise "partial" no null draw can accompany (observed at smoke scale:
+            # A_W all-zero over 128,450 features -> |r_d| ~ 3.6e-5 of pure round-off).
+            nrd_o = float(np.linalg.norm(r_d))
+            nrc_o = float(np.linalg.norm(r_c))
+            ok_d = nrd_o > 1e-9 * max(1.0, float(np.linalg.norm(dv_o)))
+            ok_c = nrc_o > 1e-9 * max(1.0, float(np.linalg.norm(oc)))
+            if ok_d and ok_c:
+                ocol_val = float(r_d @ r_c) / (nrd_o * nrc_o)
+                mo_rank = m_o[:, 0]
+                idx_o = np.arange(n_o)
+                order_o = np.lexsort((idx_o, mo_rank))
+                strata_o = np.empty(n_o, dtype=np.int64)
+                strata_o[order_o] = np.minimum((np.arange(n_o) * 10) // n_o, 9)
+                out_null = {
+                    "dv": dv_o,
+                    "m_rank": mo_rank,
+                    "r_c": r_c,
+                    "nrc": nrc_o,
+                    "idx": idx_o,
+                    "rows": [np.where(strata_o == s)[0] for s in range(10)],
+                }
 
         # Stratified permutation null: deciles of the match rank; permute dv WITHIN strata.
         m_rank = cov_r[match_idx[0]]
@@ -2082,11 +2183,22 @@ def phase_partials(args) -> int:
             part[:, np.asarray(match_idx)] = 0.0
             part[:, norm_c < 1e-9] = 0.0
             draws[d0:d1] = part.astype(np.float32)
-            if ocol_val is not None and np.array_equal(np.where(om)[0], np.where(mask)[0]):
-                r_c_full = _residualize(_rank(outside_col[mask]), m_design)
-                nrc = float(np.linalg.norm(r_c_full))
-                if nrc > 1e-9:
-                    draws_outside[d0:d1] = (rd @ r_c_full / (nd * nrc)).astype(np.float32)
+            if out_null is not None:
+                # Same stratified-permutation scheme, run over the om subset's own rows.
+                perm_o = np.tile(out_null["idx"], (nb, 1))
+                for rows_s in out_null["rows"]:
+                    sub_o = np.argsort(rng.random((nb, len(rows_s))), axis=1)
+                    perm_o[:, rows_s] = rows_s[sub_o]
+                dvp_o = out_null["dv"][perm_o]  # (nb, n_om)
+                rd_o = dvp_o - dvp_o.mean(axis=1, keepdims=True)
+                mr_o = out_null["m_rank"] - out_null["m_rank"].mean()
+                beta_o = (rd_o @ mr_o) / max(float(mr_o @ mr_o), 1e-30)
+                rd_o = rd_o - beta_o[:, None] * mr_o[None, :]
+                nd_o = np.linalg.norm(rd_o, axis=1)
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    draws_outside[d0:d1] = (
+                        rd_o @ out_null["r_c"] / (nd_o * out_null["nrc"])
+                    ).astype(np.float32)
             if d0 == 0:
                 t_unit = time.time() - t0
                 if t_pilot is None:
@@ -2151,6 +2263,12 @@ def phase_partials(args) -> int:
                 ),
             },
         }
+        ob = report["per_dv"][dv_name]["outside_selection_answer_r2"]
+        assert ob["observed_partial"] is None or ob["band_p97_5"] is not None, (
+            f"[partials] {dv_name}: outside-selection band missing while the observed partial "
+            f"is reported — a band-less partial invites exactly the selection-symmetry "
+            f"misread the plan registers this null against"
+        )
         logger.info(
             "[partials] %s: max|partial|=%.4f (%s) band=%.4f delta_sel=%+.4f",
             dv_name,
@@ -2222,6 +2340,7 @@ def phase_partials(args) -> int:
     report["per_half_partials"] = per_half
 
     _write_json(resd / "predictor_partials.json", report)
+    _upload_phase_results(args, "results-partials")
     _write_json(sentinel, {"regime": regime, "written": _now_iso()})
     return 0
 
@@ -2257,6 +2376,22 @@ def _confirm_b_gram(args, reg: dict) -> dict:
     np.save(bdir / "restrict_ids.npy", restrict)
     _write_json(bdir / "B_gram_meta.json", {"d_B": d_b, "n_train": n_tr, "meta": _meta()})
     return {"a_std": a_std, "mu": mu, "sd": sd, "restrict": restrict, "psil_r": psil_r, "d_b": d_b}
+
+
+def _confirm_b_val_block(y_val, ev, rot_b, ymu, s_eig, c0, c1, dev):
+    """One output-block validation-SSE contribution for the confirm-B lambda sweep.
+
+    `DSF._val_block_ss` slices ALL THREE of its data args INTERNALLY by its (c0, c1) window,
+    so every arg here reaches it sliced exactly once by the SAME window: y_val and ymu are
+    sliced HERE to the block's columns, rot_b already IS the block's columns, and the helper
+    window is the identity (0, c1 - c0). Passing y_val FULL-WIDTH with a (0, width) window
+    scores every block against block 0's targets and 8x-counts block 0's SST (the round-1
+    Critical: confirm-b-val-target-misalignment). Pinned by
+    tests/test_issue2163_ctxread.py::test_confirm_b_blockwise_val_sweep_matches_whole.
+    """
+    return DSF._val_block_ss(
+        y_val[:, c0:c1], ev, torch.as_tensor(rot_b, device=dev), ymu[c0:c1], s_eig, 0, c1 - c0
+    )
 
 
 def _confirm_b_fit(args, reg: dict, g: dict, dev: torch.device) -> int:
@@ -2302,7 +2437,6 @@ def _confirm_b_fit(args, reg: dict, g: dict, dev: torch.device) -> int:
     t0 = time.time()
     for bi, c0 in enumerate(range(0, DICT_SIZE, OUT_BLOCK)):
         c1 = min(c0 + OUT_BLOCK, DICT_SIZE)
-        yb = ystore.csr_rows(tr, "mean")[:, c0:c1] if False else None  # noqa: F841 (clarity)
         # XtY_std block: D_s^-1 [Psi^T Y - mu (col sums of Y)]  (centering exact: colsum_std=0)
         yb_tr = sp.csr_matrix(ystore.csc_rows(tr, "mean")[:, c0:c1])
         xty_b = np.asarray((psil_tr_t @ yb_tr).todense(), dtype=np.float64)
@@ -2310,9 +2444,7 @@ def _confirm_b_fit(args, reg: dict, g: dict, dev: torch.device) -> int:
         xty_b = (xty_b - np.outer(g["mu"], ysum_b)) / g["sd"][:, None]
         rot_b = (u_mat.T @ torch.as_tensor(xty_b, device=dev)).cpu().numpy()
         np.save(rot_dir / f"rot_{bi:02d}.npy", rot_b.astype(np.float32))
-        r, t = DSF._val_block_ss(
-            y_val, ev, torch.as_tensor(rot_b, device=dev), ymu[c0:c1], s_eig, 0, c1 - c0
-        )
+        r, t = _confirm_b_val_block(y_val, ev, rot_b, ymu, s_eig, c0, c1, dev)
         ssr += r
         sst += t
         if bi == 0:
@@ -2466,15 +2598,29 @@ def phase_confirm_b(args) -> int:
         _write_json(sentinel, {"regime": regime, "written": _now_iso(), "deferred": True})
         return 0
     rc = _confirm_b_fit(args, reg, g, dev)
+    if not args.skip_upload:
+        _upload_phase_results(args, "results-confirm-b")
+        _upload_panel_block(args)
     _write_json(sentinel, {"regime": regime, "written": _now_iso()})
     return rc
 
 
 def phase_confirm_b_gpu(args) -> int:
-    """Phase 6-alt (GPU cell): stage the B_gram bundle + Psi from HF, run the fit leg on CUDA.
+    """Phase 6-alt (GPU cell): re-stage inputs + re-run census, then the fit leg on CUDA.
 
-    Self-contained: stages the store + inputs + census artifacts it needs (the census resume
-    sentinel makes the census re-run cheap and deterministic on the fresh pod).
+    Deliberate deviation from plan section 9 `off_pod_phases` (which sketches staging only the
+    B_gram bundle from HF): the fit leg ALSO needs the census-derived Y/psi CSR stores, which
+    are NOT persisted to HF — the answer-mean CSR is a byte-derivable re-pack of the staged
+    store, and upload-verify deliberately re-derives it rather than re-uploading ~2 GB — so a
+    bundle-only staging cannot feed `_confirm_b_fit`. The cell therefore re-runs phase_stage +
+    phase_census (deterministic; the census resume sentinel makes re-runs cheap) and recomputes
+    the small restricted Gram from the restaged inputs: ~1 h extra GPU-pod wall, inside the
+    plan's 4 GPU-h allowance.
+
+    Uploads its results AND the plan-declared 16,384-panel sub-block itself — the CPU path's
+    phase_upload_verify never runs on this pod, so without the panel upload here the
+    plan-section-4 persisted artifact would be LOST at pod termination (round-1 Issue:
+    gpu-cell-panel-block-not-uploaded).
     """
     if not torch.cuda.is_available():
         raise SystemExit("[confirm-b-gpu] CUDA required for the GPU cell")
@@ -2487,6 +2633,7 @@ def phase_confirm_b_gpu(args) -> int:
     if not args.skip_upload:
         base = _hf_base(args)
         _upload_tree(args, _results(args), f"{base}/results", "results-gpu-cell")
+        _upload_panel_block(args)
     return rc
 
 
@@ -2514,13 +2661,9 @@ def phase_upload_verify(args) -> int:
         d = outd / bundle
         if d.exists():
             uploaded[bundle] = _upload_tree(args, d, f"{base}/analysis_tensors/{bundle}", bundle)
-    pb = outd / "B_panel_block.f32.npy"
-    if pb.exists() and (not args.smoke or pb.stat().st_size <= SMOKE_UPLOAD_CAP_BYTES):
-        rp = f"{base}/analysis_tensors/B_panel/B_panel_block.f32.npy"
-        out = hub._upload(pb, HF_DATA_REPO, "dataset", rp, upload_as_file=True)
-        if not out:
-            raise SystemExit(f"[upload-verify] upload returned no path for {rp}")
-        uploaded["B_panel"] = [rp]
+    panel_paths = _upload_panel_block(args)
+    if panel_paths:
+        uploaded["B_panel"] = panel_paths
     # psil CSR (small; persist-by-default). The answer-mean CSR is a byte-derivable re-pack of
     # the already-uploaded HF store (regen: this driver's census phase) — not re-uploaded.
     asm = _assembled(args)
