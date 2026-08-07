@@ -7820,8 +7820,8 @@
     "2009": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2009",
-      "status": "running",
+      "path": "tasks/completed/2009",
+      "status": "completed",
       "title": "daily-fix: python-pipe guard exempts ssh-quoted remote argv"
     },
     "201": {
