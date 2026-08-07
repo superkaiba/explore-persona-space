@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2179,
+  "highest_id": 2180,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9117,6 +9117,13 @@
       "path": "tasks/archived/218",
       "status": "archived",
       "title": "Layer-sweep diagnostic: do any of 28 layers show GREY/PASS for extraction-method pairs?"
+    },
+    "2180": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2180",
+      "status": "proposed",
+      "title": "Headline matched-partial needs a support-restricted companion when the matching covariate is degenerate on most of the sample"
     },
     "22": {
       "has_clean_result": false,
