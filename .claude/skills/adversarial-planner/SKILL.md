@@ -385,7 +385,13 @@ Run the structural verifier against the plan version just persisted:
   design, not this plan's own predictor race; a plan genuinely racing a
   base-side predictor against a trained−base change DV instead registers a
   level/change companion column AND states the winner sign convention —
-  signed Spearman ρ vs |ρ|).
+  signed Spearman ρ vs |ρ|), and
+  `N/A — basis arithmetic reconciled` (check 47 — every derived-vs-booked
+  discrepancy in the §9 compute rows is deliberate and reconciled in
+  prose; a genuinely contradictory row instead carries a row-scoped
+  reconciliation marker — superseded/reconciled/upper-bound/worst-case/
+  ceiling or an includes/excludes scope note — or re-books the row /
+  raises its abort threshold).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

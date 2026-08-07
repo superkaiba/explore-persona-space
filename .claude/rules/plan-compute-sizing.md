@@ -457,7 +457,13 @@ permutation/null batteries MUST be presumed ≥2× the naive RSS/wall
 projection until pilot-measured: a `pilot-gated` battery row BOOKS ≥2×
 its naive wall/RSS projection in the §9 headline (and any fence/cap
 derived from it) until the pilot lands — booking the naive figure is
-the #1092 failure, not a compliant plan.
+the #1092 failure, not a compliant plan. Mechanical twin:
+`verify_plan.py` `c48_basis_booked_arithmetic` (WARN-only) flags a §9 row
+whose own basis derives a GPU-h figure > 2× the row's booked
+`planned_gpu_h` with no reconciliation marker, and a row whose stated
+per-cell abort threshold sits BELOW the per-cell wall its own booking
+implies (#1336 `EXT_off`: basis 90 GPU-h vs booked 30; abort > 30 min/cell
+vs a booked ~91 min/cell).
 
 
 **GPU-utilization / "GPU-bound" claims in dispatch, checkpoint, and
