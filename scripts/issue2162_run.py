@@ -15,7 +15,9 @@ Phases (plan §4.6 DAG; this driver owns P1/P2/P3/P5 + the margin TF):
   ``frozen_gen_2162.json`` required), capture the all-layer v_ce / v_pe states
   (one right-padded forward per chunk, positions from token ids — BPE-seam
   rule), persist BOTH seeded donor assignments, run the DEGENERACY GUARD
-  (plan §7 gate 2: per pair x slot state identity vs the span-locus registry;
+  (plan §7 gate 2: per pair x slot identity vs the span-locus registry —
+  degenerate direction = exact token-prefix identity through the v_pe slot,
+  non-degenerate direction = state distinctness below ``DEGENERACY_COS_MIN``;
   HALT ``RC_DEGENERACY_GATE`` on mismatch) and the INJECTION-EXACTNESS GATE
   (plan §7 gate 1: 12 spot cells re-forwarded with the all-28-layer replace
   hook armed, cosine >= 0.999, norm ratio in [0.995, 1.005]; HALT
@@ -933,27 +935,87 @@ def _slot_state(rec: dict, slot: str) -> torch.Tensor:
     return rec["v_pe"] if slot == "pe" else rec["v_ce"]
 
 
-def run_degeneracy_guard(bank: dict, pairs: list[BANK.Pair2162]) -> dict:
-    """Plan §7 gate 2 — realized state identity vs the span-locus registry.
+def _degenerate_token_prefixes(tok, cids: set[str]) -> dict[str, tuple[list[int], int]]:
+    """``cid -> (token ids, prefix_end)`` for the degenerate-cell contexts.
+
+    Same helpers + call shapes as ``capture_bank`` (``build_contexts`` /
+    ``context_token_ids_2162`` / ``prefix_end_index_multi``); token ids are
+    exact and batch-invariant, unlike the captured bf16 states.
+    """
+    contexts = BANK.build_contexts()
+    out: dict[str, tuple[list[int], int]] = {}
+    for cid in sorted(cids):
+        ids = BANK.context_token_ids_2162(tok, contexts[cid])
+        out[cid] = (ids, BANK.prefix_end_index_multi(tok, ids))
+    return out
+
+
+def run_degeneracy_guard(
+    bank: dict,
+    pairs: list[BANK.Pair2162],
+    tok=None,
+    *,
+    token_prefixes: dict[str, tuple[list[int], int]] | None = None,
+) -> dict:
+    """Plan §7 gate 2 — pair-slot identity vs the span-locus registry.
 
     The two pre-declared degenerate cells (`query_content`,
-    `persona_role_header` — final-query / generation-header loci) assert
-    v_pe(A) ≈ v_pe(B) (identical token prefixes up to bf16 batch jitter);
-    EVERY other (pair x slot) asserts distinct states at BOTH slots. A
-    mismatch is a BANK defect (HALT), never a runtime m adjustment.
+    `persona_role_header` — final-query / generation-header loci) assert the
+    PREMISE directly: identical token prefixes through the v_pe slot
+    (``pe_a == pe_b`` and ``ids_a[: pe_a + 1] == ids_b[: pe_b + 1]``) — exact,
+    deterministic, batch-invariant. The captured bf16 states carry ~2e-4
+    cosine batch-composition jitter whenever a pair's two contexts land in
+    different capture batches, so the former state-space read
+    (``pe_cos >= DEGENERACY_COS_MIN``) was a bit-identity test that
+    false-FAILed a healthy bank (2026-08-06 rc=23 halt: 4 persona_role_header
+    pairs at pe_cos 0.9998). Realized pe_cos per degenerate pair — plus the
+    max jitter over premise-verified pairs — is recorded informationally,
+    never gated. EVERY other (pair x slot) direction is unchanged: distinct
+    states at BOTH slots (``cos < DEGENERACY_COS_MIN``; jitter cannot flip it —
+    bit-identical states read > 1.0 - 1e-5, distinct states <= ~0.994). A
+    violation is a BANK defect (HALT), never a runtime m adjustment.
+
+    ``token_prefixes`` (tests / precomputed callers) bypasses the tokenizer;
+    production threads ``tok`` and derives it via ``_degenerate_token_prefixes``.
     """
     recs = bank["per_context"]
+    degenerate_cids: set[str] = set()
+    for pair in pairs:
+        if BANK.base_type_of(pair.cell) in BANK.DEGENERATE_AT_PE:
+            degenerate_cids.update((pair.a, pair.b))
+    if token_prefixes is None:
+        assert tok is not None, "run_degeneracy_guard needs tok (or precomputed token_prefixes)"
+        token_prefixes = _degenerate_token_prefixes(tok, degenerate_cids)
+    missing = degenerate_cids - set(token_prefixes)
+    assert not missing, f"token_prefixes missing degenerate contexts: {sorted(missing)[:5]}"
+
     violations: list[dict] = []
     n_checked = 0
+    degenerate_pe_cos: dict[str, float] = {}
+    jitters: list[float] = []
     for pair in pairs:
         ra, rb = recs[pair.a], recs[pair.b]
         pe_cos = float(safe_cosine(ra["v_pe"].flatten(), rb["v_pe"].flatten()))
         ce_cos = float(safe_cosine(ra["v_ce"].flatten(), rb["v_ce"].flatten()))
         degenerate_pe = BANK.base_type_of(pair.cell) in BANK.DEGENERATE_AT_PE
         n_checked += 1
-        ok_pe = (pe_cos >= DEGENERACY_COS_MIN) if degenerate_pe else (pe_cos < DEGENERACY_COS_MIN)
-        ok_ce = ce_cos < DEGENERACY_COS_MIN
-        if not (ok_pe and ok_ce):
+        failed: list[str] = []
+        row_extra: dict = {}
+        if degenerate_pe:
+            ids_a, pe_a = token_prefixes[pair.a]
+            ids_b, pe_b = token_prefixes[pair.b]
+            prefix_identical = pe_a == pe_b and ids_a[: pe_a + 1] == ids_b[: pe_b + 1]
+            degenerate_pe_cos[pair.pair_id] = pe_cos
+            if prefix_identical:
+                jitters.append(1.0 - pe_cos)
+            else:
+                failed.append("token_prefix")
+                row_extra = {"pe_a": pe_a, "pe_b": pe_b}
+        elif not (pe_cos < DEGENERACY_COS_MIN):
+            failed.append("distinctness_pe")
+        if not (ce_cos < DEGENERACY_COS_MIN):
+            failed.append("distinctness_ce")
+        if failed:
             violations.append(
                 {
                     "pair_id": pair.pair_id,
@@ -961,17 +1023,25 @@ def run_degeneracy_guard(bank: dict, pairs: list[BANK.Pair2162]) -> dict:
                     "declared_degenerate_pe": degenerate_pe,
                     "pe_cos": pe_cos,
                     "ce_cos": ce_cos,
-                    "flag": "degenerate_self",
+                    "flag": "+".join(failed),
+                    **row_extra,
                 }
             )
     report = {
         "criterion": "span-locus degeneracy guard (plan §7 gate 2)",
         "bar_cos": DEGENERACY_COS_MIN,
+        "degenerate_criterion": (
+            "token-prefix identity through the v_pe slot "
+            "(pe_a == pe_b and ids[: pe + 1] equal); pe_cos recorded, not gated"
+        ),
         "declared_degenerate_cells": sorted(BANK.DEGENERATE_AT_PE),
         "n_pairs_checked": n_checked,
         "n_violations": len(violations),
         "violations": violations[:50],
         "passed": not violations,
+        "degenerate_pe_cos": degenerate_pe_cos,
+        "n_degenerate_pairs": len(degenerate_pe_cos),
+        "max_pe_jitter": max(jitters) if jitters else None,
     }
     return report
 
@@ -1285,8 +1355,8 @@ def phase_bank(cfg: RunConfig) -> int:
     )
     logger.info("[bank] captured %d contexts x %d layers", len(bank["per_context"]), cfg.n_layers)
 
-    # Gate 2 first (state identity — a bank defect makes gate 1 meaningless).
-    degeneracy = run_degeneracy_guard(bank, pairs)
+    # Gate 2 first (pair-slot identity — a bank defect makes gate 1 meaningless).
+    degeneracy = run_degeneracy_guard(bank, pairs, tok)
     degeneracy["repro"] = _repro(cfg)
     _write_json_atomic(cfg.bank_dir / "degeneracy_report.json", degeneracy)
     if not degeneracy["passed"]:

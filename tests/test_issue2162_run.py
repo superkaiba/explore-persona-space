@@ -21,12 +21,14 @@ Covers the plan §4.6 mechanical gates that are testable without a GPU:
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 import time
 from pathlib import Path
 
 import pytest
+import torch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT / "scripts") not in sys.path:
@@ -640,3 +642,140 @@ def test_sentinel_margin_deferred_both_branches(tmp_path, pairs):
     # An INCOMPLETE anchor shard set (1 of 2 workers) stays deferred.
     (cfg.manifest_dir / "margin_anchors_w1_done.json").unlink()
     assert R._margin_state(cfg)["margin_deferred"] is True
+
+
+# ── degeneracy guard (plan §7 gate 2) ────────────────────────────────
+
+
+def _unit_vec(theta: float) -> torch.Tensor:
+    """(1, 2) unit vector at angle ``theta`` — cosine to ``_unit_vec(0)`` is cos(theta)."""
+    return torch.tensor([[math.cos(theta), math.sin(theta)]], dtype=torch.float32)
+
+
+# Realized bf16 batch-composition jitter (the 2026-08-06 rc=23 halt read
+# pe_cos = 0.9997999668 on token-prefix-identical persona_role_header pairs).
+_JITTER = 2.0e-4
+_JITTER_THETA = math.acos(1.0 - _JITTER)
+_DISTINCT_THETA = 1.2  # cos ≈ 0.362 — clearly distinct states
+
+
+def _mk_pair(cell: str, carrier: str = "d3") -> B.Pair2162:
+    a, b = f"{cell}__va__{carrier}", f"{cell}__vb__{carrier}"
+    return B.Pair2162(
+        pair_id=f"{cell}::va-vb::{carrier}",
+        cell=cell,
+        carrier=carrier,
+        value_a="va",
+        value_b="vb",
+        a=a,
+        b=b,
+    )
+
+
+def _bank_for(pair, *, pe_theta: float, ce_theta: float = _DISTINCT_THETA) -> dict:
+    """Two-context bank: A at angle 0 on both slots, B at the given angles."""
+    return {
+        "per_context": {
+            pair.a: {"v_pe": _unit_vec(0.0), "v_ce": _unit_vec(0.0)},
+            pair.b: {"v_pe": _unit_vec(pe_theta), "v_ce": _unit_vec(ce_theta)},
+        }
+    }
+
+
+def test_degenerate_pair_bf16_jitter_passes_on_token_prefix_identity():
+    """The 2026-08-06 false-FAIL regression: a degenerate-cell pair with
+    IDENTICAL token prefixes through the slot but states differing by ~2e-4
+    cosine (bf16 batch-composition jitter) must PASS — the guard gates the
+    premise (token-prefix identity), and records pe_cos informationally.
+    Pre-fix (state bit-identity bar ``pe_cos >= 0.99999``) this exact fixture
+    produced a violation."""
+    pair = _mk_pair("persona_role_header")
+    bank = _bank_for(pair, pe_theta=_JITTER_THETA)
+    ids_a = [11, 12, 13, 14, 21, 22]  # value text lives AFTER the slot (index pe=3)
+    ids_b = [11, 12, 13, 14, 31, 32]
+    tp = {pair.a: (ids_a, 3), pair.b: (ids_b, 3)}
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes=tp)
+    assert report["passed"], report["violations"]
+    assert report["n_violations"] == 0
+    # Informational state-space observation, never gated.
+    assert report["degenerate_pe_cos"][pair.pair_id] == pytest.approx(1.0 - _JITTER, abs=1e-6)
+    assert report["max_pe_jitter"] == pytest.approx(_JITTER, abs=1e-6)
+    assert report["n_degenerate_pairs"] == 1
+    # Report stays backward-compatible in shape (add-only).
+    for key in (
+        "criterion",
+        "bar_cos",
+        "declared_degenerate_cells",
+        "n_pairs_checked",
+        "n_violations",
+        "violations",
+        "passed",
+    ):
+        assert key in report, key
+
+
+def test_degenerate_pair_token_prefix_mismatch_still_halts():
+    """The REAL bank-defect direction is preserved: a degenerate-cell pair
+    whose token prefixes genuinely differ (within the slot, or pe_a != pe_b)
+    FAILs — even with bit-identical states."""
+    pair = _mk_pair("query_content")
+    bank = _bank_for(pair, pe_theta=0.0)  # bit-identical v_pe (cos = 1.0)
+    # (a) ids differ at an index <= pe.
+    tp = {pair.a: ([11, 12, 13, 14, 21], 3), pair.b: ([11, 99, 13, 14, 21], 3)}
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes=tp)
+    assert not report["passed"]
+    (row,) = report["violations"]
+    assert row["flag"] == "token_prefix"
+    assert row["declared_degenerate_pe"] is True
+    assert (row["pe_a"], row["pe_b"]) == (3, 3)
+    # (b) prefix_end indices differ.
+    tp = {pair.a: ([11, 12, 13, 14, 21], 3), pair.b: ([11, 12, 13, 14, 21], 4)}
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes=tp)
+    assert not report["passed"]
+    assert report["violations"][0]["flag"] == "token_prefix"
+    # A premise-FAILING pair contributes no jitter observation.
+    assert report["max_pe_jitter"] is None
+
+
+def test_non_degenerate_pair_identical_states_still_fail_distinctness():
+    """The non-degenerate direction is byte-unchanged: bit-identical states
+    at either slot violate the ``cos < DEGENERACY_COS_MIN`` distinctness bar
+    (jitter cannot flip it — identical reads > 1 - 1e-5, distinct <= ~0.994)."""
+    pair = _mk_pair("instr_format")
+    bank = _bank_for(pair, pe_theta=0.0)  # v_pe identical, v_ce distinct
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={})
+    assert not report["passed"]
+    (row,) = report["violations"]
+    assert row["flag"] == "distinctness_pe"
+    # Both slots identical -> both distinctness directions named.
+    bank = _bank_for(pair, pe_theta=0.0, ce_theta=0.0)
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={})
+    assert report["violations"][0]["flag"] == "distinctness_pe+distinctness_ce"
+    # And a healthy non-degenerate pair (distinct on both slots) passes.
+    bank = _bank_for(pair, pe_theta=_DISTINCT_THETA)
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={})
+    assert report["passed"], report["violations"]
+    assert report["degenerate_pe_cos"] == {} and report["n_degenerate_pairs"] == 0
+
+
+def test_degeneracy_guard_requires_tok_or_prefixes():
+    """Fail-loud wiring: a degenerate pair with neither ``tok`` nor
+    ``token_prefixes`` (or with a missing context entry) asserts before any
+    state read."""
+    pair = _mk_pair("persona_role_header")
+    with pytest.raises(AssertionError, match="needs tok"):
+        R.run_degeneracy_guard({"per_context": {}}, [pair])
+    with pytest.raises(AssertionError, match="missing degenerate contexts"):
+        R.run_degeneracy_guard({"per_context": {}}, [pair], token_prefixes={})
+
+
+def test_degenerate_token_prefix_helper_call_shapes_bind():
+    """``_degenerate_token_prefixes`` uses the exact ``capture_bank`` call
+    shapes (build_contexts / context_token_ids_2162 / prefix_end_index_multi)
+    — signature-bind them so a helper rename/re-arity fails here, not on the
+    pod (the tokenizer-bearing body itself runs in production P1)."""
+    import inspect
+
+    inspect.signature(B.build_contexts).bind()
+    inspect.signature(B.context_token_ids_2162).bind(object(), {})
+    inspect.signature(B.prefix_end_index_multi).bind(object(), [0, 1, 2])
