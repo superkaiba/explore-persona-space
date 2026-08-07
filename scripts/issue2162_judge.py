@@ -68,6 +68,7 @@ RC_OK = 0
 RC_PILOT_GATE = 7
 RC_COHERENCE_GATE = 8
 RC_SEPARATION_GATE = 9
+RC_DRY_RUN_UNSUPPORTED = 10  # fix 3: a phase whose purpose is live measurement
 
 # Plan §7 gate 3 (thresholds body-verbatim; the 0.5 bar is the §4.5 exclusion bar).
 SEPARATION_BAR = 0.5
@@ -287,6 +288,31 @@ def build_anchor_behavior_items(
     return by_rid
 
 
+# ── uniform --dry-run (fix 3) ─────────────────────────────────────────
+#
+# ONE meaning across phases: build + validate every judge unit the phase
+# would dispatch, print counts/routing, make ZERO API calls, persist NOTHING
+# under the work root (no scores, no items, no audits, no gate verdicts).
+# A phase whose purpose IS live measurement (pilot) REFUSES loudly
+# (``RC_DRY_RUN_UNSUPPORTED``) instead of silently spending.
+
+
+def _dry_run_units_report(phase: str, waves: dict[str, list[J94.JudgeUnit]]) -> int:
+    """Construction check only — validate units per wave, log counts, exit 0."""
+    total = 0
+    for wave, units in sorted(waves.items()):
+        J94._validate_units(units)
+        total += len(units)
+        logger.info("[%s] dry-run wave %s: %d units", phase, wave, len(units))
+    logger.info(
+        "[%s] dry-run complete: %d units across %d waves (no API calls made, nothing persisted)",
+        phase,
+        total,
+        len(waves),
+    )
+    return RC_OK
+
+
 # ── gate 3: anchor-separation early gate (plan §7, SYNC) ─────────────
 
 
@@ -454,7 +480,23 @@ def _family_representative(
 
 
 def phase_pilot(cfg: J94.JudgeConfig) -> int:
-    """Rule-26 pilot per rubric FAMILY + the live forced-batch shape probe."""
+    """Rule-26 pilot per rubric FAMILY + the live forced-batch shape probe.
+
+    REFUSES ``--dry-run`` (fix 3): the pilot gate EXISTS to measure the real
+    instrument's truncation/parse-fail profile and to live-probe the
+    forced-batch request shape, so a zero-API dry run of it is meaningless —
+    the pre-fix behavior silently made ~356 real calls and wrote a real
+    verdict under the flag."""
+    if cfg.dry_run:
+        logger.error(
+            "[pilot] --dry-run refused: the rule-26 pilot's whole purpose is measuring the "
+            "REAL instrument's truncation/parse-fail profile (plus the live forced-batch "
+            "request-shape probe) — there is no meaningful zero-API pilot. Run without "
+            "--dry-run to spend the ~%d pilot draws, or use --phase separation-gate / "
+            "--phase anchors with --dry-run for a free construction check.",
+            PILOT_TARGET_COHERENCE + 2 * PILOT_TARGET_BEHAVIOR,
+        )
+        return RC_DRY_RUN_UNSUPPORTED
     pairs = BANK.build_pairs()
     pairs_by_id = {p.pair_id: p for p in pairs}
     registry = rubric_registry(pairs)
@@ -576,11 +618,21 @@ def phase_anchors(cfg: J94.JudgeConfig) -> int:
     Entry gate (r1 M5): the anchor behavior waves are an order-10^4-call
     production spend, so the pilot (gate 5) + separation (gate 3) reports must
     be present-and-passed BEFORE launch. Gate 4 (coherence baseline) is exempt
-    — this phase PRODUCES it."""
-    if not cfg.dry_run:
-        _require_gates(cfg, names=("pilot_gate_report.json", "separation_gate_report.json"))
+    — this phase PRODUCES it. ``--dry-run`` (fix 3) is handled at ENTRY:
+    construction check over every wave this phase would dispatch, zero API
+    calls, nothing persisted."""
     pairs = BANK.build_pairs()
     anchor_rows = load_anchor_rows(cfg.anchors_file)
+    if cfg.dry_run:
+        beh = build_anchor_behavior_items(anchor_rows, pairs)
+        return _dry_run_units_report(
+            "anchors",
+            {
+                "coherence.anchors": build_coherence_items(None, anchor_rows),
+                **{f"{rid}.anchors": us for rid, us in beh.items()},
+            },
+        )
+    _require_gates(cfg, names=("pilot_gate_report.json", "separation_gate_report.json"))
     audits = J94.run_audits("anchors", anchor_rows, cfg.audits_dir)
     registry = rubric_registry(pairs)
 
@@ -592,8 +644,6 @@ def phase_anchors(cfg: J94.JudgeConfig) -> int:
         coh_units,
         cfg,
     )
-    if cfg.dry_run:
-        return RC_OK
     scores = list(J94._iter_jsonl(cfg.scores_dir / "coherence.anchors.scores.jsonl"))
     gate = J94.coherence_baseline_gate(scores)
     gate["audits"] = audits
@@ -613,13 +663,23 @@ def phase_anchors(cfg: J94.JudgeConfig) -> int:
 
 
 def phase_waves(cfg: J94.JudgeConfig) -> int:
-    """Production grid waves (coherence + dual-rubric behavior), gate-guarded."""
-    if not cfg.dry_run:
-        _require_gates(cfg)
+    """Production grid waves (coherence + dual-rubric behavior), gate-guarded.
+    ``--dry-run`` (fix 3): construction check at entry, zero API calls,
+    nothing persisted."""
     pairs = BANK.build_pairs()
     pairs_by_id = {p.pair_id: p for p in pairs}
-    registry = rubric_registry(pairs)
     grid_rows = load_grid_rows(cfg.rollouts_dir)
+    if cfg.dry_run:
+        beh = build_grid_behavior_items(grid_rows, pairs_by_id)
+        return _dry_run_units_report(
+            "waves",
+            {
+                "coherence.grid": build_coherence_items(grid_rows, None),
+                **{f"{rid}.grid": us for rid, us in beh.items()},
+            },
+        )
+    _require_gates(cfg)
+    registry = rubric_registry(pairs)
     J94.run_audits("grid", grid_rows, cfg.audits_dir)
     coh_units = build_coherence_items(grid_rows, None)
     J94.run_wave(
@@ -627,20 +687,29 @@ def phase_waves(cfg: J94.JudgeConfig) -> int:
     )
     for rid, units in sorted(build_grid_behavior_items(grid_rows, pairs_by_id).items()):
         J94.run_wave(f"{rid}.grid", rid, registry[rid], units, cfg)
-    if not cfg.dry_run:
-        J94._refresh_summary(cfg)
+    J94._refresh_summary(cfg)
     return RC_OK
 
 
 def phase_stage2(cfg: J94.JudgeConfig) -> int:
+    """Stage-2 waves, gate-guarded. ``--dry-run`` (fix 3): construction check
+    at entry, zero API calls, nothing persisted."""
     if cfg.stage2_dir is None:
         raise RuntimeError("--phase stage2 requires --stage2-dir")
-    if not cfg.dry_run:
-        _require_gates(cfg)
     pairs = BANK.build_pairs()
     pairs_by_id = {p.pair_id: p for p in pairs}
-    registry = rubric_registry(pairs)
     rows = load_stage2_rows(cfg.stage2_dir)
+    if cfg.dry_run:
+        beh = build_grid_behavior_items(rows, pairs_by_id, tag="s", kind="stage2")
+        return _dry_run_units_report(
+            "stage2",
+            {
+                "coherence.stage2": build_coherence_items(None, None, rows),
+                **{f"{rid}.stage2": us for rid, us in beh.items()},
+            },
+        )
+    _require_gates(cfg)
+    registry = rubric_registry(pairs)
     J94.run_audits("stage2", rows, cfg.audits_dir)
     coh_units = build_coherence_items(None, None, rows)
     J94.run_wave(
@@ -654,12 +723,24 @@ def phase_stage2(cfg: J94.JudgeConfig) -> int:
         build_grid_behavior_items(rows, pairs_by_id, tag="s", kind="stage2").items()
     ):
         J94.run_wave(f"{rid}.stage2", rid, registry[rid], units, cfg)
-    if not cfg.dry_run:
-        J94._refresh_summary(cfg)
+    J94._refresh_summary(cfg)
     return RC_OK
 
 
 def phase_audits(cfg: J94.JudgeConfig) -> int:
+    """Mechanical text audits (zero-API). ``--dry-run`` (fix 3): report which
+    inputs are present, persist nothing."""
+    if cfg.dry_run:
+        present = [
+            str(d)
+            for d in (cfg.rollouts_dir, cfg.anchors_file, cfg.stage2_dir)
+            if d is not None and Path(d).is_dir()
+        ]
+        logger.info(
+            "[audits] dry-run: inputs present: %s — nothing persisted (zero-API phase)",
+            present or "none",
+        )
+        return RC_OK
     summaries = []
     if cfg.rollouts_dir.is_dir():
         summaries.append(J94.run_audits("grid", load_grid_rows(cfg.rollouts_dir), cfg.audits_dir))
@@ -725,10 +806,23 @@ def build_margin_pools(
     A key whose EITHER side yields zero kept items is OMITTED (the margin
     consumer records explicit skip rows for it); a 1..3-item side is kept and
     flagged ``short`` in the report — below-floor yield is REPORTED, never
-    silently backfilled."""
+    silently backfilled.
+
+    ``query_content`` builds NO pool, deliberately (same treatment as
+    ``filler_swap``): its manipulated variable IS the user query, so rubric
+    cores vary per carrier (``rubric_pair_2162`` keys them on ``pair.carrier``)
+    AND each pair's two contexts pose DIFFERENT queries — a fixed shared
+    answer pool scored under every context (plan §4.4 TF margin) is not
+    well-defined at any key granularity. The skipped keys are reported under
+    ``query_content_skip`` (never silently vanish); the margin consumer
+    records explicit skip rows for the absent keys."""
     text_by = {(r["context_id"], int(r["draw"])): r["text"] for r in anchor_rows}
     ctxs_by_key: dict[str, dict] = {}
+    qc_skipped_keys: set[str] = set()
     for p in pairs:
+        if BANK.base_type_of(p.cell) == "query_content":
+            qc_skipped_keys.add(pool_key(p))
+            continue  # query_content: no well-defined fixed pool (docstring)
         cores = pair_rubric_cores(p)
         if cores is None:
             continue  # filler_swap: no rubric, no pool (explicit skip downstream)
@@ -778,6 +872,17 @@ def build_margin_pools(
         "n_keys_built": len(pools),
         "n_keys_omitted": sum(1 for r in report_keys.values() if r["omitted"]),
         "n_keys_short": sum(1 for r in report_keys.values() if r["short"]),
+        "query_content_skip": {
+            "n_keys": len(qc_skipped_keys),
+            "keys": sorted(qc_skipped_keys),
+            "reason": (
+                "query_content manipulates the user query itself: rubric cores are "
+                "per-carrier and each pair's two contexts pose different queries, so "
+                "no fixed shared answer pool is well-defined (plan §4.4 TF margin); "
+                "the margin consumer records explicit skip rows for these keys "
+                "(same treatment as filler_swap)"
+            ),
+        },
         "per_key": report_keys,
         "repro": J94._repro(),
     }
@@ -794,22 +899,44 @@ def phase_pools(cfg: J94.JudgeConfig) -> int:
     scores = _anchor_behavior_scores(cfg)
     pools, report = build_margin_pools(pairs, anchor_rows, scores)
     assert pools, "zero pools built — the anchor waves' judge-filter kept nothing at > 50"
+    if cfg.dry_run:
+        logger.info(
+            "[pools] dry-run: would build %d/%d keys (%d omitted, %d short, %d "
+            "query_content skipped) — nothing persisted (zero-API phase)",
+            report["n_keys_built"],
+            report["n_keys_total"],
+            report["n_keys_omitted"],
+            report["n_keys_short"],
+            report["query_content_skip"]["n_keys"],
+        )
+        return RC_OK
     out = cfg.work_root / "pools.json"
     J94._write_json_atomic(out, {"pools": pools, "meta": report})
     J94._write_json_atomic(cfg.gates_dir / "pools_report.json", report)
     logger.info(
-        "[pools] %d/%d keys built (%d omitted, %d short) -> %s",
+        "[pools] %d/%d keys built (%d omitted, %d short; %d query_content keys "
+        "skipped — no well-defined fixed pool) -> %s",
         report["n_keys_built"],
         report["n_keys_total"],
         report["n_keys_omitted"],
         report["n_keys_short"],
+        report["query_content_skip"]["n_keys"],
         out,
     )
     return RC_OK
 
 
 def phase_upload_raw(cfg: J94.JudgeConfig) -> int:
-    """One folder commit of the judge work root -> the 2162 judge_raw prefix."""
+    """One folder commit of the judge work root -> the 2162 judge_raw prefix.
+    ``--dry-run`` (fix 3): a Hub upload is a mutating API call — report the
+    would-be upload and stop."""
+    if cfg.dry_run:
+        logger.info(
+            "[upload-raw] dry-run: would upload %s -> %s (no Hub calls made)",
+            cfg.work_root,
+            f"{HF_PREFIX}/raw_completions/judge_raw",
+        )
+        return RC_OK
     from explore_persona_space.orchestrate import hub
 
     url = hub._upload(
@@ -855,23 +982,91 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--cache-root", type=Path, default=Path("data/issue_2162/judge_cache"))
     ap.add_argument("--judge-model", type=str, default=J94.DEFAULT_JUDGE_MODEL)
     ap.add_argument("--max-tokens", type=int, default=J94.DEFAULT_JUDGE_MAX_TOKENS)
-    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="uniform construction check (fix 3): build + validate every judge unit "
+        "the phase would dispatch, print counts/routing, ZERO API calls, nothing "
+        "persisted; --phase pilot REFUSES it (rc 10) — its purpose is live measurement",
+    )
     return ap.parse_args(argv)
 
 
+_STAGE_GRID = f"{HF_PREFIX}/raw_completions/grid"
+_STAGE_ANCHORS = f"{HF_PREFIX}/raw_completions/anchors"
+_STAGE_ANCHORS_GATE = f"{HF_PREFIX}/raw_completions/anchors_gate"
+_STAGE_STAGE2 = f"{HF_PREFIX}/raw_completions/stage2"
+
+# Phase-aware staging (fix 2): stage only what the requested phase's loaders
+# actually read. "required" prefixes FAIL LOUD on absence ("the phase needs
+# grid rows and there are none"); an "anchors_any" phase needs anchor rows
+# from EITHER prefix (`anchors_gate` is uploaded early at P2 so gate 3 can
+# run BEFORE the terminal `anchors` upload; grid exists only from P3) — each
+# member is tolerated individually, but ZERO landing raises; "optional"
+# prefixes log-and-continue (phase_audits is is_dir-gated + fails loud on no
+# inputs itself).
+_PHASE_STAGE_PLAN: dict[str, dict[str, tuple[str, ...]]] = {
+    "separation-gate": {"anchors_any": (_STAGE_ANCHORS, _STAGE_ANCHORS_GATE)},
+    "pilot": {"required": (_STAGE_GRID,), "anchors_any": (_STAGE_ANCHORS, _STAGE_ANCHORS_GATE)},
+    "anchors": {"required": (_STAGE_ANCHORS,)},
+    "waves": {"required": (_STAGE_GRID,)},
+    "stage2": {"required": (_STAGE_STAGE2,)},
+    "pools": {"required": (_STAGE_ANCHORS,)},
+    "audits": {"optional": (_STAGE_GRID, _STAGE_ANCHORS, _STAGE_STAGE2)},
+    "upload-raw": {},
+}
+
+
 def _stage_inputs(args: argparse.Namespace) -> None:
+    """Stage the requested phase's Hub inputs per ``_PHASE_STAGE_PLAN`` (fix 2)."""
     from explore_persona_space.orchestrate import hub
 
-    prefixes = [
-        f"{HF_PREFIX}/raw_completions/grid",
-        f"{HF_PREFIX}/raw_completions/anchors",
-        f"{HF_PREFIX}/raw_completions/anchors_gate",
-    ]
-    if args.phase == "stage2":
-        prefixes.append(f"{HF_PREFIX}/raw_completions/stage2")
-    for prefix in prefixes:
-        staged = hub.stage_hub_prefix(DATASET_REPO, prefix, args.in_root, revision=args.hf_revision)
+    plan = _PHASE_STAGE_PLAN[args.phase]
+
+    def _stage(prefix: str, *, tolerate_missing: bool) -> bool:
+        try:
+            staged = hub.stage_hub_prefix(
+                DATASET_REPO, prefix, args.in_root, revision=args.hf_revision
+            )
+        except FileNotFoundError:
+            if not tolerate_missing:
+                raise
+            logger.info(
+                "[stage] %s: not on the Hub yet — tolerated (--phase %s does not "
+                "strictly require it)",
+                prefix,
+                args.phase,
+            )
+            return False
         logger.info("[stage] %s: %d files", prefix, len(staged))
+        return len(staged) > 0
+
+    for prefix in plan.get("required", ()):
+        _stage(prefix, tolerate_missing=False)
+    anchors_any = plan.get("anchors_any", ())
+    if anchors_any and not any(_stage(p, tolerate_missing=True) for p in anchors_any):
+        raise FileNotFoundError(
+            f"--phase {args.phase} needs anchor rows but none of {list(anchors_any)} "
+            f"exist on {DATASET_REPO} — the pod-side anchor uploads (P2 gate slice / "
+            "terminal) have not landed yet"
+        )
+    for prefix in plan.get("optional", ()):
+        _stage(prefix, tolerate_missing=True)
+
+
+def _resolve_anchors_dir(mirror: Path) -> Path:
+    """Default anchors dir (fix 2): the full ``anchors`` mirror when it holds
+    shards, else the early-uploaded ``anchors_gate`` mirror (P2 uploads the
+    gate slice there FIRST so ``--phase separation-gate`` can run before the
+    terminal anchors upload lands). Falls back to the canonical path when
+    neither holds shards — the loaders fail loud on absence."""
+    full, gate = mirror / "anchors", mirror / "anchors_gate"
+    if any(full.glob("anchors_*.jsonl")):
+        return full
+    if any(gate.glob("anchors_*.jsonl")):
+        logger.info("[stage] anchors dir -> %s (full anchors prefix not staged yet)", gate)
+        return gate
+    return full
 
 
 def build_config(args: argparse.Namespace) -> J94.JudgeConfig:
@@ -879,7 +1074,7 @@ def build_config(args: argparse.Namespace) -> J94.JudgeConfig:
     rollouts = args.rollouts_dir if args.rollouts_dir is not None else mirror / "grid"
     # NOTE: JudgeConfig.anchors_file carries the anchors *directory* here (the
     # 2162 anchors are per-worker shards); only OUR loaders read it.
-    anchors = args.anchors_dir if args.anchors_dir is not None else mirror / "anchors"
+    anchors = args.anchors_dir if args.anchors_dir is not None else _resolve_anchors_dir(mirror)
     stage2 = args.stage2_dir
     if stage2 is None and args.phase == "stage2":
         stage2 = mirror / "stage2"
