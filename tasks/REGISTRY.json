@@ -7841,8 +7841,8 @@
     "2011": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2011",
-      "status": "approved",
+      "path": "tasks/running/2011",
+      "status": "running",
       "title": "daily-fix: provisioner avoids a known-bad RunPod host on ret"
     },
     "2012": {
