@@ -160,22 +160,9 @@ VERBATIM in this format:
 
 `/daily last night: applied N, filed M (→/issue), held J (needs you)`
 
-- **N** = count of entries in that file's `## Applied workflow
-  improvements` section (route-1 self-applied fixes; exclude the
-  `_no workflow-fixable problems found today_` placeholder).
-- **M** = count of route-2 filings — entries in `## Applied workflow
-  improvements` tagged/marked `daily-auto-filed` (the "filed for review
-  #<N>" entries; counting the `daily-auto-filed` tag rather than the
-  prose makes the count robust).
-- **J** = count of route-3 `needs-human` filings — count the
-  `needs-human`-tagged `proposed` tasks the file recorded (TAG-BASED, the
-  same set the `Held by /daily` sub-section enumerates), NOT a prose
-  grep of `## Other problems & notes` (a note may exist without a filed
-  task).
-- If NO `logs/daily/<date>.md` exists for the previous night's PT date,
-  OMIT this line silently (no "no daily run" placeholder) — NEVER reach
-  back to an older daily file, which would surface a stale "last night"
-  line on any night /daily failed to run.
+
+> Full detail: `.claude/rules/research-pm-section-reference.md` § /daily digest counting definitions (N / M / J).
+
 
 The `proposed` figure counts ONLY the `proposed` status bucket — the
 live candidate queue. NEVER fold `on_hold` into it. `on_hold` is a
@@ -189,63 +176,9 @@ the queue-report skeleton — do not re-merge them in the headline.
 **2. Needs attention — investigate, auto-fix, surface only the
 residue** (user directive 2026-06-12: everything that CAN be fixed
 automatically IS fixed automatically; the user sees only what
-genuinely needs his call). Candidate exceptions:
+genuinely needs his call).
 
-- `blocked` tasks (reason from the latest `epm:failure` marker).
-- `plan_pending` over the auto-approve cap.
-- Active tasks gone quiet: latest marker older than ~2h with a live
-  pod, or older than ~24h regardless (a row idle at
-  `interpreting`/`reviewing` is a stuck session, not a healthy pause).
-- Orphan or idle pods (live pod, no active owning task).
-- Watcher flags (ALIVE-BUT-STALLED, zombie wrappers), disk pressure,
-  registry drift.
-- Dashboard comments awaiting reply; `needs-thomas` tags.
-- `needs-human`-tagged `proposed` tasks — /daily route-3 held judgment
-  calls (see the dedicated `Held by /daily (needs your call):`
-  sub-section of the `Needs you` block below; these are SURFACED +
-  RE-SURFACED every pass and EXCLUDED from auto-dispatch, never auto-run).
-
-For EACH candidate, INVESTIGATE before reporting — cheap reads first
-(`task.py view <N>` / `latest-marker`, watcher registry
-`~/.eps-autonomous/`, `spawn_session.py list`, `pod.py
-list-ephemeral`, log tails); for a genuinely murky stall,
-background-spawn a read-only diagnostic agent (`stuck-diagnoser`,
-`experiment-status`) — never an execution agent. Then route:
-
-- **Auto-fix now** — apply inline, per the Autonomy rules: status-
-  drift corrections (automation-owned), stop + respawn a stalled/dead
-  autonomous session (`spawn_session.py stop` + `spawn-issue --issue
-  <N> --auto`) (deliberate kills post the stop breadcrumb FIRST —
-  § Autonomy rules), terminate orphaned/EXITED pods (policy-backed; NEVER
-  a pod with live work), zombie-session sweeps, cache/disk cleanup,
-  `pods.conf` refresh-from-api on SSH-vs-API drift, INDEX/registry
-  fixes, re-push of unpushed commits.
-- **Auto-fix in background** — too big for inline: workflow-surface
-  gaps go through the workflow-fix-on-bug auto-file (a filed `kind: infra`
-  task + a background `/issue --auto` session); filed infra
-  work through the infra auto-dispatch pass; murky stalls to a
-  background diagnostic agent whose verdict feeds the NEXT pass.
-- **Surface to the user** ONLY when the fix is his by policy: over-cap
-  plan approvals, promotions, a blocked task whose question only he
-  can answer (state the specific question + your recommended answer),
-  credentials / outward-facing sends / spend, irreversible deletion of
-  research artifacts, research-judgment calls. Each surfaced line
-  states what, why it can't be auto-fixed, and the recommended action.
-
-Report as two compact blocks: `Auto-fixed (N):` one line per fix
-(including background dispatches, marked `bg`), then `Needs you (N):`.
-Both empty → the single line `Nothing needs your attention.` Healthy
-running experiments and healthy sessions are NEVER enumerated *in THIS
-Needs-attention block* — and the proposed queue is not enumerated here
-either, but it DOES get its own tight listing in part 3 below (it is the
-one category the user acts on next). Never block the STATUS pass on a
-fix — anything slow runs in the background and reports on the next pass.
-
-Inside the `Needs you (N):` block, surface /daily-held judgment calls as
-a distinct sub-section (#706) — they genuinely need Thomas's call, and
-the ADHD-aware re-surfacing rule (SOUL.md "ADHD-aware urgent
-re-surfacing": re-surface until acknowledged, never drop after one
-mention) applies:
+> Full detail: `.claude/rules/research-pm-section-reference.md` § STATUS part 2 — Needs attention: candidates and routing.
 
 > **Held by /daily (needs your call):** ENUMERATE every
 > `needs-human`-tagged `proposed` task EACH pass, one line each —
@@ -260,113 +193,18 @@ mention) applies:
 
 **3. Proposed & follow-ups (N)** — a tight per-task listing of the live
 `proposed` queue, NOT just the headline count (user directive
-2026-06-14). This is the DELIBERATE exception to "healthy work is
-counted, never enumerated": the proposed/follow-up queue is what the user
-acts on next, so it is surfaced BY DEFAULT on every concise STATUS pass —
-not hidden behind "full status". Built from the single
-`pm_queue_report.py` run already in hand (it returns `id` / `kind` /
-`title` / `parent_id` / `tags` / `created_ts` per task) — no extra
-command. Render two sub-groups under this header:
+2026-06-14).
 
-- **Fresh** — `proposed` tasks with NO `parent_id`. One line each:
-  `#<id> [<kind-abbrev>] <short-title>`.
-- **Follow-ups** — `proposed` tasks WITH `parent_id` set. One line each,
-  marked distinctly with the parent: `#<id> [<kind-abbrev>] ← #<parent>
-  <short-title>`.
-
-Abbreviate `kind`: `exp` / `analysis` / `infra` / `batch` / `survey` /
-`campaign`. Show any `needs-thomas` / `human` / `needs-thought` tag
-inline in the bracket, e.g. `[survey · needs-thomas]`. Keep titles short
-(truncate to ~one clause; fall back to the first clause of `goal:` when
-the title is not in claim form).
-
-Conciseness sizing — this block is lighter than "full status", heavier
-than a bare count:
-
-- Show ALL proposed tasks when the TRUE `proposed` count (the `proposed`
-  status bucket only — NOT inflated by `on_hold`) is ≤ ~15.
-- Otherwise show the top-N (~12) by `created_ts` (most recent first),
-  then a final line `+M more (full status)`.
-
-`on_hold` stays EXCLUDED from this block — it is a parked backlog, not
-the live proposed queue (same rule as the headline count). When the
-`proposed` bucket is empty, this part collapses to the single line
-`Proposed & follow-ups (0) — empty.` Sub-groups with zero tasks are
-omitted (e.g. no `Follow-ups:` header when there are no follow-ups).
+> Full detail: `.claude/rules/research-pm-section-reference.md` § STATUS part 3 — Proposed & follow-ups rendering.
 
 **4. Suggested next actions** — ranked numbered list (plain markdown),
 ONLY non-empty categories, 1–2 lines each with counts:
 
-- **Triage awaiting promotion** — ALWAYS present. Rank it #1 (the
-  default action) when BOTH (a) no ripe queued follow-ups exist and
-  (b) fewer than ~3 experiments are actively running; otherwise list
-  it after follow-ups. On pick: render `/group-promotion-queue`'s
-  grouped report and walk promotion group-by-group via
-  `/promote-clean-result`. Triage is the follow-up generator — an
-  empty follow-up queue is itself the reason to do it.
-- **Follow-ups to run** — `proposed` tasks with `parent_id` set whose
-  parent is completed / parked (the report exposes `parent_id`), plus
-  un-acted follow-up proposals on parked tasks. Top 1–3 by
-  information gain per GPU-hour, one-line rationale each.
-- **Human tasks** — actions only the user can take: over-cap plan
-  approvals, blocked-task answers, pending promotions (count),
-  dashboard comments awaiting reply.
-- **Papers to read** — new: top picks from the latest
-  `~/lit-review/reports/<date>.md` daily digest; old:
-  `~/lit-review/to-read.md` and `docs/papers.md` entries tagged
-  `queued`. Suggest 1–3 with a one-line tie to an active research
-  line.
-- **Wednesday: mentor-meeting prep** — when the scan day is Wednesday
-  (PT), suggest `/mentor-update-slides` to prep the mentor meeting (the
-  one genuinely weekly rhythm). The week-scale consolidation that used to
-  ride the `weekly` skill now runs nightly in `/daily` (the `weekly`
-  skill was retired 2026-08-05).
-- **Proposed-queue pruning** — when the TRUE `proposed` count (the
-  `proposed` status bucket only — NOT inflated by `on_hold`) exceeds
-  ~100 or is visibly stale, suggest an archive pass over superseded /
-  stale proposals so ranking stays meaningful. With `on_hold` excluded
-  from the count this trigger no longer false-fires at ~10 proposed; if
-  it is the large parked `on_hold` backlog that warrants pruning, route
-  the archive pass at `on_hold` (archive superseded parked tasks), not
-  at the live `proposed` queue.
-- **Ideation** — when the ripe proposed-experiment pipeline is thin
-  AND few experiments are running, suggest `/ideation` /
-  `/experiment-proposer` to refill it.
-- **on_hold backlog (fallback idea-source)** — surface ONLY under the
-  same gate as Ideation above (ripe proposed-experiment pipeline thin
-  AND few experiments running — i.e. genuinely out of ideas). When the
-  `on_hold` bucket is non-empty, mention it as a fallback idea-source —
-  e.g. "N-task `on_hold` backlog available to mine for revival" — a
-  SEPARATE category from the live `proposed` queue, never folded into
-  it. When the pipeline is healthy, `on_hold` is NOT mentioned at all.
+> Full detail: `.claude/rules/research-pm-section-reference.md` § STATUS part 4 — Suggested next actions categories.
 
-**On-demand views** (never rendered by default):
 
-- **"full status"** → the legacy exhaustive report: Active work (one
-  entry per task at every active status, `#N — <one-line summary> |
-  <pod-N if live> | <latest marker kind, age>`; `followups_running`
-  entries append `#N — <followup_label> (auto|manual)` — label from
-  the latest `epm:followup-scope v1` marker via `task.py latest-marker
-  <N> --prefix epm:followup-scope`, auto/manual from the
-  `followup-auto`/`followup-manual` tag); Awaiting promotion
-  (`### Most recent` top 5 by `status_arrival_ts`, then `### Grouped`
-  — the `/group-promotion-queue` cached report; `followups_running`
-  tasks stay tagged "follow-up in flight"); Proposed queue
-  (`### Recently filed` top 10 by `created_ts`, then `### By theme`,
-  one line per task — title, else title + first clause of `goal:`;
-  never page through full bodies).
-- **"quick status"** → headline + needs-attention only (no
-  suggestions).
 
-On every STATUS pass, also keep the `/group-promotion-queue` cache
-warm: if the awaiting_promotion ID set changed since the cache header,
-background-spawn its grouping subagent (never blocking the pass) so
-triage renders instantly when picked.
-
-After the report, run the **infra auto-dispatch pass** (see § Standing
-rule — infra auto-dispatch below). Its `Infra auto-dispatch` block
-compresses to the single line `Infra auto-dispatch: none ripe.` when
-nothing was dispatched and nothing is held.
+> Full detail: `.claude/rules/research-pm-section-reference.md` § On-demand views (never rendered by default).
 
 ### Mode 2 — AUDIT ("check for drift")
 
@@ -495,143 +333,8 @@ tasks (plus pure code/ops `kind: batch` and `agent-ok`-tagged
 After producing the Mode 1 report — boot scan and every STATUS re-run
 alike — run the infra auto-dispatch pass:
 
-1. **Enumerate** the auto-dispatchable `proposed` tasks from the queue
-   report already in hand:
-   - `kind: infra`;
-   - `kind: batch` when the work is pure code/ops;
-   - `kind: analysis` tagged `agent-ok` — CPU-only analysis/audit tasks
-     explicitly cleared for autonomous running (e.g. cheap
-     follow-up/audit work like #581/#582). These keep the SAME
-     concurrency cap and the SAME park list below; the `agent-ok` tag is
-     the required opt-in (an `agent-ok`-untagged `kind: analysis` task is
-     NOT auto-dispatched — it stays for Mode 4/5 triage).
 
-   EXCLUDE any task tagged `needs-human` — these are /daily-held judgment
-   calls (route 3, `.claude/skills/daily/SKILL.md`) that need Thomas's
-   call, NOT autonomous dispatch. They surface in the STATUS `Needs you`
-   block (Mode 1 part 2, the `Held by /daily (needs your call):`
-   sub-section) and are re-surfaced every pass until Thomas acts; they
-   are NEVER auto-run. (The watcher's `proposed_infra_sweep` backstop
-   enforces the same skip mechanically via `_proposed_infra_candidates`,
-   so a `needs-human` task is excluded from BOTH dispatch surfaces.)
-
-   `kind: experiment` stays OUT of scope — it keeps the Mode 4/5
-   ranked-candidate flow, the full adversarial-planner path, and the
-   plan-approval GPU-hour cap.
-2. **Consolidate duplicate clusters** before dispatching: when several
-   tasks file the same fix (same incident hit by different sessions),
-   dispatch the most complete one and
-   `task.py set-status <dup> archived` the rest, posting a note marker
-   on each naming the canonical task.
-3. **Re-evaluate predicate holds (do this FIRST, before dispatch).** A
-   task is held with a predicate when its readiness depends on ANOTHER
-   task reaching a terminal/landed state (e.g. "audit X after its next
-   live attempt", "fold result of #N into the docs once #N lands").
-   Encode the hold reason as **`predicate-<#N>-<short-desc>`** — the
-   issue number is the first token after `predicate-` so it is
-   machine-parseable (live examples: `predicate-535-slurm-attempt`,
-   `predicate-625-lands`). On EVERY STATUS pass, for each `holds` entry
-   whose reason starts with `predicate-`, read the named task #N's
-   current status (from the queue report already in hand, or `task.py
-   view <N>`). When the predicate is satisfied (task #N reached the
-   required terminal/landed state), REMOVE the hold and ADD the task to
-   `ripe_oldest_first` in the drain queue (step 4b) — doing this BEFORE
-   step 3b lets a just-cleared task dispatch in THIS pass; the 10-min
-   watcher also dispatches it between passes regardless. A cheap
-   `agent-ok` follow-up/audit task with a cross-issue dependency is
-   TRACKED in `holds` with a `predicate-<#N>-...` reason AT THE TIME it
-   is deferred — never left as a bare un-held `proposed` task (which
-   would sit untracked and silently never dispatch).
-3a. **NOT a valid predicate: "candidate touches a backend file an
-   experiment is live on."** Autonomous infra sessions develop in an
-   ISOLATED worktree and merge to `main` only at the end, and a live
-   experiment runs from its own `issue-<N>` worktree / provisioned VM —
-   it never reads the orchestrator's `main` mid-run. So holding an infra
-   task because it edits the GCP/SLURM backend that another task is
-   "live on" is a MANUFACTURED predicate (it wrongly held #630/#631,
-   2026-06-13). The ONLY legitimate concurrency constraint between two
-   ripe infra tasks is editing the SAME file (a merge collision) —
-   encode that as `predicate-<#otherinfra>-same-file`; dispatch
-   everything else at any confidence and let the agent deflect if its
-   bug turns out already-fixed (per the dispatch-at-any-confidence
-   directive — "defer for a future deliberate pass" is the banned
-   outcome).
-3b. **Auto-dispatch ripe tasks** — no user ask:
-   ```bash
-   uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto
-   ```
-   A task is **ripe** when it names a concrete target + change and is
-   not predicate-blocked (predicate holds were already re-evaluated in
-   step 3, so a task whose predicate cleared this pass is now ripe).
-   When the PM itself FILES a ripe `kind: infra`/`batch` fix (not just
-   dispatching one already adjudicated), prefer the file-time wrapper
-   `scripts/file_infra_task.py` (#690) — it files via `task.py new` +
-   best-effort `spawn-issue --auto` in ONE call under the SAME shared
-   3-session cap, and is the same mechanism whoever-files-it uses
-   elsewhere (workflow-fix-on-bug step 5). The standing-rule queue write
-   (4b) is UNCHANGED: it remains the durable backstop for IDs that could
-   not self-dispatch (a cap-full filing, no daemon, a crashed filer) and
-   for between-passes draining while this session is idle/closed.
-4. **Concurrency cap: 3 concurrent auto-dispatched sessions.** Count
-   live issue-mapped sessions whose task is in the auto-dispatch scope
-   (`kind: infra`, pure code/ops `kind: batch`, or `agent-ok`
-   `kind: analysis`) via `spawn_session.py list` + a task-kind lookup
-   (`task.py view <N> --json`). Drain oldest-first by default;
-   urgency-first when a task names an active incident.
-
-4b. **Durable drain between STATUS passes (task #633).** On EVERY STATUS
-   pass, WRITE the adjudicated queue to
-   `~/.eps-autonomous/infra-drain-queue.json` (atomic tmp+rename;
-   `ripe_oldest_first` ints oldest-first, `cap`, `holds` {id: one-word
-   reason}, `updated_ts` ISO-8601 UTC, `updated_by`, `comment`). The
-   10-minute watcher's infra-drain pass executes listed IDs into free
-   slots while this session is idle or closed — it only spawns
-   `spawn-issue --auto` for IDs still at `proposed`, under the cap,
-   skipping holds and already-registered issues; it NEVER judges
-   ripeness. The PM remains the only ripeness judge: un-riping a task =
-   remove it from the list / add a hold and rewrite the file. Rewriting
-   (bumping `updated_ts`) also re-arms the watcher's per-ID retry budget.
-
-5. **Park for the user ONLY when** (the "REALLY needs my call" list —
-   keep it tight):
-   - **HARD RULE — credentials/secrets off-machine.** The fix would
-     move credentials or secrets off this machine (push to any remote,
-     gist, HF, publicly visible instance metadata, ...; the established
-     `.env`-to-pod push during pod bootstrap is status quo, not in
-     scope). Never auto; redesign to keep secrets local or park.
-     `held: credentials`.
-   - **HARD RULE — outward-facing sends.** The work sends anything
-     outward-facing addressed to humans or services outside the
-     project's standard artifact channels (git/HF/WandB) — email,
-     Slack, social posts, published content. Draft only; park for
-     approval. `held: outward-facing`.
-   - **Spending / vendor decisions** (adopting a new paid service or
-     compute vendor) — not really infra fixes anyway. `held: spend`.
-   - **Research-judgment / user-voice items** (result interpretation,
-     mentor-facing prose) — these should not be `kind: infra` in the
-     first place; re-kind and leave for triage. `held: re-kind`.
-   - **Force-push and irreversible deletion of research artifacts**
-     (`eval_results/`, `figures/`, HF datasets, `RESULTS.md`) stay
-     never-auto per existing rules. `held: irreversible`.
-6. **Explicitly AUTO now (not park-worthy):** destructive-but-
-   policy-backed ops — terminating orphaned/stopped pods,
-   zombie-session sweeps, cache/disk cleanup, cron additions. These
-   were previously held for the user; the 2026-06-12 user directive
-   supersedes that hold.
-7. **Visibility without a gate:** append an `Infra auto-dispatch` block
-   to the STATUS report — what was auto-dispatched this pass and what
-   is held, each held item with the one-word reason
-   (`held: credentials`, `held: outward-facing`, `held: spend`,
-   `held: re-kind`, `held: irreversible`, `held: predicate`,
-   `held: cap`). `predicate` and `cap` are mechanical deferrals
-   re-checked on the next pass, NOT items awaiting user input.
-
-The dispatched sessions run the full `/issue <N>` lifecycle with their
-own gates; this rule changes WHO pulls the trigger on ripe `proposed`
-infra work, not any downstream gate. Promotion out of
-`awaiting_promotion` stays user-only. `kind: experiment` tasks are NOT
-covered — they keep the Mode 4/5 ranked-candidate flow, the full
-adversarial-planner path, and the plan-approval GPU-hour cap.
+> Full detail: `.claude/rules/research-pm-section-reference.md` § Infra auto-dispatch — the seven numbered items.
 
 ### Mode 6 — INTEGRATE ("a session finished")
 
@@ -861,3 +564,4 @@ say so with the search surface named.
 ## Path discipline (canonical tasks/ resolver)
 
 Never form `tasks/...` paths relative to cwd or `__file__`. From a worktree, that path is stale — the worktree branch lags `main` and any commits land on the worktree branch instead of `main`. Use `scripts/task.py find <N>` for a task folder, `scripts/task.py tasks-dir` for the root, and `from explore_persona_space.task_workflow import tasks_dir, registry_path, repo_root` for in-Python access. The canonical resolver branch-guards to `main` and refuses loudly on detached HEAD / non-`main` HEAD / missing `tasks/`. Enforced by `tests/test_no_direct_task_path_construction.py`.
+

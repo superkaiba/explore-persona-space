@@ -52,6 +52,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - pod-side-reporting.md — writing pod-side dispatcher/sentinel/poller code (incl. dispatcher OWN-sentinel read-back — drain-rename tolerance, #1311), or (re)launching ANY detached pod/VM workload (pid-file rewrite, log rotation, box teardown leg), or pushing result commits.
 - pods.md — you provision, size, SSH to, or terminate a pod (intent tables, `pod.py` surface, API hard requirements, preflight, crons).
 - replication-fidelity.md — the Goal replicates a published finding (match the paper's data + recipe FIRST; change only the tested variable).
+- research-pm-section-reference.md — the PM renders a STATUS part or runs the infra auto-dispatch items (pointer-loaded).
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).
 - selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI (selection rides per draw / freeze held-out; band vs ceiling), or difference-vector legs sharing one SAMPLED baseline vs noise-free nulls (disjoint halves / shared-B).
 - trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus, composing briefs on such targets (#1503/#1413), orchestrator run-failure ingest (#1546), judge-monitor reads (#1871), or ANY orchestrator turn on a guard-surface round (#1563).

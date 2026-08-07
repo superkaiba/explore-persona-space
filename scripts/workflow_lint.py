@@ -12741,16 +12741,6 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # mechanism); the crash-fix-relaunch paragraph + run-launched fence
     # tokens stay in-spec verbatim. Cap = measured + ~1 KB.
     "experimenter.md": 66_600,
-    # measured 49,740 B post-#1115 (read-hygiene context-budget section —
-    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
-    # measured 48,197 B post-#1102)
-    # measured 46,785 B post-#1618 (unmapped-pod triage + non-EPS pod-cost
-    # directive + Mode-2 audit template relocated to
-    # .claude/rules/pm-audit-reference.md — #829 trim after the 5d84120ac9
-    # overage to 47,861; cap UNCHANGED = measured + ~0.2 KB. Prior:
-    # measured 46,187 B post-#1082 (negative-existence search recipe),
-    # 43,500 / 40,990 B)
-    "research-pm.md": 47_000,
     # measured 51,638 B post-#1834 (marker-materialized producer-schema
     # rule bullet: remediation naming the producer-schema duty +
     # schema-mismatched canonical file is a GAP/FAIL — plan-mandated
