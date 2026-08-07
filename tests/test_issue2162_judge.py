@@ -204,3 +204,51 @@ def test_separation_verdict_math(pairs):
     seps = {r["cell"]: r["sep"] for r in report["pairs"]}
     assert seps["instr_format"] == pytest.approx(2.0)  # (+1) - (-1)
     assert seps["verbosity"] == pytest.approx(0.0)
+
+
+# ── margin pools (r1 C4) ─────────────────────────────────────────────
+
+
+def test_pool_key_cross_pin_matches_run_module():
+    """The judge's pool builder and the run driver's pool consumer MUST agree
+    byte-for-byte on the pool key grammar (r1 C4) — a drift silently empties
+    every margin lookup."""
+    import issue2162_run as R
+
+    for p in B.build_pairs():
+        assert J.pool_key(p) == R.pool_key(p)
+
+
+def test_pool_constants_pin():
+    """Plan §4.4 / llm-judging rule 19: fixed 4+4 judge-filtered (>50) pools."""
+    assert J.POOL_PER_SIDE == 4
+    assert J.POOL_FILTER_MIN == 50.0
+
+
+def test_build_margin_pools_selects_filtered_top4():
+    """Pools take the top-4 per side by score among >50-filtered anchor draws;
+    a side with zero survivors OMITS the key; 1-3 survivors keep it flagged
+    short."""
+    pairs = [p for p in B.build_pairs() if p.cell == "instr_format"][:2]
+    cores = J.pair_rubric_cores(pairs[0])
+    assert cores is not None
+    rid_a, rid_b = (J.rubric_core_id(c) for c in cores)
+    anchor_rows = []
+    scores = {}
+    for p in pairs[:1]:
+        for d in range(6):
+            anchor_rows.append({"context_id": p.a, "cell": p.cell, "draw": d, "text": f"floor {d}"})
+            anchor_rows.append({"context_id": p.b, "cell": p.cell, "draw": d, "text": f"ceil {d}"})
+            # Side A candidates: floor ctx scored under rid_a; two fail the
+            # >50 filter, the rest rank by score.
+            scores[(p.a, d, rid_a)] = [90, 80, 70, 60, 40, 30][d]
+            scores[(p.b, d, rid_b)] = [95, 85, 75, 65, 55, 45][d]
+    pools, _report = J.build_margin_pools(pairs[:1], anchor_rows, scores)
+    key = J.pool_key(pairs[0])
+    assert key in pools
+    sides = {"A": [], "B": []}
+    for item in pools[key]:
+        sides[item["side"]].append(item["text"])
+    assert len(sides["A"]) == 4 and len(sides["B"]) == 4
+    assert sides["A"][0] == "floor 0"  # top score first (90)
+    assert sides["B"] == [f"ceil {d}" for d in range(4)]
