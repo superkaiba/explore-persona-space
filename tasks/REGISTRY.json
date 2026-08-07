@@ -9002,8 +9002,8 @@
     "2164": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2164",
-      "status": "running",
+      "path": "tasks/completed/2164",
+      "status": "completed",
       "title": "Autonomous plan-gate cap default is 24 in task.py but 100 in every doc and park message"
     },
     "2165": {
