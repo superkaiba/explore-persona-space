@@ -746,6 +746,9 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         readout_rows = np.asarray(readout_rows, dtype=np.int64)
         _assert_well_posed(len(readout_rows), loaded.dim, f"{behavior}/{fit_label}")
         ev_z_parts, ev_za_parts, ev_dv_parts, ev_rung_parts = [], [], [], []
+        # ORDERED eval-context ids, parallel to the concatenated columns (the
+        # eval_id_sets below are SETS — leakage asserts only, order destroyed).
+        ev_ctx_parts: list[list[str]] = []
         eval_id_sets: dict[str, set] = {}
         for label, rows in eval_specs:
             if rows is None:  # pvsynth
@@ -753,6 +756,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
                 ev_za_parts.append(za_pv)
                 ev_dv_parts.append(dv_pv)
                 ev_rung_parts.append(np.asarray([label] * z_pv.shape[1]))
+                ev_ctx_parts.append([str(c) for c in tbl_pv.ctx_order])
                 eval_id_sets[label] = ids_pv
                 continue
             rows = np.asarray(rows, dtype=np.int64)
@@ -771,12 +775,19 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
             ev_za_parts.append(np.ascontiguousarray(z_ans[:, rows]))
             ev_dv_parts.append(dv_raw[rows])
             ev_rung_parts.append(np.asarray([label] * rows.size))
+            ev_ctx_parts.append([ctx_ids[i] for i in rows])
             eval_id_sets[label] = {ctx_ids[i] for i in rows}
         z_ev = np.concatenate(ev_z_parts, axis=1)
         za_ev = np.concatenate(ev_za_parts, axis=1)
         dv_ev = np.concatenate(ev_dv_parts)
         rungs_ev = np.concatenate(ev_rung_parts)
-        del ev_z_parts, ev_za_parts
+        ctx_order_ev = [c for part in ev_ctx_parts for c in part]
+        if len(ctx_order_ev) != z_ev.shape[1]:
+            raise AssertionError(
+                f"[{behavior}] {fit_label}: eval ctx-id order {len(ctx_order_ev)} != "
+                f"{z_ev.shape[1]} eval columns"
+            )
+        del ev_z_parts, ev_za_parts, ev_ctx_parts
 
         leak = _leakage_assert({ctx_ids[i] for i in readout_rows}, eval_id_sets, fit_label)
         map_leak = None
@@ -829,6 +840,27 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
                 min_n=args.min_n,
             )
         wall = round(time.time() - t1, 1)
+        if getattr(args, "transfer_preds", False):
+            # Per-(arm, eval context) frozen-layer predictions, via the SAME
+            # reviewed helper the bare-query / wcrung legs use. Written BEFORE
+            # rows_all is extended so a crash cannot leave aggregate rows whose
+            # per-context sidecar is missing; one file per FIT (the unit here),
+            # truncate-and-replace, so a re-run of a fit overwrites exactly its
+            # own rows. `rung` rides the generic label column, so any per-rung
+            # subset read — a paired bootstrap over shared eval contexts, an OOD
+            # scatter — is a pure post-hoc read of this file.
+            arms.write_preds_jsonl(
+                args.out_root / behavior / "transfer_preds" / f"{fit_label}.jsonl",
+                arms.transfer_preds_rows(
+                    scores,
+                    dv_ev,
+                    ctx_order_ev,
+                    frozen,
+                    provenance={**prov, "n_eval_pooled": len(ctx_order_ev)},
+                    layers=tuple(layers),
+                    labels={"rung": [str(x) for x in rungs_ev]},
+                ),
+            )
         per_layer_all.extend(
             per_layer_rows_for(
                 scores, dv_ev, frozen, {**prov, "eval_rung": "all"}, layers, frozen_src
@@ -928,6 +960,22 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
             min_n=args.min_n,
             **kwargs,
         )
+        if getattr(args, "transfer_preds", False):
+            # The P-A in-distribution anchor rung — same contract as the
+            # _fit_and_score sidecar above; its contexts are the eliciting
+            # cell's own rows, in the order scores_el was sliced to.
+            arms.write_preds_jsonl(
+                args.out_root / behavior / "transfer_preds" / "P-A-train-oof.jsonl",
+                arms.transfer_preds_rows(
+                    scores_el,
+                    dv_el,
+                    [ctx_ids[i] for i in np.asarray(elic_cell.row_idx, dtype=np.int64)],
+                    frozen,
+                    provenance={**prov_tr, "n_eval_pooled": int(n_el)},
+                    layers=tuple(layers),
+                    labels={"rung": ["train"] * n_el},
+                ),
+            )
         rows_all.extend(rows_tr)
         skips_all.extend(skips_tr)
         skips_all.extend(
@@ -1253,6 +1301,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--wcrung-store", type=Path, default=None)
     ap.add_argument("--pvsynth-store-root", type=Path, default=None)
     ap.add_argument("--pvsynth-dv-root", type=Path, default=None)
+    ap.add_argument(
+        "--transfer-preds",
+        action="store_true",
+        help="ALSO persist per-(arm, eval context) frozen-layer predictions for every "
+        "r2v2 fit (one JSONL per fit under <out-root>/<behavior>/transfer_preds/, schema "
+        "= arms.transfer_preds_rows with a per-context 'rung' label). Default OFF: the "
+        "aggregate rows are unchanged, so every other lane is byte-identical. Turning it "
+        "on is what makes a per-context re-read — paired bootstrap CIs over shared eval "
+        "contexts, per-rung subset reads, OOD scatters — a pure re-analysis instead of "
+        "another full re-score (the sibling --transfer-preds in issue1739_fits.py does "
+        "the same for the bare-query transfer leg).",
+    )
     ap.add_argument("--allow-overwrite-committed", action="store_true")
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
