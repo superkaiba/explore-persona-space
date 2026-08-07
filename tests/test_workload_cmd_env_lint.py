@@ -40,6 +40,7 @@ from tests.test_dispatch_issue_cli import (
     _build_mock_factory,
     _cd_to_tmp,
     _MockBackend,
+    _pin_issue_branch_probe,  # noqa: F401 — autouse fixture: pins the #2161 issue-branch refusal probe EMPTY (fabricated issue numbers here have live origin/issue-<N> refs)
 )
 
 REPO = Path(__file__).resolve().parent.parent

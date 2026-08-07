@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2161,
+  "highest_id": 2165,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7834,8 +7834,8 @@
     "2010": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2010",
-      "status": "planning",
+      "path": "tasks/running/2010",
+      "status": "running",
       "title": "daily-fix: corpus-replay gate test reds stale branches on fl"
     },
     "2011": {
@@ -7848,8 +7848,8 @@
     "2012": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2012",
-      "status": "proposed",
+      "path": "tasks/planning/2012",
+      "status": "planning",
       "title": "daily-fix: finally-block raise must never mask in-flight exc"
     },
     "2013": {
@@ -8979,9 +8979,39 @@
     "2161": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2161",
-      "status": "running",
+      "path": "tasks/completed/2161",
+      "status": "completed",
       "title": "dispatch_issue.py launch on the fellows lane: 600s SIGTERM disarms the QoS ladder; plan-copied commands drift (--repo-branch defaults to main)"
+    },
+    "2162": {
+      "goal": "On Qwen-2.5-7B-Instruct, determine which kinds of context information are both CARRIED at and CAUSALLY USABLE from a single context position by patching ONLY that position between minimal-pair contexts that differ in exactly one information type \u2014 21 types spanning stated response policy, conditional policy, demonstrated/implied/role-header route variants, retrievable stated items, ICL task definition, inferred user model, discourse state, and two pre-registered near-zero controls \u2014 crossed with three secondary axes (instruction-vs-demonstration route conflict, introduction recency at conversation depths 1/3/5, and information load 1/3/5) on designated subsets, measured per type by the #2094 fraction-of-swap F between the unpatched floor and the generate-under-donor ceiling under a PRE-REGISTERED anchor-separation exclusion (|ceiling - floor| >= 0.5), against BOTH a norm-matched shuffled-donor null and a cross-type-donor null, at BOTH the context-end vector v_C and the prefix-end state, under a maximal all-layer full-state Stage-1 patch with a post-selection Stage-2 layer x dose profile, with a LINEAR read-probe companion per type/state/layer (group-held-out folds) so a null separates 'not encoded' from 'encoded but not causally usable', reported in three separately Holm-corrected pre-registered families.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/approved/2162",
+      "status": "approved",
+      "title": "Which kinds of context information are carried at the context vector: a patch-only sweep over 21 minimal-pair information types, crossed with route conflict, recency, and load"
+    },
+    "2163": {
+      "goal": "Characterize, at full 131,072-feature dictionary width, which SAE features the context->answer map READS at the context vector v_C (the last prompt token, the newline of the assistant header) on Qwen-2.5-7B-Instruct layer 19; separate READ (used by the fitted map) from CARRIED (present at v_C but unused) and from FREQUENT (mechanically weighted by firing rate); and determine which mechanical feature properties predict being read, as activity-matched partials against a selection-symmetric null.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/2163",
+      "status": "planning",
+      "title": "Which SAE features are read at the context vector by the context->answer map"
+    },
+    "2164": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2164",
+      "status": "planning",
+      "title": "Autonomous plan-gate cap default is 24 in task.py but 100 in every doc and park message"
+    },
+    "2165": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2165",
+      "status": "planning",
+      "title": "workflow-fix: enumerate smoke blind spots \u2014 gates/paths a smoke run structurally cannot reach"
     },
     "218": {
       "has_clean_result": false,

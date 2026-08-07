@@ -183,10 +183,11 @@ def test_good_plan_passes_all():
         "c43_sentinel_lane": "SKIP",
         "c44_committed_paths_gitignored": "SKIP",
         "c45_change_dv_base_predictor_companion": "SKIP",
+        "c46_dispatch_cmd_cli_parse": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 44
+    assert len(results) == 45
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6244,13 +6245,15 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     # + c44 (SKIP: GOOD_PLAN declares no committed-output paths; trigger-
     #   conditional, #1900)
     # + c45 (SKIP: GOOD_PLAN carries no change-DV signature; trigger-
-    #   conditional, #1906).
-    assert payload["n_skip"] == 38
+    #   conditional, #1906)
+    # + c46 (SKIP: GOOD_PLAN embeds no dispatch_issue.py command; trigger-
+    #   conditional, #2161).
+    assert payload["n_skip"] == 39
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 46
-    assert len({c["id"] for c in payload["checks"]}) == 46
+    assert len(payload["checks"]) == 47
+    assert len({c["id"] for c in payload["checks"]}) == 47
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -10027,3 +10030,95 @@ def test_c45_escape_registered_in_skill():
     block = text[anchor : text.index("bounce to the planner", anchor)]
     norm = re.sub(r"\s+", " ", block)
     assert "`N/A — no base-side predictor vs change DV` (check 45" in norm
+
+
+# ─── c46: plan-embedded dispatch command CLI-parses (#2161) ─────────────────
+
+C46 = "c46_dispatch_cmd_cli_parse"
+
+# Fixture (a) — the founding incident, verbatim: #1336 plans/v15.md L223
+# (the `**Lane + width:**` line; inline-code span in prose). Three drifts:
+# no `launch` subcommand; --max-run-duration with no --time-budget-hours;
+# no --repo-branch.
+C46_1336_V15_L223 = (
+    "**Lane + width:** ONE 8-GPU pod via `EPM_AUTO_LANE_ORDER=fellows,runpod uv run python "
+    "scripts/dispatch_issue.py --issue 1336 --intent capture-7b --gpus 8 --boot-disk-gb 500 "
+    "--max-run-duration 24h --workload-cmd 'bash scripts/issue1336_dispatch.sh all_v3'` — "
+    "fellows H200 (free, drained sentinels via `slurm_monitor.drain_cluster_sentinels`) "
+    "first; RunPod on-demand H100 fallback.\n"
+)
+
+
+def test_c46_warns_on_incident_shaped_command():
+    # The literal #1336 v15 L223 command WARNs naming all three drifts.
+    _, by_id = _run(GOOD_PLAN + "\n" + C46_1336_V15_L223)
+    r = by_id[C46]
+    assert r.status == "WARN"
+    assert "does not parse" in r.detail
+    assert "--max-run-duration without --time-budget-hours" in r.detail
+    assert "no --repo-branch" in r.detail
+
+
+def test_c46_passes_on_corrected_command():
+    # The corrected shape (launch subcommand + --time-budget-hours as the
+    # SLURM-reachable wall fence + explicit --repo-branch) dry-parses clean;
+    # backslash continuations join into one logical command.
+    plan = GOOD_PLAN + (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch \\\n"
+        "    --issue 1336 --intent capture-7b --gpus 8 --boot-disk-gb 500 \\\n"
+        "    --time-budget-hours 24 --repo-branch issue-1336 \\\n"
+        "    --workload-cmd 'bash scripts/issue1336_dispatch.sh all_v3'\n"
+        "```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "PASS"
+    assert "1 dispatch command" in r.detail
+
+
+def test_c46_skips_when_no_dispatch_command():
+    # GOOD_PLAN embeds no dispatch_issue.py command -> trigger-conditional SKIP.
+    _, by_id = _run(GOOD_PLAN)
+    assert by_id[C46].status == "SKIP"
+
+
+def test_c46_unparseable_line_is_note_not_crash():
+    # A shlex-unsplittable line (unbalanced quote) is a per-line note,
+    # never a crash; with no other parseable command the check SKIPs.
+    plan = GOOD_PLAN + (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch --issue 1 --workload-cmd 'unclosed\n"
+        "```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "SKIP"
+    assert "unsplittable" in r.detail
+
+
+def test_c46_placeholder_tokens_never_warn():
+    # The SKILL.md Step 6b snippet shape: <N> placeholders + a ${VAR:+...}
+    # conditional expansion parse clean (placeholders substituted "1"; the
+    # conditional expansion is stripped whole, modeling VAR-unset).
+    plan = GOOD_PLAN + (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch \\\n"
+        '    --issue <N> --intent "$INTENT" --time-budget-hours 8 --repo-branch "issue-<N>" \\\n'
+        '    ${BACKEND:+--backend "$BACKEND"}\n'
+        "```\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C46].status == "PASS"
+
+
+def test_c46_prose_mention_is_not_a_command():
+    # A prose mention inside an inline-code span (no -- flag) is a bare
+    # reference, not a command invocation -> SKIP, never a WARN.
+    plan = GOOD_PLAN + "\nre-run the same `dispatch_issue.py launch` command until it exits 0\n"
+    _, by_id = _run(plan)
+    assert by_id[C46].status == "SKIP"
+
+
+def test_c46_registered_in_checks():
+    assert verify_plan.check_dispatch_cmd_cli_parse in verify_plan.CHECKS

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -65,6 +66,7 @@ from explore_persona_space.backends.router import (
     ROUTE_REASON_RECONNECT,
     ROUTE_REASON_RUNPOD_FALLBACK,
     ROUTE_REASON_RUNPOD_FIRST,
+    FreeLaneStillWaitingError,
     auto_lane_order,
     cancel_and_wait,
     park_until_running_or_cap,
@@ -10172,3 +10174,655 @@ def test_fellows_ladder_started_result_records_realized_qos(
     finals = _by_reason(captured_markers, ROUTE_REASON_AUTO_STARTED)
     assert finals
     assert finals[-1]["extra"].get("realized_qos") == "high-eur"
+
+
+# ---------------------------------------------------------------------------
+# #2161 — resumable, process-budget-bounded free-lane parks
+# ---------------------------------------------------------------------------
+
+
+def _park_state(store: LeaseStore, issue: int = 137) -> dict[str, Any] | None:
+    """Read the persisted resumable park state off the durable lease."""
+    lease = store.read(issue)
+    return None if lease is None else lease.free_lane_park_state
+
+
+def _fellows_live_handle(job_id: str = "1000") -> RunHandle:
+    """Hand-built reconnect handle matching _FreeLaneBackend's first submit."""
+    return RunHandle(
+        backend="fellows",
+        cluster="fellows",
+        job_id=job_id,
+        pod_name="eps-issue-137",
+        scratch_dir="/scratch/eps/issue-137",
+        log_path="/scratch/eps/issue-137/job.out",
+        extra={"issue": 137},
+    )
+
+
+def _budget_cut_first_route(
+    fellows: _FreeLaneBackend, lease_store: LeaseStore, monkeypatch
+) -> FreeLaneStillWaitingError:
+    """Shared setup: rung-1 fellows park cut by a 50 s process budget.
+
+    Returns the raised :class:`FreeLaneStillWaitingError`; leaves the
+    resumable park state (job "1000", rung 0) on the durable lease.
+    """
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.delenv(FELLOWS_LADDER_RUNG_WAIT_ENV, raising=False)
+    with pytest.raises(FreeLaneStillWaitingError) as exc_info:
+        route(
+            _spec(backend=None),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"fellows": fellows},
+            gcp_backend=_GcpBackendDouble(),
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(
+                free_wait_seconds=600,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                park_process_budget_seconds=50,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    return exc_info.value
+
+
+def test_fellows_park_budget_raises_still_waiting_and_persists_state(lease_store, monkeypatch):
+    """#2161 acceptance 1a: the 50 s process budget binds before the 600 s
+    rung cap — FreeLaneStillWaitingError is raised, the job is NOT
+    scancelled (exactly one sbatch, zero teardowns), and the durable lease
+    carries the resumable park state (job "1000", rung 0, elapsed > 0)."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    exc = _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    assert exc.issue == 137
+    assert exc.lane == "fellows"
+    assert exc.job_id == "1000"
+    assert exc.qos == "high-eur"
+    assert exc.rung_idx == 0
+    assert exc.n_rungs == 3
+    assert 0.0 < exc.rung_park_elapsed_s <= 55.0
+    # NOT a RouteError: the CLI's `except RouteError` arm (exit 2) must
+    # never catch it — dispatch_issue.py surfaces it as exit 75.
+    assert not isinstance(exc, router_module.RouteError)
+    assert len(fellows.launches) == 1
+    assert fellows.teardowns == []  # still queued — never cancelled
+    state = _park_state(lease_store)
+    assert state is not None
+    assert state["lane"] == "fellows"
+    assert state["job_id"] == "1000"
+    assert state["rung_idx"] == 0
+    assert state["rung_park_elapsed_s"] == exc.rung_park_elapsed_s
+    lease = lease_store.read(137)
+    assert lease is not None
+    assert state["spec_hash"] == lease.spec_hash
+
+
+def test_fellows_resume_park_continues_rung_and_walks_ladder(lease_store, monkeypatch):
+    """#2161 acceptance 1b: a re-run reconnects to job "1000", RESUMES the
+    rung-1 park with the persisted elapsed (no fresh rung-1 sbatch), then
+    walks the ladder on the rung cap: scancel + rung-2 re-submit under
+    --qos normal-eur. Totals: 2 sbatch, 1 scancel."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "5")
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: len(fellows.launches) >= 2,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "fellows"
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert result.extra["realized_qos"] == "normal-eur"
+    # 2 sbatch total (rung 1 from the FIRST invocation + rung 2 here), 1
+    # scancel (rung 1's confirmed cancel before the ladder walk).
+    assert len(fellows.launches) == 2
+    assert fellows.launches[1].extra["slurm_qos_override"] == "normal-eur"
+    assert len(fellows.teardowns) == 1
+    assert fellows.teardowns[0].job_id == "1000"
+    # No fresh rung-1 submit on resume: the reconnect handle WAS the rung.
+    assert _park_state(lease_store) is None  # cleared on RUNNING
+
+
+def test_auto_reconnect_scan_defers_to_lane_resume_when_park_state_fresh(lease_store, monkeypatch):
+    """#2161 Stage-1 defer, BOTH arms. Arm A: a live job + FRESH matching
+    park state skips the lock-free reconnect early-return — the lane's
+    in-flock resume owns the park (result is AUTO_STARTED, never
+    RECONNECT). Arm B (control): no park state keeps today's Stage-1
+    reconnect early-return byte-identical.
+
+    Round 2 note: since the parked-lane-first fix (stage 1.5,
+    ``_resume_parked_lane_first``), Arm A's resume runs BEFORE the group
+    walk rather than at the lane's position in it. Every observable
+    assertion here (reason, no ``reconnected`` outcome, single sbatch) is
+    unchanged — only the internal call site moved."""
+    # Arm A — fresh matching state -> defer -> resume -> started.
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_AUTO_STARTED  # NOT the reconnect early-return
+    assert "reconnected" not in [a.outcome for a in result.attempts]
+    assert len(fellows.launches) == 1  # resume never re-submits
+
+    # Arm B — NO park state: the Stage-1 early-return is unchanged.
+    store_b = LeaseStore(lease_dir=lease_store.lease_dir.parent / ".eps-routing-b")
+    fellows_b = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    result_b = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows_b},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=store_b,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("424242") if k == "fellows" else None,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result_b.reason == ROUTE_REASON_RECONNECT
+    assert result_b.handle.job_id == "424242"
+    assert fellows_b.launches == []
+
+
+def test_fellows_resume_state_cleared_on_running_with_realized_qos(
+    lease_store, marker_poster, captured_markers, monkeypatch
+):
+    """#2161: a resumed rung-1 park that resolves to RUNNING clears the
+    durable park state and records realized_qos == "high-eur" (the
+    PRIMARY rung) on the result extra + marker; no new sbatch, no scancel."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert result.extra["realized_qos"] == "high-eur"
+    assert result.handle.job_id == "1000"
+    assert len(fellows.launches) == 1
+    assert fellows.teardowns == []
+    assert _park_state(lease_store) is None
+    finals = _by_reason(captured_markers, ROUTE_REASON_AUTO_STARTED)
+    assert finals
+    assert finals[-1]["extra"].get("realized_qos") == "high-eur"
+
+
+def test_fellows_ladder_exhaustion_clears_state_and_advances_lane(lease_store, monkeypatch):
+    """#2161: a resume landing on the LAST rung that park-fails under the
+    RUNG cap exhausts the ladder — state cleared, lane returns None, the
+    auto chain advances to GCP (no re-submit of any earlier rung)."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    # Re-key the persisted state onto the LAST rung (idx 2, low-eur) —
+    # the crash-equivalent of two prior budget-cut invocations.
+    with lease_store.transaction(137) as (lease, write):
+        assert lease is not None and lease.free_lane_park_state is not None
+        lease.free_lane_park_state["rung_idx"] = 2
+        write(lease)
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "2")
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(gcp.launches) == 1
+    assert len(fellows.launches) == 1  # the resume never re-submits
+    assert len(fellows.teardowns) == 1  # last-rung park-fail scancels
+    assert _park_state(lease_store) is None  # exhaustion leaves NO state
+    rows = [a for a in result.attempts if a.kind == "fellows"]
+    assert [a.outcome for a in rows] == ["park_cap_exceeded"]
+    assert "qos=low-eur rung=3/3" in rows[0].detail
+
+
+def test_fellows_midladder_cancel_state_resumes_at_next_rung(lease_store, monkeypatch):
+    """#2161: a job_id-None state (budget cut BETWEEN rungs — after the
+    confirmed scancel, before the next sbatch) starts the FRESH ladder at
+    the persisted next rung: the first submit of the re-run carries
+    --qos normal-eur (rung 2), never a rung-1 re-submit."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    with lease_store.transaction(137) as (lease, write):
+        assert lease is not None and lease.free_lane_park_state is not None
+        lease.free_lane_park_state["job_id"] = None
+        lease.free_lane_park_state["rung_idx"] = 1
+        lease.free_lane_park_state["rung_park_elapsed_s"] = 0.0
+        write(lease)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        # Job 1000 is gone (it WAS scancelled) — no reconnect handle.
+        reconnect_fn=lambda _b, _k, _s: None,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert result.extra["realized_qos"] == "normal-eur"
+    assert len(fellows.launches) == 2  # 1 from the first run + rung-2 here
+    assert fellows.launches[1].extra["slurm_qos_override"] == "normal-eur"
+    assert _park_state(lease_store) is None
+
+
+def test_park_budget_none_is_byte_identical_legacy(lease_store, monkeypatch):
+    """#2161 control: park_process_budget_seconds=None (the default) keeps
+    the pre-#2161 ladder semantics — 3 rungs walked, 3 scancels, GCP
+    escalation, NO park_budget_still_waiting rows, NO leftover state."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "2")
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            park_process_budget_seconds=None,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(fellows.launches) == 3
+    assert len(fellows.teardowns) == 3
+    outcomes = [a.outcome for a in result.attempts]
+    assert "park_budget_still_waiting" not in outcomes
+    assert _park_state(lease_store) is None
+
+
+def test_reconnect_foreign_job_or_stale_state_returns_reconnect_no_resume(lease_store, monkeypatch):
+    """#2161 fail-open: a FOREIGN live job (job_id mismatch) or a STALE
+    state (updated_ts past the 24 h freshness window) keeps today's
+    reconnect early-return; the state is left in place untouched."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+
+    # Foreign job: live handle "9999" vs persisted job "1000".
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("9999") if k == "fellows" else None,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_RECONNECT
+    assert result.handle.job_id == "9999"
+    assert len(fellows.launches) == 1  # no resume, no fresh submit
+    state = _park_state(lease_store)
+    assert state is not None and state["job_id"] == "1000"  # left in place
+
+    # Stale state: matching job id but updated_ts past the 24 h window.
+    with lease_store.transaction(137) as (lease, write):
+        assert lease is not None and lease.free_lane_park_state is not None
+        lease.free_lane_park_state["updated_ts"] = time.time() - 2 * 86400
+        write(lease)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_RECONNECT
+    assert len(fellows.launches) == 1
+    state = _park_state(lease_store)
+    assert state is not None and state["job_id"] == "1000"  # still untouched
+
+
+def test_override_fellows_pin_park_budget_still_waiting_and_resume(lease_store, monkeypatch):
+    """#2161 override arm: an explicit `backend: fellows` pin gets the same
+    budget-bounded resumable park (single rung — the pin never walks the
+    ladder): budget cut raises with rung 1/1, the re-run resumes the park
+    with the persisted elapsed and returns the OVERRIDE start."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    with pytest.raises(FreeLaneStillWaitingError) as exc_info:
+        route(
+            _spec(backend="fellows"),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"fellows": fellows},
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            config=RouterConfig(
+                free_wait_seconds=600,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                park_process_budget_seconds=50,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    exc = exc_info.value
+    assert exc.lane == "fellows"
+    assert exc.job_id == "1000"
+    assert exc.qos == "high-eur"
+    assert (exc.rung_idx, exc.n_rungs) == (0, 1)  # pins never walk the ladder
+    assert fellows.teardowns == []
+    state = _park_state(lease_store)
+    assert state is not None
+    assert state["job_id"] == "1000"
+    assert 0.0 < state["rung_park_elapsed_s"] <= 55.0
+
+    result = route(
+        _spec(backend="fellows"),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    assert result.handle.job_id == "1000"
+    assert len(fellows.launches) == 1  # the resume never re-submits
+    assert _park_state(lease_store) is None
+
+
+@pytest.mark.gcp_policy_default
+def test_resume_rerun_production_order_never_launches_other_lane(lease_store, monkeypatch):
+    """#2161 round 2 (review Critical, adapted from the reviewer repro
+    ``test_repro_runpod_window.py``): under the PRODUCTION runpod-first
+    auto order, a re-run with FRESH park state + a live matching fellows
+    job NEVER launches a different lane while the parked job is
+    uncancelled — the parked lane resumes FIRST (stage 1.5), before the
+    walk reaches the runpod fresh-provision lane.
+
+    Round-1 behavior (the repro's PASS): invocation 2 fresh-provisioned
+    RunPod while fellows job 1000 stayed queued (cross-lane double-submit;
+    the module autouse fixture's legacy fellows-first order masked it)."""
+    assert router_module.DEFAULT_AUTO_LANE_ORDER[0] == "runpod"
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.delenv(FELLOWS_LADDER_RUNG_WAIT_ENV, raising=False)
+    runpod = _FlakyRunpod(fail_first_n=1)  # capacity miss on invocation 1 only
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+
+    # Invocation 1: runpod miss -> fellows submit -> 50 s budget cut -> exit-75 shape.
+    with pytest.raises(FreeLaneStillWaitingError):
+        route(
+            _spec(backend=None),
+            runpod_backend=runpod,
+            free_backends={"fellows": fellows},
+            gcp_backend=None,  # flag-ON: gcp is not in the default order
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(
+                free_wait_seconds=600,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                park_process_budget_seconds=50,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(runpod.launches) == 1  # the invocation-1 capacity miss
+    assert len(fellows.launches) == 1  # job 1000 queued
+    assert _park_state(lease_store) is not None
+
+    # Invocation 2 — the documented recovery ("re-run the SAME command"),
+    # with RunPod capacity NOW available: the parked fellows job resumes
+    # first; RunPod is never touched again.
+    result = route(
+        _spec(backend=None),
+        runpod_backend=runpod,
+        free_backends={"fellows": fellows},
+        gcp_backend=None,
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(
+            free_wait_seconds=600,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            park_process_budget_seconds=50,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "fellows"
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert result.handle.job_id == "1000"
+    assert len(runpod.launches) == 1  # NO second runpod launch (the round-1 hazard)
+    assert len(fellows.launches) == 1  # the resume never re-submits
+    assert fellows.teardowns == []  # never scancelled — it resolved to RUNNING
+    assert _park_state(lease_store) is None  # resolved, not clobbered
+
+
+@pytest.mark.gcp_policy_default
+def test_parked_lane_probe_failure_holds_never_falls_through(lease_store, monkeypatch):
+    """#2161 round 2 (review Critical, probe-failure leg): when the parked
+    lane's in-flock reconnect probe FAILS on the re-run (transport down —
+    the job may still be alive), the router surfaces the still-waiting
+    outcome instead of falling through to fresh submits on other lanes;
+    the resumable state is left in place for the next re-run."""
+    from explore_persona_space.backends.base import BackendProbeError
+
+    assert router_module.DEFAULT_AUTO_LANE_ORDER[0] == "runpod"
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.delenv(FELLOWS_LADDER_RUNG_WAIT_ENV, raising=False)
+    runpod = _FlakyRunpod(fail_first_n=1)
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    with pytest.raises(FreeLaneStillWaitingError):
+        route(
+            _spec(backend=None),
+            runpod_backend=runpod,
+            free_backends={"fellows": fellows},
+            gcp_backend=None,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(
+                free_wait_seconds=600,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                park_process_budget_seconds=50,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(runpod.launches) == 1
+
+    def _probe_down(_b, k, _s):
+        if k == "fellows":
+            raise BackendProbeError("ssh transport down")
+        return None
+
+    with pytest.raises(FreeLaneStillWaitingError) as exc_info:
+        route(
+            _spec(backend=None),
+            runpod_backend=runpod,
+            free_backends={"fellows": fellows},
+            gcp_backend=None,
+            lease_store=lease_store,
+            reconnect_fn=_probe_down,
+            is_started=lambda _b, _h: True,
+            config=RouterConfig(
+                free_wait_seconds=600,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                park_process_budget_seconds=50,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert exc_info.value.lane == "fellows"
+    assert exc_info.value.job_id == "1000"
+    assert len(runpod.launches) == 1  # no fresh provision past the parked job
+    assert len(fellows.launches) == 1  # no fresh sbatch either
+    state = _park_state(lease_store)
+    assert state is not None and state["job_id"] == "1000"  # left resumable
+
+
+def test_resume_rerun_sibling_ranked_ahead_resumes_parked_lane_first(lease_store, monkeypatch):
+    """#2161 round 2 (review Major, route level; adapted from the reviewer
+    repro ``test_repro_sibling_lane_clobber.py``): nibi ranked ahead of
+    the parked fellows lane on the re-run must NOT pre-empt it — the
+    parked lane resumes first; nibi never submits; the resumable state
+    clears only by RESOLVING on fellows, never by a sibling clobber.
+
+    Round-1 behavior (the repro's PASS): chosen_kind=nibi, a fresh nibi
+    job, fellows job 1000 still queued, park_state_after=None (the
+    resumable state destroyed)."""
+    monkeypatch.setattr(router_module, "DEFAULT_AUTO_LANE_ORDER", ("fellows", "nibi", "gcp"))
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=100.0)
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)  # ranks ahead on the re-run
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows, "nibi": nibi},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(
+            free_wait_seconds=600,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            park_process_budget_seconds=50,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "fellows"
+    assert result.handle.job_id == "1000"
+    assert nibi.launches == []  # the sibling never pre-empts the parked lane
+    assert len(fellows.launches) == 1
+    assert fellows.teardowns == []
+    assert _park_state(lease_store) is None  # cleared by resolving, not clobbered
+
+
+def test_sibling_lane_neither_clears_nor_submits_past_fresh_foreign_state(lease_store, monkeypatch):
+    """#2161 round 2 (review Major, unit level): ``_try_one_free_lane`` on a
+    SIBLING lane with FRESH foreign park state on the lease returns None
+    (next lane) WITHOUT clearing the state and WITHOUT a fresh submit.
+    Round 1 treated any non-matching leftover as stale (clear + rung-0
+    submit), destroying the resumable state — the direct pin for the
+    probe-failure leg, where the sibling walk is reachable even with the
+    parked-lane-first stage in place."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    attempts: list[RouteAttempt] = []
+    result = router_module._try_one_free_lane(
+        spec=_spec(backend=None),
+        backend=nibi,
+        kind="nibi",
+        est_raw=0.0,
+        est_clamped=0.0,
+        store=lease_store,
+        attempts=attempts,
+        started_at=0.0,
+        cfg=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        is_started=lambda _b, _h: True,
+        is_live_after_cancel=lambda _b, _h: False,
+        is_running_after_cancel=None,
+        started_evidence_probe=None,
+        reconnect_fn=None,
+        marker_poster=None,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result is None  # "next lane" — never a fresh submit here
+    assert nibi.launches == []
+    state = _park_state(lease_store)
+    assert state is not None
+    assert state["lane"] == "fellows" and state["job_id"] == "1000"  # untouched
+    assert attempts[-1].outcome == "skipped_parked_sibling"
+
+
+def test_free_lane_prepare_failure_midladder_clears_park_state(lease_store, monkeypatch):
+    """#2161 round 2 (review Minor): a rung-2 prepare failure advances the
+    lane (return None -> GCP) and CLEARS the park state. Round 1 left a
+    ``job_id: None / rung_idx: 1`` record on the lease, so a later fresh
+    invocation within 24 h silently started the ladder at rung 2 after a
+    transient endpoint hiccup."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "2")
+
+    class _PrepareFailsFromSecondCall(_FreeLaneBackend):
+        def __init__(self, **kwargs: Any) -> None:
+            super().__init__(**kwargs)
+            self.prepare_calls = 0
+
+        def prepare(self, spec: RunSpec) -> None:
+            self.prepare_calls += 1
+            if self.prepare_calls >= 2:
+                raise RuntimeError("endpoint hiccup (rung 2)")
+
+    fellows = _PrepareFailsFromSecondCall(kind="fellows", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(fellows.launches) == 1  # rung 1 only — rung 2's prepare failed
+    outcomes = [a.outcome for a in result.attempts if a.kind == "fellows"]
+    assert outcomes == ["park_cap_exceeded", "prepare_failed"]
+    assert _park_state(lease_store) is None  # the round-1 residue is cleared

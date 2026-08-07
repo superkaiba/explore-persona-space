@@ -1,0 +1,964 @@
+{
+ "P-A": {
+  "evil|pvsynth|arm1_ctx_e1": {
+   "rho": 0.755,
+   "err": 0.0564,
+   "n_rungs": 1
+  },
+  "evil|generic|arm1_ctx_e1": {
+   "rho": 0.0671,
+   "err": 0.1091,
+   "n_rungs": 1
+  },
+  "evil|indist|arm1_ctx_e1": {
+   "rho": 0.0305,
+   "err": 0.025,
+   "n_rungs": 1
+  },
+  "evil|ood|arm1_ctx_e1": {
+   "rho": 0.1049,
+   "err": 0.0836,
+   "n_rungs": 5
+  },
+  "evil|pvsynth|arm4_ridge_ctx": {
+   "rho": 0.707,
+   "err": 0.0764,
+   "n_rungs": 1
+  },
+  "evil|generic|arm4_ridge_ctx": {
+   "rho": 0.1349,
+   "err": 0.1184,
+   "n_rungs": 1
+  },
+  "evil|indist|arm4_ridge_ctx": {
+   "rho": 0.5916,
+   "err": 0.016,
+   "n_rungs": 1
+  },
+  "evil|ood|arm4_ridge_ctx": {
+   "rho": 0.1303,
+   "err": 0.0564,
+   "n_rungs": 5
+  },
+  "evil|pvsynth|arm6_map_proj_e1": {
+   "rho": 0.8181,
+   "err": 0.0438,
+   "n_rungs": 1
+  },
+  "evil|generic|arm6_map_proj_e1": {
+   "rho": 0.2254,
+   "err": 0.0771,
+   "n_rungs": 1
+  },
+  "evil|indist|arm6_map_proj_e1": {
+   "rho": 0.6712,
+   "err": 0.0138,
+   "n_rungs": 1
+  },
+  "evil|ood|arm6_map_proj_e1": {
+   "rho": 0.209,
+   "err": 0.0634,
+   "n_rungs": 5
+  },
+  "evil|pvsynth|arm7_map_ridge_pred": {
+   "rho": 0.8106,
+   "err": 0.0463,
+   "n_rungs": 1
+  },
+  "evil|generic|arm7_map_ridge_pred": {
+   "rho": 0.1632,
+   "err": 0.0918,
+   "n_rungs": 1
+  },
+  "evil|indist|arm7_map_ridge_pred": {
+   "rho": 0.7492,
+   "err": 0.0117,
+   "n_rungs": 1
+  },
+  "evil|ood|arm7_map_ridge_pred": {
+   "rho": 0.0614,
+   "err": 0.1257,
+   "n_rungs": 5
+  },
+  "evil|pvsynth|arm11_oracle_proj": {
+   "rho": 0.8429,
+   "err": 0.0481,
+   "n_rungs": 1
+  },
+  "evil|generic|arm11_oracle_proj": {
+   "rho": 0.2264,
+   "err": 0.0803,
+   "n_rungs": 1
+  },
+  "evil|indist|arm11_oracle_proj": {
+   "rho": 0.6875,
+   "err": 0.0126,
+   "n_rungs": 1
+  },
+  "evil|ood|arm11_oracle_proj": {
+   "rho": 0.1203,
+   "err": 0.1137,
+   "n_rungs": 5
+  },
+  "sycophancy|pvsynth|arm1_ctx_e1": {
+   "rho": 0.7921,
+   "err": 0.0585,
+   "n_rungs": 1
+  },
+  "sycophancy|generic|arm1_ctx_e1": {
+   "rho": -0.0391,
+   "err": 0.0936,
+   "n_rungs": 1
+  },
+  "sycophancy|indist|arm1_ctx_e1": {
+   "rho": 0.0181,
+   "err": 0.0156,
+   "n_rungs": 1
+  },
+  "sycophancy|ood|arm1_ctx_e1": {
+   "rho": 0.0981,
+   "err": 0.0425,
+   "n_rungs": 6
+  },
+  "sycophancy|pvsynth|arm4_ridge_ctx": {
+   "rho": 0.7612,
+   "err": 0.0616,
+   "n_rungs": 1
+  },
+  "sycophancy|generic|arm4_ridge_ctx": {
+   "rho": 0.504,
+   "err": 0.0845,
+   "n_rungs": 1
+  },
+  "sycophancy|indist|arm4_ridge_ctx": {
+   "rho": 0.7205,
+   "err": 0.0099,
+   "n_rungs": 1
+  },
+  "sycophancy|ood|arm4_ridge_ctx": {
+   "rho": 0.3872,
+   "err": 0.086,
+   "n_rungs": 6
+  },
+  "sycophancy|pvsynth|arm6_map_proj_e1": {
+   "rho": 0.3986,
+   "err": 0.1187,
+   "n_rungs": 1
+  },
+  "sycophancy|generic|arm6_map_proj_e1": {
+   "rho": 0.0922,
+   "err": 0.0981,
+   "n_rungs": 1
+  },
+  "sycophancy|indist|arm6_map_proj_e1": {
+   "rho": 0.2888,
+   "err": 0.0154,
+   "n_rungs": 1
+  },
+  "sycophancy|ood|arm6_map_proj_e1": {
+   "rho": 0.2096,
+   "err": 0.0354,
+   "n_rungs": 6
+  },
+  "sycophancy|pvsynth|arm7_map_ridge_pred": {
+   "rho": 0.7759,
+   "err": 0.0575,
+   "n_rungs": 1
+  },
+  "sycophancy|generic|arm7_map_ridge_pred": {
+   "rho": 0.5174,
+   "err": 0.0789,
+   "n_rungs": 1
+  },
+  "sycophancy|indist|arm7_map_ridge_pred": {
+   "rho": 0.7393,
+   "err": 0.0087,
+   "n_rungs": 1
+  },
+  "sycophancy|ood|arm7_map_ridge_pred": {
+   "rho": 0.3383,
+   "err": 0.118,
+   "n_rungs": 6
+  },
+  "sycophancy|pvsynth|arm11_oracle_proj": {
+   "rho": 0.7641,
+   "err": 0.0606,
+   "n_rungs": 1
+  },
+  "sycophancy|generic|arm11_oracle_proj": {
+   "rho": 0.0762,
+   "err": 0.0992,
+   "n_rungs": 1
+  },
+  "sycophancy|indist|arm11_oracle_proj": {
+   "rho": 0.3179,
+   "err": 0.0161,
+   "n_rungs": 1
+  },
+  "sycophancy|ood|arm11_oracle_proj": {
+   "rho": 0.2759,
+   "err": 0.0593,
+   "n_rungs": 6
+  },
+  "hallucination|pvsynth|arm1_ctx_e1": {
+   "rho": 0.6471,
+   "err": 0.0957,
+   "n_rungs": 1
+  },
+  "hallucination|generic|arm1_ctx_e1": {
+   "rho": -0.1032,
+   "err": 0.1016,
+   "n_rungs": 1
+  },
+  "hallucination|indist|arm1_ctx_e1": {
+   "rho": 0.0101,
+   "err": 0.0161,
+   "n_rungs": 1
+  },
+  "hallucination|ood|arm1_ctx_e1": {
+   "rho": 0.145,
+   "err": 0.1002,
+   "n_rungs": 2
+  },
+  "hallucination|pvsynth|arm4_ridge_ctx": {
+   "rho": 0.5774,
+   "err": 0.114,
+   "n_rungs": 1
+  },
+  "hallucination|generic|arm4_ridge_ctx": {
+   "rho": 0.5651,
+   "err": 0.0752,
+   "n_rungs": 1
+  },
+  "hallucination|indist|arm4_ridge_ctx": {
+   "rho": 0.5572,
+   "err": 0.0118,
+   "n_rungs": 1
+  },
+  "hallucination|ood|arm4_ridge_ctx": {
+   "rho": 0.3864,
+   "err": 0.0049,
+   "n_rungs": 2
+  },
+  "hallucination|pvsynth|arm6_map_proj_e1": {
+   "rho": 0.699,
+   "err": 0.0815,
+   "n_rungs": 1
+  },
+  "hallucination|generic|arm6_map_proj_e1": {
+   "rho": 0.1758,
+   "err": 0.1061,
+   "n_rungs": 1
+  },
+  "hallucination|indist|arm6_map_proj_e1": {
+   "rho": -0.0552,
+   "err": 0.016,
+   "n_rungs": 1
+  },
+  "hallucination|ood|arm6_map_proj_e1": {
+   "rho": 0.2147,
+   "err": 0.2483,
+   "n_rungs": 2
+  },
+  "hallucination|pvsynth|arm7_map_ridge_pred": {
+   "rho": 0.6274,
+   "err": 0.1052,
+   "n_rungs": 1
+  },
+  "hallucination|generic|arm7_map_ridge_pred": {
+   "rho": 0.6254,
+   "err": 0.0689,
+   "n_rungs": 1
+  },
+  "hallucination|indist|arm7_map_ridge_pred": {
+   "rho": 0.6027,
+   "err": 0.0112,
+   "n_rungs": 1
+  },
+  "hallucination|ood|arm7_map_ridge_pred": {
+   "rho": 0.4122,
+   "err": 0.0019,
+   "n_rungs": 2
+  },
+  "hallucination|pvsynth|arm11_oracle_proj": {
+   "rho": 0.7468,
+   "err": 0.0846,
+   "n_rungs": 1
+  },
+  "hallucination|generic|arm11_oracle_proj": {
+   "rho": 0.2806,
+   "err": 0.1008,
+   "n_rungs": 1
+  },
+  "hallucination|indist|arm11_oracle_proj": {
+   "rho": 0.0585,
+   "err": 0.016,
+   "n_rungs": 1
+  },
+  "hallucination|ood|arm11_oracle_proj": {
+   "rho": 0.3533,
+   "err": 0.2254,
+   "n_rungs": 2
+  },
+  "average|pvsynth|arm1_ctx_e1": {
+   "rho": 0.7314,
+   "err": 0.0435,
+   "n_rungs": 3
+  },
+  "average|pvsynth|arm4_ridge_ctx": {
+   "rho": 0.6819,
+   "err": 0.0545,
+   "n_rungs": 3
+  },
+  "average|pvsynth|arm6_map_proj_e1": {
+   "rho": 0.6386,
+   "err": 0.1248,
+   "n_rungs": 3
+  },
+  "average|pvsynth|arm7_map_ridge_pred": {
+   "rho": 0.738,
+   "err": 0.0562,
+   "n_rungs": 3
+  },
+  "average|pvsynth|arm11_oracle_proj": {
+   "rho": 0.7846,
+   "err": 0.0296,
+   "n_rungs": 3
+  },
+  "average|generic|arm1_ctx_e1": {
+   "rho": -0.0251,
+   "err": 0.0497,
+   "n_rungs": 3
+  },
+  "average|generic|arm4_ridge_ctx": {
+   "rho": 0.4014,
+   "err": 0.1344,
+   "n_rungs": 3
+  },
+  "average|generic|arm6_map_proj_e1": {
+   "rho": 0.1645,
+   "err": 0.0389,
+   "n_rungs": 3
+  },
+  "average|generic|arm7_map_ridge_pred": {
+   "rho": 0.4354,
+   "err": 0.1396,
+   "n_rungs": 3
+  },
+  "average|generic|arm11_oracle_proj": {
+   "rho": 0.1944,
+   "err": 0.0611,
+   "n_rungs": 3
+  },
+  "average|indist|arm1_ctx_e1": {
+   "rho": 0.0196,
+   "err": 0.0059,
+   "n_rungs": 3
+  },
+  "average|indist|arm4_ridge_ctx": {
+   "rho": 0.6231,
+   "err": 0.0497,
+   "n_rungs": 3
+  },
+  "average|indist|arm6_map_proj_e1": {
+   "rho": 0.3016,
+   "err": 0.2098,
+   "n_rungs": 3
+  },
+  "average|indist|arm7_map_ridge_pred": {
+   "rho": 0.6971,
+   "err": 0.0472,
+   "n_rungs": 3
+  },
+  "average|indist|arm11_oracle_proj": {
+   "rho": 0.3546,
+   "err": 0.1825,
+   "n_rungs": 3
+  },
+  "average|ood|arm1_ctx_e1": {
+   "rho": 0.116,
+   "err": 0.0146,
+   "n_rungs": 3
+  },
+  "average|ood|arm4_ridge_ctx": {
+   "rho": 0.3013,
+   "err": 0.0855,
+   "n_rungs": 3
+  },
+  "average|ood|arm6_map_proj_e1": {
+   "rho": 0.2111,
+   "err": 0.0018,
+   "n_rungs": 3
+  },
+  "average|ood|arm7_map_ridge_pred": {
+   "rho": 0.2707,
+   "err": 0.1068,
+   "n_rungs": 3
+  },
+  "average|ood|arm11_oracle_proj": {
+   "rho": 0.2499,
+   "err": 0.0685,
+   "n_rungs": 3
+  }
+ },
+ "P-A_flags": {
+  "evil|pvsynth": [
+   0,
+   0
+  ],
+  "evil|generic": [
+   1,
+   1
+  ],
+  "evil|indist": [
+   0,
+   1
+  ],
+  "evil|ood": [
+   3,
+   5
+  ],
+  "sycophancy|pvsynth": [
+   0,
+   0
+  ],
+  "sycophancy|generic": [
+   0,
+   1
+  ],
+  "sycophancy|indist": [
+   0,
+   1
+  ],
+  "sycophancy|ood": [
+   0,
+   6
+  ],
+  "hallucination|pvsynth": [
+   0,
+   0
+  ],
+  "hallucination|generic": [
+   0,
+   1
+  ],
+  "hallucination|indist": [
+   0,
+   1
+  ],
+  "hallucination|ood": [
+   0,
+   2
+  ],
+  "average|pvsynth": [
+   0,
+   0
+  ],
+  "average|generic": [
+   1,
+   3
+  ],
+  "average|indist": [
+   0,
+   3
+  ],
+  "average|ood": [
+   3,
+   13
+  ]
+ },
+ "P-B": {
+  "evil|pvsynth|arm1_ctx_e1": {
+   "rho": 0.755,
+   "err": 0.0,
+   "n_rungs": 5
+  },
+  "evil|generic|arm1_ctx_e1": {
+   "rho": 0.0671,
+   "err": 0.0,
+   "n_rungs": 5
+  },
+  "evil|indist|arm1_ctx_e1": {
+   "rho": -0.0075,
+   "err": 0.0,
+   "n_rungs": 5
+  },
+  "evil|ood|arm1_ctx_e1": {
+   "rho": 0.1049,
+   "err": 0.0836,
+   "n_rungs": 5
+  },
+  "evil|pvsynth|arm4_ridge_ctx": {
+   "rho": 0.6451,
+   "err": 0.0175,
+   "n_rungs": 5
+  },
+  "evil|generic|arm4_ridge_ctx": {
+   "rho": 0.1533,
+   "err": 0.0032,
+   "n_rungs": 5
+  },
+  "evil|indist|arm4_ridge_ctx": {
+   "rho": 0.6125,
+   "err": 0.0035,
+   "n_rungs": 5
+  },
+  "evil|ood|arm4_ridge_ctx": {
+   "rho": 0.1388,
+   "err": 0.0483,
+   "n_rungs": 5
+  },
+  "evil|pvsynth|arm6_map_proj_e1": {
+   "rho": 0.8181,
+   "err": 0.0,
+   "n_rungs": 5
+  },
+  "evil|generic|arm6_map_proj_e1": {
+   "rho": 0.2254,
+   "err": 0.0,
+   "n_rungs": 5
+  },
+  "evil|indist|arm6_map_proj_e1": {
+   "rho": 0.6676,
+   "err": 0.0,
+   "n_rungs": 5
+  },
+  "evil|ood|arm6_map_proj_e1": {
+   "rho": 0.209,
+   "err": 0.0634,
+   "n_rungs": 5
+  },
+  "evil|pvsynth|arm7_map_ridge_pred": {
+   "rho": 0.8112,
+   "err": 0.0012,
+   "n_rungs": 5
+  },
+  "evil|generic|arm7_map_ridge_pred": {
+   "rho": 0.17,
+   "err": 0.0084,
+   "n_rungs": 5
+  },
+  "evil|indist|arm7_map_ridge_pred": {
+   "rho": 0.7681,
+   "err": 0.0012,
+   "n_rungs": 5
+  },
+  "evil|ood|arm7_map_ridge_pred": {
+   "rho": 0.1127,
+   "err": 0.1221,
+   "n_rungs": 5
+  },
+  "evil|pvsynth|arm11_oracle_proj": {
+   "rho": 0.8429,
+   "err": 0.0,
+   "n_rungs": 5
+  },
+  "evil|generic|arm11_oracle_proj": {
+   "rho": 0.2264,
+   "err": 0.0,
+   "n_rungs": 5
+  },
+  "evil|indist|arm11_oracle_proj": {
+   "rho": 0.6891,
+   "err": 0.0,
+   "n_rungs": 5
+  },
+  "evil|ood|arm11_oracle_proj": {
+   "rho": 0.1203,
+   "err": 0.1137,
+   "n_rungs": 5
+  },
+  "sycophancy|pvsynth|arm1_ctx_e1": {
+   "rho": 0.7921,
+   "err": 0.0,
+   "n_rungs": 6
+  },
+  "sycophancy|generic|arm1_ctx_e1": {
+   "rho": -0.0391,
+   "err": 0.0,
+   "n_rungs": 6
+  },
+  "sycophancy|indist|arm1_ctx_e1": {
+   "rho": 0.0219,
+   "err": 0.0,
+   "n_rungs": 6
+  },
+  "sycophancy|ood|arm1_ctx_e1": {
+   "rho": 0.0981,
+   "err": 0.0425,
+   "n_rungs": 6
+  },
+  "sycophancy|pvsynth|arm4_ridge_ctx": {
+   "rho": 0.7898,
+   "err": 0.0053,
+   "n_rungs": 6
+  },
+  "sycophancy|generic|arm4_ridge_ctx": {
+   "rho": 0.4899,
+   "err": 0.0051,
+   "n_rungs": 6
+  },
+  "sycophancy|indist|arm4_ridge_ctx": {
+   "rho": 0.7241,
+   "err": 0.0005,
+   "n_rungs": 6
+  },
+  "sycophancy|ood|arm4_ridge_ctx": {
+   "rho": 0.3744,
+   "err": 0.0985,
+   "n_rungs": 6
+  },
+  "sycophancy|pvsynth|arm6_map_proj_e1": {
+   "rho": 0.3986,
+   "err": 0.0,
+   "n_rungs": 6
+  },
+  "sycophancy|generic|arm6_map_proj_e1": {
+   "rho": 0.0922,
+   "err": 0.0,
+   "n_rungs": 6
+  },
+  "sycophancy|indist|arm6_map_proj_e1": {
+   "rho": 0.2809,
+   "err": 0.0,
+   "n_rungs": 6
+  },
+  "sycophancy|ood|arm6_map_proj_e1": {
+   "rho": 0.2096,
+   "err": 0.0354,
+   "n_rungs": 6
+  },
+  "sycophancy|pvsynth|arm7_map_ridge_pred": {
+   "rho": 0.7784,
+   "err": 0.0049,
+   "n_rungs": 6
+  },
+  "sycophancy|generic|arm7_map_ridge_pred": {
+   "rho": 0.5375,
+   "err": 0.0037,
+   "n_rungs": 6
+  },
+  "sycophancy|indist|arm7_map_ridge_pred": {
+   "rho": 0.7327,
+   "err": 0.0007,
+   "n_rungs": 6
+  },
+  "sycophancy|ood|arm7_map_ridge_pred": {
+   "rho": 0.3919,
+   "err": 0.1011,
+   "n_rungs": 6
+  },
+  "sycophancy|pvsynth|arm11_oracle_proj": {
+   "rho": 0.7641,
+   "err": 0.0,
+   "n_rungs": 6
+  },
+  "sycophancy|generic|arm11_oracle_proj": {
+   "rho": 0.0762,
+   "err": 0.0,
+   "n_rungs": 6
+  },
+  "sycophancy|indist|arm11_oracle_proj": {
+   "rho": 0.3101,
+   "err": 0.0,
+   "n_rungs": 6
+  },
+  "sycophancy|ood|arm11_oracle_proj": {
+   "rho": 0.2759,
+   "err": 0.0593,
+   "n_rungs": 6
+  },
+  "hallucination|pvsynth|arm1_ctx_e1": {
+   "rho": 0.6471,
+   "err": 0.0,
+   "n_rungs": 2
+  },
+  "hallucination|generic|arm1_ctx_e1": {
+   "rho": -0.1032,
+   "err": 0.0,
+   "n_rungs": 2
+  },
+  "hallucination|indist|arm1_ctx_e1": {
+   "rho": -0.0168,
+   "err": 0.0,
+   "n_rungs": 2
+  },
+  "hallucination|ood|arm1_ctx_e1": {
+   "rho": 0.145,
+   "err": 0.1002,
+   "n_rungs": 2
+  },
+  "hallucination|pvsynth|arm4_ridge_ctx": {
+   "rho": 0.6343,
+   "err": 0.0549,
+   "n_rungs": 2
+  },
+  "hallucination|generic|arm4_ridge_ctx": {
+   "rho": 0.5427,
+   "err": 0.0013,
+   "n_rungs": 2
+  },
+  "hallucination|indist|arm4_ridge_ctx": {
+   "rho": 0.5761,
+   "err": 0.0047,
+   "n_rungs": 2
+  },
+  "hallucination|ood|arm4_ridge_ctx": {
+   "rho": 0.411,
+   "err": 0.031,
+   "n_rungs": 2
+  },
+  "hallucination|pvsynth|arm6_map_proj_e1": {
+   "rho": 0.699,
+   "err": 0.0,
+   "n_rungs": 2
+  },
+  "hallucination|generic|arm6_map_proj_e1": {
+   "rho": 0.1758,
+   "err": 0.0,
+   "n_rungs": 2
+  },
+  "hallucination|indist|arm6_map_proj_e1": {
+   "rho": -0.0563,
+   "err": 0.0,
+   "n_rungs": 2
+  },
+  "hallucination|ood|arm6_map_proj_e1": {
+   "rho": 0.2147,
+   "err": 0.2483,
+   "n_rungs": 2
+  },
+  "hallucination|pvsynth|arm7_map_ridge_pred": {
+   "rho": 0.6289,
+   "err": 0.0942,
+   "n_rungs": 2
+  },
+  "hallucination|generic|arm7_map_ridge_pred": {
+   "rho": 0.6249,
+   "err": 0.0082,
+   "n_rungs": 2
+  },
+  "hallucination|indist|arm7_map_ridge_pred": {
+   "rho": 0.615,
+   "err": 0.0051,
+   "n_rungs": 2
+  },
+  "hallucination|ood|arm7_map_ridge_pred": {
+   "rho": 0.4382,
+   "err": 0.0212,
+   "n_rungs": 2
+  },
+  "hallucination|pvsynth|arm11_oracle_proj": {
+   "rho": 0.7468,
+   "err": 0.0,
+   "n_rungs": 2
+  },
+  "hallucination|generic|arm11_oracle_proj": {
+   "rho": 0.2806,
+   "err": 0.0,
+   "n_rungs": 2
+  },
+  "hallucination|indist|arm11_oracle_proj": {
+   "rho": 0.0562,
+   "err": 0.0,
+   "n_rungs": 2
+  },
+  "hallucination|ood|arm11_oracle_proj": {
+   "rho": 0.3533,
+   "err": 0.2254,
+   "n_rungs": 2
+  },
+  "average|pvsynth|arm1_ctx_e1": {
+   "rho": 0.7314,
+   "err": 0.0435,
+   "n_rungs": 3
+  },
+  "average|pvsynth|arm4_ridge_ctx": {
+   "rho": 0.6897,
+   "err": 0.0501,
+   "n_rungs": 3
+  },
+  "average|pvsynth|arm6_map_proj_e1": {
+   "rho": 0.6386,
+   "err": 0.1248,
+   "n_rungs": 3
+  },
+  "average|pvsynth|arm7_map_ridge_pred": {
+   "rho": 0.7395,
+   "err": 0.0561,
+   "n_rungs": 3
+  },
+  "average|pvsynth|arm11_oracle_proj": {
+   "rho": 0.7846,
+   "err": 0.0296,
+   "n_rungs": 3
+  },
+  "average|generic|arm1_ctx_e1": {
+   "rho": -0.0251,
+   "err": 0.0497,
+   "n_rungs": 3
+  },
+  "average|generic|arm4_ridge_ctx": {
+   "rho": 0.3953,
+   "err": 0.122,
+   "n_rungs": 3
+  },
+  "average|generic|arm6_map_proj_e1": {
+   "rho": 0.1645,
+   "err": 0.0389,
+   "n_rungs": 3
+  },
+  "average|generic|arm7_map_ridge_pred": {
+   "rho": 0.4442,
+   "err": 0.1394,
+   "n_rungs": 3
+  },
+  "average|generic|arm11_oracle_proj": {
+   "rho": 0.1944,
+   "err": 0.0611,
+   "n_rungs": 3
+  },
+  "average|indist|arm1_ctx_e1": {
+   "rho": -0.0008,
+   "err": 0.0117,
+   "n_rungs": 3
+  },
+  "average|indist|arm4_ridge_ctx": {
+   "rho": 0.6376,
+   "err": 0.0445,
+   "n_rungs": 3
+  },
+  "average|indist|arm6_map_proj_e1": {
+   "rho": 0.2974,
+   "err": 0.2091,
+   "n_rungs": 3
+  },
+  "average|indist|arm7_map_ridge_pred": {
+   "rho": 0.7053,
+   "err": 0.0462,
+   "n_rungs": 3
+  },
+  "average|indist|arm11_oracle_proj": {
+   "rho": 0.3518,
+   "err": 0.1839,
+   "n_rungs": 3
+  },
+  "average|ood|arm1_ctx_e1": {
+   "rho": 0.116,
+   "err": 0.0146,
+   "n_rungs": 3
+  },
+  "average|ood|arm4_ridge_ctx": {
+   "rho": 0.308,
+   "err": 0.0853,
+   "n_rungs": 3
+  },
+  "average|ood|arm6_map_proj_e1": {
+   "rho": 0.2111,
+   "err": 0.0018,
+   "n_rungs": 3
+  },
+  "average|ood|arm7_map_ridge_pred": {
+   "rho": 0.3143,
+   "err": 0.1017,
+   "n_rungs": 3
+  },
+  "average|ood|arm11_oracle_proj": {
+   "rho": 0.2499,
+   "err": 0.0685,
+   "n_rungs": 3
+  }
+ },
+ "P-B_flags": {
+  "evil|pvsynth": [
+   0,
+   0
+  ],
+  "evil|generic": [
+   1,
+   1
+  ],
+  "evil|indist": [
+   0,
+   1
+  ],
+  "evil|ood": [
+   3,
+   5
+  ],
+  "sycophancy|pvsynth": [
+   0,
+   0
+  ],
+  "sycophancy|generic": [
+   0,
+   1
+  ],
+  "sycophancy|indist": [
+   0,
+   1
+  ],
+  "sycophancy|ood": [
+   0,
+   6
+  ],
+  "hallucination|pvsynth": [
+   0,
+   0
+  ],
+  "hallucination|generic": [
+   0,
+   1
+  ],
+  "hallucination|indist": [
+   0,
+   1
+  ],
+  "hallucination|ood": [
+   0,
+   2
+  ],
+  "average|pvsynth": [
+   0,
+   0
+  ],
+  "average|generic": [
+   1,
+   3
+  ],
+  "average|indist": [
+   0,
+   3
+  ],
+  "average|ood": [
+   3,
+   13
+  ]
+ },
+ "_provenance": {
+  "fits_commit": "5aae0a472b",
+  "source": "eval_results/issue_1739/r2v2_fits/<behavior>/all_arms_spearman.json",
+  "ood_rungs": {
+   "evil": [
+    "hhrt",
+    "toxicchat",
+    "evil_mhj",
+    "evil_pair",
+    "evil_tomgibbs"
+   ],
+   "sycophancy": [
+    "aita",
+    "sycoans",
+    "sycoays",
+    "sycofb",
+    "sycomim",
+    "sycomwe"
+   ],
+   "hallucination": [
+    "nqopen",
+    "simpleqa"
+   ]
+  },
+  "spread_gate": "sd>=10 and frac(<=10)<=0.80 and frac(>=90)<=0.80 on a 0-100 DV (0-1 binary DVs rescaled x100)"
+ }
+}
