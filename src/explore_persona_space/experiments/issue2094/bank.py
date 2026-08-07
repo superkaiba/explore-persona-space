@@ -184,6 +184,68 @@ def context_token_ids_2094(tokenizer, context: dict) -> list[int]:
     return ids
 
 
+TEMPLATE_ROLES: tuple[str, ...] = ("system", "user", "assistant")
+
+
+def template_token_mask(tokenizer, ids: list[int]) -> list[bool]:
+    """Per-position TEMPLATE mask for a rendered chat-template id sequence.
+
+    ``mask[i]`` is True at chat-template STRUCTURE positions and False at
+    CONTENT positions (fu2_span_slots: the qtext / pspan_text slots edit only
+    content positions). Built from the TOKENIZED structure — special-token ids
+    plus the role-header walk — never by regexing decoded text (BPE-seam rule).
+
+    Template positions per turn (Qwen-2.5 chat template):
+      ``<|im_start|>`` + role token(s) + the header newline, and
+      ``<|im_end|>`` + the structural newline immediately following it.
+    Content newlines are NOT masked (only the two structural newlines above).
+
+    Fail-loud structure asserts: the role header must terminate in <= 3 tokens
+    at a single-token newline and decode to one of ``TEMPLATE_ROLES``; a
+    trailing-header-less ``<|im_start|>`` raises; >= 3 turns required.
+    """
+    im_start_id = tokenizer.convert_tokens_to_ids(IM_START_TOKEN)
+    im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
+    assert isinstance(im_start_id, int) and im_start_id >= 0, im_start_id
+    assert isinstance(im_end_id, int) and im_end_id >= 0, im_end_id
+    nl_ids = tokenizer("\n", add_special_tokens=False)["input_ids"]
+    assert len(nl_ids) == 1, f"newline is not a single token: {nl_ids}"
+    nl_id = nl_ids[0]
+
+    mask = [False] * len(ids)
+    n_turns = 0
+    i = 0
+    while i < len(ids):
+        t = ids[i]
+        if t == im_start_id:
+            mask[i] = True
+            j = i + 1
+            role_toks: list[int] = []
+            while j < len(ids) and ids[j] != nl_id:
+                role_toks.append(ids[j])
+                mask[j] = True
+                j += 1
+                assert j - i <= 3, (
+                    f"role header runs past 3 tokens at position {i}: "
+                    f"{tokenizer.decode(ids[i : j + 1])!r}"
+                )
+            assert j < len(ids), f"<|im_start|> at {i} has no terminating newline"
+            role = tokenizer.decode(role_toks)
+            assert role in TEMPLATE_ROLES, f"unknown role {role!r} at position {i}"
+            mask[j] = True  # the header newline
+            n_turns += 1
+            i = j + 1
+        elif t == im_end_id:
+            mask[i] = True
+            if i + 1 < len(ids) and ids[i + 1] == nl_id:
+                mask[i + 1] = True  # the structural turn-separator newline
+            i += 2
+        else:
+            i += 1
+    assert n_turns >= 3, f"expected >=3 turns in a rendered context, got {n_turns}"
+    return mask
+
+
 def prefix_end_index_multi(tokenizer, ids: list[int]) -> int:
     """Prefix/query boundary for a POSSIBLY multi-turn rendered context.
 

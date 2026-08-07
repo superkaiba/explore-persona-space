@@ -510,6 +510,59 @@ def align_right(vecs: torch.Tensor, m: int) -> torch.Tensor:
     return vecs.repeat(reps, *([1] * (vecs.dim() - 1)))[-m:]
 
 
+@dataclass(frozen=True)
+class ExtraSlot:
+    """A follow-up-registered intervention slot (#2094 fu2_span_slots).
+
+    The parent slot tables are FROZEN (``SLOTS`` drives the parent grid
+    enumeration), so a follow-up round extends the slot machinery by
+    registering EXTRA slots whose positions/vectors were precomputed into the
+    follow-up's OWN bank records at capture time:
+
+    - ``rec[positions_key]``: list[int] — UNPADDED context coordinates.
+    - ``rec[vectors_key]``: ``(P, L, H)`` float tensor, row-ordered as the
+      positions list (so ``align_right`` right-alignment IS right-alignment
+      within the slot's own coordinate set — e.g. within content tokens for a
+      text-only slot).
+    - ``prefix_scoped``: state-kind donor eligibility compares ``prefix_b``
+      (the pe rule — prefix states are query-independent by causal identity)
+      instead of the target context ``b``; delta-kind additionally excludes
+      same-prefix donors (their prefix Delta is exactly zero).
+
+    Extra slots are Type-A only (``_pair_payload``'s Type-B assert stays the
+    guard) and are treated as MULTI-position (``replace`` realizes as the
+    equivalent add_full_state_patch, exactly like l3j/qspan).
+    """
+
+    name: str
+    positions_key: str
+    vectors_key: str
+    prefix_scoped: bool
+
+
+EXTRA_SLOTS: dict[str, ExtraSlot] = {}
+
+
+def register_extra_slot(spec: ExtraSlot) -> None:
+    """Idempotent extra-slot registration; refuses to shadow a parent slot or
+    re-bind a name to a DIFFERENT spec (repeated-import / subprocess safety)."""
+    assert spec.name not in SLOTS, f"extra slot {spec.name!r} shadows a parent slot"
+    prior = EXTRA_SLOTS.get(spec.name)
+    assert prior is None or prior == spec, (prior, spec)
+    EXTRA_SLOTS[spec.name] = spec
+
+
+def slot_positions_for_record(rec: dict, slot: str) -> tuple[int, ...]:
+    """Edit positions for one bank record — EXTRA_SLOTS dispatch first, else
+    the parent's arithmetic :func:`slot_positions` (behavior unchanged for
+    every parent slot while the registry is empty)."""
+    if slot in EXTRA_SLOTS:
+        pos = tuple(int(i) for i in rec[EXTRA_SLOTS[slot].positions_key])
+        assert pos, (slot, rec.get("context_id"))
+        return pos
+    return slot_positions(rec["ctx_len"], rec["prefix_end"], slot)
+
+
 def regime_fingerprint(cfg: RunConfig, bank_sha: str) -> str:
     """Stable fingerprint of EVERY output-affecting knob (resume key)."""
     import hashlib
@@ -876,6 +929,15 @@ def capture_bank(cfg: RunConfig, model, tok) -> dict:
 
 def _slot_vectors(rec: dict, slot: str) -> torch.Tensor:
     """``(P, L, H)`` slot states for one context (P = positions for the slot)."""
+    if slot in EXTRA_SLOTS:
+        spec = EXTRA_SLOTS[slot]
+        vecs = rec[spec.vectors_key]
+        assert vecs.shape[0] == len(rec[spec.positions_key]), (
+            slot,
+            vecs.shape,
+            len(rec[spec.positions_key]),
+        )
+        return vecs
     span, v_pe = rec["q_span"], rec["v_pe"]
     if slot == "pe":
         return v_pe.unsqueeze(0)
@@ -1045,10 +1107,11 @@ def _donor_eligible(
     mq--persona__q1--conv__q1 for recipient mq--bare__q1--conv__q1 shares
     b=conv__q1 => cos(null pred, steered pred) == 1.0).
     """
-    if slot == "pe" and donor.prefix_a == donor.prefix_b:
+    prefix_scoped = slot == "pe" or (slot in EXTRA_SLOTS and EXTRA_SLOTS[slot].prefix_scoped)
+    if prefix_scoped and donor.prefix_a == donor.prefix_b:
         return False
     if payload_kind == "state" and pair is not None:
-        if slot == "pe":
+        if prefix_scoped:
             return donor.prefix_b != pair.prefix_b
         return donor.b != pair.b
     return True
@@ -1237,7 +1300,7 @@ def _realized_mode(slot: str, dose: str, vec_type: str) -> tuple[str, float, str
         "replace is not a Type-B dose: the Type-B centroid is a DIFFERENCE from the "
         "bare centroid, not an absolute slot state"
     )
-    if mode == "replace" and slot in MULTI_POSITION_SLOTS:
+    if mode == "replace" and (slot in MULTI_POSITION_SLOTS or slot in EXTRA_SLOTS):
         return ("add", 1.0, "delta")
     if mode == "replace":
         return ("replace", alpha, "state")
@@ -1835,7 +1898,7 @@ def run_block(
                 payload_kind,
             )
         rec = recs[pair.a]
-        pos = slot_positions(rec["ctx_len"], rec["prefix_end"], block.slot)[-m:]
+        pos = slot_positions_for_record(rec, block.slot)[-m:]
         assert recipient.shape[0] == len(pos), (recipient.shape, pos)
         cells.append(
             {
