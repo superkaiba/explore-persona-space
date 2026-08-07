@@ -29,6 +29,8 @@ relates_to:
 # The context→answer map's per-unit-gain discounts on high-variance and template-heavy features are carried entirely by features that never fire at the context vector (HIGH confidence)
 
 <!-- clean-result-v4 -->
+**Methodology:** [docs/methodology/issue_2163.md](https://github.com/superkaiba/explore-persona-space/blob/a83d70fecf/docs/methodology/issue_2163.md) · [gist mirror](https://gist.github.com/superkaiba/cc478255863e6d45395767d30a7f756c)
+
 
 ## Takeaways
 
