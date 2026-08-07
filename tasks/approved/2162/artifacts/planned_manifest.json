@@ -44,8 +44,8 @@
       "id": "read_write_2x2",
       "title": "Read x write 2x2 (probe AUC vs causal F)",
       "source": "eval_results/issue_2162/probe/probe_auc.json + eval_results/issue_2162/f_metrics/f_cells.jsonl",
-      "transform": "x = max-over-28-layers macro AUC (leave-one-carrier-out folds) per (type x slot); y = steered mean F_beh (separation-excluded, as per_type_f_beh); quadrant thresholds = the registered verdicts (causal-positive: clears BOTH nulls disjoint-CI + Holm IUT; probe-positive: max-AUC clears the max-selected permutation 97.5th band)",
-      "plotted_quantity": "one point per (type x slot) in the AUC-vs-F plane, quadrants labeled stored-and-used / stored-but-unusable / used-but-not-decoded / absent"
+      "transform": "x = max-over-28-layers macro AUC (leave-one-carrier-out folds) per (type x slot); y = steered mean F_beh (separation-excluded, as per_type_f_beh); quadrant thresholds = the registered verdicts (causal-positive: clears BOTH nulls disjoint-CI + Holm IUT; probe-positive: max-AUC clears the max-selected permutation 97.5th band); cells with post-exclusion n < 12 (the survival floor) are labeled untestable-causal - an explicit fifth label, never rendered as a causal verdict",
+      "plotted_quantity": "one point per (type x slot) in the AUC-vs-F plane, quadrants labeled stored-and-used / stored-but-unusable / used-but-not-decoded / absent, with sub-floor cells labeled untestable-causal"
     },
     {
       "id": "probe_layer_curves",
@@ -116,6 +116,13 @@
       "source": "eval_results/issue_2162/f_metrics/{f_cells,margin_cells}.jsonl",
       "transform": "per (type-cell x slot): mean TF margin shift (steered minus floor, length-normalized lnP over the fixed 4+4 pools) vs mean F_beh; Spearman rho across cells with dynamic range = the registered rule-19 validation, reported before the margin carries any read",
       "plotted_quantity": "margin shift vs F_beh scatter with the validation rho"
+    },
+    {
+      "id": "crosstype_null_by_donor",
+      "title": "Cross-type null by donor type (diagnostic)",
+      "source": "eval_results/issue_2162/f_metrics/null_crosstype_cells.jsonl",
+      "transform": "per (recipient type-cell x slot): mean F_beh of the cross-type-donor arm split BY DONOR TYPE (donor type + pair id recorded per row; same separation exclusion as per_type_f_beh), rendered for every cell whose pooled cross-type-null bootstrap CI excludes 0",
+      "plotted_quantity": "donor-type-resolved cross-type-null F_beh bars per elevated recipient cell (visibility diagnostic for donor content moving the recipient rubric)"
     },
     {
       "id": "coherence_caphit",
