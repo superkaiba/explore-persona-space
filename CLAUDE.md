@@ -105,7 +105,9 @@ Codex dispatch is `scripts/codex_task.py`, run by the **orchestrator** as bg Bas
 **READ `.claude/rules/codex-ensemble-review.md` before dispatching, composing, or posting any
 twin verdict** — it carries the exact bg-Bash invocation, the mechanical-contract-only strip,
 at-the-cap handling, the pre-spawn quota-sentinel check (canonical snippet) and its fail-open
-rules, file-only verdict posting, and the killed-wrapper re-attach recipe.
+rules, **File-only Codex verdict posting** (trigger-dense rounds: grep the verdict line, extract
+the marker block mechanically, post via `post-marker --file` — never page the findings body into
+context, #1275), and the killed-wrapper re-attach recipe.
 
 ## Context hygiene
 
@@ -119,10 +121,21 @@ rules, file-only verdict posting, and the killed-wrapper re-attach recipe.
   plan/brief, never the body — and never inline code bodies to defend against subagent
   autocompact-thrash, which just moves the problem to the orchestrator); never dump giant logs
   into tool output (`grep -iE 'error|traceback|killed|OOM'` / `tail -50`, never `cat`).
-- **Spurious usage-policy refusals** (ladder rungs (a)-(g)) and **Autocompact-thrash** subagent
-  deaths (Class 1 reduced-window vs Class 2 fixed-overhead) both have multi-rung recovery
-  ladders — never park on either, and never pin a smaller model to fix thrash (that is the
-  INVERSE of the refusal ladder's rung (b2)).
+- **Spurious usage-policy refusals** — a multi-rung recovery ladder; never park on a refusal.
+  Rung (e) is PREVENTION and binds every brief you compose: name banks/corpora by filename +
+  row count, never inline example items; use neutral gate vocabulary ("halt gate",
+  "stop criterion", "termination predicate") for kill-gate / RLVR / guard / stop-criteria work,
+  leaving the loaded terms untouched in the ARTIFACTS themselves (code, plans and task bodies
+  are never renamed — only brief text is neutralized); describe activation-steering /
+  causal-intervention work mechanistically rather than in control-agentic phrasing (#1415); and
+  pass a trigger-dense task Goal BY REFERENCE, never quoted verbatim. FIRST-PASS briefs carry
+  BOTH disciplines, and REVISION-ROUND briefs the same, with findings passed by marker/file
+  reference, never inlined (#1073, #1413). Rung (f) is the orchestrator refusal-wedge (recovery
+  is a FRESH SESSION); rung (g) is the refusal-truncated Agent spawn (verify the dispatched
+  brief was not cut mid-sentence).
+- **Autocompact-thrash** subagent deaths (Class 1 reduced-window vs Class 2 fixed-overhead)
+  have their own ladder — never park on one, and never pin a smaller model to fix thrash (that
+  is the INVERSE of the refusal ladder's rung (b2)).
 
 **READ `.claude/rules/context-hygiene.md` before retrying a refused or thrash-killed agent, or
 before widening any brief** — it carries the refusal ladder (a)-(g), the two autocompact-thrash
@@ -281,6 +294,8 @@ is `pod-<N>-<slug>` (`--name-suffix`). `/issue` Step 8 runs `pod.py terminate --
 the `keep-running` tag is the only skip, and it is ISSUE-WIDE. **Terminating a verified-done pod
 is never a user decision** — that is the standing exception to ask-before-terminating. `pod.py
 stop` is NEVER a durability substitute (a STOPPED volume is not durable).
+
+**Completion-side teardown (suffixed pods — no ask-gate, #1662):** the moment a suffixed pod's round is COMPLETE and its artifacts are VERIFIED-uploaded, the owning session terminates it — surgical `pod.py terminate --issue <N> --name-suffix <slug> --yes`, removing the `keep-running` tag in the same step when no other live round needs the shield; terminating a verified-done pod is NEVER a user decision, exactly as at Step 8. The ONLY keep-alive exception is a NAMED next round reusing THIS pod, recorded in an `epm:progress` note; a pending user question is NOT a named round (#1662: pod-1586-b idled ~$12–13/hr behind an ask-gate).
 
 **CPU-only phases don't hold GPU pods** — placement and GPU-width are plan-time decisions, not
 mid-run ones: a narrow phase longer than ~15-30 min releases a wide pod, anything downloading
