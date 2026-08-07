@@ -3,8 +3,7 @@ title: Context-end is the only single position where activation edits move behav
   clear of the shuffled-donor null, and even its strongest patch falls well short
   of a full context swap (MODERATE confidence)
 kind: experiment
-tags:
-- followup-auto
+tags: []
 created_at: '2026-08-05T20:07:47Z'
 has_clean_result: true
 parent_id: 1415
