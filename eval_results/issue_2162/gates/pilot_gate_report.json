@@ -1,0 +1,25 @@
+{
+  "criterion": "generation-throughput pilot (plan §7)",
+  "measured_rollouts": 180,
+  "measured_wall_s": 216.33893673866987,
+  "s_per_rollout": 1.2018829818814993,
+  "gen_batch": 16,
+  "num_workers": 8,
+  "rollouts_total": 42120,
+  "projected_pod_wall_h": 1.7577538610016927,
+  "planned_pod_wall_h": 3.7,
+  "refusal_threshold_h": 11.100000000000001,
+  "recommended_poll_fence_h": 3.5155077220033855,
+  "sweep_allowed": true,
+  "forced": false,
+  "repro": {
+    "git_commit": "b4ab6ed5f96216566b78b090f432d763246997b0",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "smoke": false,
+    "n_layers": 28,
+    "timestamp": "2026-08-07T16:55:43.185091+00:00"
+  }
+}
