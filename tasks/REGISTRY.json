@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2183,
+  "highest_id": 2184,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9145,6 +9145,13 @@
       "path": "tasks/proposed/2183",
       "status": "proposed",
       "title": "Remediate 19 scripts/ drivers with repo_root()-derived sys.path inserts, then widen the #2181 check to scripts/"
+    },
+    "2184": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2184",
+      "status": "proposed",
+      "title": "CPU-intent RunPod provisioning: type the no-port wedge, rotate DC, and document a residual route when every CPU DC is dry"
     },
     "22": {
       "has_clean_result": false,
