@@ -3,20 +3,25 @@
 
 Reuses the Stage-1 driver (``issue2162_run``) wholesale — model/bank loading,
 hook machinery, claim-file queue, atomic writers, upload path — and changes
-ONLY the intervention geometry: instead of the all-28-layer replace, the
-steered payload V_slot(B) is written at a LAYER SUBSET (dose 1 = the single
-layer; dose 4 = a 4-consecutive-layer window, shifted down so it fits), at
-each of ``STAGE2_LAYERS`` = {8, 12, 14, 16, 19, 22, 26}.
+ONLY the intervention geometry (plan §4.2 verbatim; restored to spec in fix
+round 2, r1 C3): PAIR-DIFFERENCE edits ``mode="add"`` with Δ = V(B) − V(A)
+at SINGLE layers ``STAGE2_LAYERS`` = {8, 12, 14, 16, 19, 22, 26}, where the
+DOSE ∈ {1, 4} is the alpha MULTIPLIER on the added delta (never a
+layer-window width — dose semantics per the parent ``issue2094_run.py``
+``dose_spec``), with BOTH arms (steered + shuffled-donor) and 1 GREEDY draw
+per pair.
 
 Grid: <=12 selected (cell, slot) units (``best_cells.json``, the analysis
-stats step's Holm-IUT AND disjoint-CI survivors) x 7 layers x 2 doses x 36
-pairs x K=2 draws = <=12,096 rollouts (plan §4.3). Steered arm only — the
-stage-1 nulls already bound the type-level effect; stage-2 localizes it.
+stats step's Holm-IUT AND disjoint-CI survivors) x 2 arms x 7 layers x
+2 doses x 36 pairs x 1 greedy draw = <=12,096 rollouts (plan §4.3, 2-arm
+form).
 
 Rows land under ``<out_root>/stage2/shard_*.jsonl`` (the judge driver's
-``load_stage2_rows`` glob) with the grid-row schema + ``layer``/``dose``/
-``layers_patched``. No V_a capture and no margin pass at stage-2 (F_beh via
-the judge is the stage-2 read) — recorded as a scope note in the sentinel.
+``load_stage2_rows`` glob) with the grid-row schema + ``arm``/``layer``/
+``dose``/``layers_patched``/``mode``. No V_a capture and no margin pass at
+stage-2 (F_beh via the judge is the stage-2 read; the plan
+``phase_outputs.P8`` V_a-shard omission at stage-2 is a stated scope note in
+the sentinel).
 """
 
 from __future__ import annotations
@@ -47,24 +52,27 @@ from explore_persona_space.experiments.issue2162 import bank2162 as BANK  # noqa
 logger = logging.getLogger("issue2162.stage2")
 
 STAGE2_LAYERS: tuple[int, ...] = (8, 12, 14, 16, 19, 22, 26)
-STAGE2_DOSES: tuple[int, ...] = (1, 4)
-STAGE2_DRAWS = 2  # 12 cells x 7 layers x 2 doses x 36 pairs x 2 = 12,096 (plan §4.3)
+STAGE2_DOSES: tuple[int, ...] = (1, 4)  # alpha multipliers on the added delta (plan §4.2)
+STAGE2_ARMS: tuple[str, ...] = ("steered", "shuffled")
+STAGE2_DRAWS = 1  # <=12 combos x 2 arms x 7 layers x 2 doses x 36 pairs x 1 = 12,096 (§4.3)
+STAGE2_TEMPERATURE = 0.0  # 1 GREEDY draw per pair (plan §4.2)
 SENTINEL_PATH = Path("/workspace/logs/issue-2162-stage2-results.json")
 
 
 @dataclass(frozen=True)
 class Stage2Block:
-    """One schedulable stage-2 unit: (cell, slot, layer, dose)."""
+    """One schedulable stage-2 unit: (cell, slot, arm, layer, dose)."""
 
     cell: str
     slot: str
+    arm: str
     layer: int
     dose: int
     pair_ids: tuple[str, ...]
 
     @property
     def key(self) -> str:
-        return f"{self.cell}|{self.slot}|steered|L{self.layer}|d{self.dose}"
+        return f"{self.cell}|{self.slot}|{self.arm}|L{self.layer}|d{self.dose}"
 
     @property
     def slug(self) -> str:
@@ -73,18 +81,6 @@ class Stage2Block:
     @property
     def n_pairs(self) -> int:
         return len(self.pair_ids)
-
-
-def layers_for_dose(layer: int, dose: int, n_layers: int) -> tuple[int, ...]:
-    """The patched layer window: dose 1 = [layer]; dose 4 = 4 consecutive
-    layers starting at ``layer``, SHIFTED DOWN when it would run past the
-    top (keeps the dose true instead of clipping the window)."""
-    assert 0 <= layer < n_layers, (layer, n_layers)
-    if dose == 1:
-        return (layer,)
-    start = min(layer, n_layers - dose)
-    assert start >= 0, (layer, dose, n_layers)
-    return tuple(range(start, start + dose))
 
 
 def load_best_cells(path: Path) -> list[dict]:
@@ -112,9 +108,12 @@ def enumerate_stage2_blocks(
         ids = tuple(p.pair_id for p in sorted(by_cell[rec["cell"]], key=lambda p: p.pair_id))
         if smoke:
             ids = ids[: R.SMOKE_PAIRS_PER_CELL]
-        for layer in layers:
-            for dose in STAGE2_DOSES:
-                blocks.append(Stage2Block(rec["cell"], rec["slot"], layer, dose, ids))
+        # BOTH arms in smoke too (>=1 tiny block per arm class — the per-arm
+        # smoke-coverage rule; the shuffled arm exercises the donor seam).
+        for arm in STAGE2_ARMS:
+            for layer in layers:
+                for dose in STAGE2_DOSES:
+                    blocks.append(Stage2Block(rec["cell"], rec["slot"], arm, layer, dose, ids))
     keys = [b.key for b in blocks]
     assert len(set(keys)) == len(keys), "duplicate stage-2 block keys"
     return blocks
@@ -122,26 +121,30 @@ def enumerate_stage2_blocks(
 
 def stage2_regime_fp(cfg: R.RunConfig, bank_sha: str) -> str:
     base = R.regime_fingerprint(cfg, bank_sha)
-    return f"{base}-stage2-K{STAGE2_DRAWS}"
+    return f"{base}-stage2-add-K{STAGE2_DRAWS}"
 
 
-def _arm_hook_layer_subset(
+def _arm_hook_add_single_layer(
     model,
-    subset: tuple[int, ...],
+    layer: int,
+    dose: int,
     row_lengths: list[int],
     positions: list[tuple[int, ...]],
-    per_row_payload: list[torch.Tensor],
+    per_row_delta: list[torch.Tensor],
     expected_prompt_len: int,
 ):
-    """Replace-mode hook stack over ONLY the dose window's layers.
+    """Add-mode hook at ONE layer: ``h[b, p] += dose * delta[b][layer]``
+    (plan §4.2 stage-2 — the dose is the alpha multiplier on the added
+    pair-difference delta, never a layer-window width; r1 C3).
 
-    ``per_row_payload[b]`` is the stage-1 ``(1, L_all, H)`` steered payload;
-    each subset layer's hook receives its own ``(1, H)`` slice (payload
-    layer index == model layer index: cfg.layers is range(n_layers))."""
-    stack = joint_hooks(model, list(subset))
-    per_layer = [[p[:, layer, :].contiguous() for p in per_row_payload] for layer in subset]
+    ``per_row_delta[b]`` is the pair-difference payload ``(1, L_all, H)``
+    (delta = V(B) - V(A), donor-side per arm); the single patched layer's
+    hook receives its own ``(1, H)`` slice (payload layer index == model
+    layer index: cfg.layers is range(n_layers))."""
+    stack = joint_hooks(model, [layer])
+    per_layer = [[d[:, layer, :].contiguous() for d in per_row_delta]]
     stack.install()
-    stack.arm_batch_per_layer(row_lengths, positions, per_layer, mode="replace", alpha=1.0)
+    stack.arm_batch_per_layer(row_lengths, positions, per_layer, mode="add", alpha=float(dose))
     stack.arm(expected_prompt_len)
     return stack
 
@@ -159,10 +162,19 @@ def run_stage2_block(
     ctx_ids_cache: dict[str, list[int]],
     regime_fp: str,
 ) -> dict:
-    """One stage-2 block: K hooked draws per pair at the dose window."""
-    base_block = R.Block(block.cell, block.slot, "steered", block.pair_ids)
+    """One stage-2 block: 1 greedy add-mode draw per pair at (arm, layer, dose).
+
+    The delta is the PAIR-DIFFERENCE payload (plan §4.2): steered arm
+    delta = V(B) - V(A); shuffled arm delta = norm-matched V(B_donor) - V(A)
+    (the B-side reuses the stage-1 ``payload_for_arm`` construction wholesale,
+    so the donor assignment + norm-matching stay bit-identical to stage 1)."""
+    base_block = R.Block(block.cell, block.slot, block.arm, block.pair_ids)
     cells = R._block_cells(bank, base_block, pairs_by_id, donor_maps)
-    subset = layers_for_dose(block.layer, block.dose, cfg.n_layers)
+    recs = bank["per_context"]
+    for c in cells:
+        a_state = R._slot_state(recs[c["pair"].a], block.slot).unsqueeze(0)  # (1, L, H)
+        assert c["payload"].shape == a_state.shape, (c["payload"].shape, a_state.shape)
+        c["delta"] = (c["payload"] - a_state).contiguous()
 
     def ids_for(cid: str) -> list[int]:
         if cid not in ctx_ids_cache:
@@ -176,12 +188,13 @@ def run_stage2_block(
         rows = [ids_for(c["context_a"]) for c in chunk]
         row_lengths = [len(r) for r in rows]
         t_pad = max(row_lengths)
-        stack = _arm_hook_layer_subset(
+        stack = _arm_hook_add_single_layer(
             model,
-            subset,
+            block.layer,
+            block.dose,
             row_lengths,
             [(c["position"],) for c in chunk],
-            [c["payload"] for c in chunk],
+            [c["delta"] for c in chunk],
             t_pad,
         )
         try:
@@ -192,7 +205,7 @@ def run_stage2_block(
                 n=STAGE2_DRAWS,
                 hook=stack,
                 max_new_tokens=cfg.max_new_tokens,
-                temperature=R.GRID_TEMPERATURE,
+                temperature=STAGE2_TEMPERATURE,
                 seed_base=cfg.seed_base,
                 render_fn=BANK.render_context_2162,
                 ids_fn=BANK.context_token_ids_2162,
@@ -213,11 +226,13 @@ def run_stage2_block(
                     "block_key": block.key,
                     "cell": block.cell,
                     "slot": block.slot,
-                    "arm": "steered",
+                    "arm": block.arm,
+                    "mode": "add",
                     "layer": block.layer,
                     "dose": block.dose,
-                    "layers_patched": list(subset),
+                    "layers_patched": [block.layer],
                     "pair_id": pair.pair_id,
+                    "donor_pair_id": c["donor_pair_id"],
                     "carrier": pair.carrier,
                     "value_a": pair.value_a,
                     "value_b": pair.value_b,
@@ -228,7 +243,7 @@ def run_stage2_block(
                     "degenerate_pe": c["degenerate_pe"],
                     "draw": i,
                     "seed": cfg.seed_base + i,
-                    "temperature": R.GRID_TEMPERATURE,
+                    "temperature": STAGE2_TEMPERATURE,
                     "n_completion_tokens": n_tok,
                     "cap_hit": R.cap_hit(n_tok, cfg.max_new_tokens),
                     "cap_hit_basis": "retokenized_completion_len >= max_new_tokens",
@@ -240,7 +255,7 @@ def run_stage2_block(
         "key": block.key,
         "regime_fp": regime_fp,
         "n_rows": len(rows_out),
-        "layers_patched": list(subset),
+        "layers_patched": [block.layer],
         "repro": R._repro(cfg),
     }
     R._write_json_atomic(R.block_done_path(cfg.out_root, block, "stage2_blocks"), done)
@@ -316,9 +331,10 @@ def phase_upload(cfg: R.RunConfig) -> int:
         "n_stage2_shards": len(list(stage2_dir(cfg).glob("shard_*.jsonl"))),
         "scope_notes": [
             "stage-2 captures no V_a and runs no margin pass (F_beh via judge is the "
-            "stage-2 read; plan §4.2)",
-            "dose-4 windows are shifted down at the top of the stack "
-            "(layers_for_dose) so the dose stays 4 true layers",
+            "stage-2 read; plan §4.2) — the plan phase_outputs.P8 V_a-shard entry is "
+            "therefore NOT produced at stage-2 (stated scope limit, r1 C3)",
+            "dose is the alpha multiplier on the added pair-difference delta "
+            "(mode=add, delta = V(B)-V(A), single layer; plan §4.2)",
         ],
         "repro": R._repro(cfg),
     }
@@ -336,11 +352,10 @@ def phase_upload(cfg: R.RunConfig) -> int:
 def _import_check() -> int:
     """Execute the deferred/production imports + a tiny geometry self-check."""
     assert len(STAGE2_LAYERS) == 7 and STAGE2_DOSES == (1, 4)
-    assert layers_for_dose(26, 4, 28) == (24, 25, 26, 27)
-    assert layers_for_dose(8, 4, 28) == (8, 9, 10, 11)
-    assert layers_for_dose(12, 1, 28) == (12,)
-    b = Stage2Block("instr_format", "ce", 8, 4, ("x",))
-    assert b.key == "instr_format|ce|steered|L8|d4" and "__" in b.slug
+    assert STAGE2_ARMS == ("steered", "shuffled")  # plan §4.2 (r1 C3)
+    assert STAGE2_DRAWS == 1 and STAGE2_TEMPERATURE == 0.0  # 1 greedy draw per pair
+    b = Stage2Block("instr_format", "ce", "shuffled", 26, 4, ("x",))
+    assert b.key == "instr_format|ce|shuffled|L26|d4" and "__" in b.slug
     print("[import-check] issue2162_stage2 OK")
     return 0
 
