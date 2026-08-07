@@ -21,10 +21,19 @@ Restyles the P-A / P-B setting figures to match the committed
   * a caption block carrying protocol provenance, what was dropped, what was
     scope-excluded, and per-group n_eval
 
-Methods: the result2_fivemethod reference roster MINUS arm12_oracle_reg
-("Ridge regression on real answer"), which P-A/P-B never scored -- ridge on
-context, ridge on the mapped answer, PV on the mapped answer, PV on the real
-answer. ``--pv-only`` switches to the three persona-vector arms instead.
+Methods: the result2_fivemethod reference roster. arm12_oracle_reg ("Ridge
+regression on real answer") was ABSENT from the original P-A/P-B round -- the
+roster there was five arms and nothing scored ridge-on-the-real-answer. It is
+spliced in from a dedicated re-score (``--arm12-root``) that re-ran the SAME
+P-A/P-B fits with the roster extended by that one arm, and is drawn on the P-B
+figure only (``ARM12_PROTOCOLS``).
+
+The other four arms keep reading the COMMITTED round, so their bars are
+numerically untouched by the re-score; only the new bar comes from new data.
+Mixing the two sources is licensed by a reproduction gate
+(``scripts/issue1739_arm12_repro_check.py``), which checks that the five arms
+the re-score shares with the committed round came back identical. Run it before
+trusting an arm12 bar.
 
 Usage
 -----
@@ -127,15 +136,35 @@ SHARED_EVAL_CONTEXTS = frozenset({"pvsynth", "generic", "indist"})
 
 _Z95 = 1.959963984540054
 
-# The result2_fivemethod reference roster (d78aff9e5c), same order + colours,
-# MINUS arm12_oracle_reg ("Ridge regression on real answer"), which this
-# protocol never scored -- see the caption for where that arm does exist.
+# The result2_fivemethod reference roster (d78aff9e5c), same order.
 REF_METHODS = (
     ("arm4_ridge_ctx", "Ridge regression on context", "#1f77b4"),
     ("arm7_map_ridge_pred", "Ridge regression on mapped answer", "#e8b23a"),
     ("arm6_map_proj_e1", "Persona vector on mapped answer", "#8c3b1e"),
     ("arm11_oracle_proj", "Persona vector on real answer", "#1a6b54"),
 )
+
+ARM12 = "arm12_oracle_reg"
+# Colour + roster slot both come from the reference figure's `reg_real`
+# (d78aff9e5c): Wong bluish-green #009E73, placed immediately after
+# ridge-on-context. Green-family is the reference's "real answer" signal --
+# it pairs with PV-on-real-answer's darker #1a6b54 and stays distinguishable
+# from it, so one colour keeps one meaning across both figures.
+ARM12_METHOD = (ARM12, "Ridge regression on real answer", "#009E73")
+ARM12_INSERT_AT = 1
+# Protocols whose figure carries the arm. P-B only: the arm was requested for
+# that figure, and the re-score covers both protocols, so widening this to
+# ("P-A", "P-B") is the only change needed to draw it on both.
+ARM12_PROTOCOLS = ("P-B",)
+
+
+def methods_for(protocol: str, base: tuple, arm12_behaviors: frozenset) -> tuple:
+    """Roster for one protocol, with arm12 spliced in only where it applies."""
+    if base is not REF_METHODS or protocol not in ARM12_PROTOCOLS or not arm12_behaviors:
+        return base
+    return base[:ARM12_INSERT_AT] + (ARM12_METHOD,) + base[ARM12_INSERT_AT:]
+
+
 PV_METHODS = (
     ("arm1_ctx_e1", "Persona vector on context", "#4C72B0"),
     ("arm6_map_proj_e1", "Persona vector on mapped answer", "#8c3b1e"),
@@ -205,7 +234,9 @@ def _combine_se(rhos: list[float], ses: list[float], *, shared: bool) -> tuple[f
     }
 
 
-def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dict]:
+def collect(
+    fits: dict, spread: dict, protocol: str, methods, avg_exclude: frozenset = frozenset()
+) -> tuple[dict, dict]:
     """(behavior, regime, arm) -> (rho, err, n_eval, n_use, n_in_scope, kept, gate_dropped, scope_dropped, all_failed)."""  # noqa: E501
     vals: dict = {}
     for beh in BEHAVIORS:
@@ -289,6 +320,14 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
 
     for key, _ in REGIMES:
         for arm, *_ in methods:
+            # An arm whose re-score has not landed for EVERY behaviour is held
+            # out of the average panel entirely. Averaging it over the
+            # behaviours it does have would place a 2-behaviour mean beside
+            # 4-behaviour... beside 3-behaviour means at identical visual
+            # weight, with nothing in the bar itself saying so. Gating removes
+            # that by construction instead of relying on a sub-label.
+            if arm in avg_exclude:
+                continue
             # Hatched (all-floored) cells are excluded from the average panel.
             per = [
                 vals[(b, key, arm)]
@@ -409,11 +448,16 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
             label="every dataset in the regime floored — NOT interpretable",
         )
     )
+    # ONE row, pinned just under the axes. The caption block below is anchored
+    # at the bottom and grows UPWARD, so a multi-row legend at a fixed y walks
+    # into its top lines as arms and notes are added -- which is exactly what
+    # happened at five arms. One row keeps the legend's height constant no
+    # matter how the roster grows.
     fig.legend(
         handles=handles,
         loc="lower left",
-        bbox_to_anchor=(0.012, 0.305),
-        ncol=3,
+        bbox_to_anchor=(0.012, 0.352),
+        ncol=len(handles),
         frameon=False,
         fontsize=9.5,
     )
@@ -440,7 +484,13 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
     print(f"wrote {out_png}")
 
 
-def build_caption(vals: dict, protocol: str, methods) -> str:
+def build_caption(
+    vals: dict,
+    protocol: str,
+    methods,
+    arm12_behaviors: frozenset = frozenset(),
+    avg_excluded: bool = False,
+) -> str:
     proto = {
         "P-A": "P-A: the readout trains on ONE trait-eliciting dataset (the `train` budget cell) "
         "plus the judged WildChat train split.",
@@ -467,6 +517,52 @@ def build_caption(vals: dict, protocol: str, methods) -> str:
         ns.append(f"  {b}: " + "; ".join(row))
     drops = "; ".join(dropped_note) if dropped_note else "none"
     scoped = "; ".join(scope_note) if scope_note else "none"
+
+    # METHOD ROSTER paragraph. Two branches, because arm12_oracle_reg is drawn
+    # on some figures and not others and the reader must be able to tell WHY
+    # from the figure alone -- "absent because never scored" and "absent
+    # because not drawn here" are different facts.
+    if ARM12 in {a for a, *_ in methods}:
+        have = ", ".join(sorted(arm12_behaviors))
+        roster_note = (
+            "METHOD ROSTER = the result2_fivemethod reference roster, all five arms. 'Ridge "
+            "regression on real answer' (arm12_oracle_reg) was NOT part of the original P-A/P-B "
+            "round -- that round scored five arms (arm1/arm4/arm6/arm7/arm11) and nothing "
+            "ridge-on-the-real-answer -- so its bars here come from a SEPARATE re-score that "
+            "re-ran the SAME P-A/P-B fits with the roster extended by that one arm "
+            f"(behaviours re-scored: {have}). The other four arms still read the committed round "
+            "and are numerically UNCHANGED by the re-score, so no bar that was already published "
+            "has moved; a reproduction gate checks that the five arms the two sources share came "
+            "back identical, and that is what licenses drawing them side by side.\n"
+        )
+        if avg_excluded:
+            roster_note += (
+                "arm12_oracle_reg is drawn in the per-behaviour panels but is HELD OUT of the "
+                "average panel, because its re-score has not landed for every behaviour yet: "
+                "averaging it over a subset would put a smaller-denominator mean next to the "
+                "other arms' full-denominator means at identical visual weight. It joins the "
+                "average once all three behaviours are in.\n"
+            )
+    elif arm12_behaviors:
+        # Data exists; this figure's protocol just isn't one that draws it.
+        roster_note = (
+            "METHOD ROSTER = the result2_fivemethod reference roster MINUS 'Ridge regression on "
+            "real answer' (arm12_oracle_reg). That arm was absent from the original P-A/P-B "
+            "round (five arms: arm1/arm4/arm6/arm7/arm11), and a later re-score does supply it, "
+            "but it is drawn on the "
+            + "/".join(ARM12_PROTOCOLS)
+            + " figure only -- so its absence HERE is a display choice, not a measurement gap.\n"
+        )
+    else:
+        # No re-score on disk at all. Say that, rather than implying a choice.
+        roster_note = (
+            "METHOD ROSTER = the result2_fivemethod reference roster MINUS 'Ridge regression on "
+            "real answer' (arm12_oracle_reg). That arm was NOT scored by the original P-A/P-B "
+            "round -- that round ran five arms (arm1/arm4/arm6/arm7/arm11) and nothing "
+            "ridge-on-the-real-answer -- and no re-score supplying it was found when this figure "
+            "was built, so the arm is MISSING here rather than withheld. Nothing in this figure "
+            "should be read as evidence about how ridge-on-the-real-answer performs.\n"
+        )
     return (
         f"{proto}\n"
         "The context->answer MAP is identical under both protocols: fit once per behaviour on the "
@@ -513,15 +609,42 @@ def build_caption(vals: dict, protocol: str, methods) -> str:
         "not K copies of it. "
         "Only the CONTEXT-based variant is scored (variant=context_end); the prefix-end arm is a "
         "stated scope deviation inherited from the parent round. Mapping is LINEAR throughout; no "
-        "MLP or kernel arm. METHOD ROSTER = the result2_fivemethod reference roster MINUS "
-        "'Ridge regression on real answer' (arm12_oracle_reg), which P-A/P-B never scored.\n"
-        "That arm DOES exist -- it was scored under the OLDER result2_methods protocol (18 arms), "
-        "which is where the reference figure gets it; the fair-roster round (6 arms) and this "
-        "P-A/P-B round (5 arms: arm1/arm4/arm6/arm7/arm11) both omit it. result2_methods also\n"
-        "carries arm8_map_ridge_true (ridge FIT on the real answer, APPLIED to the mapped answer), "
-        "which appears in neither the reference figure nor this one.\n"
+        "MLP or kernel arm.\n" + roster_note + "result2_methods also carries arm8_map_ridge_true "
+        "(ridge FIT on the real answer, APPLIED to the mapped answer), which appears in neither "
+        "the reference figure nor this one.\n"
         "n_eval per behaviour x regime --\n" + "\n".join(ns)
     )
+
+
+def splice_arm12(fits: dict, arm12_root: Path) -> frozenset:
+    """Add the re-score's arm12 rows to each behaviour; return those covered.
+
+    ONLY arm12 rows are taken. The arms already plotted keep coming from the
+    committed round, so this splice cannot move an existing bar -- if the
+    re-score disagreed with the committed round on a shared arm, the
+    reproduction gate is what surfaces it, not a silently shifted figure.
+    """
+    covered: list[str] = []
+    for beh in BEHAVIORS:
+        path = arm12_root / beh / "all_arms_spearman.json"
+        if not path.exists():
+            continue
+        rows = [r for r in json.loads(path.read_text())["transfer_rows"] if r.get("arm") == ARM12]
+        if not rows:
+            continue
+        if any(r.get("arm") == ARM12 for r in fits[beh]["transfer_rows"]):
+            raise ValueError(
+                f"{beh}: the committed round already carries {ARM12} — splicing would double it"
+            )
+        fits[beh]["transfer_rows"].extend(rows)
+        covered.append(beh)
+        print(f"[arm12] {beh}: spliced {len(rows)} rows from {path}")
+    missing = [b for b in BEHAVIORS if b not in covered]
+    if not covered:
+        print(f"[arm12] no re-score found under {arm12_root} — drawing the 4-arm roster")
+    elif missing:
+        print(f"[arm12] PARTIAL — missing {missing}; held out of the average panel")
+    return frozenset(covered)
 
 
 def main() -> None:
@@ -530,20 +653,46 @@ def main() -> None:
     ap.add_argument("--spread-json", default="/tmp/spread_1739.json")
     ap.add_argument("--out-dir", default="figures/issue_1739/pv_regime_view")
     ap.add_argument("--pv-only", action="store_true", help="3 persona-vector arms instead")
+    ap.add_argument(
+        "--arm12-root",
+        default="eval_results/issue_1739/r2v2_fits_arm12",
+        help="re-score out root supplying arm12_oracle_reg rows",
+    )
+    ap.add_argument(
+        "--no-arm12", action="store_true", help="draw the original 4-arm roster even if present"
+    )
     args = ap.parse_args()
 
-    methods = PV_METHODS if args.pv_only else REF_METHODS
+    base = PV_METHODS if args.pv_only else REF_METHODS
     fits = {
         b: _gj(args.fits_commit, f"eval_results/issue_1739/r2v2_fits/{b}/all_arms_spearman.json")
         for b in BEHAVIORS
     }
+    arm12_behaviors = (
+        frozenset()
+        if (args.no_arm12 or args.pv_only)
+        else splice_arm12(fits, _REPO_ROOT / args.arm12_root)
+    )
+    # Partial coverage -> per-behaviour bars only; see collect()'s avg_exclude.
+    avg_exclude = (
+        frozenset({ARM12})
+        if arm12_behaviors and len(arm12_behaviors) < len(BEHAVIORS)
+        else frozenset()
+    )
     spread = json.loads(Path(args.spread_json).read_text())
     out_dir = _REPO_ROOT / args.out_dir
     sfx = "_pvonly" if args.pv_only else ""
 
     for protocol in ("P-A", "P-B"):
-        vals, _ = collect(fits, spread, protocol, methods)
-        cap = build_caption(vals, protocol, methods)
+        methods = methods_for(protocol, base, arm12_behaviors)
+        vals, _ = collect(fits, spread, protocol, methods, avg_exclude=avg_exclude)
+        cap = build_caption(
+            vals,
+            protocol,
+            methods,
+            arm12_behaviors=arm12_behaviors,
+            avg_excluded=bool(avg_exclude),
+        )
         draw(
             vals,
             protocol,
