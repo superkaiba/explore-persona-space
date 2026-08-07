@@ -115,6 +115,18 @@ REGIMES = (
     ("ood", "completely OOD"),
 )
 
+# Regimes whose cells are scored on the SAME eval contexts. Under P-B every
+# holdout fit reads one common pvsynth grid / WildChat slice / 20% held-in
+# slice (verified: n_eval is identical across the K cells, and the
+# non-label-consuming PV arms return literally ONE distinct rho), so the
+# context-sampling error is COMMON to the cells and cannot average down --
+# only the fit-to-fit spread does. 'ood' is the opposite: each cell is a
+# different held-out corpus. Under P-A every non-OOD regime is a single cell,
+# where both rules collapse to that cell's own bootstrap SE.
+SHARED_EVAL_CONTEXTS = frozenset({"pvsynth", "generic", "indist"})
+
+_Z95 = 1.959963984540054
+
 # The result2_fivemethod reference roster (d78aff9e5c), same order + colours,
 # MINUS arm12_oracle_reg ("Ridge regression on real answer"), which this
 # protocol never scored -- see the caption for where that arm does exist.
@@ -142,9 +154,55 @@ def _gj(commit: str, path: str) -> dict:
     return json.loads(out.stdout)
 
 
-def _sem(v: list[float]) -> float:
-    v = [x for x in v if x is not None and not math.isnan(x)]
-    return float(st.stdev(v) / math.sqrt(len(v))) if len(v) > 1 else 0.0
+def _se_from_ci(row: dict, where: str) -> float:
+    """Per-cell sampling SE of rho, from its committed 95% bootstrap CI.
+
+    ``ci_frozen`` is the [2.5%, 97.5%] percentile interval of a nonparametric
+    bootstrap that RESAMPLES EVAL CONTEXTS (arms.evaluate_transfer), so its
+    half-width / 1.96 is the context-sampling SE of that cell's rho. Fail loud
+    rather than substitute a zero: a silently missing CI would draw a bar that
+    reads as precise.
+    """
+    ci = row.get("ci_frozen")
+    if not ci or len(ci) != 2 or any(x is None or math.isnan(float(x)) for x in ci):
+        raise ValueError(f"{where}: no usable ci_frozen — cannot build a calibrated error bar")
+    return max(0.0, (float(ci[1]) - float(ci[0])) / (2.0 * _Z95))
+
+
+def _combine_se(rhos: list[float], ses: list[float], *, shared: bool) -> tuple[float, dict]:
+    """SE of the PLOTTED MEAN: within-cell bootstrap error + between-cell spread.
+
+    One definition for every bar in both figures, so heights are comparable
+    across regimes, protocols and panels. The two branches differ only in
+    whether the within-cell error averages down:
+
+    * ``shared=True``  -- the cells are K reads of the SAME eval contexts, so
+      their context-sampling errors are common: ``var = v_bar + s2/K``.
+      A regime whose K cells are numerically identical (the PV arms under
+      P-B) therefore keeps its real bootstrap SE instead of collapsing to
+      exactly 0, which is what averaging K copies of one number produced.
+    * ``shared=False`` -- the cells are disjoint corpora (each OOD dataset;
+      each behaviour in the average panel), so the within-cell error DOES
+      average down and the between-cell spread is corrected for the
+      within-cell noise it already contains (a DerSimonian-Laird-style moment
+      estimator for the heterogeneity, floored at 0):
+      ``var = (v_bar + max(0, s2 - v_bar)) / K``.
+
+    K == 1 collapses both branches to that cell's own bootstrap SE.
+    """
+    k = len(rhos)
+    vbar = sum(s * s for s in ses) / k
+    s2 = st.variance(rhos) if k > 1 else 0.0
+    if shared:
+        var = vbar + (s2 / k if k > 1 else 0.0)
+    else:
+        var = (vbar + (max(0.0, s2 - vbar) if k > 1 else 0.0)) / k
+    return math.sqrt(var), {
+        "k": k,
+        "se_within": math.sqrt(vbar),
+        "sd_between": math.sqrt(s2),
+        "shared": shared,
+    }
 
 
 def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dict]:
@@ -200,13 +258,22 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                 dropped = () if all_failed else tuple(rn for rn, _r in in_scope if not ok(rn))
                 if not use:
                     continue
-                rho = float(st.mean([r["rho_frozen"] for _rn, r in use]))
-                if len(use) == 1 and use[0][1].get("ci_frozen"):
-                    lo, hi = use[0][1]["ci_frozen"]
-                    err = float(max(0.0, max(hi - rho, rho - lo)))
-                else:
-                    err = _sem([r["rho_frozen"] for _rn, r in use])
-                n_eval = sum(int(r.get("n_eval") or 0) for _rn, r in use)
+                rhos = [float(r["rho_frozen"]) for _rn, r in use]
+                rho = float(st.mean(rhos))
+                shared = key in SHARED_EVAL_CONTEXTS
+                if shared and len({int(r.get("n_eval") or 0) for _rn, r in use}) > 1:
+                    raise ValueError(
+                        f"{beh}/{key}/{arm}: regime is declared shared-context but its cells "
+                        "disagree on n_eval — the shared-context SE rule does not apply"
+                    )
+                ses = [_se_from_ci(r, f"{beh}/{key}/{arm}/{rn}") for rn, r in use]
+                err, ci_parts = _combine_se(rhos, ses, shared=shared)
+                # A shared-context regime reports ONE eval set, not K copies of it.
+                n_eval = (
+                    int(use[0][1].get("n_eval") or 0)
+                    if shared
+                    else sum(int(r.get("n_eval") or 0) for _rn, r in use)
+                )
                 vals[(beh, key, arm)] = (
                     rho,
                     err,
@@ -217,6 +284,7 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                     dropped,
                     scope_dropped,
                     all_failed,
+                    ci_parts,
                 )
 
     for key, _ in REGIMES:
@@ -228,9 +296,15 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                 if (b, key, arm) in vals and not vals[(b, key, arm)][8]
             ]
             if per:
+                # Behaviours are disjoint corpora, so the panel mean propagates
+                # each behaviour bar's own SE and adds the behaviour-to-behaviour
+                # heterogeneity on top.
+                avg_err, avg_parts = _combine_se(
+                    [p[0] for p in per], [p[1] for p in per], shared=False
+                )
                 vals[("average", key, arm)] = (
                     float(st.mean([p[0] for p in per])),
-                    _sem([p[0] for p in per]),
+                    avg_err,
                     sum(p[2] for p in per),
                     len(per),
                     len(BEHAVIORS),
@@ -238,6 +312,7 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                     (),
                     (),
                     False,
+                    avg_parts,
                 )
     return vals, {}
 
@@ -418,8 +493,24 @@ def build_caption(vals: dict, protocol: str, methods) -> str:
         "whole evil OOD set. Removing it therefore REMOVES the one setting where the mapped-answer "
         "readout was decisively worse than the context readout; read evil's OOD bar as 'MHJ only', "
         "never as evil OOD in general.\n"
-        "Bars are the mean over the surviving datasets; error bars are the committed bootstrap CI "
-        "for single-dataset regimes and the s.e.m. across datasets for multi-dataset ones. "
+        "ERROR BARS -- one definition for every bar in both figures: +/-1 standard error of the "
+        "PLOTTED MEAN, combining (i) within-cell sampling error over eval contexts, taken as "
+        "half-width/1.96 of each cell's committed 95% bootstrap CI (the bootstrap resamples eval "
+        "contexts), and (ii) between-cell spread. The combination rule follows whether the "
+        "averaged cells share eval contexts. The three non-OOD regimes do: under P-B the K holdout "
+        "fits all read ONE common pvsynth grid / WildChat slice / 20% held-in slice, so the "
+        "context error is COMMON and does not average down -- var = v_within + s2_between/K. The "
+        "completely-OOD regime does not (each cell is a different held-out corpus), nor do the "
+        "three behaviours in the average panel, so there var = (v_within + tau2)/K with tau2 = "
+        "max(0, s2_between - v_within) correcting the observed spread for the within-cell noise it "
+        "already contains. A single-cell bar reduces to that cell's own bootstrap SE under both "
+        "rules. This SUPERSEDES the previous mixed convention (bootstrap CI for single-dataset "
+        "bars, bare s.e.m. across cells otherwise), whose s.e.m. branch read EXACTLY 0.000 for the "
+        "persona-vector arms in every shared-context P-B regime -- those arms are not "
+        "label-consuming, so the K LODO fits return literally one repeated number and their spread "
+        "measures nothing; the bars looked precise where no precision had been estimated. "
+        "Correspondingly, n_eval for a shared-context regime below now counts that ONE eval set, "
+        "not K copies of it. "
         "Only the CONTEXT-based variant is scored (variant=context_end); the prefix-end arm is a "
         "stated scope deviation inherited from the parent round. Mapping is LINEAR throughout; no "
         "MLP or kernel arm. METHOD ROSTER = the result2_fivemethod reference roster MINUS "
