@@ -20,6 +20,7 @@ origin_prompt: 'Help me to plan this issue based on the previous causality exper
   types), linear read-probe companion included, all three deferred axes (conflict,
   recency, capacity/load) folded in, workflow v2 dogfood.'
 workflow: v2
+backend: runpod
 goal: 'On Qwen-2.5-7B-Instruct, determine which kinds of context information are both
   CARRIED at and CAUSALLY USABLE from a single context position by patching ONLY that
   position between minimal-pair contexts that differ in exactly one information type
