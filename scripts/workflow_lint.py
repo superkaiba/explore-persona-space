@@ -13070,7 +13070,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # gate + Blocker-tags entry; cap sized to the #2012-first merge-order
     # base too — 99,822 + 1,935 = 101,757 measured under that order, so
     # cap = worse-order measured + ~1.0 KB, inside the both-orders
-    # admissible window 101,757–103,461. Prior: 99_500.)
+    # admissible window 101,757-103,461. Prior: 99_500.)
     "code-reviewer.md": 102_800,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
