@@ -11258,6 +11258,202 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
     return errors
 
 
+def check_authorized_stub_wiring(  # noqa: C901 -- flat per-surface token ladder (seven pinned surfaces, #2171), mirroring check_smoke_blind_spot_review_lens
+    *, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL if the #2171 ``PASS_AUTHORIZED_STUB`` wiring is absent or stale
+    on ANY of its seven surfaces.
+
+    Task #2163 (2026-08-07) hit the Step 6d.0 gate's own documented escape
+    ("re-authorize the stubs in §4 Design") with NO token to land on — every
+    surface annotated it "not yet wired" / "v1.1" — and the orchestrator had
+    to improvise a shape-violating ``PASS_UNIFIED`` grant. #2171 wired the
+    escape: the fifth verdict token ``PASS_AUTHORIZED_STUB``, granted ONLY by
+    ``task.py check-authorized-stub`` (rc=0). This check pins the wiring
+    across its surfaces, region-anchored, so a future refactor cannot
+    silently strip one and re-open the unwired state (the #811 prose-only
+    class):
+
+    (a) `.claude/skills/issue/SKILL.md` — the Step 6d.0 region (from
+        ``##### Step 6d.0:`` to ``##### Step 6d.0-bis``) names
+        ``PASS_AUTHORIZED_STUB`` AND ``check-authorized-stub``, and does NOT
+        contain ``not yet wired``;
+    (b) `.claude/workflow.yaml` — names ``PASS_AUTHORIZED_STUB``; does NOT
+        contain ``canary-like exception, v1.1``;
+    (c) `.claude/skills/issue/markers.md` — names ``PASS_AUTHORIZED_STUB``
+        (regen-freshness pin — markers.md is generated from workflow.yaml
+        via ``--emit-tables``);
+    (d) `.claude/agents/experiment-implementer.md` — names
+        ``PASS_AUTHORIZED_STUB``;
+    (e) `.claude/rules/experiment-implementer-section-reference.md` — names
+        ``PASS_AUTHORIZED_STUB``; does NOT contain ``does NOT yet wire``;
+    (f) `.claude/rules/code-reviewer-section-reference.md` — the
+        ``## Step 0.55 detail`` section (up to the next ``## `` heading)
+        names ``PASS_AUTHORIZED_STUB``;
+    (g) `src/explore_persona_space/task_workflow.py` — contains
+        ``def authorized_stub_grant(`` — the routing row's command target
+        exists, so the row can never regress to prose-only (#811 class).
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    token = "PASS_AUTHORIZED_STUB"
+    errors: list[str] = []
+
+    # (a) issue/SKILL.md: the Step 6d.0 routing-table region.
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if not skill.is_file():
+        errors.append(
+            f"{skill}: missing — the Step 6d.0 routing table (the "
+            f"PASS_AUTHORIZED_STUB grant row, #2171) must live in the /issue skill."
+        )
+    else:
+        text = skill.read_text(encoding="utf-8")
+        idx = text.find("##### Step 6d.0:")
+        if idx == -1:
+            errors.append(
+                f"{skill}: missing the '##### Step 6d.0:' heading (#2171) — the "
+                f"smoke-architecture routing table (which carries the "
+                f"PASS_AUTHORIZED_STUB grant row) is unlocatable."
+            )
+        else:
+            nxt = text.find("##### Step 6d.0-bis", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+            if token not in region:
+                errors.append(
+                    f"{skill}: the Step 6d.0 region carries no {token} routing row "
+                    f"(#2171) — the gate's sanctioned stub-authorization escape has "
+                    f"no landing token (the #2163 unwired-escape incident)."
+                )
+            if "check-authorized-stub" not in region:
+                errors.append(
+                    f"{skill}: the Step 6d.0 region does not name "
+                    f"'check-authorized-stub' (#2171) — the grant must be the "
+                    f"checker's exit code (task.py check-authorized-stub), never "
+                    f"orchestrator prose judgment (#397)."
+                )
+            if "not yet wired" in region:
+                errors.append(
+                    f"{skill}: the Step 6d.0 region still says 'not yet wired' "
+                    f"(#2171 wired the authorized-stub escape) — the stale "
+                    f"annotation re-opens the unwired state."
+                )
+
+    # (b) workflow.yaml: the marker schema + gates.inline id=10 reason.
+    wf = root / ".claude" / "workflow.yaml"
+    if not wf.is_file():
+        errors.append(
+            f"{wf}: missing — the epm:smoke-architecture-check marker schema "
+            f"(which names {token}, #2171) must live in workflow.yaml."
+        )
+    else:
+        text = wf.read_text(encoding="utf-8")
+        if token not in text:
+            errors.append(
+                f"{wf}: does not name {token} (#2171) — the marker schema must "
+                f"document the fifth verdict token beside PASS_PARTIAL."
+            )
+        if "canary-like exception, v1.1" in text:
+            errors.append(
+                f"{wf}: still says 'canary-like exception, v1.1' (#2171 wired the "
+                f"authorized-stub escape) — the stale annotation re-opens the "
+                f"unwired state."
+            )
+
+    # (c) issue/markers.md: generated from workflow.yaml — regen-freshness pin.
+    markers = root / ".claude" / "skills" / "issue" / "markers.md"
+    if not markers.is_file():
+        errors.append(
+            f"{markers}: missing — the generated marker table (which names "
+            f"{token}, #2171) must exist; regenerate via "
+            f"`uv run python scripts/workflow_lint.py --emit-tables`."
+        )
+    elif token not in markers.read_text(encoding="utf-8"):
+        errors.append(
+            f"{markers}: does not name {token} (#2171) — markers.md is generated "
+            f"from workflow.yaml; regenerate via "
+            f"`uv run python scripts/workflow_lint.py --emit-tables` and commit it "
+            f"in the same change (the Step 5a family-atomic sync)."
+        )
+
+    # (d) experiment-implementer.md: the item-5 verdict vocabulary.
+    impl = root / ".claude" / "agents" / "experiment-implementer.md"
+    if not impl.is_file():
+        errors.append(
+            f"{impl}: missing — the implementer's verdict vocabulary (which names "
+            f"{token}, #2171) must live in experiment-implementer.md."
+        )
+    elif token not in impl.read_text(encoding="utf-8"):
+        errors.append(
+            f"{impl}: does not name {token} (#2171) — the implementer's item-5 "
+            f"verdict vocabulary must carry the fifth token + its self-tag rule."
+        )
+
+    # (e) experiment-implementer-section-reference.md: the item-5 detail.
+    impl_ref = root / ".claude" / "rules" / "experiment-implementer-section-reference.md"
+    if not impl_ref.is_file():
+        errors.append(
+            f"{impl_ref}: missing — the item-5 detail (which names {token}, "
+            f"#2171) must live in experiment-implementer-section-reference.md."
+        )
+    else:
+        text = impl_ref.read_text(encoding="utf-8")
+        if token not in text:
+            errors.append(
+                f"{impl_ref}: does not name {token} (#2171) — the item-5 detail's "
+                f"legal-tokens list must carry the fifth token."
+            )
+        if "does NOT yet wire" in text:
+            errors.append(
+                f"{impl_ref}: still says 'does NOT yet wire' (#2171 wired the "
+                f"authorized-stub escape) — the stale annotation re-opens the "
+                f"unwired state."
+            )
+
+    # (f) code-reviewer-section-reference.md: the Step 0.55 detail section.
+    rev_ref = root / ".claude" / "rules" / "code-reviewer-section-reference.md"
+    if not rev_ref.is_file():
+        errors.append(
+            f"{rev_ref}: missing — the Step 0.55 detail (which names {token}, "
+            f"#2171) must live in code-reviewer-section-reference.md."
+        )
+    else:
+        text = rev_ref.read_text(encoding="utf-8")
+        idx = text.find("## Step 0.55 detail")
+        if idx == -1:
+            errors.append(
+                f"{rev_ref}: missing the '## Step 0.55 detail' section (#2171) — "
+                f"the reviewer-side verdict enumeration (which names {token}) is "
+                f"unlocatable."
+            )
+        else:
+            nxt = text.find("\n## ", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+            if token not in region:
+                errors.append(
+                    f"{rev_ref}: the '## Step 0.55 detail' section does not name "
+                    f"{token} (#2171) — the reviewer's verdict enumeration + "
+                    f"per-verdict binding must cover the fifth token."
+                )
+
+    # (g) task_workflow.py: the grant predicate exists (never prose-only, #811).
+    twf = root / "src" / "explore_persona_space" / "task_workflow.py"
+    if not twf.is_file():
+        errors.append(
+            f"{twf}: missing — the authorized-stub grant predicate "
+            f"(`def authorized_stub_grant(`, #2171) must live in task_workflow.py."
+        )
+    elif "def authorized_stub_grant(" not in twf.read_text(encoding="utf-8"):
+        errors.append(
+            f"{twf}: no `def authorized_stub_grant(` (#2171) — the Step 6d.0 "
+            f"routing row's command target (task.py check-authorized-stub) would "
+            f"point at a ghost; the grant must stay code, never prose-only (#811)."
+        )
+
+    return errors
+
+
 def check_smoke_blind_spot_review_lens(  # noqa: C901 -- flat per-surface token ladder (seven pinned surfaces, #2165); extracting a branch would just relocate it
     *, repo_root: Path | None = None
 ) -> list[str]:
@@ -13517,10 +13713,12 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 897,435 B post-t3b story->citation trim; the remaining mass is
-    # the judgment tranche (bash-block extraction to step10d_guards.sh-style
+    # measured 901,729 B after #2171 wired the Step 6d.0 PASS_AUTHORIZED_STUB
+    # routing row + PASS_PARTIAL rewrite + 5c-bis extensions (~+1.8 KB on the
+    # 2026-08-05 897,435 B post-t3b trim base); the remaining mass is the
+    # judgment tranche (bash-block extraction to step10d_guards.sh-style
     # scripts, 9a-quater legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 900_000,
+    "issue/SKILL.md": 903_000,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
@@ -14968,6 +15166,24 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Step 6d.0 post-provision). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-authorized-stub-wiring",
+        action="store_true",
+        help="FAIL if the #2171 PASS_AUTHORIZED_STUB wiring is absent or stale "
+        "on any of its seven surfaces: the Step 6d.0 routing row + "
+        "check-authorized-stub command in issue/SKILL.md (region free of "
+        "'not yet wired'), the workflow.yaml marker schema (free of "
+        "'canary-like exception, v1.1'), the generated issue/markers.md, the "
+        "experiment-implementer.md item-5 vocabulary, the "
+        "experiment-implementer-section-reference.md detail (free of 'does "
+        "NOT yet wire'), the code-reviewer-section-reference.md Step 0.55 "
+        "section, and the `def authorized_stub_grant(` predicate in "
+        "task_workflow.py. Pins the Step 6d.0 authorized-stub grant escape "
+        "wired by #2171 (incident #2163: the gate's own documented escape "
+        "had no landing token and the orchestrator improvised a "
+        "shape-violating PASS_UNIFIED grant). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-smoke-blind-spot-review-lens",
         action="store_true",
         help="FAIL if the #2165 smoke blind-spot enumeration lens is absent "
@@ -15499,6 +15715,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_long_loop_restartability_review_lens
         or args.check_hollow_verification_gate_review_lens
         or args.check_smoke_architecture_review_lens
+        or args.check_authorized_stub_wiring
         or args.check_smoke_blind_spot_review_lens
         or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
@@ -15647,6 +15864,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_hollow_verification_gate_review_lens())
     if args.check_smoke_architecture_review_lens or no_flags:
         errors.extend(check_smoke_architecture_review_lens())
+    if args.check_authorized_stub_wiring or no_flags:
+        errors.extend(check_authorized_stub_wiring())
     if args.check_smoke_blind_spot_review_lens or no_flags:
         errors.extend(check_smoke_blind_spot_review_lens())
     if args.check_smoke_blind_spots:
