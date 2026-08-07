@@ -8995,8 +8995,8 @@
       "goal": "Characterize, at full 131,072-feature dictionary width, which SAE features the context->answer map READS at the context vector v_C (the last prompt token, the newline of the assistant header) on Qwen-2.5-7B-Instruct layer 19; separate READ (used by the fitted map) from CARRIED (present at v_C but unused) and from FREQUENT (mechanically weighted by firing rate); and determine which mechanical feature properties predict being read, as activity-matched partials against a selection-symmetric null.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2163",
-      "status": "running",
+      "path": "tasks/verifying/2163",
+      "status": "verifying",
       "title": "Which SAE features are read at the context vector by the context->answer map"
     },
     "2164": {
