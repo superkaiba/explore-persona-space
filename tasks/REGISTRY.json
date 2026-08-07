@@ -9135,8 +9135,8 @@
     "2182": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2182",
-      "status": "running",
+      "path": "tasks/reviewing/2182",
+      "status": "reviewing",
       "title": "sync_repo_root: fail loud when a pull --autostash is left unrestored (silently reverts concurrent sessions' uncommitted work)"
     },
     "22": {
