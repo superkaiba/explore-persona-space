@@ -222,23 +222,63 @@ def fig_hero(
     _save(fig, out_dir, "hero_ftype_perpair", inputs)
 
 
+# Manifest ``read_write_2x2`` quadrant labels (r3 MAJOR 1). Quadrant
+# membership is the PERSISTED (probe_verdict, causal_verdict) pair from
+# two_by_two.json — never plot position: the probe-positive threshold is the
+# PER-CELL max-selected 97.5th permutation band (probe.json perm_band_97p5),
+# so no single vertical line marks the read threshold and none is drawn (an
+# AUC=0.5 chance line would misread as the registered threshold).
+QUADRANT_LABELS = {
+    ("positive", "positive"): "stored-and-used",
+    ("positive", "null"): "stored-but-unusable",
+    ("null", "positive"): "used-but-not-decoded",
+    ("null", "null"): "absent",
+}
+QUADRANT_STYLE = {
+    "stored-and-used": ("o", "#2a9d2a"),
+    "stored-but-unusable": ("s", "#4878d0"),
+    "used-but-not-decoded": ("D", "#ee854a"),
+    "absent": ("o", "#9d9d9d"),
+    "untestable-causal": ("x", "#c44e52"),
+}
+
+
+def _quadrant_of(r: dict) -> str | None:
+    """Registered quadrant label for a persisted two_by_two.json row.
+
+    ``untestable-causal`` (post-exclusion n < 12) is the explicit fifth
+    label regardless of the probe verdict; a ``missing`` probe verdict (no
+    probe rows for the cell) maps to None — such rows carry no ``max_auc``
+    and cannot be positioned in the AUC-vs-F plane.
+    """
+    if r["causal_verdict"] == "untestable-causal":
+        return "untestable-causal"
+    return QUADRANT_LABELS.get((r["probe_verdict"], r["causal_verdict"]))
+
+
 def fig_two_by_two(two: dict, out_dir: Path, inputs: list[Path]) -> None:
+    """Manifest ``read_write_2x2``: one point per (type x slot) in the
+    AUC-vs-F plane, quadrant membership encoded from the persisted
+    (probe_verdict, causal_verdict) pair — probe-positive = the per-cell
+    max-selected permutation band, causal-positive = Holm +
+    disjoint-both-nulls — with the four registered quadrant labels drawn
+    (legend, every class always present) and untestable-causal as the
+    explicit fifth label. No vertical threshold line: the probe threshold
+    is per-cell, so a single vertical (e.g. chance 0.5) would misrepresent
+    the registered read threshold (r3 MAJOR 1)."""
     rows = two["cells"]
+    plottable = [r for r in rows if r["max_auc"] is not None]
+    n_no_probe = len(rows) - len(plottable)
     fig, ax = plt.subplots(figsize=(9, 8))
-    style = {
-        "positive": ("o", "#2a9d2a"),
-        "null": ("o", "#9d9d9d"),
-        "untestable-causal": ("x", "#c44e52"),
-    }
-    for verdict, (marker, color) in style.items():
-        pts = [r for r in rows if r["causal_verdict"] == verdict and r["max_auc"] is not None]
+    for quad, (marker, color) in QUADRANT_STYLE.items():
+        pts = [r for r in plottable if _quadrant_of(r) == quad]
         ax.scatter(
             [r["max_auc"] for r in pts],
             [r["f_steered_mean"] if r["f_steered_mean"] is not None else 0.0 for r in pts],
             marker=marker,
-            s=26,
+            s=30,
             color=color,
-            label=f"causal: {verdict} (n={len(pts)})",
+            label=f"{quad} (n={len(pts)})",
             alpha=0.85,
         )
         for r in pts:
@@ -248,12 +288,14 @@ def fig_two_by_two(two: dict, out_dir: Path, inputs: list[Path]) -> None:
                 fontsize=4.5,
                 alpha=0.8,
             )
-    ax.axvline(0.5, color="k", lw=0.6, ls=":")
     ax.axhline(0.0, color="k", lw=0.6)
-    ax.set_xlabel("probe max-over-layers AUC (read)")
+    ax.set_xlabel("probe max-over-layers AUC (read; positive = clears the per-cell perm band)")
     ax.set_ylabel("steered F_beh mean (write)")
-    ax.set_title("Read x write 2x2 (every cell x slot; untestable-causal marked x)")
-    ax.legend(fontsize=8)
+    title = "Read x write 2x2 — quadrant = persisted (probe, causal) verdicts"
+    if n_no_probe:
+        title += f" ({n_no_probe} cells without probe rows omitted)"
+    ax.set_title(title)
+    ax.legend(fontsize=8, title="quadrant (verdict-encoded, per-cell probe threshold)")
     _save(fig, out_dir, "two_by_two", inputs)
 
 
@@ -706,30 +748,69 @@ def fig_anchor_separation(anchor_rows: list[dict], out_dir: Path, inputs: list[P
     _save(fig, out_dir, "anchor_separation_diag", inputs)
 
 
+# r3 MINOR 1: the manifest transform registers "Spearman rho across cells
+# WITH DYNAMIC RANGE reported in-panel" — the same restriction phrase as the
+# rule-19 grain, so the screen mirrors
+# issue2162_analysis.RULE19_DYNAMIC_RANGE_SCREEN.
+ACT_BEH_DYNAMIC_RANGE_SCREEN = (
+    "a (cell x slot) unit enters an arm's rho iff it has >=2 separation-kept rows with both "
+    "F_act and F_beh present AND nonzero spread (max > min) in BOTH quantities across those "
+    "rows (a constant/degenerate unit carries no dynamic range)"
+)
+
+
+def _act_beh_units(rows: list[dict]) -> dict[str, dict]:
+    """Per-(cell|slot) aggregation for ``act_beh_agreement`` (r3 MINOR 1).
+
+    Applies the manifest separation exclusion, then the rule-19-mirrored
+    dynamic-range screen; returns per-unit means + ``in_rho`` (whether the
+    unit enters the arm's Spearman rho). Screened-out units stay PLOTTED —
+    the manifest plotted_quantity is one point per cell-arm — they are only
+    excluded from the statistic.
+    """
+    per: dict[str, list[tuple[float, float]]] = defaultdict(list)
+    for r in rows:
+        if (
+            r["f_beh"] is None
+            or r["f_act"] is None
+            or r["separation"] is None
+            or abs(r["separation"]) < SEPARATION_BAR
+        ):
+            continue
+        per[f"{r['cell']}|{r['slot']}"].append((r["f_act"], r["f_beh"]))
+    out: dict[str, dict] = {}
+    for k, pts in sorted(per.items()):
+        acts = [a for a, _ in pts]
+        behs = [b for _, b in pts]
+        out[k] = {
+            "act_mean": float(np.mean(acts)),
+            "beh_mean": float(np.mean(behs)),
+            "n_rows": len(pts),
+            "in_rho": len(pts) >= 2 and max(acts) > min(acts) and max(behs) > min(behs),
+        }
+    return out
+
+
 def fig_act_beh_agreement(
     arm_rows: dict[str, list[dict]], out_dir: Path, inputs: list[Path]
 ) -> None:
     """Manifest ``act_beh_agreement``: mean F_act (read layer 26, disjoint
-    floor halves) vs mean F_beh per (cell x slot x arm), separation-excluded;
-    Spearman rho per arm in the legend."""
+    floor halves) vs mean F_beh per (cell x slot x arm), separation-excluded.
+    Per-arm Spearman rho is computed ONLY across units passing the
+    rule-19-mirrored dynamic-range screen (``ACT_BEH_DYNAMIC_RANGE_SCREEN``),
+    with the screened points' realized dynamic range stated in-panel; units
+    failing the screen render hollow and carry no rho weight (r3 MINOR 1)."""
     from scipy.stats import spearmanr
 
     fig, ax = plt.subplots(figsize=(9, 8))
+    panel_lines = ["rho over units with dynamic range (rule-19-mirrored screen):"]
+    dropped_any = False
     for arm, rows in arm_rows.items():
-        agg: dict[str, dict[str, list[float]]] = defaultdict(lambda: {"act": [], "beh": []})
-        for r in rows:
-            if (
-                r["f_beh"] is None
-                or r["f_act"] is None
-                or r["separation"] is None
-                or abs(r["separation"]) < 0.5
-            ):
-                continue
-            k = f"{r['cell']}|{r['slot']}"
-            agg[k]["act"].append(r["f_act"])
-            agg[k]["beh"].append(r["f_beh"])
-        xs = [float(np.mean(v["act"])) for v in agg.values() if v["act"]]
-        ys = [float(np.mean(v["beh"])) for v in agg.values() if v["beh"]]
+        units = _act_beh_units(rows)
+        kept = {k: u for k, u in units.items() if u["in_rho"]}
+        dropped = {k: u for k, u in units.items() if not u["in_rho"]}
+        xs = [u["act_mean"] for u in kept.values()]
+        ys = [u["beh_mean"] for u in kept.values()]
         rho = spearmanr(xs, ys)[0] if len(xs) >= 5 else float("nan")
         ax.scatter(
             xs,
@@ -737,11 +818,36 @@ def fig_act_beh_agreement(
             s=18,
             color=ARM_COLORS[arm],
             alpha=0.8,
-            label=f"{arm} (n={len(xs)}, rho={rho:.3f})",
+            label=f"{arm} (rho={rho:.3f} over n={len(kept)} screened; {len(dropped)} dropped)",
         )
-        for k, v in agg.items():
-            if v["act"] and v["beh"]:
-                ax.annotate(k, (np.mean(v["act"]), np.mean(v["beh"])), fontsize=3.5, alpha=0.6)
+        if dropped:
+            dropped_any = True
+            ax.scatter(
+                [u["act_mean"] for u in dropped.values()],
+                [u["beh_mean"] for u in dropped.values()],
+                s=18,
+                facecolors="none",
+                edgecolors=ARM_COLORS[arm],
+                alpha=0.8,
+            )
+        for k, u in units.items():
+            ax.annotate(k, (u["act_mean"], u["beh_mean"]), fontsize=3.5, alpha=0.6)
+        if kept:
+            panel_lines.append(
+                f"{arm}: F_act range [{min(xs):+.3f}, {max(xs):+.3f}], "
+                f"F_beh range [{min(ys):+.3f}, {max(ys):+.3f}] (n={len(kept)})"
+            )
+    if dropped_any:
+        panel_lines.append("hollow points: screened out of rho (no dynamic range)")
+    ax.text(
+        0.02,
+        0.98,
+        "\n".join(panel_lines),
+        transform=ax.transAxes,
+        fontsize=5.5,
+        va="top",
+        bbox={"facecolor": "white", "alpha": 0.7, "lw": 0.3},
+    )
     ax.axhline(0.0, color="k", lw=0.5)
     ax.axvline(0.0, color="k", lw=0.5)
     ax.set_xlabel("mean F_act (read layer 26)")

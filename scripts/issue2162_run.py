@@ -2478,8 +2478,9 @@ def _sentinel_payload(cfg: RunConfig, uploaded: dict[str, list[str]]) -> dict:
     gate = json.loads(gate_path.read_text()) if gate_path.exists() else {}
     degen_path = cfg.bank_dir / "degeneracy_report.json"
     degen = json.loads(degen_path.read_text()) if degen_path.exists() else {}
+    block_done_recs = sorted((cfg.manifest_dir / "blocks").glob("*.done.json"))
     cap_hits, rows_total = 0, 0
-    for done in sorted((cfg.manifest_dir / "blocks").glob("*.done.json")):
+    for done in block_done_recs:
         rec = json.loads(done.read_text())
         cap_hits += int(rec.get("n_cap_hit", 0))
         rows_total += int(rec.get("n_rows", 0))
@@ -2489,6 +2490,11 @@ def _sentinel_payload(cfg: RunConfig, uploaded: dict[str, list[str]]) -> dict:
         # report pipeline) key on margin_deferred to distinguish "secondary DV
         # deferred with a recipe" from "secondary DV missing".
         **margin_state,
+        # r3 MINOR 2: on the fresh deferred-leg pod blocks/ is empty, so the
+        # grid stats below are zeroed — this stamp tells a downstream reader
+        # of the SECOND sentinel that no local grid block state contributed
+        # (the grid ran on the primary pod), never "the run produced nothing".
+        "deferred_leg": not block_done_recs,
         "eval_numbers": {
             "grid_shards": n_grid_shards,
             "va_shards": n_va_shards,

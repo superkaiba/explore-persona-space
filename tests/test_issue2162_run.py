@@ -403,13 +403,16 @@ def test_pilot_leaves_no_done_state_on_shared_out_root(tmp_path, cfg, pairs):
         and n.args[0].func.id == "block_done_path"
     ]
     assert len(done_writes) == 2, "expected the block + margin-twin done-writes"
+    # r3 MINOR 3: iterate iff.body ONLY — ast.walk(iff) would also count a
+    # done-write placed in the `else:` branch of `if write_done:` as GUARDED.
     guarded_ids = {
         id(n)
         for iff in ast.walk(rb)
         if isinstance(iff, ast.If)
         and isinstance(iff.test, ast.Name)
         and iff.test.id == "write_done"
-        for n in ast.walk(iff)
+        for stmt in iff.body
+        for n in ast.walk(stmt)
     }
     unguarded = [n for n in done_writes if id(n) not in guarded_ids]
     assert not unguarded, "every run_block done-write must be write_done-guarded"
@@ -605,6 +608,19 @@ def test_sentinel_margin_deferred_both_branches(tmp_path, pairs):
     assert payload["margin_deferred"] is True
     assert "dispatch.sh margin" in payload["margin_deferred_recipe"]
     assert payload["margin_blocks_done"] == 0
+    # r3 MINOR 2: no local grid block state (the deferred-leg pod shape) ->
+    # the sentinel stamps deferred_leg so its zeroed grid stats read as
+    # "grid ran elsewhere", never "run produced nothing".
+    assert payload["deferred_leg"] is True
+    assert payload["eval_numbers"]["grid_shards"] == 0
+    # A pod WITH local grid block done-state stamps deferred_leg False.
+    grid_done = cfg.manifest_dir / "blocks"
+    grid_done.mkdir(parents=True, exist_ok=True)
+    R._write_json_atomic(grid_done / "b0.done.json", {"n_cap_hit": 1, "n_rows": 10})
+    payload_grid = R._sentinel_payload(cfg, {})
+    assert payload_grid["deferred_leg"] is False
+    assert payload_grid["eval_numbers"]["grid_rollouts_persisted"] == 10
+    (grid_done / "b0.done.json").unlink()
 
     # Complete the margin legs on disk -> deferred flips False, recipe gone.
     blocks = R.smoke_blocks(pairs)
