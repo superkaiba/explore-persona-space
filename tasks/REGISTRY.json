@@ -9128,8 +9128,8 @@
     "2181": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2181",
-      "status": "approved",
+      "path": "tasks/running/2181",
+      "status": "running",
       "title": "Ban repo_root()-derived sys.path inserts in tests (worktree runs silently exercise main's code)"
     },
     "2182": {
