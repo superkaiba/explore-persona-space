@@ -231,6 +231,39 @@ def test_fig_diagnostics_missing_anchor_baseline_is_nan_not_zero(tmp_path, caplo
     assert any("no anchor incoherence baseline" in rec.message for rec in caplog.records)
 
 
+def test_fig_diagnostics_absent_coherent_count_skips_context(tmp_path, caplog):
+    """r4 MINOR 1 (round 5): an anchor side with n_*_rollouts present but
+    n_*_coherent ABSENT must NOT read as "0 coherent of N" (a fabricated
+    maximally-incoherent baseline) — the context is skipped, so a cell with
+    no other valid contexts routes into the r2 H3 missing-baseline NaN +
+    loud-warning path instead of a silent 1.0 baseline."""
+    import logging
+
+    stats = {"per_cell": {"instr_format|ce": _cell_rec("instr_format", "ce")}}
+    arm_rows = {
+        "steered": [
+            {"cell": "instr_format", "slot": "ce", "n_coherent": 7, "n_cap_hit": 1, "n_draws": 10}
+        ],
+        "shuffled": [],
+        "crosstype": [],
+    }
+    # Rollout count present, coherent count ABSENT (no ceiling fields at all).
+    anchors = [
+        {
+            "cell": "instr_format",
+            "carrier": "c1",
+            "value_a": "v1",
+            "value_b": "v2",
+            "pair_id": "p1",
+            "n_floor_rollouts": 10,
+        }
+    ]
+    with caplog.at_level(logging.WARNING, logger="issue2162.figures"):
+        F.fig_diagnostics(stats, arm_rows, anchors, tmp_path, [Path("x")])
+    _assert_saved(tmp_path, "diagnostics")
+    assert any("no anchor incoherence baseline" in rec.message for rec in caplog.records)
+
+
 def test_fig_margin_validation_percell_grain(tmp_path):
     """The margin-validation figure plots the REGISTERED per-cell grain from
     margin_validation.json's percell_points + the per-pair companion (r2 R2)."""
@@ -265,12 +298,15 @@ def _two_rec(cell: str, causal: str, probe: str, auc: float | None, f: float | N
     }
 
 
-def test_fig_two_by_two_quadrant_labels(tmp_path):
+def test_fig_two_by_two_quadrant_labels(tmp_path, monkeypatch):
     """r3 MAJOR 1: quadrant membership comes from the PERSISTED
     (probe_verdict, causal_verdict) pair — the four registered manifest
     labels, untestable-causal as the explicit fifth — and the render
     consumes probe_verdict (no causal-only styling, no chance axvline
-    standing in for the per-cell probe threshold)."""
+    standing in for the per-cell probe threshold). r4 MAJOR 1 (round 5):
+    a row with f_steered_mean=None (zero surviving steered pairs) is
+    OMITTED from the scatter — never plotted at a fabricated y=0.0 — and
+    counted in the title beside the existing no-probe-rows count."""
     # The four registered label strings (manifest read_write_2x2
     # plotted_quantity), pinned verbatim.
     assert set(F.QUADRANT_LABELS.values()) == {
@@ -299,8 +335,27 @@ def test_fig_two_by_two_quadrant_labels(tmp_path):
             _two_rec("c6", "null", "missing", None),  # no probe rows -> omitted + counted
         ]
     }
+    captured: dict = {}
+    real_save = F._save
+
+    def _spy_save(fig, out_dir, name, inputs):
+        ax = fig.axes[0]
+        captured["title"] = ax.get_title()
+        captured["ys"] = [
+            float(y) for coll in ax.collections for _x, y in coll.get_offsets().tolist()
+        ]
+        real_save(fig, out_dir, name, inputs)
+
+    monkeypatch.setattr(F, "_save", _spy_save)
     F.fig_two_by_two(two, tmp_path, [Path("x")])
     _assert_saved(tmp_path, "two_by_two")
+    # c5 (untestable-causal, f_steered_mean=None) is excluded from the scatter:
+    # only c1-c4's genuinely-measured y=0.4 points render — no fabricated 0.0
+    # at the zero-effect coordinate — and the title counts BOTH omission
+    # classes (c6 no-probe-rows, c5 no-steered-F).
+    assert captured["ys"] == [0.4] * 4
+    assert "1 cells without probe rows omitted" in captured["title"]
+    assert "1 untestable cells without steered F omitted" in captured["title"]
 
 
 def test_fig_anchor_separation(tmp_path):
