@@ -2263,7 +2263,8 @@ def test_workflow_lint_check_heredoc_dotenv_cli_exits_zero():
 # 2026-06-29). Each fixture case writes a tiny ``*.sh`` under ``tmp_path``
 # and calls ``check_pipe_python(scripts_dir=tmp_path)``. The dual-engine
 # test additionally asserts the Python ``re`` lint and the POSIX
-# ``grep -qE`` hook (SOURCED from ``.claude/settings.json``, not a
+# ``grep -qE`` hook ERE (SOURCED from ``.claude/hooks/guard_python_pipe.sh``
+# — the #2009 extraction of the former inline settings.json command — not a
 # hard-coded copy — F2) AGREE on the §4 example set, including the F3
 # attached-arg (``python -c'code'``) shapes; the F1 fix flags
 # ``echo ... | python -c`` producer pipes (no longer skipped).
@@ -2437,33 +2438,19 @@ def test_pipe_python_bundled_in_no_flags_source_pin():
 
 
 def _load_shipped_pipe_python_hook_ere() -> str:
-    """Extract the pipe-into-python PreToolUse hook's POSIX ERE from the
-    SHIPPED `.claude/settings.json` (F2: source the regex from the live
-    config, never a hard-coded second copy — a hard-coded copy stays green
-    while the production hook drifts, defeating acceptance-criterion-4).
-
-    The pipe-python hook is identified by its unique BLOCKED message marker
-    (`BLOCKED: bare \\`| python -c/-m\\` pipe`), which disambiguates it from
-    the 4 OTHER PreToolUse Bash hooks. Returns the ERE between the hook's
-    `grep -qE '...'` single quotes (un-escaping the JSON `\\\\` → `\\`)."""
-    import json
-    import re
-
-    settings = json.loads((_REPO_ROOT / ".claude" / "settings.json").read_text())
-    for hook_block in settings.get("hooks", {}).get("PreToolUse", []):
-        if hook_block.get("matcher") != "Bash":
-            continue
-        for hook in hook_block.get("hooks", []):
-            cmd = hook.get("command", "")
-            if "BLOCKED: bare `| python -c/-m` pipe" not in cmd:
-                continue
-            m = re.search(r"grep -qE '([^']+)'", cmd)
-            assert m, f"pipe-python hook found but no `grep -qE '...'` pattern in: {cmd!r}"
-            # The command is a JSON string; `\\` in the file is a single
-            # backslash in the parsed value — json.loads already un-escaped
-            # it, so `m.group(1)` is the literal ERE the shell `grep` sees.
-            return m.group(1)
-    raise AssertionError("pipe-python PreToolUse Bash hook not found in .claude/settings.json")
+    """Extract the pipe-into-python guard's POSIX ERE from the SHIPPED
+    `.claude/hooks/guard_python_pipe.sh` (task #2009 extracted the former
+    inline `.claude/settings.json` command into that hook file; the
+    settings entry now carries only the script path — wiring pinned by
+    tests/test_guard_python_pipe.py). F2's anti-drift property is
+    preserved: the ERE is sourced from the live production hook's
+    `PIPE_PYTHON_ERE='...'` assignment, never a hard-coded second copy —
+    a hard-coded copy stays green while the production hook drifts,
+    defeating acceptance-criterion-4."""
+    text = (_REPO_ROOT / ".claude" / "hooks" / "guard_python_pipe.sh").read_text()
+    m = re.search(r"^PIPE_PYTHON_ERE='([^']+)'\s*$", text, re.MULTILINE)
+    assert m, "PIPE_PYTHON_ERE assignment not found in .claude/hooks/guard_python_pipe.sh"
+    return m.group(1)
 
 
 def test_check_pipe_python_dual_engine_agreement_on_example_set():
@@ -2475,13 +2462,17 @@ def test_check_pipe_python_dual_engine_agreement_on_example_set():
     `-[cm]([^A-Za-z0-9_]|$)`) are semantically identical, so there is no
     longer a divergence edge — the engines agree everywhere.
 
-    The hook regex is SOURCED FROM `.claude/settings.json` (F2): the test
-    parses the shipped `PreToolUse` Bash hook and extracts its
-    `grep -qE '...'` pattern, so the production hook cannot drift without
-    breaking this test (a hard-coded copy would stay green on drift)."""
+    The hook regex is SOURCED FROM `.claude/hooks/guard_python_pipe.sh`
+    (F2; the former inline settings.json command was extracted into that
+    hook file by #2009): the test extracts the shipped `PIPE_PYTHON_ERE`
+    assignment, so the production hook cannot drift without breaking this
+    test (a hard-coded copy would stay green on drift). NOTE: this drives
+    the RAW regex through grep — the hook's #1675 quoted-span strip runs
+    BEFORE the regex in production, so quoted-mention NOMATCH behavior is
+    pinned end-to-end in tests/test_guard_python_pipe.py, not here."""
     from workflow_lint import PIPE_PYTHON_RE  # the Python `re` lint regex
 
-    # F2: the POSIX-ERE hook regex, extracted from the SHIPPED settings.json.
+    # F2: the POSIX-ERE hook regex, extracted from the SHIPPED hook file.
     hook_ere = _load_shipped_pipe_python_hook_ere()
 
     def grep_matches(s: str) -> bool:
@@ -2520,29 +2511,26 @@ def test_check_pipe_python_dual_engine_agreement_on_example_set():
 
 
 def test_pipe_python_hook_subprocess_blocks_attached_arg():
-    """F3 hook-subprocess test — the SHIPPED PreToolUse hook command, fed
-    the harness JSON-stdin shape, must `exit 2` on the attached-argument
-    form `cat x | python -c'print(1)'` (valid shell that crashes exit 127
-    on this VM) and exit 0 on the correct `| uv run python -c` form. Runs
-    the real hook command string from settings.json end-to-end (not just
-    the extracted regex), so an escaping break in the JSON `command` is
-    caught too."""
+    """F3 hook-subprocess test — the SHIPPED `guard_python_pipe.sh` hook
+    script (the settings.json matcher-Bash entry invokes it by absolute
+    path since #2009; wiring pinned by tests/test_guard_python_pipe.py),
+    fed the harness JSON-stdin shape, must `exit 2` on the
+    attached-argument form `cat x | python -c'print(1)'` (valid shell that
+    crashes exit 127 on this VM) and exit 0 on the correct
+    `| uv run python -c` form. Runs the real hook script end-to-end (not
+    just the extracted regex). Env hygiene: EPM_ALLOW_PYTHON_PIPE scrubbed
+    so a session-level escape hatch cannot green the block cases."""
     import json
 
-    settings = json.loads((_REPO_ROOT / ".claude" / "settings.json").read_text())
-    hook_cmd = None
-    for hook_block in settings.get("hooks", {}).get("PreToolUse", []):
-        if hook_block.get("matcher") != "Bash":
-            continue
-        for hook in hook_block.get("hooks", []):
-            cmd = hook.get("command", "")
-            if "BLOCKED: bare `| python -c/-m` pipe" in cmd:
-                hook_cmd = cmd
-    assert hook_cmd, "pipe-python PreToolUse Bash hook not found"
+    script = _REPO_ROOT / ".claude" / "hooks" / "guard_python_pipe.sh"
+    assert script.is_file(), script
+    env = {k: v for k, v in os.environ.items() if k != "EPM_ALLOW_PYTHON_PIPE"}
 
     def run_hook(command: str) -> int:
         stdin = json.dumps({"tool_input": {"command": command}})
-        proc = subprocess.run(["bash", "-c", hook_cmd], input=stdin, text=True, check=False)
+        proc = subprocess.run(
+            [str(script)], input=stdin, text=True, check=False, env=env, capture_output=True
+        )
         return proc.returncode
 
     assert run_hook("cat x | python -c'print(1)'") == 2, "attached-arg form must be blocked (F3)"
