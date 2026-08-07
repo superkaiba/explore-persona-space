@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2173,
+  "highest_id": 2174,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9068,6 +9068,13 @@
       "path": "tasks/proposed/2173",
       "status": "proposed",
       "title": "workflow-fix: test_backend_poll module-mode test fails only in large collections, always classified NEW by the Step 9c oracle"
+    },
+    "2174": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2174",
+      "status": "proposed",
+      "title": "Fact-checker: exact-identity premise from a sample must be verified at the assert's grain"
     },
     "218": {
       "has_clean_result": false,
