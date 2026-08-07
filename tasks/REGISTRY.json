@@ -8214,8 +8214,8 @@
       "goal": "Fit a map from the pooled context activation to the SAE feature vector of the answer state, holding ONE fixed SAE dictionary across every post-training stage of an open ladder, and determine whether any individual SAE feature's per-feature held-out predictability improves across adjacent stage transitions beyond a selection-symmetric null over the whole dictionary.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/2061",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/2061",
+      "status": "awaiting_promotion",
       "title": "Per-feature SAE predictability gains across the T\u00fclu post-training ladder stay within a selection-symmetric null whose bar only rarely-active features can reach (MODERATE confidence)"
     },
     "2062": {
@@ -8995,8 +8995,8 @@
       "goal": "Characterize, at full 131,072-feature dictionary width, which SAE features the context->answer map READS at the context vector v_C (the last prompt token, the newline of the assistant header) on Qwen-2.5-7B-Instruct layer 19; separate READ (used by the fitted map) from CARRIED (present at v_C but unused) and from FREQUENT (mechanically weighted by firing rate); and determine which mechanical feature properties predict being read, as activity-matched partials against a selection-symmetric null.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/2163",
-      "status": "planning",
+      "path": "tasks/approved/2163",
+      "status": "approved",
       "title": "Which SAE features are read at the context vector by the context->answer map"
     },
     "2164": {
