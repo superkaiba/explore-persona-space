@@ -23,6 +23,8 @@ goal: Fit a map from the pooled context activation to the SAE feature vector of 
 
 **Methodology:** [docs/methodology/issue_2061.md @ d8b1739a0d](https://github.com/superkaiba/explore-persona-space/blob/d8b1739a0d719a4fc9e3815374ff461c570217be/docs/methodology/issue_2061.md) · [gist mirror](https://gist.github.com/superkaiba/a21b1e234a2bc730d33189756dc3e530)
 
+**Dashboard:** per-feature ΔR² explorer (most increased / most decreased per stage transition + distributions): https://eps.superkaiba.com/sae-predictability-2061.html (generator `scripts/issue2061_predictability_dashboard.py` @ c5fe5c220e; descriptive, multiplicity-uncorrected — see Takeaways)
+
 ## Takeaways
 
 - Across 56 transition cells and 262,144 sparse-autoencoder (SAE) features, the largest gain (ΔR² 1.46; p = 0.49, N = 500 draws) stays within the selection-symmetric null under both estimator reads.
