@@ -947,7 +947,12 @@ def _repo_materializing_lane_reachable(args: argparse.Namespace) -> bool:
     ``--execute-workload``) syncs the pod clone — on all of them an unset
     ``repo_branch`` resolves to ``main``. ``auto`` / absent reaches gcp +
     the SLURM lanes through the chain; a bare ``runpod`` provision-only
-    launch materializes no branch this CLI gates.
+    launch materializes no branch this CLI gates. Reads ONLY the CLI arg:
+    an absent ``--backend`` is treated as ``auto`` even when the task's
+    frontmatter pins ``backend: runpod`` (provision-only) — a deliberate
+    conservative over-refusal (frontmatter is not consulted here); the
+    documented escape is an explicit ``--repo-branch`` (including
+    ``--repo-branch main``).
     """
     backend = (args.backend or "auto").strip().lower() or "auto"
     if backend in {"auto", "gcp"} or backend in _SLURM_LANE_BACKENDS:
