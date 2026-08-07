@@ -1,0 +1,323 @@
+{
+  "commit": "794c08d2+dirty",
+  "git_commit": "794c08d2",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/analyzer/MEMORY.md"
+  ],
+  "created": "2026-08-07T14:29:02Z",
+  "figsize": [
+    12.4,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "label": "-0.046",
+      "_kind": "scatter"
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "label": "-0.046",
+      "_kind": "scatter"
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "x": 3.0,
+      "y": 1.0,
+      "label": "-0.015",
+      "_kind": "scatter"
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "label": "-0.015",
+      "_kind": "scatter"
+    },
+    {
+      "x": 5.0,
+      "y": 1.0,
+      "_kind": "scatter"
+    },
+    {
+      "x": 3.0,
+      "y": 2.0,
+      "label": "-0.041",
+      "_kind": "scatter"
+    },
+    {
+      "x": 4.0,
+      "y": 2.0,
+      "label": "-0.041",
+      "_kind": "scatter"
+    },
+    {
+      "x": 5.0,
+      "y": 2.0,
+      "_kind": "scatter"
+    },
+    {
+      "x": 3.0,
+      "y": 3.0,
+      "label": "-0.036",
+      "_kind": "scatter"
+    },
+    {
+      "x": 4.0,
+      "y": 3.0,
+      "label": "-0.036",
+      "_kind": "scatter"
+    },
+    {
+      "x": 5.0,
+      "y": 3.0,
+      "_kind": "scatter"
+    },
+    {
+      "x": 3.0,
+      "y": 4.0,
+      "label": "-0.043",
+      "_kind": "scatter"
+    },
+    {
+      "x": 4.0,
+      "y": 4.0,
+      "label": "-0.043",
+      "_kind": "scatter"
+    },
+    {
+      "x": 5.0,
+      "y": 4.0,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 15,
+  "text": {
+    "suptitle": "Transport agreement \u2014 steered minus donor-null (per-cell delta; n = per-arm cell n)",
+    "fig_texts": [
+      "900 degenerate-by-design self-transfer rows (matched-prefix x prefix-end, all doses; open circles \u2014 no cosine in the artifact) excluded; pooled over vector types A+B and rollouts; direction-only agreement (norms not compared).",
+      "banked map layer (left of divider: context->answer map m779; right: prefix->answer map m1738)"
+    ],
+    "axes": [
+      {
+        "title_left": "matched prefix (query transfer)",
+        "annotations": [
+          "-0.030",
+          "n=30",
+          "-0.052",
+          "n=30",
+          "-0.046",
+          "n=30",
+          "-0.021",
+          "n=30",
+          "-0.032",
+          "n=30",
+          "-0.015",
+          "n=30",
+          "-0.027",
+          "n=30",
+          "-0.033",
+          "n=30",
+          "-0.041",
+          "n=30",
+          "-0.057",
+          "n=30",
+          "-0.046",
+          "n=30",
+          "-0.036",
+          "n=30",
+          "-0.088",
+          "n=30",
+          "-0.045",
+          "n=30",
+          "-0.043",
+          "n=30"
+        ],
+        "xticklabels": [
+          "L14",
+          "L19",
+          "L26",
+          "L14",
+          "L19",
+          "L26"
+        ],
+        "yticklabels": [
+          "dose 0.5x",
+          "dose 1x",
+          "dose 2x",
+          "dose 4x",
+          "replace (full state)"
+        ]
+      },
+      {
+        "title_left": "matched query (prefix transfer)",
+        "annotations": [
+          "+0.163",
+          "n=30",
+          "+0.109",
+          "n=30",
+          "+0.099",
+          "n=30",
+          "+0.042",
+          "n=15",
+          "+0.039",
+          "n=15",
+          "+0.014",
+          "n=15",
+          "+0.210",
+          "n=30",
+          "+0.222",
+          "n=30",
+          "+0.129",
+          "n=30",
+          "+0.036",
+          "n=15",
+          "+0.027",
+          "n=15",
+          "+0.004",
+          "n=15",
+          "+0.208",
+          "n=30",
+          "+0.119",
+          "n=30",
+          "+0.089",
+          "n=30",
+          "+0.014",
+          "n=15",
+          "+0.028",
+          "n=15",
+          "-0.004",
+          "n=15",
+          "+0.195",
+          "n=30",
+          "+0.111",
+          "n=30",
+          "+0.124",
+          "n=30",
+          "+0.039",
+          "n=15",
+          "+0.063",
+          "n=15",
+          "-0.002",
+          "n=15",
+          "+0.141",
+          "n=15",
+          "+0.126",
+          "n=15",
+          "+0.060",
+          "n=15",
+          "+0.075",
+          "n=15",
+          "+0.040",
+          "n=15",
+          "+0.015",
+          "n=15"
+        ],
+        "xticklabels": [
+          "L14",
+          "L19",
+          "L26",
+          "L14",
+          "L19",
+          "L26"
+        ]
+      },
+      {
+        "title_left": "cross (joint transfer)",
+        "annotations": [
+          "+0.020",
+          "n=15",
+          "-0.041",
+          "n=15",
+          "+0.065",
+          "n=15",
+          "+0.029",
+          "n=15",
+          "+0.039",
+          "n=15",
+          "-0.000",
+          "n=15",
+          "+0.073",
+          "n=15",
+          "+0.030",
+          "n=15",
+          "+0.027",
+          "n=15",
+          "+0.036",
+          "n=15",
+          "+0.054",
+          "n=15",
+          "-0.001",
+          "n=15",
+          "+0.055",
+          "n=15",
+          "+0.004",
+          "n=15",
+          "+0.068",
+          "n=15",
+          "+0.015",
+          "n=15",
+          "+0.045",
+          "n=15",
+          "-0.017",
+          "n=15",
+          "+0.161",
+          "n=15",
+          "-0.021",
+          "n=15",
+          "+0.101",
+          "n=15",
+          "+0.047",
+          "n=15",
+          "+0.038",
+          "n=15",
+          "-0.019",
+          "n=15",
+          "+0.022",
+          "n=15",
+          "+0.013",
+          "n=15",
+          "+0.002",
+          "n=15",
+          "+0.059",
+          "n=15",
+          "+0.048",
+          "n=15",
+          "+0.016",
+          "n=15"
+        ],
+        "xticklabels": [
+          "L14",
+          "L19",
+          "L26",
+          "L14",
+          "L19",
+          "L26"
+        ]
+      },
+      {
+        "ylabel": "steered minus donor-null mean cosine",
+        "yticklabels": [
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      }
+    ]
+  }
+}
