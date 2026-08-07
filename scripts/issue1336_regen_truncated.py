@@ -30,11 +30,14 @@ Session constraints (2026-08-06 prefix-continuation round on #1336):
      is per-invocation CLI state (``--tail-max-tokens`` / ``--max-model-len``),
      so a concurrently queued job that pulls this branch keeps the recipe
      constants byte-identical.
-  2. A row with ``finish_reason == "length"`` hit the ORIGINAL cap exactly,
-     so every stored truncated answer is exactly ``cm.SAMPLING["max_tokens"]``
-     tokens — ASSERTED per row at load (``assert_stored_answers_at_cap``),
-     never assumed: a uniform tail cap then gives every row the same total
-     answer budget ``original_cap + tail_cap`` with no per-row SamplingParams.
+  2. A row with ``finish_reason == "length"`` hit the ORIGINAL cap, but what is
+     STORED is the answer after ``_truncate_role_headers`` — so length-finish
+     does NOT imply the stored text sits at the cap. Rows are PARTITIONED at
+     load (``partition_truncated_by_stored_length``): stored ~at cap =>
+     continuable (a uniform tail cap gives every one the same total budget
+     ``original_cap + tail_cap``, no per-row SamplingParams); stored materially
+     short => the answer already terminated and the row is SKIPPED and
+     reported (measured 25.4% of length-finish rows on base/lmsys23k).
   3. The PROMPT budget must not move: in continuation mode the effective
      prompt carries the stored answer, so the resample-mode assert
      (``max_model_len - max_tokens == PROMPT_TOKEN_BUDGET``) is RE-DERIVED —
@@ -140,44 +143,99 @@ def assert_continuation_budget(max_model_len: int, tail_max_tokens: int) -> int:
 STORED_CAP_TOKEN_TOLERANCE = 16
 
 
-def assert_stored_answers_at_cap(tokenizer, rows: list[dict], original_cap: int) -> dict:
-    """Every stored truncated answer must re-tokenize to ~the original cap.
+#: A stored answer longer than this multiple of the cap cannot be explained by BPE
+#: round-trip drift and means the pool is not what this script assumes (a wrong cap, a
+#: mismatched tokenizer, a corrupted row). Fail loud rather than continue from it.
+STORED_CAP_ABSURD_MULTIPLE = 1.5
 
-    A ``finish_reason == "length"`` row's answer was cut by the engine at
-    exactly ``original_cap`` tokens, so the uniform tail cap gives every row
-    the same total budget. A stored answer whose re-tokenized count is OUTSIDE
-    ``STORED_CAP_TOKEN_TOLERANCE`` of the cap did NOT come from the cap —
-    post-hoc role-header truncation shortened it materially — and a uniform
-    tail cap would hand it a WRONG total budget: fail loud BEFORE any
-    generation, never silently continue.
 
-    Within the tolerance the row IS an at-cap row and the residual delta is
-    BPE round-trip drift, which shifts the realized total budget by a few
-    tokens out of ~2048 — immaterial, and not a reason to refuse ~10% of the
-    real truncated population (see ``STORED_CAP_TOKEN_TOLERANCE``).
+def partition_truncated_by_stored_length(
+    tokenizer, rows: list[dict], original_cap: int
+) -> tuple[list[dict], list[dict], dict]:
+    """Split ``finish_reason == "length"`` rows into CONTINUABLE and ROLE-HEADER-STRIPPED.
 
-    Returns the realized drift distribution so the audit records how much of
-    the tolerance the data actually used — a band silently near-saturated is
-    the signal that the round-trip assumption is degrading.
+    ``finish_reason == "length"`` means the engine stopped at ``original_cap`` TOKENS —
+    but what is persisted is the answer AFTER ``_truncate_role_headers`` removed any
+    hallucinated next turn. Those are two different things, and conflating them is the
+    trap this function exists to close:
+
+    * **Continuable** — stored text re-tokenizes to ~the cap. The answer really was cut
+      mid-sentence by the budget, so ``P(tail | prompt, stored prefix)`` is exactly the
+      continuation an uncapped run would have sampled. Regenerate these.
+    * **Role-header-stripped** — stored text is materially SHORTER than the cap because
+      the model finished its answer, started a fake new turn, and the strip removed it.
+      The stored answer already TERMINATES; it is not length-censored in the sense this
+      regen exists to fix. Appending a continuation would fabricate text after a
+      completed answer — a worse artifact than the censoring. SKIP these, and report
+      them, so the regen's denominator is honest.
+
+    MEASURED on base/lmsys23k (2026-08-07, the production basis cell): of 3,220
+    length-finish rows, 2,401 continuable and 818 role-header-stripped (25.4%), the
+    stripped ones at min 0 / median 61 / p75 210 tokens. An earlier version of this
+    function ASSERTED every row sat within ``STORED_CAP_TOKEN_TOLERANCE`` of the cap and
+    aborted the whole cell on the first stripped row (prompt_idx=5020, 89 tokens, −935
+    off cap). One quarter of the population is not an edge case to fail on — it is a
+    class to classify.
+
+    Note 652 of those 818 were KEPT rows, i.e. they sit in the analyzed pool with a
+    length-finish flag and a median ~61-token answer. That is a property of the parent
+    generation pipeline, not something this regen can fix; the returned stats surface it.
+
+    Returns ``(continuable, stripped, stats)``. Raises only for an ABSURD stored length
+    (> ``STORED_CAP_ABSURD_MULTIPLE`` x cap), which no drift or strip can produce.
     """
+    continuable: list[dict] = []
+    stripped: list[dict] = []
     drifts: list[int] = []
+    stripped_lens: list[int] = []
+    floor = original_cap - STORED_CAP_TOKEN_TOLERANCE
+    ceiling = int(original_cap * STORED_CAP_ABSURD_MULTIPLE)
     for r in rows:
         n = len(tokenizer(r["response"], add_special_tokens=False)["input_ids"])
-        assert abs(n - original_cap) <= STORED_CAP_TOKEN_TOLERANCE, (
+        assert n <= ceiling, (
             f"stored answer for prompt_idx={r['prompt_idx']} re-tokenizes to {n} tokens, "
-            f"off original cap {original_cap} by {n - original_cap} (> tolerance "
-            f"{STORED_CAP_TOKEN_TOLERANCE}) — row did not come from the cap; refusing a "
-            "wrong per-row tail budget (fail loud, not a silent wrong total)"
+            f"more than {STORED_CAP_ABSURD_MULTIPLE}x the original cap {original_cap} — "
+            "no BPE round-trip drift or role-header strip can produce that; the pool, cap, "
+            "or tokenizer is not what this script assumes (fail loud, do not continue)"
         )
-        drifts.append(n - original_cap)
-    return {
-        "tolerance": STORED_CAP_TOKEN_TOLERANCE,
-        "n_exact": sum(1 for d in drifts if d == 0),
-        "n_rows": len(drifts),
-        "min": min(drifts) if drifts else None,
-        "max": max(drifts) if drifts else None,
-        "max_abs": max((abs(d) for d in drifts), default=None),
-    }
+        if n >= floor:
+            continuable.append(r)
+            drifts.append(n - original_cap)
+        else:
+            stripped.append(r)
+            stripped_lens.append(n)
+
+    def _pct(vals: list[int], p: float) -> int | None:
+        return sorted(vals)[min(len(vals) - 1, int(p * len(vals)))] if vals else None
+
+    return (
+        continuable,
+        stripped,
+        {
+            "tolerance": STORED_CAP_TOKEN_TOLERANCE,
+            "absurd_multiple": STORED_CAP_ABSURD_MULTIPLE,
+            "n_length_finish_rows": len(rows),
+            "n_continuable": len(continuable),
+            "n_role_header_stripped": len(stripped),
+            "n_role_header_stripped_kept": sum(1 for r in stripped if r.get("kept")),
+            "role_header_stripped_frac": (len(stripped) / len(rows)) if rows else None,
+            # Drift of the CONTINUABLE rows only — how much of the tolerance band the
+            # at-cap population actually used. Near-saturation means the round-trip
+            # assumption is degrading, not that a row is bad.
+            "continuable_drift": {
+                "n_exact": sum(1 for d in drifts if d == 0),
+                "min": min(drifts) if drifts else None,
+                "max": max(drifts) if drifts else None,
+                "max_abs": max((abs(d) for d in drifts), default=None),
+            },
+            "role_header_stripped_tokens": {
+                "min": min(stripped_lens) if stripped_lens else None,
+                "median": _pct(stripped_lens, 0.5),
+                "p75": _pct(stripped_lens, 0.75),
+                "max": max(stripped_lens) if stripped_lens else None,
+            },
+        },
+    )
 
 
 def _assert_prefix_preserved(answer: str, stored: str, prompt_idx) -> None:
@@ -259,17 +317,22 @@ def regen_cell(
         f"gen format {gen_format!r} not licensed for corpus {corpus!r} (formats: {fmts_needed})"
     )
     src_rows = load_source_pool(slug, cell)
-    trunc = [r for r in src_rows if r.get("finish_reason") == "length"]
+    length_finish = [r for r in src_rows if r.get("finish_reason") == "length"]
+    # A length-finish row is not automatically continuable: the stored text is
+    # post-role-header-strip, so a quarter of them terminate well short of the cap and
+    # must be SKIPPED rather than continued (see partition_truncated_by_stored_length).
+    trunc, stripped, stored_cap_drift = partition_truncated_by_stored_length(
+        tokenizer, length_finish, original_cap
+    )
     n_src_trunc_kept = sum(1 for r in trunc if r.get("kept"))
     print(
-        f"[regen] {slug}/{cell}: {len(trunc)}/{len(src_rows)} source rows cap-truncated "
-        f"({n_src_trunc_kept} of them kept) — continuing tails at cap {tail_max_tokens}",
+        f"[regen] {slug}/{cell}: {len(length_finish)}/{len(src_rows)} source rows "
+        f"length-finish; {len(trunc)} continuable ({n_src_trunc_kept} kept), "
+        f"{len(stripped)} role-header-stripped and SKIPPED "
+        f"({stored_cap_drift['n_role_header_stripped_kept']} of them kept) "
+        f"— continuing tails at cap {tail_max_tokens}",
         flush=True,
     )
-    # Fail loud BEFORE any generation: the uniform tail cap is only correct
-    # when every stored answer sits exactly at the original cap (docstring
-    # constraint 2).
-    stored_cap_drift = assert_stored_answers_at_cap(tokenizer, trunc, original_cap)
 
     prompt_builder = {"chat": cm.tulu_prompt, "naturalistic": cm.natural_prompt}[gen_format]
     stop_strings = cm.STOP_STRINGS if gen_format == "chat" else cm.NATURAL_STOP_STRINGS
@@ -373,13 +436,18 @@ def regen_cell(
         "original_cap": original_cap,
         "tail_max_tokens": tail_max_tokens,
         "total_answer_budget": total_budget,
-        # How much of STORED_CAP_TOKEN_TOLERANCE the stored prefixes actually
-        # used (detokenize -> retokenize BPE drift). Near-saturation here means
-        # the at-cap round-trip assumption is degrading, not that a row is bad.
-        "stored_cap_token_drift": stored_cap_drift,
+        # The length-finish partition: how many rows were continuable vs
+        # role-header-stripped-and-skipped, the skipped rows' length distribution,
+        # and how much of STORED_CAP_TOKEN_TOLERANCE the CONTINUABLE prefixes used
+        # (detokenize -> retokenize BPE drift). Near-saturation of that band means the
+        # at-cap round-trip assumption is degrading, not that a row is bad. The skip
+        # count is the regen's honest denominator — it is NOT a failure.
+        "stored_length_partition": stored_cap_drift,
         "n_source_rows": len(src_rows),
+        "n_source_length_finish": len(length_finish),
         "n_source_truncated": len(trunc),
         "n_source_truncated_kept": n_src_trunc_kept,
+        "n_role_header_stripped_skipped": len(stripped),
         "n_regenerated": len(rows),
         "n_kept": len(kept_ids),
         "keep_rate": (len(kept_ids) / len(rows)) if rows else None,

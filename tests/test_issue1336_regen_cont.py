@@ -132,38 +132,77 @@ def test_cont_cell_key_distinct_from_pilot_resample_key():
 # ---------------------------------------------------------------------------
 # 4. stored answer of unexpected token length fails loud
 # ---------------------------------------------------------------------------
-def test_stored_answer_off_cap_fails_loud():
+def test_role_header_stripped_rows_are_skipped_not_fatal():
+    """A length-finish row whose stored text is far short of the cap is SKIPPED.
+
+    MEASURED on base/lmsys23k: 818 of 3,220 length-finish rows (25.4%) store far less
+    than the cap — min 0, median 61, p75 210 tokens — because _truncate_role_headers
+    removed a hallucinated next turn after the answer had already ended. The first
+    version of this code ASSERTED every row sat within the tolerance and aborted the
+    whole cell on prompt_idx=5020 (89 tokens, -935 off cap). A quarter of the population
+    is a class to classify, not an edge case to die on — and continuing such a row would
+    append text after a completed answer, a worse artifact than the censoring.
+    """
     tok = CharTok()
-    rt.assert_stored_answers_at_cap(tok, [{"prompt_idx": 5, "response": "a" * ORIG_CAP}], ORIG_CAP)
-    over = ORIG_CAP - rt.STORED_CAP_TOKEN_TOLERANCE - 1
-    with pytest.raises(AssertionError, match="prompt_idx=7"):
-        rt.assert_stored_answers_at_cap(tok, [{"prompt_idx": 7, "response": "a" * over}], ORIG_CAP)
+    rows = [
+        {"prompt_idx": 1, "response": "a" * ORIG_CAP, "kept": True},  # continuable
+        {"prompt_idx": 2, "response": "a" * 89, "kept": True},  # the #5020 shape
+        {"prompt_idx": 3, "response": "", "kept": True},  # fully stripped
+    ]
+    cont, stripped, stats = rt.partition_truncated_by_stored_length(tok, rows, ORIG_CAP)
+    assert [r["prompt_idx"] for r in cont] == [1]
+    assert [r["prompt_idx"] for r in stripped] == [2, 3]
+    assert stats["n_length_finish_rows"] == 3
+    assert stats["n_continuable"] == 1
+    assert stats["n_role_header_stripped"] == 2
+    assert stats["n_role_header_stripped_kept"] == 2
+    assert abs(stats["role_header_stripped_frac"] - 2 / 3) < 1e-9
+    assert stats["role_header_stripped_tokens"]["min"] == 0
+    assert stats["role_header_stripped_tokens"]["max"] == 89
 
 
-def test_stored_answer_bpe_round_trip_drift_is_tolerated():
-    """A stored at-cap answer re-tokenizes a few tokens off the cap (BPE seam
-    drift on detokenize -> retokenize) — MEASURED on the real #1336 pools as
-    deltas -6..+2 over 505 truncated rows, 12.3%/8.6% of them non-exact. An
-    exact-equality assert would refuse ~10% of the real truncated population,
-    so the band must absorb drift while still failing loud past it."""
+def test_stored_answer_bpe_round_trip_drift_stays_continuable():
+    """A stored at-cap answer re-tokenizes a few tokens off the cap (BPE seam drift on
+    detokenize -> retokenize) — MEASURED on the real #1336 pools as deltas -6..+2 over
+    505 truncated rows, 12.3%/8.6% of them non-exact. Those rows must stay CONTINUABLE:
+    an exact-equality band would refuse ~10% of the genuinely cap-truncated population.
+    Drift is reported for the continuable rows only."""
     tok = CharTok()
     tol = rt.STORED_CAP_TOKEN_TOLERANCE
     assert tol >= 8, "tolerance must clear the measured -6..+2 drift with margin"
-    for delta in (-6, -1, 0, +1, +2, -tol, +tol):
-        stats = rt.assert_stored_answers_at_cap(
+    for delta in (-6, -1, 0, +1, +2, -tol, +tol, +100):
+        cont, stripped, stats = rt.partition_truncated_by_stored_length(
             tok, [{"prompt_idx": 3, "response": "a" * (ORIG_CAP + delta)}], ORIG_CAP
         )
-        assert stats["max_abs"] == abs(delta)
-        assert stats["n_exact"] == (1 if delta == 0 else 0)
-    # ...and one token past the band is still a loud refusal, both directions.
-    for delta in (-(tol + 1), +(tol + 1)):
-        with pytest.raises(AssertionError, match="tolerance"):
-            rt.assert_stored_answers_at_cap(
-                tok, [{"prompt_idx": 4, "response": "a" * (ORIG_CAP + delta)}], ORIG_CAP
-            )
+        assert len(cont) == 1 and not stripped, f"delta {delta} must stay continuable"
+        assert stats["continuable_drift"]["max_abs"] == abs(delta)
+        assert stats["continuable_drift"]["n_exact"] == (1 if delta == 0 else 0)
+    # One token BELOW the band is a skip, not a crash (the role-header-stripped class).
+    _, stripped, _ = rt.partition_truncated_by_stored_length(
+        tok, [{"prompt_idx": 4, "response": "a" * (ORIG_CAP - tol - 1)}], ORIG_CAP
+    )
+    assert len(stripped) == 1
 
 
-def test_regen_cell_refuses_off_cap_row_before_generation(tmp_path, monkeypatch):
+def test_absurdly_long_stored_answer_still_fails_loud():
+    """Longer than 1.5x the cap cannot be drift or a strip — the pool/cap/tokenizer is
+    wrong, so fail loud rather than continue from it."""
+    tok = CharTok()
+    absurd = int(ORIG_CAP * rt.STORED_CAP_ABSURD_MULTIPLE) + 1
+    with pytest.raises(AssertionError, match="prompt_idx=9"):
+        rt.partition_truncated_by_stored_length(
+            tok, [{"prompt_idx": 9, "response": "a" * absurd}], ORIG_CAP
+        )
+
+
+def test_regen_cell_skips_role_header_stripped_row_without_generating(tmp_path, monkeypatch):
+    """A short-stored length-finish row is skipped, and no tail is generated for it.
+
+    The 900-token row here is the shape that aborted the production basis cell under the
+    first implementation (real case: prompt_idx=5020 at 89 tokens). It must now be
+    classified and skipped — never continued, because its answer already terminated —
+    and it must never reach the generator.
+    """
     rows = [
         {
             "prompt_idx": 0,
@@ -175,22 +214,31 @@ def test_regen_cell_refuses_off_cap_row_before_generation(tmp_path, monkeypatch)
     ]
     _mk_source_pool(tmp_path, monkeypatch, rows)
 
-    def exploding_generate(texts):
-        raise AssertionError("generate_fn must not be called when the cap assert fails")
+    calls: list[list[str]] = []
 
-    with pytest.raises(AssertionError, match="original cap"):
-        rt.regen_cell(
-            exploding_generate,
-            CharTok(),
-            "rlvr",
-            "gsm8k_test1319",
-            gen_format="chat",
-            tail_max_tokens=1024,
-            max_model_len=5120,
-            upload=False,
-        )
-    out_dir = Path("data/issue_1336/gen/rlvr/gsm8k_test1319_cont2048")
-    assert not (out_dir / "answers.jsonl").exists()  # failed loud, wrote nothing
+    def recording_generate(texts):
+        calls.append(list(texts))
+        return [("", "stop") for _ in texts]
+
+    rt.regen_cell(
+        recording_generate,
+        CharTok(),
+        "rlvr",
+        "gsm8k_test1319",
+        gen_format="chat",
+        tail_max_tokens=1024,
+        max_model_len=5120,
+        upload=False,
+    )
+    assert not any(calls), f"generator was called for a skipped row: {calls}"
+    audit = json.loads(
+        (Path("data/issue_1336/gen/rlvr/gsm8k_test1319_cont2048") / "audit.json").read_text()
+    )
+    part = audit["stored_length_partition"]
+    assert part["n_length_finish_rows"] == 1
+    assert part["n_continuable"] == 0
+    assert part["n_role_header_stripped"] == 1
+    assert audit["n_role_header_stripped_skipped"] == 1
 
 
 # ---------------------------------------------------------------------------
