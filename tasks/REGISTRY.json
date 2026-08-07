@@ -8166,7 +8166,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2054",
       "status": "interpreting",
-      "title": "6k-row scaffold-and-splice lattice: framing x character x condition context-to-answer maps at well-posed n"
+      "title": "The answer-boundary form, not the narrative prose, carries the framing cost of context\u2192answer maps (MODERATE confidence)"
     },
     "2055": {
       "has_clean_result": false,

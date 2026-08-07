@@ -1,6 +1,6 @@
 ---
-title: '6k-row scaffold-and-splice lattice: framing x character x condition context-to-answer
-  maps at well-posed n'
+title: The answer-boundary form, not the narrative prose, carries the framing cost
+  of context→answer maps (MODERATE confidence)
 kind: experiment
 tags:
 - trigger-dense
