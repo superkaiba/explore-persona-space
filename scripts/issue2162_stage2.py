@@ -241,6 +241,7 @@ def run_stage2_block(
                     "context_b": pair.b,
                     "position": c["position"],
                     "degenerate_pe": c["degenerate_pe"],
+                    "len_delta": c["len_delta"],
                     "draw": i,
                     "seed": cfg.seed_base + i,
                     "temperature": STAGE2_TEMPERATURE,
