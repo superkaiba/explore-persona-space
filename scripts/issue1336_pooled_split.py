@@ -725,8 +725,21 @@ def assert_split(
                 len(corpus_locked),
             )
         else:
+            # Carry the actual composition: the bare cluster-id list cannot be
+            # acted on (a 2-corpus gsm8k_train+gsm8k_test cluster and a
+            # 1-corpus math cluster are different diagnoses, and the manifest
+            # holding the histogram is only written AFTER these asserts pass).
+            composition = "; ".join(
+                "cluster {}: n={} {}".format(
+                    cid,
+                    sum(cluster_hist[cid].values()),
+                    dict(sorted(cluster_hist[cid].items(), key=lambda kv: -kv[1])),
+                )
+                for cid in corpus_locked
+            )
             raise AssertionError(
-                f"corpus-locked clusters (fewer than {CLUSTER_MIN_CORPORA} corpora): {corpus_locked}"
+                f"corpus-locked clusters (fewer than {CLUSTER_MIN_CORPORA} corpora): "
+                f"{corpus_locked} — composition: {composition}"
             )
 
     # (2) per-corpus test-side share >= 15%
@@ -918,7 +931,26 @@ def run(args) -> int:
         round3_keep_rate,
         per_corpus_pre_intersection=per_corpus_pre_intersection,
     )
-    assert_split(manifest, round3_keep_rate, smoke=ctx.smoke)
+    # A failing assertion is the SIGNAL and must still halt the run — but a
+    # bare raise also destroys the only artifact that explains it (the
+    # manifest is written below, i.e. only on the passing path). Dump a
+    # clearly-named REJECTED copy first, then re-raise unchanged. The
+    # rejected copy deliberately does NOT use the canonical
+    # ``split_manifest.json`` name so no downstream phase can mistake a
+    # failed split for a valid one.
+    try:
+        assert_split(manifest, round3_keep_rate, smoke=ctx.smoke)
+    except AssertionError:
+        rejected_dir = ctx.out_root
+        rejected_dir.mkdir(parents=True, exist_ok=True)
+        rejected_path = rejected_dir / "split_manifest.rejected.json"
+        rejected_path.write_text(json.dumps(manifest, indent=2) + "\n")
+        logger.error(
+            "[pool] split assertions FAILED — rejected manifest dumped to %s "
+            "(diagnostic only; NOT a usable split)",
+            rejected_path,
+        )
+        raise
 
     # Persist.
     out_dir = ctx.out_root
