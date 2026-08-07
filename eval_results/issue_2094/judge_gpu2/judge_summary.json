@@ -1,0 +1,122 @@
+{
+  "waves": {
+    "coherence.grid": {
+      "rubric_id": "coherence",
+      "n_items": 1500,
+      "n_scored_items": 1500,
+      "pass1": {
+        "n_total_draws": 1500,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 1500
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 750,
+          "n_scored": 750,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 750,
+          "n_scored": 750,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fp-bare.grid": {
+      "rubric_id": "fp-bare",
+      "n_items": 1500,
+      "n_scored_items": 1500,
+      "pass1": {
+        "n_total_draws": 1500,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 2,
+        "stop_reason_tally": {
+          "end_turn": 1498
+        }
+      },
+      "retry1": {
+        "n_total_draws": 2,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 2
+        }
+      },
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 750,
+          "n_scored": 750,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 750,
+          "n_scored": 750,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    },
+    "fp-conv2.grid": {
+      "rubric_id": "fp-conv2",
+      "n_items": 1500,
+      "n_scored_items": 1500,
+      "pass1": {
+        "n_total_draws": 1500,
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "stop_reason_tally": {
+          "end_turn": 1500
+        }
+      },
+      "retry1": null,
+      "residual_transport_lost": 0,
+      "per_arm": {
+        "grid-null": {
+          "n_items": 750,
+          "n_scored": 750,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        },
+        "grid-steered": {
+          "n_items": 750,
+          "n_scored": 750,
+          "transport_lost": 0,
+          "truncation_drops": 0
+        }
+      }
+    }
+  },
+  "n_waves": 3,
+  "total_judge_calls_dispatched": 4500,
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1,
+    "temperature_note": "not threaded by judge_graded — Anthropic API default"
+  },
+  "repro": {
+    "git_commit": "e66d3c36",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/analyzer/MEMORY.md"
+    ],
+    "script": "scripts/issue2094_judge.py"
+  }
+}
