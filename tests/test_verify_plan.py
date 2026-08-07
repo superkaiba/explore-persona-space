@@ -185,10 +185,11 @@ def test_good_plan_passes_all():
         "c45_change_dv_base_predictor_companion": "SKIP",
         "c46_dispatch_cmd_cli_parse": "SKIP",
         "c47_wall_cell_parseable": "SKIP",
+        "c48_basis_booked_arithmetic": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 46
+    assert len(results) == 47
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6251,12 +6252,16 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   conditional, #2161)
     # + c47 (SKIP: GOOD_PLAN carries no planned_wall_h table; trigger-
     #   conditional, #2172).
-    assert payload["n_skip"] == 40
+    assert payload["n_skip"] == 41
+    #   conditional, #2161)
+    # + c47 (SKIP: GOOD_PLAN carries no basis-column compute table; trigger-
+    #   conditional, #2177).
+    assert payload["n_skip"] == 41
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 48
-    assert len({c["id"] for c in payload["checks"]}) == 48
+    assert len(payload["checks"]) == 49
+    assert len({c["id"] for c in payload["checks"]}) == 49
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -10237,3 +10242,235 @@ def test_c47_corpus_scan_old_rule_values_preserved():
         f"old-rule-parsed cells changed value under the new rule "
         f"({len(violations)}/{n_old} of {n_cells}): {violations[:5]}"
     )
+
+
+# ─── Check 48 — §9 basis-vs-booked arithmetic (#2177) ──────────────────────
+
+C48 = "c48_basis_booked_arithmetic"
+
+C48_HEADER = (
+    "\n## 9. Compute\n\n"
+    "| component | planned_wall_h | planned_gpu_h | parallelism | basis |\n"
+    "|---|---|---|---|---|\n"
+)
+
+# The #1336 v16 `EXT_off` row VERBATIM (tasks .../1336/plans/v16.md §9) — the
+# driving incident: basis derives 90 GPU-h, books 30 (arm A, 3.0x), and states
+# abort > 30 min/cell against a booked ~91 min/cell (arm B).
+C48_DRIVING_ROW = (
+    "| EXT_off: 20 off-diagonal cells × n=48,103 rows teacher-forced (axis: cells) | 3.8 | 30 "
+    "| 20 cells / 8 GPUs, batch 8 bf16, 32 layers "
+    '| "wave-1 measured: 81.6k rows ≈ 7.6 GPU-h ⇒ 10.7k rows/GPU-h ⇒ 20 cells × 48.1k rows ≈ '
+    "90 GPU-h naive-serial ÷ 8-way ≈ 11.2 wall-h serial-equivalent; ×1.09 over v15's 44k-row "
+    "booking, inside the booked ×1.5 margin; MEASURED 1-cell pilot at production shape "
+    "re-projects the queue after Phase EXT_off's first cell (abort > 30 min/cell)\" |\n"
+)
+
+
+def test_c48_driving_row_warns_both_arms():
+    # Acceptance criterion 2 (#2177): the #1336 EXT_off shape (90 derived /
+    # 30 booked / 30-min abort vs ~91-min booked per-cell wall) WARNs on
+    # BOTH arms, each named in the bounded detail.
+    _, by_id = _run(GOOD_PLAN + C48_HEADER + C48_DRIVING_ROW)
+    r = by_id[C48]
+    assert r.status == "WARN"
+    assert "[arm A]" in r.detail
+    assert "[arm B]" in r.detail
+    assert "90" in r.detail and "30" in r.detail
+    assert "N/A — basis arithmetic reconciled" in r.detail  # remedy 2
+    assert "unwrapped" in r.detail  # the #1263 own-line clarifier
+
+
+def test_c48_kind_analysis_warns():
+    # analysis is IN scope (the c26/c32 kind gate).
+    assert _status(GOOD_PLAN + C48_HEADER + C48_DRIVING_ROW, C48, kind="analysis") == "WARN"
+
+
+def test_c48_arm_a_reconciliation_token_passes():
+    # Acceptance criterion 3: the same row with the derived figure explicitly
+    # labelled superseded (the task body's own escapable form), arm-B trigger
+    # removed -> PASS.
+    row = C48_DRIVING_ROW.replace(
+        "naive-serial", "naive-serial (superseded by the batched 30 GPU-h booking)"
+    ).replace(" (abort > 30 min/cell)", "")
+    assert _status(GOOD_PLAN + C48_HEADER + row, C48) == "PASS"
+
+
+def test_c48_arm_b_abort_above_booked_per_cell_passes():
+    # Acceptance criterion 4: booked per-cell wall (3.8 h x 8 GPUs / 20 cells
+    # = ~91 min) comfortably UNDER the stated abort threshold (120 min/cell),
+    # arm-A trigger removed (no derivation in the basis) -> PASS.
+    row = (
+        "| EXT_off booked-sane | 3.8 | 30 | 20 cells / 8 GPUs "
+        '| "MEASURED wave-1 pilot banked; re-projects the queue after the first cell '
+        '(abort > 120 min/cell)" |\n'
+    )
+    assert _status(GOOD_PLAN + C48_HEADER + row, C48) == "PASS"
+
+
+def test_c48_bare_parallelism_token_does_not_escape_arm_a():
+    # The §3.3 trap this check exists to keep closed: the driving row contains
+    # BOTH bare `naive-serial` AND `÷ 8-way`, so a substring allowlist on the
+    # task body's draft tokens would suppress the exact incident. Parallelism
+    # divides WALL time, never GPU-hours — a bare N-way token is NOT an
+    # escape.
+    row = (
+        "| EXT_off | 3.8 | 30 | 20 cells / 8 GPUs "
+        '| "20 cells × 48.1k rows ≈ 90 GPU-h naive-serial ÷ 8-way across 8 GPUs" |\n'
+    )
+    _, by_id = _run(GOOD_PLAN + C48_HEADER + row)
+    r = by_id[C48]
+    assert r.status == "WARN"
+    assert "[arm A]" in r.detail
+
+
+def test_c48_cited_parent_total_does_not_warn():
+    # The #1434/#1415 FP class (§3.3 step 1 condition (a)+(b)): a basis that
+    # CITES a GPU-h figure (a parent's realized total) rather than deriving
+    # one must not warn — v2's largest-token extraction fired here at 5.8x.
+    row = (
+        "| reuse pass | 0.5 | 2.4 | 1 GPU "
+        "| reuses the parent rig; realized inside the parent's 14 GPU-h envelope |\n"
+    )
+    assert _status(GOOD_PLAN + C48_HEADER + row, C48) != "WARN"
+
+
+def test_c48_cap_mention_does_not_warn():
+    # The #1489 FP class — and the FORWARD-window pin specifically: `cap`
+    # TRAILS its figure (`≤100 GPU-h cap check below`), so a backward-only
+    # window implementation passes every other test in this roster and fails
+    # only here (the unrelated `21.3 x 9.6 ~= 17` earlier in the cell
+    # satisfies condition (a) for the 100 token).
+    row = (
+        "| battery | 2.0 | 17 | 8 workers "
+        "| 21.3 × 9.6 ≈ 17 GPU-h; sits under the ≤100 GPU-h cap check below |\n"
+    )
+    assert _status(GOOD_PLAN + C48_HEADER + row, C48) != "WARN"
+
+
+def test_c48_planned_gpu_h_header_is_matched():
+    # The v3 regression (#2177 §12 Must-Fix 1/3): `_` is a word character, so
+    # a `\b`-guarded pattern has no boundary inside `planned_gpu_h` (989 of
+    # 1,056 gpu-h-bearing corpus files) — the gpu column silently never
+    # resolves and the whole check becomes an inert no-op (measured 0 hits
+    # over 5,166 files). This test makes that failure loud.
+    for h in [
+        "planned_gpu_h",
+        "GPU-hours",
+        "GPU-h",
+        "Planned GPU-h",
+        "GPU-hours total",
+        "planned gpu h",
+    ]:
+        assert verify_plan._C48_GPU_H_HEADER_RE.search(h), h
+    for h in ["GPU spec", "GPU width", "GPU", "gpu_id", "gpus"]:
+        assert not verify_plan._C48_GPU_H_HEADER_RE.search(h), h
+
+
+def test_c48_product_with_unit_word_is_a_derivation():
+    # The v3 regression (#2177 §12 Must-Fix 2/3): v3's product regex required
+    # the multiplication sign to abut the number, but the driving derivation
+    # is `20 cells x 48.1k rows` — the unit-word tolerance is what acceptance
+    # criterion 2 depends on.
+    assert verify_plan._c48_derived_gpu_h("20 cells × 48.1k rows ≈ 90 GPU-h") == 90.0
+    # The unit-word-free shape still qualifies too.
+    assert verify_plan._c48_derived_gpu_h("20 × 48.1k ≈ 90 GPU-h") == 90.0
+
+
+def test_c48_arrow_without_product_does_not_warn():
+    # The #1335 FP class (§3.3 step 1 condition (a)): an arrow with NO product
+    # expression before it is a stated total, not a derivation.
+    row = (
+        "| fit battery | 5.5 | 3.6 | CPU "
+        "| ~5.5 h total wall ≈ 11 GPU-h was dominated by the CPU-resident fit battery |\n"
+    )
+    assert _status(GOOD_PLAN + C48_HEADER + row, C48) != "WARN"
+
+
+def test_c48_combined_wall_gpu_header_skipped():
+    # §3.3 step 2: ~109 corpus tables use ONE combined `Wall / GPU-h` column
+    # whose single cell holds two figures (`3.8 / 30`); a first-number parse
+    # there reads the WALL as the booked GPU-h and fabricates a ratio —
+    # attribution is unrecoverable from the header, so the row is skipped for
+    # arm A (the under-WARN direction).
+    header = "\n| component | Wall / GPU-h | parallelism | basis |\n|---|---|---|---|\n"
+    row = '| EXT_off | 3.8 / 30 | 20 cells / 8 GPUs | "20 cells × 48.1k rows ≈ 90 GPU-h" |\n'
+    assert _status(GOOD_PLAN + header + row, C48) != "WARN"
+
+
+def test_c48_gpu_spec_header_not_treated_as_gpu_hours():
+    # §3.2: `GPU spec` (28 corpus occurrences) holds `1x H100`, not hours — a
+    # substring header bind would parse booked=1 and manufacture a ~90x ratio.
+    header = (
+        "\n| component | planned_wall_h | GPU spec | parallelism | basis |\n|---|---|---|---|---|\n"
+    )
+    row = '| EXT_off | 3.8 | 1× H100 | 20 cells / 8 GPUs | "20 cells × 48.1k rows ≈ 90 GPU-h" |\n'
+    assert _status(GOOD_PLAN + header + row, C48) != "WARN"
+
+
+def test_c48_standalone_na_escapes():
+    # The family-standard document-wide escape.
+    plan = GOOD_PLAN + C48_HEADER + C48_DRIVING_ROW + "\nN/A — basis arithmetic reconciled\n"
+    assert _status(plan, C48) == "PASS"
+
+
+def test_c48_quoted_na_phrase_does_not_escape():
+    # Anti-paste guard (the c12/c26 twin): a mid-sentence quote of the escape
+    # phrase — the shape a pasted bounce brief produces — must not satisfy the
+    # standalone-line escape.
+    plan = (
+        GOOD_PLAN
+        + C48_HEADER
+        + C48_DRIVING_ROW
+        + "\nThe remedy menu suggests `N/A — basis arithmetic reconciled` as one option.\n"
+    )
+    assert _status(plan, C48) == "WARN"
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c48_skips_non_experiment_kinds(kind):
+    assert _status(GOOD_PLAN + C48_HEADER + C48_DRIVING_ROW, C48, kind=kind) == "SKIP"
+
+
+def test_c48_skips_when_no_gpu_column():
+    # A basis+wall table with NO gpu-h column and no abort idiom: arm A has
+    # no booked figure to compare and arm B no threshold -> SKIP, never a
+    # guess.
+    header = "\n| component | planned_wall_h | parallelism | basis |\n|---|---|---|---|\n"
+    row = '| EXT_off | 3.8 | 20 cells / 8 GPUs | "20 cells × 48.1k rows ≈ 90 GPU-h" |\n'
+    assert _status(GOOD_PLAN + header + row, C48) == "SKIP"
+
+
+def test_c48_skips_when_no_compute_table():
+    # GOOD_PLAN carries no basis-column table at all.
+    assert _status(GOOD_PLAN, C48) == "SKIP"
+
+
+def test_c48_unparseable_abort_or_cells_does_not_warn():
+    # §3.4 row-skip-on-unparseable: an abort threshold without a number, or a
+    # parseable abort with no `N cells` count (>= 2) anywhere in the row, is
+    # skipped for arm B — never guessed.
+    unparseable_abort = (
+        '| EXT_off | 3.8 | 3.8 | 20 cells / 8 GPUs | "abort > TBD min/cell after pilot" |\n'
+    )
+    no_cells_count = '| sweep | 3.8 | 3.8 | 8 GPUs | "abort > 30 min/cell after the pilot" |\n'
+    for row in (unparseable_abort, no_cells_count):
+        assert _status(GOOD_PLAN + C48_HEADER + row, C48) != "WARN", row
+
+
+def test_c26_c32_unchanged_by_parser_extraction():
+    # #2177 §4.1(1): `_c26_compute_table_rows` is now a projection of
+    # `_compute_table_rows`; the admission predicate, fence mask, short-row
+    # defence and cell-stripping are carried over verbatim. Direct shape
+    # check plus both consumers' verdicts on their canonical WARN fixtures.
+    rows = verify_plan._c26_compute_table_rows(GOOD_PLAN + C26_WARN_SHAPE)
+    assert rows and all(isinstance(r, tuple) and len(r) == 4 for r in rows)
+    component, basis, wall, row_text = rows[-1]
+    assert row_text.strip().startswith("|")
+    assert basis in row_text and wall in row_text and component in row_text
+    assert _status(GOOD_PLAN + C26_WARN_SHAPE, "c26_gpu_basis_routed_machine") == "WARN"
+    assert _status(_c32_plan("~2 s/fit"), "c32_fit_basis_grounding") == "WARN"
+
+
+def test_c48_registered_in_checks():
+    assert verify_plan.check_basis_booked_arithmetic in verify_plan.CHECKS
