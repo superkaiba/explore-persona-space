@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2162,
+  "highest_id": 2163,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8990,6 +8990,14 @@
       "path": "tasks/planning/2162",
       "status": "planning",
       "title": "Which kinds of context information are carried at the context vector: a patch-only sweep over 21 minimal-pair information types, crossed with route conflict, recency, and load"
+    },
+    "2163": {
+      "goal": "Characterize, at full 131,072-feature dictionary width, which SAE features the context->answer map READS at the context vector v_C (the last prompt token, the newline of the assistant header) on Qwen-2.5-7B-Instruct layer 19; separate READ (used by the fitted map) from CARRIED (present at v_C but unused) and from FREQUENT (mechanically weighted by firing rate); and determine which mechanical feature properties predict being read, as activity-matched partials against a selection-symmetric null.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2163",
+      "status": "proposed",
+      "title": "Which SAE features are read at the context vector by the context->answer map"
     },
     "218": {
       "has_clean_result": false,
