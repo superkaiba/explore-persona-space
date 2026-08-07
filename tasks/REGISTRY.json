@@ -9023,8 +9023,8 @@
     "2167": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2167",
-      "status": "proposed",
+      "path": "tasks/planning/2167",
+      "status": "planning",
       "title": "workflow-fix: pin MALLOC_MMAP_THRESHOLD_ in launch-prefix rules"
     },
     "218": {
