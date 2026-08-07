@@ -55,7 +55,9 @@ def _assert_saved(out_dir: Path, name: str) -> None:
 
 def test_fig_hero_renders_inverted_ci(tmp_path):
     """An INVERTED quantile CI (lo > v > hi — legitimate at tiny bootstrap n)
-    must render through the clamped errorbar path, never raise ValueError."""
+    must render through the clamped errorbar path, never raise ValueError;
+    both slots render as separate panels (r2 R3) and the per-pair companion
+    takes the three-arm row dict (r2 R1)."""
     stats = {
         "per_cell": {
             "instr_format|ce": _cell_rec(
@@ -66,13 +68,61 @@ def test_fig_hero_renders_inverted_ci(tmp_path):
             "verbosity|pe": _cell_rec("verbosity", "pe", untestable_causal=True),
         }
     }
-    f_cells = [
-        {"cell": "instr_format", "slot": "ce", "f_beh": 0.4, "pair_id": "p1"},
-        {"cell": "verbosity", "slot": "pe", "f_beh": None, "pair_id": "p2"},
-    ]
-    F.fig_hero(stats, f_cells, tmp_path, [Path("x")])
+    arm_rows = {
+        "steered": [
+            {
+                "cell": "instr_format",
+                "slot": "ce",
+                "f_beh": 0.4,
+                "pair_id": "p1",
+                "separation": 0.8,
+            },
+            {"cell": "verbosity", "slot": "pe", "f_beh": None, "pair_id": "p2", "separation": 0.8},
+        ],
+        "shuffled": [
+            {
+                "cell": "instr_format",
+                "slot": "ce",
+                "f_beh": 0.1,
+                "pair_id": "p1",
+                "separation": 0.8,
+            },
+        ],
+        "crosstype": [],
+    }
+    F.fig_hero(stats, arm_rows, tmp_path, [Path("x")])
     _assert_saved(tmp_path, "hero_ftype")
     _assert_saved(tmp_path, "hero_ftype_perpair")
+
+
+def test_perpair_surviving_applies_separation_exclusion():
+    """r2 R1: the per-pair companion uses the SAME |separation| >= 0.5
+    exclusion as the hero aggregation, keeps points PER ARM, and carries the
+    pair id with every surviving point."""
+    arm_rows = {
+        "steered": [
+            {"cell": "c", "slot": "ce", "f_beh": 0.5, "pair_id": "keep", "separation": 0.9},
+            {"cell": "c", "slot": "ce", "f_beh": 0.4, "pair_id": "drop_sep", "separation": 0.2},
+            {"cell": "c", "slot": "ce", "f_beh": 0.3, "pair_id": "drop_nosep", "separation": None},
+            {"cell": "c", "slot": "ce", "f_beh": None, "pair_id": "drop_nof", "separation": 0.9},
+        ],
+        "shuffled": [
+            {"cell": "c", "slot": "ce", "f_beh": 0.1, "pair_id": "keep", "separation": -0.7},
+        ],
+        "crosstype": [],
+    }
+    pts = F._perpair_surviving(arm_rows)
+    assert pts[("c", "ce", "steered")] == [("keep", 0.5)]
+    assert pts[("c", "ce", "shuffled")] == [("keep", 0.1)]  # abs(-0.7) >= bar
+    assert ("c", "ce", "crosstype") not in pts
+
+
+def test_separation_bar_pinned_to_analysis_module():
+    """figures.SEPARATION_BAR is a local copy (keeps torch/scipy out of the
+    figure script) — this pin is what keeps it equal to the analysis bar."""
+    import issue2162_analysis as A
+
+    assert F.SEPARATION_BAR == A.SEPARATION_BAR
 
 
 def test_fig_dose_position_with_slopes_and_null(tmp_path):
@@ -155,6 +205,52 @@ def test_fig_diagnostics_excess_incoherence(tmp_path):
     ]
     F.fig_diagnostics(stats, arm_rows, anchors, tmp_path, [Path("x")])
     _assert_saved(tmp_path, "diagnostics")
+
+
+def test_fig_diagnostics_missing_anchor_baseline_is_nan_not_zero(tmp_path, caplog):
+    """r2 H3: a cell whose anchors.jsonl rows predate the n_*_rollouts fields
+    has NO incoherence baseline — the excess renders NaN with a loud warning,
+    never a silent 0.0 substitute (which fakes 'no excess over baseline')."""
+    import logging
+
+    stats = {"per_cell": {"instr_format|ce": _cell_rec("instr_format", "ce")}}
+    arm_rows = {
+        "steered": [
+            {"cell": "instr_format", "slot": "ce", "n_coherent": 7, "n_cap_hit": 1, "n_draws": 10}
+        ],
+        "shuffled": [],
+        "crosstype": [],
+    }
+    # Legacy anchor row: NO n_*_rollouts / n_*_coherent fields at all.
+    anchors = [
+        {"cell": "instr_format", "carrier": "c1", "value_a": "v1", "value_b": "v2", "pair_id": "p1"}
+    ]
+    with caplog.at_level(logging.WARNING, logger="issue2162.figures"):
+        F.fig_diagnostics(stats, arm_rows, anchors, tmp_path, [Path("x")])
+    _assert_saved(tmp_path, "diagnostics")
+    assert any("no anchor incoherence baseline" in rec.message for rec in caplog.records)
+
+
+def test_fig_margin_validation_percell_grain(tmp_path):
+    """The margin-validation figure plots the REGISTERED per-cell grain from
+    margin_validation.json's percell_points + the per-pair companion (r2 R2)."""
+    margin_cells = [
+        {"pair_id": f"p{i}", "cell": "c", "slot": "ce", "arm": "steered", "margin_shift": 0.1 * i}
+        for i in range(4)
+    ]
+    f_cells = [{"pair_id": f"p{i}", "slot": "ce", "f_beh": 0.2 * i} for i in range(4)]
+    validation = {
+        "rho_margin_fbeh_percell": 0.9,
+        "n_cells": 12,
+        "rho_margin_fbeh_perpair": 0.7,
+        "n_pairs": 40,
+        "validated": True,
+        "percell_points": [
+            {"cell": "c", "slot": "ce", "margin_shift_mean": 0.15, "f_beh_mean": 0.3, "n_pairs": 4}
+        ],
+    }
+    F.fig_margin_validation(margin_cells, f_cells, validation, tmp_path, [Path("x")])
+    _assert_saved(tmp_path, "margin_validation")
 
 
 def test_fig_anchor_separation(tmp_path):

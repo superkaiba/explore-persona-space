@@ -10,13 +10,21 @@
 #   margin          pools-dependent margin TF legs, one worker per visible GPU
 #   stage2          P4: layer x dose survivor grid (issue2162_stage2.py), fanned out
 #   upload          P5: bulk HF uploads + pod sentinel (CPU)
-#   all             import-check -> bank -> anchors -> pilot -> grid -> margin -> upload
+#   all             import-check -> bank -> anchors -> pilot -> gate3 -> grid
+#                   -> margin (OPPORTUNISTIC) -> upload
 #
-# The margin leg of `all` HARD-FAILS (rc=24) when the judge-built pools file
-# is not staged at $POOLS_PATH — the TF-margin dual-DV leg must run BEFORE
-# upload/terminate, never be silently deferred (r1 C4). Stage pools via
-#   uv run python scripts/issue2162_judge.py --phase pools  (VM-side)
-# then scp/stage the pools.json to the pod and re-run `margin` + `upload`.
+# Margin semantics (r2 MAJOR 1, superseding the r1 C4 literal wiring):
+# the pools file is judge-built from the ~28k-call Batch-API behavior wave
+# (2-24h calendar SLA), so the `all` chain must NEVER park the 8-GPU pod
+# behind it (#664 idle-burn). Pools staged in time -> margin rides the wide
+# pod here; absent -> the margin leg is DEFERRED LOUDLY: upload + sentinel +
+# teardown proceed, the sentinel carries `margin_deferred: true` plus the
+# deferred-leg recipe (issue2162_run._margin_state), and the deferred leg
+# runs later on a fresh 1x H100 once pools land:
+#   uv run python scripts/issue2162_judge.py --phase pools   (VM-side)
+#   scp pools.json to the pod, then: dispatch.sh margin && dispatch.sh upload
+# The STANDALONE `margin` phase keeps the rc=24 HARD HALT — an explicitly
+# requested margin with no pools is an error, never a silent skip.
 #
 # Worker count is DERIVED from the realized GPU count (`nvidia-smi -L`) at
 # launch — never hardcoded — so a 4-GPU fallback pod re-shards with no code
@@ -156,15 +164,33 @@ require_gate3() {
 }
 
 run_margin_if_pools() {
-  # r1 C4: the TF-margin phase is the dual-DV secondary leg and MUST run
-  # before upload/terminate. Missing pools on the `all` path is a DESIGNED
-  # HALT (distinct rc, never a silent skip): stage the judge-built pools
+  # STANDALONE `margin` phase (r1 C4, scope narrowed by r2 MAJOR 1): an
+  # explicitly requested margin with no pools staged is a DESIGNED HALT
+  # (distinct rc, never a silent skip): stage the judge-built pools
   # (issue2162_judge.py --phase pools -> pools.json -> pod), then re-run
   # `margin` + `upload` — grid outputs are already per-worker uploaded.
   if [ ! -f "$POOLS_PATH" ]; then
     echo "[dispatch] margin HALT rc=24: pools file missing at $POOLS_PATH" \
       "(judge-built; see header). Re-run phases: margin, upload." >&2
     exit 24
+  fi
+  run_fanout_phase margin --pools "$POOLS_PATH"
+}
+
+run_margin_opportunistic() {
+  # r2 MAJOR 1: on the `all` chain margin is OPPORTUNISTIC — the pools ride
+  # the Batch-API judge SLA (2-24h), and gating upload/sentinel/teardown on
+  # them idles the 8-GPU pod at 0% for the SLA tail (#664; plan §9 directive
+  # 5: width released before the tail). Pools present -> margin rides the
+  # wide pod now. Absent -> DEFER LOUDLY and proceed: the sentinel carries
+  # margin_deferred=true + the recipe (never a silent drop), and the
+  # deferred leg runs later on a fresh 1x H100 (dispatch.sh margin+upload).
+  if [ ! -f "$POOLS_PATH" ]; then
+    echo "[dispatch] margin DEFERRED: pools file missing at $POOLS_PATH" \
+      "(judge-built; Batch-API SLA tail). Proceeding to upload + teardown;" \
+      "the sentinel records margin_deferred=true + the deferred-leg recipe." \
+      "Later, once pools land: dispatch.sh margin && dispatch.sh upload (1x H100)."
+    return 0
   fi
   run_fanout_phase margin --pools "$POOLS_PATH"
 }
@@ -272,10 +298,14 @@ case "$PHASE" in
     run_import_check
     run_single_gpu_phase bank
     run_fanout_phase anchors
-    require_gate3
+    # r2 MINOR 1: pilot BEFORE the gate-3 report check — the pilot is
+    # gate-independent (~8-15 min), so a judge/scp lag on the gate-3 report
+    # is absorbed by useful work instead of halting 8 idle GPUs; a genuine
+    # gate-3 FAIL forfeits only the pilot's ~180 rollouts.
     run_single_gpu_phase pilot --pilot --num-workers "$NUM_WORKERS"
+    require_gate3
     run_fanout_phase grid
-    run_margin_if_pools
+    run_margin_opportunistic
     run_upload
     ;;
   *)

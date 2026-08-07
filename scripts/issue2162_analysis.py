@@ -705,35 +705,103 @@ def step_margin(args: argparse.Namespace) -> None:
         )
     _write_jsonl_atomic(args.out_dir / "margin_cells.jsonl", out)
 
-    # Rule-19 validation: Spearman rho(margin shift, F_beh) across steered
-    # cells with dynamic range — reported BEFORE the margin carries any read.
-    from scipy.stats import spearmanr
-
     f_by_key = {
         (r["pair_id"], r["slot"]): r["f_beh"]
         for r in _iter_jsonl(args.out_dir / "f_cells.jsonl")
         if r["f_beh"] is not None
     }
-    xs, ys = [], []
-    for r in out:
+    validation = rule19_validation(out, f_by_key)
+    _write_json_atomic(args.out_dir / "margin_validation.json", validation)
+    logger.info(
+        "[margin] cells=%d validation rho_percell=%s (n_cells=%d) rho_perpair=%s (n_pairs=%d)",
+        len(out),
+        validation["rho_margin_fbeh_percell"],
+        validation["n_cells"],
+        validation["rho_margin_fbeh_perpair"],
+        validation["n_pairs"],
+    )
+
+
+RULE19_MIN_N = 10
+RULE19_DYNAMIC_RANGE_SCREEN = (
+    "a (cell x slot) unit enters the per-cell rho iff it has >=2 steered pairs with both "
+    "margin_shift and F_beh present AND nonzero spread (max > min) in BOTH quantities "
+    "across those pairs (a constant/degenerate unit carries no dynamic range)"
+)
+
+
+def rule19_validation(margin_rows: list[dict], f_by_key: dict[tuple[str, str], float]) -> dict:
+    """Rule-19 validation at BOTH grains (r2 R2).
+
+    The REGISTERED grain (plan §4.4 / manifest): Spearman rho(margin shift,
+    F_beh) ACROSS (cell x slot) units — per-unit means over steered pairs —
+    restricted to units passing the dynamic-range screen (declared in
+    ``dynamic_range_screen``). ``validated`` keys on this grain. The per-pair
+    rho is kept as the low-level companion. Reported BEFORE the margin
+    carries any cross-condition read; never the headline.
+    """
+    from scipy.stats import spearmanr
+
+    def _stat(xs: list[float], ys: list[float]) -> tuple[float | None, float | None]:
+        if len(xs) < RULE19_MIN_N:
+            return None, None
+        rho, pval = spearmanr(xs, ys)
+        return (
+            None if math.isnan(float(rho)) else float(rho),
+            None if math.isnan(float(pval)) else float(pval),
+        )
+
+    xs_pair: list[float] = []
+    ys_pair: list[float] = []
+    by_unit: dict[tuple[str, str], list[tuple[float, float]]] = defaultdict(list)
+    for r in margin_rows:
         if r["arm"] != "steered" or r["margin_shift"] is None:
             continue
         f = f_by_key.get((r["pair_id"], r["slot"]))
-        if f is not None:
-            xs.append(r["margin_shift"])
-            ys.append(f)
-    rho, pval = spearmanr(xs, ys) if len(xs) >= 10 else (float("nan"), float("nan"))
-    _write_json_atomic(
-        args.out_dir / "margin_validation.json",
-        {
-            "rho_margin_fbeh": None if math.isnan(float(rho)) else float(rho),
-            "p": None if math.isnan(float(pval)) else float(pval),
-            "n": len(xs),
-            "validated": bool(len(xs) >= 10 and float(rho) > 0),
-            "note": "rule 19: the margin carries NO cross-condition read unless rho > 0",
-        },
-    )
-    logger.info("[margin] cells=%d validation rho=%s n=%d", len(out), rho, len(xs))
+        if f is None:
+            continue
+        xs_pair.append(r["margin_shift"])
+        ys_pair.append(f)
+        by_unit[(r["cell"], r["slot"])].append((r["margin_shift"], f))
+    xs_cell: list[float] = []
+    ys_cell: list[float] = []
+    percell_points: list[dict] = []
+    dropped: list[str] = []
+    for (cell, slot), pts in sorted(by_unit.items()):
+        ms = [m for m, _ in pts]
+        fs = [f for _, f in pts]
+        if len(pts) < 2 or max(ms) <= min(ms) or max(fs) <= min(fs):
+            dropped.append(f"{cell}|{slot}")
+            continue
+        xs_cell.append(sum(ms) / len(ms))
+        ys_cell.append(sum(fs) / len(fs))
+        percell_points.append(
+            {
+                "cell": cell,
+                "slot": slot,
+                "margin_shift_mean": xs_cell[-1],
+                "f_beh_mean": ys_cell[-1],
+                "n_pairs": len(pts),
+            }
+        )
+    rho_cell, p_cell = _stat(xs_cell, ys_cell)
+    rho_pair, p_pair = _stat(xs_pair, ys_pair)
+    return {
+        "rho_margin_fbeh_percell": rho_cell,
+        "p_percell": p_cell,
+        "n_cells": len(xs_cell),
+        "percell_points": percell_points,
+        "cells_dropped_no_dynamic_range": dropped,
+        "dynamic_range_screen": RULE19_DYNAMIC_RANGE_SCREEN,
+        "rho_margin_fbeh_perpair": rho_pair,
+        "p_perpair": p_pair,
+        "n_pairs": len(xs_pair),
+        "validated": bool(rho_cell is not None and rho_cell > 0),
+        "note": (
+            "rule 19 (registered grain = across cells with dynamic range): the margin "
+            "carries NO cross-condition read unless the per-cell rho > 0"
+        ),
+    }
 
 
 # ── step: probe (kernelized batched-torch logistic; LOCO carrier folds) ──
@@ -952,7 +1020,29 @@ def step_probe(args: argparse.Namespace) -> None:
     pdir = args.out_dir / "probe_perm_matrix"
     pdir.mkdir(parents=True, exist_ok=True)
     np.savez(pdir / "perm_auc_matrix.npz", **perm_store)
+    _persist_perm_matrix(pdir, no_upload=args.no_upload)
     logger.info("[probe] %d (cell x slot) units", len(results))
+
+
+def _persist_perm_matrix(pdir: Path, no_upload: bool) -> None:
+    """Upload the probe permutation matrix to the HF data repo (plan §248/§10).
+
+    The matrix is what makes the max-selected permutation band RECOMPUTABLE —
+    a pre-registered persistence commitment, not a convenience. It is ``*.npz``
+    and therefore GITIGNORED repo-wide (a bare ``git add`` of out_dir silently
+    skips it, rc=0 — the #958 class), so git is NOT a durable home: the plan's
+    registered destination is HF ``analysis_tensors/probe_perm_matrix/``.
+    Fail-loud via the run driver's bounded-retry upload seam.
+    """
+    if no_upload:
+        logger.warning(
+            "[probe] --no-upload: perm matrix NOT persisted to HF (%s) — production "
+            "runs must upload (plan §248 recomputability commitment)",
+            pdir,
+        )
+        return
+    uploaded = R.upload_dir_hf(pdir, f"{R.HF_PREFIX}/analysis_tensors/probe_perm_matrix", ["*.npz"])
+    logger.info("[probe] perm matrix persisted to HF: %s", uploaded)
 
 
 # ── step: two-by-two ──────────────────────────────────────────────────
@@ -1114,6 +1204,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--out-dir", type=Path, default=Path("eval_results/issue_2162/f_metrics"))
     ap.add_argument("--perm-b", type=int, default=PROBE_PERM_B)
     ap.add_argument("--perm-chunk", type=int, default=64)
+    ap.add_argument(
+        "--no-upload",
+        action="store_true",
+        default=False,
+        help="skip the HF persist of the probe perm matrix (local smoke/tests only — "
+        "production runs MUST upload; the *.npz is gitignored, so git is not durable)",
+    )
     return ap.parse_args(argv)
 
 

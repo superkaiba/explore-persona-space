@@ -103,58 +103,122 @@ def _cells_sorted(per_cell: dict) -> list[tuple[str, dict]]:
     )
 
 
-def fig_hero(stats: dict, f_cells: list[dict], out_dir: Path, inputs: list[Path]) -> None:
+# Manifest separation exclusion bar — pinned equal to
+# issue2162_analysis.SEPARATION_BAR by test_issue2162_figures.py (a local
+# constant so the figure script does not import the torch/scipy-heavy
+# analysis module at render time).
+SEPARATION_BAR = 0.5
+
+
+def _perpair_surviving(
+    arm_rows: dict[str, list[dict]],
+) -> dict[tuple[str, str, str], list[tuple[str, float]]]:
+    """Manifest ``per_type_f_beh_perpair`` selection (r2 R1): SAME exclusion
+    as ``per_type_f_beh`` (|separation| >= SEPARATION_BAR), NO aggregation —
+    one (pair_id, f_beh) point per SURVIVING pair, keyed (cell, slot, arm)."""
+    out: dict[tuple[str, str, str], list[tuple[str, float]]] = defaultdict(list)
+    for arm, rows in arm_rows.items():
+        for r in rows:
+            if (
+                r.get("f_beh") is not None
+                and r.get("separation") is not None
+                and abs(r["separation"]) >= SEPARATION_BAR
+            ):
+                out[(r["cell"], r["slot"], arm)].append((r["pair_id"], r["f_beh"]))
+    return out
+
+
+def fig_hero(
+    stats: dict, arm_rows: dict[str, list[dict]], out_dir: Path, inputs: list[Path]
+) -> None:
+    """Manifest ``per_type_f_beh`` (one PANEL PER SLOT, post-exclusion n per
+    type — r2 R3) + ``per_type_f_beh_perpair`` (same exclusion, one point per
+    surviving pair PER ARM, pair-id labeled — r2 R1)."""
     items = _cells_sorted(stats["per_cell"])
-    labels = [f"{r['cell']}|{r['slot']}" for _, r in items]
-    x = np.arange(len(items))
+    slots = [s for s in ("ce", "pe") if any(r["slot"] == s for _, r in items)]
     width = 0.27
-    fig, ax = plt.subplots(figsize=(max(14, len(items) * 0.32), 6))
-    for k, arm in enumerate(("steered", "shuffled", "crosstype")):
-        vals, lo_off, hi_off = [], [], []
-        for _, r in items:
-            v = r.get(f"f_{arm}_mean")
-            ci = (r.get("ci95") or {}).get(arm, [None, None])
-            vals.append(np.nan if v is None else v)
-            e = _err(ci[0], ci[1], v if v is not None else 0.0)
-            lo_off.append(e[0])
-            hi_off.append(e[1])
-        ax.bar(
-            x + (k - 1) * width,
-            vals,
-            width,
-            yerr=[lo_off, hi_off],
-            color=ARM_COLORS[arm],
-            label=arm,
-            error_kw={"lw": 0.7},
-        )
-    for i, (_, r) in enumerate(items):
-        if r["untestable_causal"]:
-            ax.text(x[i], 0.02, "n/a", ha="center", fontsize=5, rotation=90, color="#555")
-    ax.axhline(0.0, color="k", lw=0.6)
-    ax.axhline(1.0, color="k", lw=0.6, ls=":")
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=90, fontsize=5.5)
-    ax.set_ylabel("F_beh (mean over post-exclusion pairs)")
-    ax.set_title("Per-(type-cell x slot) F_beh: steered vs both nulls (95% pair-clustered CIs)")
-    ax.legend(loc="upper right", fontsize=8)
+    n_widest = max((sum(1 for _, r in items if r["slot"] == s) for s in slots), default=1)
+    fig, axes = plt.subplots(
+        len(slots),
+        1,
+        figsize=(max(14, n_widest * 0.5), 5.5 * len(slots)),
+        sharey=True,
+        squeeze=False,
+    )
+    for ax, slot in zip(axes.ravel(), slots, strict=True):
+        s_items = [(key, r) for key, r in items if r["slot"] == slot]
+        labels = [f"{r['cell']}\n(n={r['n_post_exclusion']})" for _, r in s_items]
+        x = np.arange(len(s_items))
+        for k, arm in enumerate(("steered", "shuffled", "crosstype")):
+            vals, lo_off, hi_off = [], [], []
+            for _, r in s_items:
+                v = r.get(f"f_{arm}_mean")
+                ci = (r.get("ci95") or {}).get(arm, [None, None])
+                vals.append(np.nan if v is None else v)
+                e = _err(ci[0], ci[1], v if v is not None else 0.0)
+                lo_off.append(e[0])
+                hi_off.append(e[1])
+            ax.bar(
+                x + (k - 1) * width,
+                vals,
+                width,
+                yerr=[lo_off, hi_off],
+                color=ARM_COLORS[arm],
+                label=arm,
+                error_kw={"lw": 0.7},
+            )
+        for i, (_, r) in enumerate(s_items):
+            if r["untestable_causal"]:
+                ax.text(x[i], 0.02, "n/a", ha="center", fontsize=5, rotation=90, color="#555")
+        ax.axhline(0.0, color="k", lw=0.6)
+        ax.axhline(1.0, color="k", lw=0.6, ls=":")
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, rotation=90, fontsize=5.5)
+        ax.set_ylabel("F_beh (mean over post-exclusion pairs)")
+        ax.set_title(f"slot = {slot}")
+        ax.legend(loc="upper right", fontsize=8)
+    fig.suptitle(
+        "Per-type-cell F_beh by slot: steered vs both nulls "
+        "(95% pair-clustered CIs; n = post-exclusion pairs)"
+    )
+    fig.tight_layout(rect=(0, 0, 1, 0.97))  # rotated labels must clear the next panel
     _save(fig, out_dir, "hero_ftype", inputs)
 
-    # Per-unit companion: per-pair steered F_beh points.
-    by_key: dict[str, list[float]] = defaultdict(list)
-    for r in f_cells:
-        if r["f_beh"] is not None:
-            by_key[f"{r['cell']}|{r['slot']}"].append(r["f_beh"])
-    fig, ax = plt.subplots(figsize=(max(14, len(items) * 0.32), 6))
-    for i, lab in enumerate(labels):
-        ys = by_key.get(lab, [])
-        fam = items[i][1]["family"]
-        ax.scatter([i] * len(ys), ys, s=6, alpha=0.55, color=FAMILY_COLORS.get(fam, "#999"))
-    ax.axhline(0.0, color="k", lw=0.6)
-    ax.axhline(1.0, color="k", lw=0.6, ls=":")
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=90, fontsize=5.5)
-    ax.set_ylabel("per-pair F_beh (steered)")
-    ax.set_title("Per-pair steered F_beh (every pair, pre-aggregation; family-colored)")
+    # Per-unit companion (r2 R1): SAME separation exclusion, one point per
+    # surviving pair PER ARM (arm-offset like the bars), pair-id labeled.
+    perpair = _perpair_surviving(arm_rows)
+    rng = np.random.default_rng(2162)
+    fig, axes = plt.subplots(
+        len(slots),
+        1,
+        figsize=(max(14, n_widest * 0.5), 5.5 * len(slots)),
+        sharey=True,
+        squeeze=False,
+    )
+    for ax, slot in zip(axes.ravel(), slots, strict=True):
+        s_items = [(key, r) for key, r in items if r["slot"] == slot]
+        labels = [r["cell"] for _, r in s_items]
+        x = np.arange(len(s_items))
+        for i, (_, rcell) in enumerate(s_items):
+            for k, arm in enumerate(("steered", "shuffled", "crosstype")):
+                for pair_id, f in perpair.get((rcell["cell"], slot, arm), []):
+                    xi = i + (k - 1) * width + float(rng.uniform(-0.06, 0.06))
+                    ax.scatter(xi, f, s=6, alpha=0.6, color=ARM_COLORS[arm])
+                    ax.annotate(pair_id, (xi, f), fontsize=3.2, alpha=0.7)
+        for k, arm in enumerate(("steered", "shuffled", "crosstype")):
+            ax.scatter([], [], s=10, color=ARM_COLORS[arm], label=arm)
+        ax.axhline(0.0, color="k", lw=0.6)
+        ax.axhline(1.0, color="k", lw=0.6, ls=":")
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, rotation=90, fontsize=5.5)
+        ax.set_ylabel("per-pair F_beh")
+        ax.set_title(f"slot = {slot}")
+        ax.legend(loc="upper right", fontsize=8)
+    fig.suptitle(
+        "Per-pair F_beh, separation-excluded survivors only, per arm "
+        "(no aggregation; pair-id labeled)"
+    )
+    fig.tight_layout(rect=(0, 0, 1, 0.97))  # rotated labels must clear the next panel
     _save(fig, out_dir, "hero_ftype_perpair", inputs)
 
 
@@ -293,8 +357,9 @@ def fig_route_contrasts(stats: dict, out_dir: Path, inputs: list[Path]) -> None:
 
 def fig_dose_position(stats: dict, out_dir: Path, inputs: list[Path]) -> None:
     """Manifest ``recency_load_curves``: steered F_beh vs depth/load with the
-    shuffled-donor null line behind each curve (grey) + the registered
-    per-pair slope with its pair-clustered bootstrap 95% CI annotated."""
+    shuffled-donor null as a shaded BAND behind each curve (95% pair-clustered
+    CI, mean line inside — r2 R4) + the registered per-pair slope with its
+    pair-clustered bootstrap 95% CI annotated."""
     from explore_persona_space.experiments.issue2162 import bank2162 as B
 
     per_cell = stats["per_cell"]
@@ -306,7 +371,8 @@ def fig_dose_position(stats: dict, out_dir: Path, inputs: list[Path]) -> None:
         bases = sorted({B.base_type_of(c) for c in B.crossed_cells() if c.startswith(prefix)})
         for base in bases:
             for slot, ls in (("ce", "-"), ("pe", "--")):
-                xs, ys, lo_off, hi_off, null_ys = [], [], [], [], []
+                xs, ys, lo_off, hi_off = [], [], [], []
+                null_ys, null_lo, null_hi = [], [], []
                 depth_tag = "d" if prefix == "recency" else "l"
                 for depth in (1, 3, 5):
                     key = (
@@ -320,21 +386,27 @@ def fig_dose_position(stats: dict, out_dir: Path, inputs: list[Path]) -> None:
                     xs.append(depth)
                     ys.append(r["f_steered_mean"])
                     null_ys.append(r.get("f_shuffled_mean"))
+                    nci = (r.get("ci95") or {}).get("shuffled", [None, None])
+                    null_lo.append(nci[0])
+                    null_hi.append(nci[1])
                     ci = (r.get("ci95") or {}).get("steered", [None, None])
                     e = _err(ci[0], ci[1], ys[-1])
                     lo_off.append(e[0])
                     hi_off.append(e[1])
                 if xs:
-                    # Shuffled-donor null behind (grey; one line per curve).
-                    if any(v is not None for v in null_ys):
-                        ax.plot(
-                            xs,
-                            [np.nan if v is None else v for v in null_ys],
-                            color="#bbbbbb",
-                            ls=ls,
-                            lw=1.0,
-                            zorder=1,
-                        )
+                    # Shuffled-donor null behind: shaded 95%-CI band + mean
+                    # line (r2 R4 — a bare mean line is not a band).
+                    band_ok = [
+                        m is not None and lo is not None and hi is not None
+                        for m, lo, hi in zip(null_ys, null_lo, null_hi, strict=True)
+                    ]
+                    if any(band_ok):
+                        bx = [v for v, ok in zip(xs, band_ok, strict=True) if ok]
+                        blo = [v for v, ok in zip(null_lo, band_ok, strict=True) if ok]
+                        bhi = [v for v, ok in zip(null_hi, band_ok, strict=True) if ok]
+                        bm = [v for v, ok in zip(null_ys, band_ok, strict=True) if ok]
+                        ax.fill_between(bx, blo, bhi, color="#bbbbbb", alpha=0.35, lw=0, zorder=1)
+                        ax.plot(bx, bm, color="#bbbbbb", ls=ls, lw=0.8, zorder=1)
                     ax.errorbar(
                         xs,
                         ys,
@@ -369,7 +441,7 @@ def fig_dose_position(stats: dict, out_dir: Path, inputs: list[Path]) -> None:
             )
         ax.axhline(0.0, color="k", lw=0.6)
         ax.set_xlabel(xlab + " (1 = uncrossed base cell)")
-        ax.set_title(f"{prefix} curves (steered F_beh; grey = shuffled-donor null)")
+        ax.set_title(f"{prefix} curves (steered F_beh; grey band = shuffled-donor null 95% CI)")
         ax.legend(fontsize=6)
     axes[0].set_ylabel("steered F_beh")
     _save(fig, out_dir, "dose_position", inputs)
@@ -382,6 +454,10 @@ def fig_margin_validation(
     out_dir: Path,
     inputs: list[Path],
 ) -> None:
+    """Manifest ``margin_validation``: the REGISTERED per-(cell x slot) mean
+    scatter (dynamic-range-screened points from margin_validation.json — the
+    grain the rule-19 rho is computed on) with the per-pair points behind as
+    the low-level companion (r2 R2)."""
     f_by_key = {(r["pair_id"], r["slot"]): r["f_beh"] for r in f_cells if r["f_beh"] is not None}
     xs, ys = [], []
     for r in margin_cells:
@@ -392,13 +468,33 @@ def fig_margin_validation(
             xs.append(r["margin_shift"])
             ys.append(f)
     fig, ax = plt.subplots(figsize=(7, 6))
-    ax.scatter(xs, ys, s=8, alpha=0.5, color="#4878d0")
-    rho = validation.get("rho_margin_fbeh")
+    ax.scatter(xs, ys, s=8, alpha=0.25, color="#9d9d9d", label="per-pair (companion)")
+    pc = validation.get("percell_points") or []
+    ax.scatter(
+        [p["margin_shift_mean"] for p in pc],
+        [p["f_beh_mean"] for p in pc],
+        s=26,
+        alpha=0.9,
+        color="#4878d0",
+        label="per-(cell x slot) mean (registered grain)",
+    )
+    for p in pc:
+        ax.annotate(
+            f"{p['cell']}|{p['slot']}",
+            (p["margin_shift_mean"], p["f_beh_mean"]),
+            fontsize=3.5,
+            alpha=0.8,
+        )
+    rho_c = validation.get("rho_margin_fbeh_percell")
+    rho_p = validation.get("rho_margin_fbeh_perpair")
     ax.set_xlabel("TF fixed-pool margin shift (patched - floor anchor)")
-    ax.set_ylabel("per-pair F_beh (steered)")
+    ax.set_ylabel("F_beh (steered)")
+    ax.legend(fontsize=7)
     ax.set_title(
-        f"Margin validation (rule 19): Spearman rho={rho if rho is None else round(rho, 3)} "
-        f"(n={validation.get('n')}, validated={validation.get('validated')})"
+        f"Margin validation (rule 19): per-cell rho={rho_c if rho_c is None else round(rho_c, 3)} "
+        f"(n_cells={validation.get('n_cells')}, validated={validation.get('validated')}); "
+        f"per-pair rho={rho_p if rho_p is None else round(rho_p, 3)} "
+        f"(n_pairs={validation.get('n_pairs')})"
     )
     _save(fig, out_dir, "margin_validation", inputs)
 
@@ -443,6 +539,7 @@ def fig_diagnostics(
     x = np.arange(len(labels))
     width = 0.27
     fig, axes = plt.subplots(3, 1, figsize=(max(14, len(labels) * 0.32), 10), sharex=True)
+    missing_baseline: set[str] = set()
     for k, arm in enumerate(("steered", "shuffled", "crosstype")):
         excess, cap = [], []
         for (key, _), rec in [((lab, arm), agg.get((lab, arm))) for lab in labels]:
@@ -452,7 +549,21 @@ def fig_diagnostics(
                 continue
             cell = key.split("|")[0]
             incoh = 1.0 - rec["coh"] / rec["n"]
-            excess.append(incoh - anchor_incoh.get(cell, 0.0))
+            base = anchor_incoh.get(cell)
+            if base is None:
+                # r2 H3: a MISSING anchor baseline (legacy anchors.jsonl rows
+                # without n_*_rollouts) is NaN + a loud log — never a silent
+                # 0.0 substitute that fakes "no excess over baseline".
+                if cell not in missing_baseline:
+                    missing_baseline.add(cell)
+                    logger.warning(
+                        "[figures] no anchor incoherence baseline for cell %s — excess "
+                        "plotted as NaN (legacy anchors.jsonl without n_*_rollouts?)",
+                        cell,
+                    )
+                excess.append(np.nan)
+            else:
+                excess.append(incoh - base)
             cap.append(rec["cap"] / rec["n"])
         axes[0].bar(x + (k - 1) * width, excess, width, color=ARM_COLORS[arm], label=arm)
         axes[1].bar(x + (k - 1) * width, cap, width, color=ARM_COLORS[arm], label=arm)
@@ -852,7 +963,17 @@ def main(argv: list[str] | None = None) -> int:
     anchor_rows = list(_iter_jsonl(md / "anchors.jsonl"))
     arm_rows = {"steered": f_cells, "shuffled": null_shuffled, "crosstype": null_crosstype}
     manifest = {
-        "hero": lambda: fig_hero(stats, f_cells, args.out_dir, [md / "stats.json"]),
+        "hero": lambda: fig_hero(
+            stats,
+            arm_rows,
+            args.out_dir,
+            [
+                md / "stats.json",
+                md / "f_cells.jsonl",
+                md / "null_shuffled_cells.jsonl",
+                md / "null_crosstype_cells.jsonl",
+            ],
+        ),
         "two_by_two": lambda: fig_two_by_two(
             json.loads((md / "two_by_two.json").read_text()),
             args.out_dir,

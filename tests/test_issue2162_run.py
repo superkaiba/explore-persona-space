@@ -11,8 +11,10 @@ Covers the plan §4.6 mechanical gates that are testable without a GPU:
 - the pilot gate's projection arithmetic at the THREADED width + designed rc
   (r1 C2), --force as resume-only (r1 M3),
 - pilot-vs-production state on a SHARED out-root (r1 C1),
-- the dispatcher ``all`` chain wiring (gate3 -> pilot -> grid -> margin ->
-  upload; stage2 fan-out case) (r1 C4/M4/M9),
+- the dispatcher ``all`` chain wiring (pilot -> gate3 -> grid ->
+  margin-opportunistic -> upload; stage2 fan-out case) (r1 C4/M4/M9,
+  r2 MAJOR 1/MINOR 1) + the sentinel ``margin_deferred`` flag,
+- corrupt claim records read DEAD (r2 H2),
 - the smoke slice's per-arm-class coverage.
 """
 
@@ -371,17 +373,64 @@ def test_pilot_leaves_no_done_state_on_shared_out_root(tmp_path, cfg, pairs):
     with pytest.raises(RuntimeError, match="refusing to resume across"):
         R.run_claim_queue(cfg, blocks, regime_fp, "blocks", lambda b: None)
     # (b) Post-fix wiring: the pilot leg suppresses done-writes entirely.
+    # r2 H1: AST-located pins, drift-hardened — a file-wide "write_done=False"
+    # grep + an `if write_done:` count would miss a future UNGUARDED third
+    # done-write in run_block, or a write_done=False on the WRONG call site.
+    import ast
     import inspect
-    import re
 
     assert inspect.signature(R.run_block).parameters["write_done"].default is True
     src = (REPO_ROOT / "scripts" / "issue2162_run.py").read_text()
     assert 'regime_fp + "-pilot"' in src  # the pilot leg keeps its own regime tag
-    assert "write_done=False" in src  # ... and suppresses done-writes
-    run_block_src = inspect.getsource(R.run_block)
-    assert len(re.findall(r"if write_done:", run_block_src)) == 2, (
-        "both done-writes (block + margin twin) must be write_done-guarded"
-    )
+    tree = ast.parse(src)
+    fns = {
+        n.name: n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.FunctionDef) and n.name in ("run_block", "phase_grid")
+    }
+    # (b1) EVERY block_done_path done-write inside run_block sits under an
+    # `if write_done:` guard (exactly the block + margin-twin pair today).
+    rb = fns["run_block"]
+    done_writes = [
+        n
+        for n in ast.walk(rb)
+        if isinstance(n, ast.Call)
+        and isinstance(n.func, ast.Name)
+        and n.func.id == "_write_json_atomic"
+        and n.args
+        and isinstance(n.args[0], ast.Call)
+        and isinstance(n.args[0].func, ast.Name)
+        and n.args[0].func.id == "block_done_path"
+    ]
+    assert len(done_writes) == 2, "expected the block + margin-twin done-writes"
+    guarded_ids = {
+        id(n)
+        for iff in ast.walk(rb)
+        if isinstance(iff, ast.If)
+        and isinstance(iff.test, ast.Name)
+        and iff.test.id == "write_done"
+        for n in ast.walk(iff)
+    }
+    unguarded = [n for n in done_writes if id(n) not in guarded_ids]
+    assert not unguarded, "every run_block done-write must be write_done-guarded"
+    # (b2) phase_grid's PILOT call site — and ONLY that site — passes the
+    # literal write_done=False; the queue's run_one call keeps the default.
+    rb_calls = [
+        n
+        for n in ast.walk(fns["phase_grid"])
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "run_block"
+    ]
+    assert len(rb_calls) == 2, "expected the run_one + pilot run_block call sites"
+    wd_kwargs = [kw for c in rb_calls for kw in c.keywords if kw.arg == "write_done"]
+    assert len(wd_kwargs) == 1, "exactly ONE call site (the pilot) threads write_done"
+    assert isinstance(wd_kwargs[0].value, ast.Constant) and wd_kwargs[0].value.value is False
+    pilot_call = next(c for c in rb_calls if any(k.arg == "write_done" for k in c.keywords))
+    # The write_done=False call is the PILOT leg: its regime arg is the
+    # BinOp `regime_fp + "-pilot"`, not the bare name.
+    assert any(
+        isinstance(a, ast.BinOp) and isinstance(a.right, ast.Constant) and a.right.value == "-pilot"
+        for a in pilot_call.args
+    ), "write_done=False must sit on the pilot-tagged call site"
     # And with a CLEAN out-root the queue actually RUNS the block.
     clean = _cfg_with(tmp_path / "clean")
     ran: list[str] = []
@@ -425,21 +474,31 @@ def test_sharded_done_record_width_mismatch_regenerates(tmp_path):
 
 
 def test_dispatch_all_chain_wiring():
-    """The ``all`` chain must run gate3-check -> pilot (width-threaded) ->
-    grid -> margin -> upload, in that order; the stage2 fan-out case exists."""
+    """r2 MAJOR 1 + MINOR 1: the ``all`` chain runs pilot (width-threaded,
+    gate-independent) -> gate3-check -> grid -> margin-OPPORTUNISTIC ->
+    upload, in that order — upload/teardown must NEVER wait on the Batch-API
+    pools SLA; the stage2 fan-out case exists."""
     src = (REPO_ROOT / "scripts" / "issue2162_dispatch.sh").read_text()
     assert 'pilot --pilot --num-workers "$NUM_WORKERS"' in src  # r1 C2
     assert "run_stage2_fanout" in src  # r1 M9
     seg = src.split("all)")[1].split(";;")[0]
     order = [
-        "require_gate3",
         "run_single_gpu_phase pilot",
+        "require_gate3",
         "run_fanout_phase grid",
-        "run_margin_if_pools",
+        "run_margin_opportunistic",
         "run_upload",
     ]
     idx = [seg.index(tok) for tok in order]
-    assert idx == sorted(idx), (order, idx)  # r1 C4/M4 sequencing
+    assert idx == sorted(idx), (order, idx)  # r2 MAJOR 1 / MINOR 1 sequencing
+    # The `all` chain must NOT use the hard-halting variant ...
+    assert "run_margin_if_pools" not in seg
+    # ... which stays wired to the STANDALONE `margin` phase (rc=24, r1 C4).
+    margin_seg = src.split("margin)")[1].split(";;")[0]
+    assert "run_margin_if_pools" in margin_seg
+    assert "exit 24" in src
+    # The deferred branch is LOUD and returns 0 (proceed to upload).
+    assert "margin DEFERRED" in src
 
 
 # ── claim-queue namespace pairing (the margin infinite-loop bug) ──────
@@ -463,3 +522,105 @@ def test_claim_queue_namespace_matches_done_write_namespace():
         # Every queue namespace has a matching done-write in the same file
         # (run.py's grid queue polls "blocks", the block_done_path DEFAULT).
         assert called - {"blocks"} <= written, (path, called, written)
+
+
+# ── upload seam body (r2: upload_dir_hf extraction) ──────────────────
+
+
+def test_upload_dir_hf_retries_then_raises(tmp_path, monkeypatch):
+    """Executes the REAL ``upload_dir_hf`` body (the fail-loud retry seam the
+    analysis driver's perm-matrix persist reuses), faking ONLY the hub
+    boundary with a signature-mirroring fake: a no-path return is retried
+    with backoff, persistent no-path RAISES (never warn-and-continue), and
+    success returns the exact expected repo paths."""
+    (tmp_path / "a.npz").write_bytes(b"x")
+    sleeps: list[float] = []
+    monkeypatch.setattr(R, "_upload_retry_sleep", sleeps.append)
+    calls: list[dict] = []
+    results = ["", "https://hf.co/ok"]
+
+    def fake_upload_folder_filtered(  # mirrors hub._upload_folder_filtered
+        local_dir,
+        repo_id,
+        repo_type,
+        path_in_repo,
+        allow_patterns,
+        expected_repo_paths,
+        ignore_patterns=None,
+        delete_after=False,
+    ):
+        calls.append({"path_in_repo": path_in_repo, "expected": list(expected_repo_paths)})
+        return results[min(len(calls) - 1, len(results) - 1)]
+
+    import explore_persona_space.orchestrate.hub as hub
+
+    monkeypatch.setattr(hub, "_upload_folder_filtered", fake_upload_folder_filtered)
+    out = R.upload_dir_hf(tmp_path, "pfx/analysis_tensors/probe_perm_matrix", ["*.npz"])
+    assert out == ["pfx/analysis_tensors/probe_perm_matrix/a.npz"]
+    assert calls[-1]["expected"] == out
+    assert len(calls) == 2 and len(sleeps) == 1  # the retry branch engaged
+    # Exhaustion RAISES — the results sentinel must never post over loss.
+    results[:] = [""]
+    calls.clear()
+    with pytest.raises(RuntimeError, match="no path"):
+        R.upload_dir_hf(tmp_path, "pfx/x", ["*.npz"])
+    assert len(calls) == R.UPLOAD_TRANSPORT_RETRIES + 1
+    # No matching files: a skip, never a network call.
+    calls.clear()
+    assert R.upload_dir_hf(tmp_path, "pfx/y", ["*.jsonl"]) == []
+    assert not calls
+
+
+# ── corrupt claim records read DEAD (r2 H2) ──────────────────────────
+
+
+def test_claim_stale_missing_or_nonpositive_pid_is_dead():
+    """r2 H2: a same-host claim record with a MISSING or non-positive pid is
+    STALE (dead) — ``os.kill(-1, 0)`` signals the caller's own process GROUP
+    and SUCCEEDS, so the pre-fix probe read a corrupt record as live forever
+    (permanently unstealable)."""
+    import socket
+
+    host = socket.gethostname()
+    assert R._claim_stale({"host": host, "ts": time.time()}) is True  # pid missing
+    assert R._claim_stale({"host": host, "pid": -1, "ts": time.time()}) is True
+    assert R._claim_stale({"host": host, "pid": 0, "ts": time.time()}) is True
+    # A live same-host claim is still never stolen (r1 M1 unchanged).
+    assert R._claim_stale({"host": host, "pid": os.getpid(), "ts": 0.0}) is False
+
+
+# ── sentinel margin_deferred flag (r2 MAJOR 1) ───────────────────────
+
+
+def test_sentinel_margin_deferred_both_branches(tmp_path, pairs):
+    """r2 MAJOR 1: the results-sentinel payload carries ``margin_deferred``
+    in BOTH branches — True + the deferred-leg RECIPE while the margin legs
+    are incomplete (the Batch-SLA tail deferral), False once every per-block
+    margin done-file AND a complete sharded anchor-margin record set are on
+    disk (the state the later 1x-H100 ``margin`` + ``upload`` leg produces).
+    Disk-derived, so a standalone ``upload`` reports the truth regardless of
+    which dispatcher branch ran."""
+    cfg = _cfg_with(tmp_path, "--smoke", "--upload", "none")
+    payload = R._sentinel_payload(cfg, {})
+    assert payload["margin_deferred"] is True
+    assert "dispatch.sh margin" in payload["margin_deferred_recipe"]
+    assert payload["margin_blocks_done"] == 0
+
+    # Complete the margin legs on disk -> deferred flips False, recipe gone.
+    blocks = R.smoke_blocks(pairs)
+    for b in blocks:
+        R._write_json_atomic(R.block_done_path(cfg.out_root, b, "margin_blocks"), {"key": b.key})
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    for w in range(2):
+        R._write_json_atomic(
+            cfg.manifest_dir / f"margin_anchors_w{w}_done.json",
+            {"num_workers": 2, "worker_index": w},
+        )
+    payload = R._sentinel_payload(cfg, {})
+    assert payload["margin_deferred"] is False
+    assert "margin_deferred_recipe" not in payload
+    assert payload["margin_blocks_done"] == len(blocks) == payload["margin_blocks_expected"]
+
+    # An INCOMPLETE anchor shard set (1 of 2 workers) stays deferred.
+    (cfg.manifest_dir / "margin_anchors_w1_done.json").unlink()
+    assert R._margin_state(cfg)["margin_deferred"] is True
