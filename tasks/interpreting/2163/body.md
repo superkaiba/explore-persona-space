@@ -4,7 +4,7 @@ title: 'The context→answer map reads SAE features selectively: per-unit gain i
 kind: experiment
 tags: []
 created_at: '2026-08-07T06:53:39Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1482
 origin_prompt: we also trained a SAE feature -> answer vector mapping. Since we want
   to see what kind of information is stored at the context vector (newline before
