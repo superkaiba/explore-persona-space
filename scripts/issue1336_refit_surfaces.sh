@@ -48,6 +48,26 @@ FIRST=${1:-1}
 LAST=${2:-${#SURFACES[@]}}
 
 cd "$REPO" || { echo "FATAL: no $REPO" >&2; exit 1; }
+
+# Re-attach breadcrumbs. The pidfile is rewritten by THIS run (never left carrying a
+# predecessor's pid — the #813 relaunch trap), and the exit-code sentinel is removed at
+# launch so a stale one can never satisfy a done-check (the never-key-done-on-bare-
+# existence rule). A successor session re-attaches from these two paths alone.
+LOGDIR=${EPM_1336_LOGDIR:-/workspace/logs}
+PIDFILE="$LOGDIR/issue-1336-refit.pid"
+SENTINEL="$LOGDIR/issue-1336-refit-done.json"
+mkdir -p "$LOGDIR"
+echo $$ > "$PIDFILE"
+rm -f "$SENTINEL"
+
+write_sentinel() {
+  cat > "$SENTINEL.tmp" <<JSON
+{"issue": 1336, "round": "refit-v3", "rc": $1, "surfaces": "$FIRST..$LAST",
+ "cells_on_disk": $2, "out_root": "$OUT", "finished_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
+JSON
+  mv "$SENTINEL.tmp" "$SENTINEL"
+}
+
 set -a
 [ -f ./.env ] && . ./.env
 set +a
@@ -101,4 +121,5 @@ done
 
 n_cells=$(ls -1 "$OUT/cells" 2>/dev/null | wc -l)
 echo "[driver] DONE rc=$rc_all cells_on_disk=$n_cells"
+write_sentinel "$rc_all" "$n_cells"
 exit "$rc_all"
