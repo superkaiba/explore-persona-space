@@ -54,22 +54,25 @@ for phase in "${PHASES[@]}"; do
       echo "[workload] confirm-b venue switch fired: fit leg deferred to the GPU cell" \
         "(pod-2163-b, --phase confirm-b-gpu); see out/results/confirm_B_venue.json"
     fi
-    # Between-phase incremental cache reap (disk-hygiene contract). Consumer
-    # enumeration (grep of _store_dir/_inputs_1482_dir/_meta_dir/_dense_dir/_cov_dir
-    # call sites in the driver):
-    #   store shards (9.82 GB)      -> last read by census
-    #   #1482 inputs/registry (2 GB)-> last read by confirm-b (_registry)
-    #   dense targets Y_L19 (2 GB)  -> last read by read-ladder
-    #   covariates v2 (25 MB)       -> last read by partials (_load_selection)
-    #   scratch meta (~15 MB)       -> last read by carried
-    # confirm-b is therefore the LAST consumer of ANY staged download input, and the
-    # cleaner is not prefix-selective — so the single safe reap point is here.
-    # upload-verify reads only out/ + results/, never the staged caches. Note the
-    # driver stages under $WORK_ROOT/staged (outside the cleaner's data/issue_<N>
-    # sweep scope), so this reap covers only issue-keyed repo/data//tmp caches.
-    echo "[workload] $(date -u +%Y-%m-%dT%H:%M:%SZ) incremental cache reap (post confirm-b)"
-    uv run python scripts/clean_experiment_downloads.py 2163 --incremental --apply
   fi
 done
+
+# Incremental cache reap AFTER upload-verify (disk-hygiene contract). Consumer
+# enumeration (grep of _store_dir/_inputs_1482_dir/_meta_dir/_dense_dir/_cov_dir
+# call sites in the driver):
+#   store shards (9.82 GB)      -> last read by census
+#   #1482 inputs/registry (2 GB)-> last read by confirm-b (_registry)
+#   dense targets Y_L19 (2 GB)  -> last read by read-ladder
+#   covariates v2 (25 MB)       -> last read by partials (_load_selection)
+#   scratch meta (~15 MB)       -> last read by carried
+# confirm-b is the LAST consumer of ANY staged download input, and upload-verify reads
+# only out/ + results/, never the staged caches — so placing the reap AFTER upload-verify
+# costs nothing while removing the failure mode where, under `set -e`, a reap failure
+# after confirm-b would abort the workload with all results computed but the main upload
+# never run (round-1 Minor). Note the driver stages under $WORK_ROOT/staged (outside the
+# cleaner's data/issue_<N> sweep scope), so this reap covers only issue-keyed
+# repo/data//tmp caches.
+echo "[workload] $(date -u +%Y-%m-%dT%H:%M:%SZ) incremental cache reap (post upload-verify)"
+uv run python scripts/clean_experiment_downloads.py 2163 --incremental --apply
 
 echo "[workload] $(date -u +%Y-%m-%dT%H:%M:%SZ) all pod-side phases complete [phase=done]"
