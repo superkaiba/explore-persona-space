@@ -119,10 +119,10 @@
     },
     {
       "id": "crosstype_null_by_donor",
-      "title": "Cross-type null by donor type (diagnostic)",
-      "source": "eval_results/issue_2162/f_metrics/null_crosstype_cells.jsonl",
-      "transform": "per (recipient type-cell x slot): mean F_beh of the cross-type-donor arm split BY DONOR TYPE (donor type + pair id recorded per row; same separation exclusion as per_type_f_beh), rendered for every cell whose pooled cross-type-null bootstrap CI excludes 0",
-      "plotted_quantity": "donor-type-resolved cross-type-null F_beh bars per elevated recipient cell (visibility diagnostic for donor content moving the recipient rubric)"
+      "title": "Cross-type null by donor type + shuffled-donor null by donor value (diagnostic)",
+      "source": "eval_results/issue_2162/f_metrics/{null_crosstype_cells,null_shuffled_cells}.jsonl",
+      "transform": "cross-type facet: per (recipient type-cell x slot), mean F_beh of the cross-type-donor arm split BY DONOR TYPE (donor type + pair id recorded per row; same separation exclusion as per_type_f_beh), rendered for every cell whose pooled cross-type-null bootstrap CI excludes 0; shuffled-donor facet (the two graded/ordinal value sets, refusal_boundary + constraint_knowledge, only): per (recipient type-cell x slot), mean F_beh of the shuffled-donor arm split BY DONOR VALUE (donor pair + value ids recorded per row; same exclusion), rendered for those two types whenever either null's pooled bootstrap CI excludes 0 (adjacent-value donors can earn partial rubric credit and elevate that null)",
+      "plotted_quantity": "donor-type-resolved cross-type-null F_beh bars per elevated recipient cell, plus donor-value-resolved shuffled-donor-null F_beh bars for the two ordinal value sets (visibility diagnostic for donor content moving the recipient rubric / partial rubric credit elevating the null)"
     },
     {
       "id": "coherence_caphit",
