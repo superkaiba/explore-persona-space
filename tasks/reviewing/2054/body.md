@@ -21,6 +21,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2054.md @ d077d79f](https://github.com/superkaiba/explore-persona-space/blob/d077d79f19a9090783a5a59da22a0a5703704a7b/docs/methodology/issue_2054.md) · [gist mirror](https://gist.github.com/superkaiba/dd921616d01ccbc53e0004ee97657e28)
+
 ## Takeaways
 
 - All 56 lattice cells fit a real context→answer map at well-posed n (per-fold n_train 6,341–9,586 against d = 3,584): held-out R² 0.12–0.58, every cell far above its shuffled-answer null (95th-percentile draw ≈ −0.03) and identity-plus-bias floor (predict the input plus a mean shift; −0.48 or lower); retrieval finds the true answer vector first try in 19% of held-out rows at the median cell, 70% at the best, against ~0.06% chance.
