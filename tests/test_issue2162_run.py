@@ -4,17 +4,22 @@ Covers the plan §4.6 mechanical gates that are testable without a GPU:
 
 - block enumeration (234 = 39 cells x 2 slots x 3 arms; 42,120 rollouts),
 - the shared work-conserving CLAIM-FILE queue (O_CREAT-exclusive claims,
-  stale-claim reclamation by dead-pid and by age, unparseable-claim fail-loud,
-  wrong-token release fail-loud),
+  stale-claim reclamation by dead-pid and by cross-host age, live-same-host
+  claims never stolen, tolerant stolen-claim release — r1 M1),
 - regime-fingerprint resume refusal (a mismatched done-file RAISES, never a
-  silent skip),
-- the pilot gate's projection arithmetic + designed rc,
+  silent skip) + width-keyed sharded resume (r1 M2),
+- the pilot gate's projection arithmetic at the THREADED width + designed rc
+  (r1 C2), --force as resume-only (r1 M3),
+- pilot-vs-production state on a SHARED out-root (r1 C1),
+- the dispatcher ``all`` chain wiring (gate3 -> pilot -> grid -> margin ->
+  upload; stage2 fan-out case) (r1 C4/M4/M9),
 - the smoke slice's per-arm-class coverage.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -152,12 +157,55 @@ def test_try_claim_unparseable_fails_loud(tmp_path):
         R.try_claim(cdir, block, 0, "tok")
 
 
-def test_release_claim_wrong_token_asserts(tmp_path):
+def test_try_claim_live_same_host_old_claim_not_stolen(tmp_path):
+    """r1 M1: same-host pid probe is authoritative in BOTH directions — a
+    LIVE owner is never stolen by age (blocks have no mid-block heartbeat,
+    so a >4h block must not lose its claim mid-run)."""
+    import socket
+
+    cdir = tmp_path / "claims"
+    cdir.mkdir(parents=True)
+    block = _mkblock()
+    (cdir / f"{block.slug}.claim").write_text(
+        json.dumps(
+            {
+                "key": block.key,
+                "pid": os.getpid(),  # provably alive: our own pid
+                "host": socket.gethostname(),
+                "worker_index": 1,
+                "ts": time.time() - 2 * 3600,  # older than any age fallback would like
+                "token": "live-owner",
+            }
+        )
+    )
+    assert R.try_claim(cdir, block, 0, "tok-thief") is False
+    rec = json.loads((cdir / f"{block.slug}.claim").read_text())
+    assert rec["token"] == "live-owner"
+
+
+def test_release_claim_stolen_is_tolerated(tmp_path, caplog):
+    """r1 M1: a stolen claim at release time (vanished, or another worker's
+    token) is a LOUD error log, never an assert — the done-file landed
+    atomically, so the steal must not kill this worker's whole queue loop."""
+    import logging
+
     cdir = tmp_path / "claims"
     block = _mkblock()
+    # Vanished claim: no raise.
     assert R.try_claim(cdir, block, 0, "tok-a")
-    with pytest.raises(AssertionError, match="another worker"):
-        R.release_claim(cdir, block, "tok-b")
+    (cdir / f"{block.slug}.claim").unlink()
+    with caplog.at_level(logging.ERROR, logger="issue2162.run"):
+        R.release_claim(cdir, block, "tok-a")
+    assert any("VANISHED" in m for m in caplog.messages)
+    caplog.clear()
+    # Foreign-token claim: no raise, and the THIEF's claim file is left.
+    assert R.try_claim(cdir, block, 0, "tok-thief")
+    with caplog.at_level(logging.ERROR, logger="issue2162.run"):
+        R.release_claim(cdir, block, "tok-original")
+    assert any("ANOTHER worker" in m for m in caplog.messages)
+    assert (cdir / f"{block.slug}.claim").exists()
+    rec = json.loads((cdir / f"{block.slug}.claim").read_text())
+    assert rec["token"] == "tok-thief"
 
 
 def test_run_claim_queue_runs_every_block(tmp_path, cfg, pairs):
@@ -237,6 +285,23 @@ def test_pool_key(pairs):
 # ── pilot gate (designed halt, distinct rc) ──────────────────────────
 
 
+def _cfg_with(tmp_path, *extra: str):
+    args = R.parse_args(
+        [
+            "--phase",
+            "grid",
+            "--out-root",
+            str(tmp_path / "out"),
+            "--log-dir",
+            str(tmp_path / "logs"),
+            *extra,
+        ]
+    )
+    c = R.build_config(args)
+    c.out_root.mkdir(parents=True, exist_ok=True)
+    return c
+
+
 def test_pilot_gate_refuses_over_3x(tmp_path, cfg, pairs):
     totals = R.grid_totals(R.enumerate_blocks(pairs), R.GRID_DRAWS)
     cfg.out_root.mkdir(parents=True, exist_ok=True)
@@ -251,6 +316,130 @@ def test_pilot_gate_refuses_over_3x(tmp_path, cfg, pairs):
     report = json.loads((cfg.out_root / "pilot_gate_report.json").read_text())
     assert report["sweep_allowed"] is True
     assert report["recommended_poll_fence_h"] == pytest.approx(2.0 * report["projected_pod_wall_h"])
+
+
+def test_pilot_gate_passes_plan_basis_at_width_8(tmp_path, pairs):
+    """r1 C2: the §9 plan is 42,120 rollouts across 8 workers within
+    planned_wall_h — at exactly the plan-basis per-rollout wall the gate must
+    PASS at width 8 and REFUSE at width 1 (the r1 bug ran the projection at
+    the un-threaded default width 1, a deterministic 8x false-fire)."""
+    totals = R.grid_totals(R.enumerate_blocks(pairs), R.GRID_DRAWS)
+    per_rollout = R.PLANNED_GRID_WALL_H * 3600.0 * 8 / totals["rollouts_total"]
+    ran_rollouts, ran_wall = 180, 180 * per_rollout
+    cfg8 = _cfg_with(tmp_path, "--num-workers", "8")
+    assert R._enforce_pilot_gate(cfg8, totals, ran_rollouts, ran_wall) == R.RC_OK
+    report = json.loads((cfg8.out_root / "pilot_gate_report.json").read_text())
+    assert report["num_workers"] == 8
+    assert report["projected_pod_wall_h"] == pytest.approx(R.PLANNED_GRID_WALL_H)
+    # Same timings projected at width 1: 8x the plan -> refusal.
+    cfg1 = _cfg_with(tmp_path / "w1")
+    assert R._enforce_pilot_gate(cfg1, totals, ran_rollouts, ran_wall) == R.RC_PILOT_GATE
+
+
+def test_pilot_gate_force_is_resume_only(tmp_path, pairs):
+    """r1 M3: --force is a RESUME override only — it must NOT bypass the
+    pilot refusal; only --force-past-halt-gates does (recorded as forced)."""
+    totals = R.grid_totals(R.enumerate_blocks(pairs), R.GRID_DRAWS)
+    cfg_force = _cfg_with(tmp_path / "f", "--force")
+    rc = R._enforce_pilot_gate(cfg_force, totals, ran_rollouts=10, ran_wall=100.0)
+    assert rc == R.RC_PILOT_GATE
+    cfg_halt = _cfg_with(tmp_path / "h", "--force-past-halt-gates")
+    rc = R._enforce_pilot_gate(cfg_halt, totals, ran_rollouts=10, ran_wall=100.0)
+    assert rc == R.RC_OK
+    report = json.loads((cfg_halt.out_root / "pilot_gate_report.json").read_text())
+    assert report["forced"] is True
+    assert report["sweep_allowed"] is False  # the report never lies about refusal
+
+
+# ── pilot vs production state on a SHARED out-root (r1 C1) ────────────
+
+
+def test_pilot_leaves_no_done_state_on_shared_out_root(tmp_path, cfg, pairs):
+    """r1 C1 (the production killer): the pilot runs production ``blocks[0]``
+    under ``regime_fp + "-pilot"`` on the SAME out-root the grid then uses.
+    Pre-fix, ``run_block`` wrote its done-files unconditionally, so every
+    grid worker's ``block_is_done`` scan RAISED at P3 entry. This test pins
+    BOTH halves: (a) the crash shape a pilot done-residue produces, and
+    (b) the write_done=False wiring that prevents the residue."""
+    blocks = R.enumerate_blocks(pairs)[:1]
+    regime_fp = "fp-prod"
+    # (a) The pre-fix residue kills the production queue at entry.
+    R._write_json_atomic(
+        R.block_done_path(cfg.out_root, blocks[0]),
+        {"key": blocks[0].key, "regime_fp": regime_fp + "-pilot"},
+    )
+    with pytest.raises(RuntimeError, match="refusing to resume across"):
+        R.run_claim_queue(cfg, blocks, regime_fp, "blocks", lambda b: None)
+    # (b) Post-fix wiring: the pilot leg suppresses done-writes entirely.
+    import inspect
+    import re
+
+    assert inspect.signature(R.run_block).parameters["write_done"].default is True
+    src = (REPO_ROOT / "scripts" / "issue2162_run.py").read_text()
+    assert 'regime_fp + "-pilot"' in src  # the pilot leg keeps its own regime tag
+    assert "write_done=False" in src  # ... and suppresses done-writes
+    run_block_src = inspect.getsource(R.run_block)
+    assert len(re.findall(r"if write_done:", run_block_src)) == 2, (
+        "both done-writes (block + margin twin) must be write_done-guarded"
+    )
+    # And with a CLEAN out-root the queue actually RUNS the block.
+    clean = _cfg_with(tmp_path / "clean")
+    ran: list[str] = []
+
+    def run_one(block: R.Block) -> None:
+        ran.append(block.key)
+        R._write_json_atomic(
+            R.block_done_path(clean.out_root, block),
+            {"key": block.key, "regime_fp": regime_fp},
+        )
+
+    stats = R.run_claim_queue(clean, blocks, regime_fp, "blocks", run_one)
+    assert stats["ran"] == 1 and ran == [blocks[0].key]
+
+
+# ── width-keyed sharded resume (r1 M2) ───────────────────────────────
+
+
+def test_sharded_done_record_width_mismatch_regenerates(tmp_path):
+    """r1 M2: ``order[w::num_workers]`` shard identity includes the width — a
+    done record written at width 8 must NOT satisfy a width-4 resume (the
+    vanished workers' contexts would silently never regenerate)."""
+    cfg8 = _cfg_with(tmp_path, "--num-workers", "8")
+    cfg8.manifest_dir.mkdir(parents=True, exist_ok=True)
+    R._write_json_atomic(
+        cfg8.manifest_dir / "anchors_gate_w0_done.json",
+        {"regime_fp": "fp-a", "num_workers": 8, "batch": "gate"},
+    )
+    assert R._sharded_done_record(cfg8, "anchors_gate_w0", "fp-a") is not None
+    cfg4 = _cfg_with(tmp_path, "--num-workers", "4")  # same out-root
+    assert R._sharded_done_record(cfg4, "anchors_gate_w0", "fp-a") is None
+    # A LEGACY record with no num_workers key also regenerates (never crashes).
+    R._write_json_atomic(
+        cfg8.manifest_dir / "anchors_rest_w0_done.json",
+        {"regime_fp": "fp-a", "batch": "rest"},
+    )
+    assert R._sharded_done_record(cfg8, "anchors_rest_w0", "fp-a") is None
+
+
+# ── dispatcher wiring pins (r1 C2 / C4 / M4 / M9) ────────────────────
+
+
+def test_dispatch_all_chain_wiring():
+    """The ``all`` chain must run gate3-check -> pilot (width-threaded) ->
+    grid -> margin -> upload, in that order; the stage2 fan-out case exists."""
+    src = (REPO_ROOT / "scripts" / "issue2162_dispatch.sh").read_text()
+    assert 'pilot --pilot --num-workers "$NUM_WORKERS"' in src  # r1 C2
+    assert "run_stage2_fanout" in src  # r1 M9
+    seg = src.split("all)")[1].split(";;")[0]
+    order = [
+        "require_gate3",
+        "run_single_gpu_phase pilot",
+        "run_fanout_phase grid",
+        "run_margin_if_pools",
+        "run_upload",
+    ]
+    idx = [seg.index(tok) for tok in order]
+    assert idx == sorted(idx), (order, idx)  # r1 C4/M4 sequencing
 
 
 # ── claim-queue namespace pairing (the margin infinite-loop bug) ──────
