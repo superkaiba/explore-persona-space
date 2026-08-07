@@ -881,6 +881,82 @@ def test_launch_gcp_create_timeout_still_provisioning_exits_75(monkeypatch, tmp_
     assert not default_handle_sidecar_path(736).exists()
 
 
+def test_launch_free_lane_still_waiting_exits_75_with_rerun_json_no_failure_keys(
+    monkeypatch, tmp_path
+) -> None:
+    """The free-lane THIRD producer of exit 75 (#2161): a free SLURM lane's
+    queue park reached the per-process budget
+    (EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS) — the router raises
+    ``FreeLaneStillWaitingError`` with the ladder position persisted to the
+    durable lease. The CLI must convert it to the still-waiting JSON
+    (``still_waiting: true`` + ``rerun: true`` + the additive ``lane`` /
+    ``job_id`` / ``qos`` / ``rung`` / ``n_rungs`` / ``rung_park_elapsed_s``
+    keys) and exit 75 — never the exit-2 ``RouteError`` arm (the error is
+    deliberately NOT a RouteError) and never the rc-4 catch-all. Mirrors
+    the two exit-75 tests above; deliberately NO ``failure_class`` /
+    ``status`` keys so the orchestrator does NOT post ``epm:failure`` /
+    ``set-status blocked``."""
+    from explore_persona_space.backends.router import FreeLaneStillWaitingError
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as cli
+
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: "nibi")
+    nibi = _MockBackend(
+        kind="nibi",
+        launch_should_raise=FreeLaneStillWaitingError(
+            issue=2161,
+            lane="nibi",
+            cluster="nibi",
+            job_id="31337",
+            qos=None,
+            rung_idx=0,
+            n_rungs=1,
+            rung_park_elapsed_s=417.0,
+        ),
+    )
+    factory = _build_mock_factory(nibi=nibi)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = cli.main(
+            [
+                "launch",
+                "--issue",
+                "2161",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "nibi",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == cli.EXIT_STILL_WAITING == 75
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["still_waiting"] is True
+    assert body["rerun"] is True
+    assert body["reason"] == "free_lane_park_budget_reached"
+    # Additive keys carry the parked ladder position the re-run resumes.
+    assert body["lane"] == "nibi"
+    assert body["job_id"] == "31337"
+    assert body["qos"] is None
+    assert body["rung"] == 1
+    assert body["n_rungs"] == 1
+    assert body["rung_park_elapsed_s"] == 417.0
+    # The note names the resume contract + the backend_poll handoff ban.
+    assert "re-run the SAME" in body["note"]
+    assert "backend_poll" in body["note"]
+    # Deliberately NO failure_class / status keys — the orchestrator must
+    # not post epm:failure / set-status blocked on this exit.
+    assert "failure_class" not in body
+    assert "status" not in body
+    # No sidecar — the launch never completed (re-run resumes the park).
+    assert not default_handle_sidecar_path(2161).exists()
+
+
 def test_launch_unrelated_calledprocesserror_keeps_generic_rc4(monkeypatch, tmp_path) -> None:
     """An rc-75 subprocess that is NOT ``pod_lifecycle.py provision``
     (e.g. an ssh/gcloud helper from another lane) must NOT be mistaken
