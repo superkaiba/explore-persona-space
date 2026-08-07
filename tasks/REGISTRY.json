@@ -9016,8 +9016,8 @@
     "2166": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2166",
-      "status": "planning",
+      "path": "tasks/approved/2166",
+      "status": "approved",
       "title": "#2166 workflow-fix: repoint 5 stale CLAUDE.md prose \u00b7 planning \u00b7 \u2588\u258c\u2591\u2591\u2591 30%"
     },
     "218": {
