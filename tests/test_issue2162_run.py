@@ -251,3 +251,26 @@ def test_pilot_gate_refuses_over_3x(tmp_path, cfg, pairs):
     report = json.loads((cfg.out_root / "pilot_gate_report.json").read_text())
     assert report["sweep_allowed"] is True
     assert report["recommended_poll_fence_h"] == pytest.approx(2.0 * report["projected_pod_wall_h"])
+
+
+# ── claim-queue namespace pairing (the margin infinite-loop bug) ──────
+
+
+def test_claim_queue_namespace_matches_done_write_namespace():
+    """Every ``run_claim_queue`` call's namespace must equal the namespace its
+    ``run_one`` writes done-files under — a mismatch means the queue never
+    sees completion and re-runs blocks forever (caught live: phase_margin
+    polled "margin" while done-files landed under "margin_blocks")."""
+    import re
+
+    for path, queue_ns in (
+        (Path("scripts/issue2162_run.py"), {"blocks", "margin_blocks"}),
+        (Path("scripts/issue2162_stage2.py"), {"stage2_blocks"}),
+    ):
+        src = (REPO_ROOT / path).read_text()
+        called = set(re.findall(r'run_claim_queue\(cfg, blocks, regime_fp, "([^"]+)"', src))
+        assert called == queue_ns, (path, called)
+        written = set(re.findall(r'block_done_path\(cfg\.out_root, block, "([^"]+)"\)', src))
+        # Every queue namespace has a matching done-write in the same file
+        # (run.py's grid queue polls "blocks", the block_done_path DEFAULT).
+        assert called - {"blocks"} <= written, (path, called, written)

@@ -297,7 +297,9 @@ def phase_stage2(cfg: R.RunConfig, best_cells_path: Path) -> int:
             time.monotonic() - t0,
         )
 
-    stats = R.run_claim_queue(cfg, blocks, regime_fp, "stage2", run_one)
+    # Queue namespace MUST equal run_stage2_block's done-file namespace
+    # ("stage2_blocks") — a mismatch re-runs blocks forever (#2162 margin bug).
+    stats = R.run_claim_queue(cfg, blocks, regime_fp, "stage2_blocks", run_one)
     logger.info("[stage2] queue stats: %s", stats)
     return R.RC_OK
 

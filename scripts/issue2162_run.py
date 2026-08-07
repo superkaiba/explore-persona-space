@@ -2197,7 +2197,10 @@ def phase_margin(cfg: RunConfig) -> int:
             time.monotonic() - t0,
         )
 
-    stats = run_claim_queue(cfg, blocks, regime_fp, "margin", run_one)
+    # Namespace MUST match run_one's done-file namespace ("margin_blocks") —
+    # a mismatched queue namespace never sees the done files and re-runs the
+    # blocks forever (caught by the tiny-real cross-phase smoke).
+    stats = run_claim_queue(cfg, blocks, regime_fp, "margin_blocks", run_one)
     logger.info("[phase=margin_done] worker=%d blocks_run=%d", cfg.worker_index, stats["ran"])
     return RC_OK
 
