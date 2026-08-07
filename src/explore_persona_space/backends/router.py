@@ -2233,6 +2233,87 @@ def _free_lane_park_state(
     }
 
 
+def _fresh_sibling_park_state(lease: Lease | None, kind: BackendKind) -> dict[str, Any] | None:
+    """FRESH spec-hash-matching park state held by a DIFFERENT lane (#2161 round 2).
+
+    The round-1 review's sibling-clobber instance: ``_try_one_free_lane``'s
+    fresh-submit path treated ANY non-matching leftover state as stale —
+    a sibling SLURM lane ranked ahead of the parked lane CLEARED the
+    parked lane's resumable state and fresh-submitted its own job while
+    the parked job stayed queued (double submit + the resumable state
+    destroyed). A fresh sibling state must be NEITHER cleared NOR
+    submitted past. Returns the state dict when the lease carries one for
+    ANOTHER lane and it still matches for THAT lane (spec-hash +
+    freshness; any job id), else ``None``.
+    """
+    if lease is None or not isinstance(lease.free_lane_park_state, dict):
+        return None
+    lane = lease.free_lane_park_state.get("lane")
+    if not isinstance(lane, str) or lane == kind:
+        return None
+    return _matching_free_lane_park_state(lease, lane)
+
+
+def _clear_same_lane_park_state(
+    lease: Lease | None, kind: BackendKind, write: Callable[[Lease], None]
+) -> None:
+    """Drop THIS lane's park-state residue on a lane-advance path (#2161 round 2).
+
+    Mirrors the ladder-exhaustion clear on the mid-ladder
+    ``prepare_failed`` / ``launch_failed`` return-``None`` paths (round-1
+    review Minor): leaving a ``job_id: None / rung_idx: N`` record on the
+    lease made a LATER fresh invocation (within the 24 h freshness window)
+    silently start the ladder at rung N after a transient endpoint hiccup.
+    Scoped to ``lane == kind`` so a sibling lane's resumable state is
+    never clobbered (:func:`_fresh_sibling_park_state`).
+    """
+    if (
+        lease is not None
+        and isinstance(lease.free_lane_park_state, dict)
+        and lease.free_lane_park_state.get("lane") == kind
+    ):
+        lease.free_lane_park_state = None
+        write(lease)
+
+
+def _still_waiting_from_state(
+    *, spec: RunSpec, lane: BackendKind, state: dict[str, Any]
+) -> FreeLaneStillWaitingError:
+    """Build the exit-75 still-waiting terminal from a PERSISTED park state (#2161 round 2).
+
+    Used by the stage-1.5 parked-lane-first holds (reconnect probe failed /
+    parked lane unwired this invocation), where no live in-flock park is
+    running to raise it: the parked job may still be alive, so the router
+    must NOT fall through to fresh submits on other lanes — it re-surfaces
+    the same still-waiting outcome the budget cut originally raised, and a
+    later re-run retries the resume. Field values come from the persisted
+    state (fail-soft on malformed fields — the freshness check upstream
+    already vouched for the record's shape).
+    """
+    lane_spec = _spec_for_lane(spec, lane)
+    rungs, primary_qos = _qos_rungs_for_lane(lane, lane_spec)
+    try:
+        rung_idx = min(max(int(state.get("rung_idx", 0)), 0), len(rungs) - 1)
+    except (TypeError, ValueError):
+        rung_idx = 0
+    rung = rungs[rung_idx]
+    try:
+        elapsed = float(state.get("rung_park_elapsed_s") or 0.0)
+    except (TypeError, ValueError):
+        elapsed = 0.0
+    job_id = state.get("job_id")
+    return FreeLaneStillWaitingError(
+        issue=spec.issue,
+        lane=lane,
+        cluster=lane_spec.cluster,
+        job_id=str(job_id) if job_id is not None else None,
+        qos=rung.qos if rung is not None else primary_qos,
+        rung_idx=rung_idx,
+        n_rungs=len(rungs),
+        rung_park_elapsed_s=elapsed,
+    )
+
+
 def _park_segment_outcome(
     *,
     backend: ComputeBackend,
@@ -4598,6 +4679,23 @@ def _override_free_or_gcp(  # noqa: C901 — pinned-lane reconnect/resume + park
             assert handle is not None  # matched state requires the handle
         else:
             # Fresh submit (still under the flock).
+            # #2161 round 2 (review secondary): the user explicitly pinned
+            # THIS lane, so the pin wins — but warn loudly when the submit
+            # proceeds past (and, on non-gcp lanes, the lease write below
+            # overwrites) another lane's FRESH park state: the parked job,
+            # if still queued, becomes unresumable from this lease.
+            sibling_state = _fresh_sibling_park_state(lease, kind)
+            if sibling_state is not None:
+                logger.warning(
+                    "route: explicit override %s fresh submit proceeds past FRESH "
+                    "park state for lane %s (job %r, rung_idx=%r) and will "
+                    "overwrite it — the parked job is no longer resumable from "
+                    "this lease; scancel it manually if it is still alive.",
+                    kind,
+                    sibling_state.get("lane"),
+                    sibling_state.get("job_id"),
+                    sibling_state.get("rung_idx"),
+                )
             threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
             try:
                 handle = _prepare_and_launch(
@@ -5334,6 +5432,11 @@ def _auto_route(
     one final RunPod retry (#656 machinery, retained). Only if THAT launch
     fails does the chain raise :class:`NoComputeAvailableError` ("truly no
     compute anywhere").
+
+    #2161 round 2: BETWEEN the stage-1 reconnect scan and the group walk,
+    a FRESH matching park state routes the PARKED lane's resume first
+    (:func:`_resume_parked_lane_first`) so no other lane can fresh-submit
+    past a still-queued parked job.
     """
     del clock_fn  # reserved for a future "day boundary at posted-time" override
     # Build the candidate list in lane order (skipping unwired lanes +
@@ -5373,6 +5476,34 @@ def _auto_route(
     )
     if reconnect_result is not None:
         return reconnect_result
+
+    # Stage 1.5 (#2161 round 2): a FRESH spec-hash-matching park state on
+    # the lease names the lane holding OUR budget-parked attempt — that
+    # lane resumes FIRST, before any fresh-provision lane (under the
+    # production runpod-first order the walk would otherwise provision
+    # RunPod while the parked job stays queued — cross-lane double-submit,
+    # round-1 review Critical). On a clean lane advance (state cleared,
+    # job confirmed dead) the walk proceeds WITHOUT the parked lane.
+    parked_result, candidates = _resume_parked_lane_first(
+        spec=spec,
+        candidates=candidates,
+        store=store,
+        attempts=attempts,
+        started_at=started_at,
+        cfg=cfg,
+        is_started=is_started,
+        is_live_after_cancel=is_live_after_cancel,
+        is_running_after_cancel=is_running_after_cancel,
+        started_evidence_probe=started_evidence_probe,
+        reconnect_fn=reconnect_fn,
+        now_fn=now_fn,
+        sleep_fn=sleep_fn,
+        marker_poster=marker_poster,
+        on_launched=on_launched,
+        process_deadline=process_deadline,
+    )
+    if parked_result is not None:
+        return parked_result
 
     # Stage 2: walk the chain group by group. A GCP group is a single
     # provision attempt; a SLURM group is the ranked launch → park →
@@ -5633,6 +5764,134 @@ def _record_reconnect(
     return result
 
 
+def _resume_parked_lane_first(
+    *,
+    spec: RunSpec,
+    candidates: list[tuple[ComputeBackend, BackendKind]],
+    store: LeaseStore,
+    attempts: list[RouteAttempt],
+    started_at: float,
+    cfg: RouterConfig,
+    is_started: Callable[[ComputeBackend, RunHandle], bool],
+    is_live_after_cancel: Callable[[ComputeBackend, RunHandle], bool],
+    is_running_after_cancel: Callable[[ComputeBackend, RunHandle], bool] | None,
+    started_evidence_probe: (Callable[[ComputeBackend, RunHandle], dict[str, Any] | None] | None),
+    reconnect_fn: (Callable[[ComputeBackend, BackendKind, RunSpec], RunHandle | None] | None),
+    now_fn: Callable[[], float],
+    sleep_fn: Callable[[float], None],
+    marker_poster: Callable[..., None] | None,
+    on_launched: Callable[[RunHandle], None] | None,
+    process_deadline: float | None,
+) -> tuple[RouteResult | None, list[tuple[ComputeBackend, BackendKind]]]:
+    """Auto-route stage 1.5 (#2161 round 2): the PARKED lane resumes FIRST.
+
+    A FRESH spec-hash-matching :attr:`Lease.free_lane_park_state` means a
+    prior budget-cut invocation left a resumable parked attempt on lane K.
+    The stage-2 group walk must NOT run any other lane first: under the
+    production runpod-first order it would fresh-provision RunPod while
+    the parked job stays queued — the cross-lane double-submit the round-1
+    review flagged as Critical. Outcomes:
+
+    - **K wired** → run K's :func:`_try_one_free_lane` BEFORE the walk. A
+      result / raise resolves the invocation. A ``None``-return is a CLEAN
+      lane advance ONLY when the state is gone by then (ladder exhaustion
+      and the mid-ladder failure paths all clear it, each after the rung's
+      job is confirmed dead) — the walk then proceeds WITHOUT K (its
+      ladder already had its full chance this invocation).
+    - **state still present after K's ``None``-return** — the in-flock
+      reconnect probe failed (the parked job may still be alive) → raise
+      the still-waiting terminal (:func:`_still_waiting_from_state`)
+      instead of falling through to fresh submits.
+    - **K unwired this invocation** (not in ``candidates``: backend not
+      wired, Mila socket down) → same still-waiting outcome: the parked
+      job can be neither verified nor resumed, so no other lane may
+      fresh-submit past it. The 24 h freshness cap bounds the hold; a
+      deliberately re-wired re-run (or the state aging out) releases it.
+
+    Absent / stale / non-matching state returns ``(None, candidates)``
+    unchanged — this stage is a pure lease READ (no writes, no flock held
+    across it).
+    """
+    lease = store.read(spec.issue)
+    if lease is None or not isinstance(lease.free_lane_park_state, dict):
+        return None, candidates
+    parked_lane = lease.free_lane_park_state.get("lane")
+    if not isinstance(parked_lane, str) or parked_lane not in _PER_CLUSTER_LANES:
+        return None, candidates
+    state = _matching_free_lane_park_state(lease, parked_lane)
+    if state is None:
+        # Stale / spec-hash mismatch — fail-open to today's walk (the
+        # parked lane's own attempt clears the residue).
+        return None, candidates
+    parked_backend = next((b for b, k in candidates if k == parked_lane), None)
+    if parked_backend is None:
+        logger.warning(
+            "route: lease carries FRESH park state for lane %s (job %r) but the "
+            "lane is not wired/available this invocation — surfacing the "
+            "still-waiting outcome instead of fresh-submitting past the parked "
+            "job on another lane.",
+            parked_lane,
+            state.get("job_id"),
+        )
+        attempts.append(
+            RouteAttempt(
+                kind=parked_lane,
+                cluster=parked_lane,
+                est_start_seconds_raw=None,
+                est_start_seconds_clamped=None,
+                outcome="parked_lane_unavailable",
+                detail=(
+                    f"fresh park state (job {state.get('job_id')!r}, "
+                    f"rung_idx={state.get('rung_idx')!r}) but the lane is unwired — "
+                    "cannot verify or resume; holding (re-run with the lane wired)"
+                ),
+                elapsed_seconds=now_fn() - started_at,
+            )
+        )
+        raise _still_waiting_from_state(spec=spec, lane=parked_lane, state=state)
+    result = _try_one_free_lane(
+        spec=spec,
+        backend=parked_backend,
+        kind=parked_lane,
+        est_raw=None,
+        est_clamped=None,
+        store=store,
+        attempts=attempts,
+        started_at=started_at,
+        cfg=cfg,
+        is_started=is_started,
+        is_live_after_cancel=is_live_after_cancel,
+        is_running_after_cancel=is_running_after_cancel,
+        started_evidence_probe=started_evidence_probe,
+        reconnect_fn=reconnect_fn,
+        marker_poster=marker_poster,
+        on_launched=on_launched,
+        now_fn=now_fn,
+        sleep_fn=sleep_fn,
+        process_deadline=process_deadline,
+    )
+    if result is not None:
+        return result, candidates
+    residual = _matching_free_lane_park_state(store.read(spec.issue), parked_lane)
+    if residual is not None:
+        # The lane advanced WITHOUT resolving the parked state: the only
+        # such path is the in-flock reconnect-probe failure (every other
+        # None-return clears the state after confirming the job dead).
+        # The job may still be alive — do NOT fall through to fresh
+        # submits; re-running later retries the probe.
+        logger.warning(
+            "route: parked lane %s returned no result but its park state (job %r) "
+            "is still fresh — reconnect probe failed; surfacing still-waiting "
+            "instead of walking the remaining lanes.",
+            parked_lane,
+            residual.get("job_id"),
+        )
+        raise _still_waiting_from_state(spec=spec, lane=parked_lane, state=residual)
+    # Clean advance (state cleared with the job confirmed dead): walk the
+    # remaining lanes WITHOUT the parked lane — its ladder already ran.
+    return None, [(b, k) for b, k in candidates if k != parked_lane]
+
+
 def _try_free_lanes(
     *,
     spec: RunSpec,
@@ -5841,8 +6100,15 @@ def _try_one_free_lane(  # noqa: C901 — in-flock reconnect/resume + QoS-ladder
         # #2161: fresh-submit resume — a job_id-None matching state means a
         # prior invocation was budget-cut BETWEEN rungs (confirmed cancel,
         # next rung never submitted): start the fresh ladder at that rung.
-        # A leftover NON-matching state with no live job is stale — clear
-        # it and start at rung 0.
+        # Round 2 (review Major): the stale-clear is scoped to OUR lane —
+        # a FRESH sibling lane's state is a resumable parked job on
+        # ANOTHER lane, which must be NEITHER cleared NOR submitted past
+        # (clearing destroys the resumable state; a fresh submit here
+        # double-runs the workload while the parked job stays queued).
+        # Only a leftover record for THIS lane that failed the pending
+        # match (stale / hash mismatch / job vanished) is cleared before
+        # the rung-0 start; a stale foreign record is left in place for
+        # its own lane's attempt to clear.
         pending_state: dict[str, Any] | None = None
         if handle is None:
             pending_state = _matching_free_lane_park_state(lease, kind, job_id=None)
@@ -5851,8 +6117,40 @@ def _try_one_free_lane(  # noqa: C901 — in-flock reconnect/resume + QoS-ladder
                 and lease is not None
                 and lease.free_lane_park_state is not None
             ):
-                lease.free_lane_park_state = None
-                write(lease)
+                sibling_state = _fresh_sibling_park_state(lease, kind)
+                if sibling_state is not None:
+                    logger.warning(
+                        "route: free lane %s skipped — the lease carries FRESH park "
+                        "state for sibling lane %s (job %r); clearing it or "
+                        "fresh-submitting here would double-run the workload past "
+                        "the parked job.",
+                        kind,
+                        sibling_state.get("lane"),
+                        sibling_state.get("job_id"),
+                    )
+                    attempts.append(
+                        RouteAttempt(
+                            kind=kind,
+                            cluster=spec.cluster,
+                            est_start_seconds_raw=est_raw,
+                            est_start_seconds_clamped=est_clamped,
+                            outcome="skipped_parked_sibling",
+                            detail=(
+                                f"fresh park state on lane "
+                                f"{sibling_state.get('lane')!r} (job "
+                                f"{sibling_state.get('job_id')!r}) — not clearing, "
+                                "not submitting past it"
+                            ),
+                            elapsed_seconds=now_fn() - started_at,
+                        )
+                    )
+                    return None
+                if (
+                    not isinstance(lease.free_lane_park_state, dict)
+                    or lease.free_lane_park_state.get("lane") == kind
+                ):
+                    lease.free_lane_park_state = None
+                    write(lease)
 
         rungs, primary_qos = _qos_rungs_for_lane(kind, spec)
         start_rung_idx = 0
@@ -5921,6 +6219,11 @@ def _try_one_free_lane(  # noqa: C901 — in-flock reconnect/resume + QoS-ladder
                         kind,
                         exc.reason,
                     )
+                    # #2161 round 2 (review Minor): mirror the exhaustion
+                    # clear — a leftover job_id-None/rung-N record would make
+                    # a later fresh invocation (within 24 h) start the ladder
+                    # at rung N after this transient endpoint hiccup.
+                    _clear_same_lane_park_state(lease, kind, write)
                     return None
                 except Exception as exc:
                     attempts.append(
@@ -5939,6 +6242,9 @@ def _try_one_free_lane(  # noqa: C901 — in-flock reconnect/resume + QoS-ladder
                         kind,
                         type(exc).__name__,
                     )
+                    # #2161 round 2 (review Minor): same residue clear as the
+                    # prepare_failed path above.
+                    _clear_same_lane_park_state(lease, kind, write)
                     return None
 
                 # Persist the handle (sidecar hook) + launched id IMMEDIATELY
