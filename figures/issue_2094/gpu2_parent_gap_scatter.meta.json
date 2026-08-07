@@ -1,0 +1,2539 @@
+{
+  "commit": "74828e7b+dirty",
+  "git_commit": "74828e7b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/analyzer/MEMORY.md"
+  ],
+  "created": "2026-08-07T14:19:46Z",
+  "figsize": [
+    9.6,
+    4.4
+  ],
+  "points": [
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.055768042476847766,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.027908648713491857,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.10676390109583736,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.07406301363371312,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.06704755676910282,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.002212393889203669,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.05275800824165344,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.009363287128508091,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.031178953498601912,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.018726592301391065,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0013355202507227657,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.009363287128508091,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.11073769927024842,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0009015725459903465,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.001838184287771591,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.04818453229963779,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.13632314493879677,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.04681647103279829,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.11460882001556456,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.009363305172882974,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0013244150206446637,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.0062421910697594285,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.10231359004974365,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0768001746851951,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.1638039203826338,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0062421910697594285,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.07221945007331669,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.11386157018132508,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0062421910697594285,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.03719878525007517,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.009363305172882974,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.1301954591879621,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.23408238496631384,
+      "label": "L17 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0755927185062319,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.009363287128508091,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.07552282384131104,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.04681647103279829,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.22769133762922136,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0740001475205645,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.1857800861587748,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.209559470647946,
+      "label": "L17 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.22352577426936476,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.02125850901938975,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.03152432178612798,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.15147897319402545,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.20604910908732565,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.044635622878558934,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.030605295277200628,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.9455686617875472,
+      "label": "Spearman rho = 0.46, p = 3.4e-09 (150 families)",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.16533173178322613,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.3055242886533961,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.07377344707492739,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.11017440841533244,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.1021060498431325,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 1.0154934745514765,
+      "label": "Spearman rho = 0.46, p = 3.4e-09 (150 families)",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.23174203450325875,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.07987985922954977,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.11820018980652093,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.16705713963601737,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.08042602753266692,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.5496380323311314,
+      "label": "L17 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0178945655701682,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.4854833675781265,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.21264622376766057,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.02125850901938975,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0422090582549572,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.024968783371150494,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.15828404517378658,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0803781325230375,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.03953267203178256,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.03743137081619352,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.08915151877380494,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.3062860214849934,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.22858476324472576,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.09771249850746244,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.06226217783987522,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.03317933813668787,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0069056476932018995,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.07474255212582648,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.15874105477705597,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0386080801486969,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.04622729239054024,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.2338377349311486,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.2335826667258516,
+      "label": "L17 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.19385929682757708,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.20761818962637335,
+      "label": "L17 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.10475719626992941,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.5658893432701007,
+      "label": "L17 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0452641487121582,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.12684885419439523,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.08347027970012277,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.14924694669898597,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.23978085292037576,
+      "label": "L17 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.07788155686575919,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.44058008084539324,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.007383618853054941,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.012303152470849454,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.052340197190642354,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.02125850901938975,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.11387976428959519,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.16279684973414987,
+      "label": "L12 4x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.14067177774850279,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.15346527507063001,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.09475523971486836,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.34482098219450563,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.11498603450600058,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.10786599724087864,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.08054506066255271,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.008503393037244678,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.29206200467888266,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.059119623503647745,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.10208109091036022,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.042562454589642584,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.16344880301039666,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.04555384267587215,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.182449235371314,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.2578152169007808,
+      "label": "L12 4x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.004493429185822606,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.02125850901938975,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.18251378063578158,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.012303152470849454,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.06247773901559412,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.04591025167610496,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.05348694582935423,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.3454969957238063,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.20452856321353466,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.004079538746736944,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.04869771520607174,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.15647200120147317,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.013254809542559087,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.2538230258971453,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.10738055931869894,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.1573970155790448,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.34782877878751606,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.3136281214421615,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.03980385255999863,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0417023628950119,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.03686400526203215,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.19515037012752146,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.0033023437717929482,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.044858024222776294,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.036412041750736535,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.02172033451497555,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.37690292426850647,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.304266798379831,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.027908648713491857,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.03986453600227833,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.12091688772197813,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.0033023437717929482,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.07723548822104931,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.18744164262898266,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.12628692414145917,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.3381151225185022,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.25147443760652094,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.012303152470849454,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.08020954802632332,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.06767465337179601,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.02828731895424426,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.009363305172882974,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.010437020380049945,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.06432572528719901,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.009363305172882974,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.01849601692520082,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0030673784669488675,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0020664712879806812,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.06341631929390132,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.021847687661647797,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.06565958722494543,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.03695336123928427,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.12705912552773954,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.04368281164206564,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0819814696442336,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0033023437717929482,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.06528413742780685,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0780274635180831,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.04004464759491384,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.013060513138771056,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.053270903229713444,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.05161753338761628,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.024968783371150494,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.04276009714230895,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.012912812316790222,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.039938379125669596,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.009363305172882974,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.044924006192013616,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.009363305172882974,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.025192648777738216,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.009363287128508091,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.02831557085737586,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.07602732400409877,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.0062421910697594285,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.07798790005035698,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.0062421910697594285,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.008108312636613846,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.024968783371150494,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.14999477048404514,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.04453028514981269,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.01274827904999256,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.009363287128508091,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.007510418025776743,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.04000276331789791,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.027908648713491857,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.06596514508128165,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.011895221890881658,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.007916355272755027,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.02065783515572548,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.04737619813531637,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0018333314917981635,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.024968783371150494,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.12346133454702794,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.024968783371150494,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.053846102347597485,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.015605496242642403,
+      "label": "L15 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.3642436816305336,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.5385348530253395,
+      "label": "L17 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.2555808598563696,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.7364562343573198,
+      "label": "L16 4x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.316432935390104,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.30221382656600326,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.5021338039776311,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.7411636309698224,
+      "label": "mid 0.5x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.3232789599103853,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 1.2827874418580905,
+      "label": "Spearman rho = 0.46, p = 3.4e-09 (150 families)",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.2344046011334285,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.8471003109201167,
+      "label": "L16 4x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.3579598403768614,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 1.1808162551606074,
+      "label": "L16 4x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.44351342697627844,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.07472511974629015,
+      "label": "L20 patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.43117767760995773,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.010684241191484034,
+      "label": "L12 4x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.39161194527987386,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.004079538746736944,
+      "label": "L12 4x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.34566728624049575,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.009363305172882974,
+      "label": "L12 4x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.33691306638065727,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.02125850901938975,
+      "label": "L12 4x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.3890383173013106,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.003799759433604777,
+      "label": "L12 4x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.280650234175846,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.09657282137777656,
+      "label": "L15 patch",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.2863478817278519,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.7674494605744258,
+      "label": "L16 4x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.3299631885951385,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.02125850901938975,
+      "label": "L12 4x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.2908101796871051,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.4412227604771033,
+      "label": "L17 2x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.46798745582345874,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.06976349104661494,
+      "label": "L20 patch",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.672224124148488,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.053654626361094415,
+      "label": "all patch",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.5942309798439964,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.7717668792465702,
+      "label": "mid 0.5x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.3178152169007808,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.3178152169007808,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 1.3427874418580905,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 1.3427874418580905,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.004372836509719491,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.006566965486854315,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.002672812715172768,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.01829009084030986,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0038989328022580594,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.07980653957929462,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.00319166190456599,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.03269454091787338,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.010480057558743283,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.013253213837742805,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0031041917623952035,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.010867938864976168,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.013473010598681867,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.03955230943392962,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.018973956000991166,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.090628941077739,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.01147451977012679,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.032636001240462065,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.005067066662013531,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.009734690189361572,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0036034156219102442,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.027431143942521885,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0014056013431400062,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.04474411910632625,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.013576389523223042,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.015461352420970798,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.051966240117326375,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.029262477881275117,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.007988540246151386,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0451771424850449,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.003455227782251314,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.01034759171307087,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.005930312373675406,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.011210659984499216,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.042432780796661976,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.016241337405517697,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.06443244558759034,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.004967950284481049,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.013137039868161083,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.048527670092880726,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.010035574599169194,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.027315580286085606,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.05498402742668986,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.007907961437013,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.11426393049769104,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0508578778244555,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.03708610189496539,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.1035123779438436,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.026540987030602994,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0007970868609845638,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.026136993104591968,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.05658341804519296,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.10247212002286687,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.1026899570133537,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.09749351983191445,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.11668094154447317,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.11558517336379737,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.096356853377074,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.045122516702394935,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.08300698595121503,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.015873995586298404,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.019197850488126278,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.09296786384657026,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.051310709211975336,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.05803129563573747,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.13451560772955418,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.08136471654288471,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.26320017594844103,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.06062405066331848,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.1337639419361949,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.03236982062226161,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.02427396923303604,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0612933533033356,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.318965595215559,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.03680656456854195,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.09393203817307949,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.04448129646480083,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.028112344909459352,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.08747233327012509,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.09229450533166528,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.15400218991562725,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.18733518105000257,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.07739226354751737,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.3250937070697546,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.033266429253853855,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.059954813215881586,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.026511589623987676,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.026928750798106194,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.07957350251526804,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.16021875210572034,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.004787145217414943,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.1606388632208109,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.02279620720073581,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.034600524697452784,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.006535046058706941,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0026233415119349957,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.06138316595461219,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.024039451964199543,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.019915732322260737,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0882087736390531,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0007530040625068884,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.08916566614061594,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.028478161431849003,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.023780873976647854,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0009025552310049532,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.014138109516352415,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0009394529333803803,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.028953153640031815,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0005263279424980285,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.05579264089465141,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0046703622210770845,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.006035924656316638,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.005867206602124497,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.02125390386208892,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0009426073404029019,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.03079627687111497,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0757051664404571,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.010698934085667133,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.02266736554447562,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.08243599161505699,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.025764135958161207,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.1297586704895366,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.041347091051284215,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.02814040519297123,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.022489722759928554,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.0008455952629446983,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.05609447128372267,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.004401324316859245,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.025324957189150156,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.037945003248751163,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.045001460961066185,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.02718531945720315,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.011870673345401886,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.008242245763540268,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.028973844461143018,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.012435242882929742,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.03597590539138765,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.03800756763666868,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0519697101553902,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.08173735323362052,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0046848824596963795,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.04343209555372596,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.018242727988399564,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.004569383803755045,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.010402142000384628,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.03923137788660824,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.03738674491178244,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0767782861366868,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0447657659649849,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.030454530380666256,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.04190693625714631,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.030936216237023473,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.04120000376133248,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.10547714587301016,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.010462821181863547,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.032961870077997446,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.043343991425354035,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.023580248933285475,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.015951582201523706,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0009977680165320635,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.03402365244692192,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.028850949369370937,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.030888839450199154,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.06571853114292026,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.001303185382857919,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.08537225797772408,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.027674674219451842,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.054749630158767104,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.03149552068207413,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.06248012366995681,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.03764328720862978,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.03241239907220006,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.001414762251079081,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.012528297957032919,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.017549229250289504,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.03409358859062195,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.04117487566545606,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.021795913577079773,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.022199836652725936,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.0790804773569107,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.016996694263070825,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.06023569405078888,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.01034010080620646,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.060412678867578506,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0020292256027460084,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.011310860514640808,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.02832238008268178,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.007368050515651703,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.008172510424628854,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.02601015567779541,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.004182496201246971,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.03345648944377899,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.013790856115520007,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.01631946861743927,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0002219117479398845,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.06482985848560929,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0031989954179152853,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.06700276024639606,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0046373515506275,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.07414299296215177,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0010049260919913648,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.07984566106460989,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.00037819524295628053,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.031832797307288274,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0021457273280248036,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.00039646215736866,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.002014066406991333,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.013357734540477395,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.010238106639008038,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.028584670275449753,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0228316962136887,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.08337017800658941,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.00783616303524468,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.010722123086452484,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.009352394461166112,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.01690610498189926,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0006351850344799466,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.009252145420759916,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.003870626515708864,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.1033561616204679,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.09478677167207934,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.007892160210758448,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.003739088505972177,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.08323208708316088,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0023811451159417626,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.05399647494778037,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.01221267292276025,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.045046051032841206,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.003089619264937938,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.01149292616173625,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.005782032175920904,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.0018393758218735456,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.005523404153063894,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.003432280384004116,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.02476835041306913,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.06541384110460058,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.0024661228177137694,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.012628138530999422,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.025646746298298242,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.027271080994978547,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.027151529339607804,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.009717269567772746,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.009971568372566252,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.003028772189281881,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.0067211999790743,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.041069315979257226,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.028304460621438918,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.04098317795433104,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.01659297003643587,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.07394197513349354,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.016642588737886398,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.05614160792902112,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.013246927130967378,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.025558041059412062,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.003942801547236741,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.003197002806700766,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.008238615473965183,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.02247857500333339,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.018735831929370762,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.03950742958113551,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.009973333368543535,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.03686531650600955,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.005924224480986596,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.00045484304428100586,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.010980296693742274,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.010058357031084597,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.011070685647428035,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.027170646004378796,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.02298093501594849,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.08968715043738484,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.05376536007970571,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.04581521589716431,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.005203076114412397,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.00821974000427872,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.32210454031204183,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.1409301720559597,
+      "label": "mid 0.5x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.13804993599963683,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.10802342742681503,
+      "label": "L16 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.34182954032827795,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.02077251672744751,
+      "label": "all patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.34036020576022563,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.06277095526456833,
+      "label": "all patch",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.17443266403861343,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.5335047766566277,
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.13083028951659798,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.3791884036424259,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.09845262966118754,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.17583098483737558,
+      "label": "L16 2x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.19791916072135793,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.07228791620582342,
+      "label": "L18 1x",
+      "series": "other family",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.12318910569883883,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.11146337911486626,
+      "label": "L16 1x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.12942356741987168,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.14421576354652643,
+      "label": "L16 2x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.09950434060301631,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.06622670078650117,
+      "label": "L18 1x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.32127679311670365,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.008140042424201965,
+      "label": "all patch",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.23862437224015592,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.21841054409742355,
+      "label": "mid 0.5x",
+      "series": "parent clean-separating family",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": -0.16547714587301016,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": -0.16547714587301016,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "parent-grid gap: steered - null mean F\n(10 well-separated pairs)": 0.5935047766566277,
+      "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)": 0.5935047766566277,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 304,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "behavior F (prefix rubric)",
+        "xlabel": "parent-grid gap: steered - null mean F\n(10 well-separated pairs)",
+        "ylabel": "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)",
+        "annotations": [
+          "L12 4x",
+          "L13 2x",
+          "L14 1x",
+          "L15 patch",
+          "L16 1x",
+          "L16 2x",
+          "L16 4x",
+          "L17 1x",
+          "L17 2x",
+          "L20 patch",
+          "all patch",
+          "mid 0.5x",
+          "Spearman rho = 0.46, p = 3.4e-09 (150 families)"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ]
+      },
+      {
+        "title_left": "activation F",
+        "xlabel": "parent-grid gap: steered - null mean F\n(10 well-separated pairs)",
+        "ylabel": "conv2 re-run gap: steered - null mean F\n(4 recovered pairs)",
+        "legend_labels": [
+          "other family",
+          "parent clean-separating family",
+          "identity"
+        ],
+        "annotations": [
+          "L16 1x",
+          "L16 2x",
+          "L18 1x",
+          "all patch",
+          "mid 0.5x",
+          "Spearman rho = 0.43, p = 5.7e-08 (150 families)"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "identity",
+      "other family",
+      "parent clean-separating family"
+    ]
+  }
+}
