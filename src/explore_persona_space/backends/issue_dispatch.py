@@ -126,6 +126,32 @@ _LEGACY_TO_ROUTER_BACKEND: dict[str, BackendKind] = {
     "cluster": "nibi",
 }
 
+#: #2161: env knob bounding how long ONE ``dispatch_for_issue`` process may
+#: spend inside free-lane queue parks before the router persists the ladder
+#: position and raises :class:`FreeLaneStillWaitingError` (surfaced by
+#: ``dispatch_issue.py launch`` as still-waiting exit 75 — re-run the SAME
+#: command; the run resumes from the durable lease state, no double-submit).
+#: Mirrors the FELLOWS_QUEUE_WAIT_ENV convention: read at CALL time, never
+#: import time. Unset / malformed → the 420 s default; ``0`` or negative →
+#: None (unlimited — the pre-#2161 in-process park semantics, byte-identical).
+PARK_PROCESS_BUDGET_ENV = "EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS"
+PARK_PROCESS_BUDGET_DEFAULT_SECONDS = 420
+
+
+def _env_park_process_budget() -> int | None:
+    """Resolve the per-process free-lane park budget from the env (#2161).
+
+    Returns the budget in seconds, or ``None`` for unlimited (legacy
+    semantics). Read at call time so tests / operators can flip the knob
+    without re-importing the module.
+    """
+    raw = os.environ.get(PARK_PROCESS_BUDGET_ENV)
+    try:
+        val = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return PARK_PROCESS_BUDGET_DEFAULT_SECONDS
+    return val if val > 0 else None
+
 
 @functools.lru_cache(maxsize=1)
 def _main_checkout_root() -> Path:
@@ -1180,6 +1206,14 @@ def dispatch_for_issue(
         route_kwargs["lease_store"] = lease_store
     if config is not None:
         route_kwargs["config"] = config
+    else:
+        # #2161: the production default wires the per-process free-lane
+        # park budget from EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS (420 s
+        # default; 0/negative → None = unlimited legacy parks). Callers
+        # passing an explicit ``config`` own every knob themselves.
+        route_kwargs["config"] = RouterConfig(
+            park_process_budget_seconds=_env_park_process_budget()
+        )
     if now_fn is not None:
         route_kwargs["now_fn"] = now_fn
     if sleep_fn is not None:

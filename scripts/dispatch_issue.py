@@ -85,7 +85,7 @@ Exit codes
   confirm gate passed on already-durable artifacts.
 * ``4`` — unexpected exception. ``stderr`` carries the traceback.
 * ``75`` — still-waiting (EX_TEMPFAIL; mirrors
-  ``pod_lifecycle.EXIT_STILL_WAITING``). TWO producers, same contract:
+  ``pod_lifecycle.EXIT_STILL_WAITING``). THREE producers, same contract:
   (1) the RunPod lane's ``pod_lifecycle.py provision`` exited 75 because
   its bounded wait-for-capacity loop reached the per-process wall-clock
   budget while capacity / the fleet burn cap kept the provision queued
@@ -94,15 +94,25 @@ Exit codes
   a FLEX_START rung but a post-timeout ``instances list`` probe found the
   instance live server-side — a FLEX_START preemptible-queueing state
   (``reason: gcloud_create_timeout_still_provisioning``, with additive
-  ``instance_name`` / ``instance_status`` keys; #736). NEITHER is a
+  ``instance_name`` / ``instance_status`` keys; #736); (3) a free SLURM
+  lane's queue park reached the per-process budget
+  (``EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS``, default 420 s) with the
+  job still queued — the router persists the QoS-ladder position (rung +
+  elapsed + job id) to the durable per-issue lease BEFORE raising
+  (``reason: free_lane_park_budget_reached``, with additive ``lane`` /
+  ``job_id`` / ``qos`` / ``rung`` / ``n_rungs`` /
+  ``rung_park_elapsed_s`` keys; #2161). NONE is a
   failure: ``stdout`` carries ``still_waiting: true`` + ``rerun: true``
   and the caller RE-RUNS the same launch command to continue waiting
   (the RunPod wait loop is state-free; the GCP re-run reconnects to the
-  live instance via ``reconnect_or_none`` with NO double-create, so both
-  resume exactly). Do NOT post ``epm:failure v1`` / ``set-status
-  blocked`` on this exit. (Incident #603, 2026-06-11: this exit
-  previously fell through to the generic handler and crashed as an rc-4
-  ``CalledProcessError``. Incident #658/#736, 2026-06-29: the GCP
+  live instance via ``reconnect_or_none`` with NO double-create; the
+  free-lane re-run reconnects by ``squeue --name`` and RESUMES the park
+  from the lease state with NO double-submit — do NOT hand off to
+  ``backend_poll`` while still_waiting, PENDING polls as running there
+  and the QoS ladder would stall). Do NOT post ``epm:failure v1`` /
+  ``set-status blocked`` on this exit. (Incident #603, 2026-06-11: this
+  exit previously fell through to the generic handler and crashed as an
+  rc-4 ``CalledProcessError``. Incident #658/#736, 2026-06-29: the GCP
   create-timeout case crashed as the undocumented rc-4 traceback below.)
 
 Bg-Bash contract preservation
@@ -1744,7 +1754,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         classify_terminal_exception,
         dispatch_for_issue,
     )
-    from explore_persona_space.backends.router import RouteError
+    from explore_persona_space.backends.router import FreeLaneStillWaitingError, RouteError
     from explore_persona_space.backends.runpod import RunPodWorkloadStartError
 
     # Pre-route --width-required / --gpus conflict guard (#1379): the two
@@ -1927,6 +1937,45 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
                 "reconnect_or_none reconnects to the live instance with no "
                 "double-create. Do not post epm:failure or set-status blocked "
                 "on this exit."
+            ),
+        }
+        print(json.dumps(body, sort_keys=True))
+        return EXIT_STILL_WAITING
+    except FreeLaneStillWaitingError as exc:
+        # The free-lane THIRD producer of exit 75 (#2161): a free SLURM
+        # lane's queue park reached the per-process budget
+        # (EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS) while the job stayed
+        # queued. The router persisted the ladder position (rung + elapsed
+        # + job id) to the durable lease BEFORE raising, so a re-run of
+        # the SAME command reconnects by job name and RESUMES the park —
+        # no double-submit. Mirror the #603 still-waiting contract
+        # exactly: deliberately NO ``failure_class`` / ``status`` keys.
+        # ``FreeLaneStillWaitingError`` is deliberately NOT a
+        # ``RouteError`` subclass (that arm exits 2), so arm order is moot.
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "still_waiting": True,
+            "rerun": True,
+            "reason": "free_lane_park_budget_reached",
+            "lane": exc.lane,
+            "job_id": exc.job_id,
+            "qos": exc.qos,
+            "rung": exc.rung_idx + 1,
+            "n_rungs": exc.n_rungs,
+            "rung_park_elapsed_s": exc.rung_park_elapsed_s,
+            "note": (
+                "free-lane queue park reached the per-process budget "
+                f"(EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS) with job {exc.job_id} "
+                f"still queued on {exc.lane} (qos={exc.qos}, rung "
+                f"{exc.rung_idx + 1}/{exc.n_rungs}, {exc.rung_park_elapsed_s:.0f}s "
+                "parked so far). Still waiting, not a failure — re-run the SAME "
+                "dispatch_issue.py launch command; the router reconnects by "
+                "squeue --name and resumes the QoS-ladder park from durable "
+                "lease state (no double-submit). Do NOT post epm:failure / "
+                "set-status blocked; do NOT hand off to backend_poll while "
+                "still_waiting (PENDING polls as running there and the ladder "
+                "would stall)."
             ),
         }
         print(json.dumps(body, sort_keys=True))
