@@ -73,6 +73,8 @@ PROBE_SEED = 21621
 PROBE_PERM_B = 1_000
 STAGE2_CAP = 12
 HOLM_ALPHA = 0.05
+# Plan §4.1 length mitigation (r1 M7): the length-matched sensitivity subset.
+LEN_MATCH_MAX_ABS = 2
 
 ROUTE_VARIANT_TYPES = ("demo_format", "demo_persona", "language_implied", "persona_role_header")
 
@@ -326,6 +328,8 @@ def step_f_tables(args: argparse.Namespace) -> None:
             "f_act": f_act,
             "separation": sep_by_pair.get(pair_id),
             "family": family_of(p.cell, slot),
+            # Plan §4.1 length covariate (r1 M7): per-pair token-length delta.
+            "len_delta": rows[0].get("len_delta"),
         }
         key = {"steered": "steered", "shuffled": "shuffled", "crosstype": "crosstype"}[arm]
         tables[key].append(rec)
@@ -403,6 +407,8 @@ def step_stats(args: argparse.Namespace) -> None:
         diffs: dict[str, list[float]] = {"shuffled": [], "crosstype": []}
         f_steered: list[float] = []
         f_null: dict[str, list[float]] = {"shuffled": [], "crosstype": []}
+        lm_steered: list[float] = []
+        lm_null: dict[str, list[float]] = {"shuffled": [], "crosstype": []}
         for r in kept:
             if r["f_beh"] is None:
                 continue
@@ -416,6 +422,12 @@ def step_stats(args: argparse.Namespace) -> None:
             for null in ("shuffled", "crosstype"):
                 f_null[null].append(per_null_f[null])
                 diffs[null].append(r["f_beh"] - per_null_f[null])
+            # Plan §4.1 length-matched sensitivity subset (r1 M7).
+            ld = r.get("len_delta")
+            if ld is not None and abs(int(ld)) <= LEN_MATCH_MAX_ABS:
+                lm_steered.append(r["f_beh"])
+                for null in ("shuffled", "crosstype"):
+                    lm_null[null].append(per_null_f[null])
         n = len(f_steered)
         testable = n >= SURVIVAL_FLOOR
         p_iut = None
@@ -451,6 +463,20 @@ def step_stats(args: argparse.Namespace) -> None:
             ),
             "p_iut": p_iut,
             "realized_mde_single_test": (1.02 / math.sqrt(n)) if n else None,
+            # Plan §4.1 length-matched sensitivity recount (r1 M7): the same
+            # per-cell means over |Δlen| <= 2 pairs only ("where the varied
+            # span permits" — n=0 means the type's spans never length-match).
+            "length_matched": {
+                "max_abs_len_delta": LEN_MATCH_MAX_ABS,
+                "n": len(lm_steered),
+                "f_steered_mean": float(np.mean(lm_steered)) if lm_steered else None,
+                "f_shuffled_mean": (
+                    float(np.mean(lm_null["shuffled"])) if lm_null["shuffled"] else None
+                ),
+                "f_crosstype_mean": (
+                    float(np.mean(lm_null["crosstype"])) if lm_null["crosstype"] else None
+                ),
+            },
         }
 
     # Pair-clustered bootstrap: pad columns to a shared pair axis per cell —

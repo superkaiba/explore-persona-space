@@ -124,8 +124,10 @@ PLANNED_GRID_WALL_H = 3.7
 PILOT_REFUSAL_MULT = 3.0
 PILOT_FENCE_MULT = 2.0
 
-# Claim-file queue (plan §4.6): stale = dead pid (same host) or claim age.
-CLAIM_STALE_S = float(os.environ.get("EPM_2162_CLAIM_STALE_S", "3600"))
+# Claim-file queue (plan §4.6): stale = dead pid (same host; a same-host LIVE
+# pid is NEVER stolen — r1 M1) or claim age (the cross-host-only fallback;
+# raised 3600 -> 14400 s so a legitimately long block never ages out mid-run).
+CLAIM_STALE_S = float(os.environ.get("EPM_2162_CLAIM_STALE_S", "14400"))
 CLAIM_POLL_S = float(os.environ.get("EPM_2162_CLAIM_POLL_S", "30"))
 
 # Distinct rcs: a designed halt is never an anonymous rc=1 (#1415).
@@ -289,11 +291,17 @@ def _pid_alive(pid: int) -> bool:
 
 
 def _claim_stale(rec: dict, now: float | None = None) -> bool:
-    """A claim is stale when its owner is provably dead (same-host pid probe)
-    or its age exceeds ``CLAIM_STALE_S`` (the cross-host fallback key)."""
+    """A claim is stale when its owner is provably dead (same-host pid probe);
+    the age key is a CROSS-HOST-ONLY fallback.
+
+    r1 M1: on the SAME host the pid probe is authoritative in BOTH directions
+    — a live owner is never stolen by age (blocks have no mid-block heartbeat,
+    so any long block would age out mid-run), and a dead owner is reclaimed
+    immediately. A same-host WEDGED owner holds its claim until killed (pid
+    death is the release), by design."""
     now = time.time() if now is None else now
-    if rec.get("host") == socket.gethostname() and not _pid_alive(int(rec.get("pid", -1))):
-        return True
+    if rec.get("host") == socket.gethostname():
+        return not _pid_alive(int(rec.get("pid", -1)))
     return (now - float(rec.get("ts", 0.0))) > CLAIM_STALE_S
 
 
@@ -331,6 +339,12 @@ def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
         tmp = path.parent / f"{path.name}.tmp.{token}"
         tmp.write_text(json.dumps(payload))
         os.replace(tmp, path)
+        # r1 M1 (TOCTOU): two workers can both see stale and both replace;
+        # a short randomized settle before the read-back arbitration shrinks
+        # the both-read-own-token window, and release_claim's stolen-claim
+        # tolerance makes the residual race non-fatal (done-file writes are
+        # atomic + idempotent, so a double-run wastes work, never corrupts).
+        time.sleep(random.uniform(0.05, 0.25))
         winner = json.loads(path.read_text())
         won = winner.get("token") == token
         if won:
@@ -348,14 +362,32 @@ def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
 
 
 def release_claim(cdir: Path, block: Block, token: str) -> None:
-    """Release OUR claim after the done-checkpoint landed (token-verified)."""
+    """Release OUR claim after the done-checkpoint landed (token-verified).
+
+    r1 M1: a STOLEN claim (vanished, or another worker's token) is tolerated
+    with a LOUD error log instead of an assert — the block's done-file already
+    landed atomically, so the steal wastes duplicate work but must never kill
+    THIS worker's whole queue loop. The thief owns the claim file now; leave
+    it (the thief's own release removes it)."""
     path = cdir / f"{block.slug}.claim"
-    assert path.exists(), f"claim vanished before release: {path}"
+    if not path.exists():
+        logger.error(
+            "[claims] claim %s VANISHED before release — stolen by another worker "
+            "(check CLAIM_STALE_S / worker liveness); done-file is intact, continuing",
+            block.key,
+        )
+        return
     rec = json.loads(path.read_text())
-    assert rec.get("token") == token, (
-        f"claim {block.key} owned by another worker at release time "
-        f"(token {rec.get('token')!r} != ours) — inconsistent claim state"
-    )
+    if rec.get("token") != token:
+        logger.error(
+            "[claims] claim %s owned by ANOTHER worker at release time (token %r != ours; "
+            "pid=%s host=%s) — stolen mid-run; done-file is intact, continuing",
+            block.key,
+            rec.get("token"),
+            rec.get("pid"),
+            rec.get("host"),
+        )
+        return
     path.unlink()
 
 
@@ -470,9 +502,30 @@ def bank_is_done(cfg: RunConfig, regime_fp: str) -> bool:
     return True
 
 
+def _sharded_done_record(cfg: RunConfig, phase: str, regime_fp: str) -> dict | None:
+    """Width-checked per-worker done-record read (r1 M2): a phase that shards
+    ``order[w::num_workers]`` keys its done files per (worker, batch), so a
+    cross-width resume (8-GPU run -> 4-GPU fallback re-shard) would silently
+    LOSE the contexts of the vanished workers — the width is part of the shard
+    identity, so a width mismatch regenerates (the block-queue fingerprint
+    deliberately does NOT carry width: blocks are width-invariant units)."""
+    rec = _phase_done_record(cfg, phase, regime_fp)
+    if rec is None:
+        return None
+    if int(rec.get("num_workers", -1)) != cfg.num_workers:
+        logger.warning(
+            "[%s] done num_workers=%s != %d (cross-width resume) — re-running",
+            phase,
+            rec.get("num_workers"),
+            cfg.num_workers,
+        )
+        return None
+    return rec
+
+
 def _anchor_batch_done(cfg: RunConfig, regime_fp: str, batch: str, expected_draws: int) -> bool:
     """Per-worker per-batch anchors resume predicate (gate slice vs rest)."""
-    rec = _phase_done_record(cfg, f"anchors_{batch}_w{cfg.worker_index}", regime_fp)
+    rec = _sharded_done_record(cfg, f"anchors_{batch}_w{cfg.worker_index}", regime_fp)
     if rec is None:
         return False
     if int(rec.get("draws", -1)) != expected_draws:
@@ -1535,6 +1588,7 @@ def _run_anchor_batch(
             "regime_fp": regime_fp,
             "batch": batch,
             "worker_index": cfg.worker_index,
+            "num_workers": cfg.num_workers,  # shard identity (r1 M2)
             "n_contexts": len(order),
             "draws": draws,
             "n_rows": len(rows),
@@ -1587,6 +1641,7 @@ def phase_anchors(cfg: RunConfig) -> int:
                     "regime_fp": regime_fp,
                     "batch": "gate",
                     "worker_index": cfg.worker_index,
+                    "num_workers": cfg.num_workers,  # shard identity (r1 M2)
                     "n_contexts": 0,
                     "draws": draws,
                     "n_rows": 0,
@@ -1610,6 +1665,7 @@ def phase_anchors(cfg: RunConfig) -> int:
                     "regime_fp": regime_fp,
                     "batch": "rest",
                     "worker_index": cfg.worker_index,
+                    "num_workers": cfg.num_workers,  # shard identity (r1 M2)
                     "n_contexts": 0,
                     "draws": draws,
                     "n_rows": 0,
@@ -1663,6 +1719,10 @@ def _block_cells(
                 "payload": payload,
                 "donor_pair_id": donor_id,
                 "degenerate_pe": degenerate_pe,
+                # Plan §4.1 length mitigation (r1 M7): per-pair token-length
+                # delta (varied-span length difference), the analysis covariate
+                # + the |Δlen| <= 2 length-matched sensitivity subset key.
+                "len_delta": int(recs[pair.b]["ctx_len"]) - int(rec["ctx_len"]),
             }
         )
     return cells
@@ -1834,6 +1894,7 @@ def run_block(
                     "position": c["position"],
                     "donor_pair_id": c["donor_pair_id"],
                     "degenerate_pe": c["degenerate_pe"],
+                    "len_delta": c["len_delta"],
                     "draw": i,
                     "seed": cfg.seed_base + i,
                     "temperature": GRID_TEMPERATURE,
@@ -2123,7 +2184,7 @@ def phase_margin(cfg: RunConfig) -> int:
     done_path = cfg.manifest_dir / f"margin_anchors_w{cfg.worker_index}_done.json"
     if (
         cfg.force
-        or _phase_done_record(cfg, f"margin_anchors_w{cfg.worker_index}", regime_fp) is None
+        or _sharded_done_record(cfg, f"margin_anchors_w{cfg.worker_index}", regime_fp) is None
     ):
         pairs_by_ctx: dict[str, list[BANK.Pair2162]] = {}
         for p in pairs:
@@ -2188,6 +2249,7 @@ def phase_margin(cfg: RunConfig) -> int:
             {
                 "regime_fp": regime_fp,
                 "worker_index": cfg.worker_index,
+                "num_workers": cfg.num_workers,  # shard identity (r1 M2)
                 "n_rows": len(out_rows),
                 "repro": _repro(cfg),
             },
