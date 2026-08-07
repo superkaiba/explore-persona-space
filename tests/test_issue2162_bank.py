@@ -207,6 +207,24 @@ def test_span_locus_registry(tokenizer, pairs, contexts):
     )
 
 
+def test_gate_slice_shape(pairs):
+    """Plan §7 gate 3: 6 stratified pairs per NON-filler cell (2 carriers x 3
+    directed value-pairs), 228 total, deterministic and unique — the SHARED
+    definition the pod driver (P2 gate-first ordering) and the VM judge
+    (SYNC slice) both consume."""
+    sl = B.gate_slice_pairs(pairs)
+    assert len(sl) == 38 * B.GATE_SLICE_PAIRS_PER_CELL == 228
+    assert len({p.pair_id for p in sl}) == len(sl)
+    by_cell: dict[str, int] = {}
+    for p in sl:
+        assert B.base_type_of(p.cell) != "filler_swap"
+        by_cell[p.cell] = by_cell.get(p.cell, 0) + 1
+    assert all(n == 6 for n in by_cell.values()), by_cell
+    # Deterministic across calls.
+    again = [p.pair_id for p in B.gate_slice_pairs(pairs)]
+    assert again == [p.pair_id for p in sl]
+
+
 def test_predeclared_degenerate_cells():
     cells = {c for c in B.all_cells() if B.base_type_of(c) in B.DEGENERATE_AT_PE}
     assert cells == {"query_content", "persona_role_header"}, cells

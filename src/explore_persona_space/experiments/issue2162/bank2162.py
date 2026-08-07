@@ -1474,6 +1474,36 @@ def pairs_by_cell(pairs: list[Pair2162]) -> dict[str, list[Pair2162]]:
     return out
 
 
+GATE_SLICE_PAIRS_PER_CELL = 6  # plan §7 gate 3: 2 carriers x 3 value-pairs
+
+
+def gate_slice_pairs(pairs: list[Pair2162], seed: int = SEED) -> list[Pair2162]:
+    """The stratified gate-3 anchor slice (plan §7): 6 pairs per NON-filler cell.
+
+    2 seeded carriers per directed value-pair x 3 value-pairs = 6 pairs for each
+    of the 38 non-filler cells (228 total). Deterministic and SHARED between the
+    pod driver (which generates these pairs' anchors FIRST in P2) and the VM
+    judge script (which judges exactly this slice SYNC) — one definition, no
+    re-derivation drift.
+    """
+    rng = random.Random(seed + 7)
+    by_cell = pairs_by_cell(pairs)
+    out: list[Pair2162] = []
+    for cell in all_cells():
+        if base_type_of(cell) == "filler_swap":
+            continue
+        for va, vb in cell_pairs_per_carrier(cell):
+            candidates = sorted(
+                (p for p in by_cell[cell] if p.value_a == va and p.value_b == vb),
+                key=lambda p: p.pair_id,
+            )
+            assert len(candidates) >= 2, (cell, va, vb, len(candidates))
+            out.extend(rng.sample(candidates, 2))
+    assert len(out) == 38 * GATE_SLICE_PAIRS_PER_CELL, len(out)
+    assert len({p.pair_id for p in out}) == len(out)
+    return out
+
+
 def designed_separable_counts() -> dict[str, int]:
     """Per cell: value_pairs x carriers designed separable (plan §4.1; the r1
     engaging-carrier floor). ``filler_swap`` reports no F -> 0."""
