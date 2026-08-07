@@ -8995,8 +8995,8 @@
       "goal": "Characterize, at full 131,072-feature dictionary width, which SAE features the context->answer map READS at the context vector v_C (the last prompt token, the newline of the assistant header) on Qwen-2.5-7B-Instruct layer 19; separate READ (used by the fitted map) from CARRIED (present at v_C but unused) and from FREQUENT (mechanically weighted by firing rate); and determine which mechanical feature properties predict being read, as activity-matched partials against a selection-symmetric null.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2163",
-      "status": "interpreting",
+      "path": "tasks/reviewing/2163",
+      "status": "reviewing",
       "title": "The context\u2192answer map's per-unit-gain discounts on high-variance and template-heavy features are carried entirely by features that never fire at the context vector (HIGH confidence)"
     },
     "2164": {
