@@ -118,6 +118,16 @@ GEOMETRY_DEFINITIONAL = ("massive_dim_mass", "write_norm", "proj_var")
 PARENT_DECILE_GRADIENT = (0.091, 0.266)
 PARENT_SHUFFLE_BAND = {"median": -0.07, "rare_decile_q2_5": -0.139, "K": 20}
 
+# Prefix-degeneracy invariant (CORRECTED after the full-grain Phase-0 measurement, plan v6 §12 A11).
+# The earlier byte-identity form (`n_distinct == 1`) was falsified at full grain: the store carries
+# 4 distinct h_prefix vectors over 142,000 rows (258 rows / 0.18% differ from the reference; only 3
+# distinct vectors among them), mutually within cosine 0.99989, under a UNIFORM prefix_end of 23.
+# That residual is capture-time numerical noise, not context-driven variation, so the arm stays
+# degenerate — but the assert must encode the invariant that is actually true while still failing
+# loud on a store whose prefixes genuinely vary with context.
+PREFIX_MAX_VARIANTS = 8  # distinct h_prefix vectors tolerated store-wide (measured: 4)
+PREFIX_MIN_COS = 0.999  # min cosine of any variant to the reference (measured: 0.99988980)
+
 VM_DENSE_DIR = Path("/mnt/eps-data/thomasjiralerspong/issue1482_saedense/dense")
 # Phase U runs on the VM against the MAIN repo root (the worktree is sparse and the npz is
 # gitignored there) — absolute path per the plan's Phase U spec.
@@ -798,18 +808,46 @@ def phase_census(args) -> int:
 
     which_by_pos = which  # split code per CSR row
     href_ref: np.ndarray | None = None
-    href_distinct = 0
+    href_ref64: np.ndarray | None = None
+    href_ref_norm = 0.0
+    href_variant_keys: set[bytes] = set()  # distinct h_prefix vectors seen (incl. the reference)
+    href_n_deviating = 0  # rows not byte-identical to the reference
+    href_min_cos = 1.0  # min cosine of any deviating row to the reference
+    prefix_end_values: set[int] = set()
     t0 = time.time()
     for si_, path in enumerate(shards):
         with np.load(path) as z:
             rp = pos[z["row_idx"]]
             w = which_by_pos[rp]
-            # Prefix-degeneracy re-assert: every h_prefix row equals the first row seen.
+            # Prefix-degeneracy re-assert (CORRECTED invariant, plan v6 §12 A11): the store may
+            # carry a few numerically-indistinguishable h_prefix variants (capture-time noise);
+            # it must NOT carry prefixes that vary with context. Measure, never assume.
             hp = np.asarray(z["h_prefix"], dtype=np.float16)
             if href_ref is None:
                 href_ref = hp[0].copy()
+                href_ref64 = href_ref.astype(np.float64)
+                href_ref_norm = float(np.linalg.norm(href_ref64))
+                href_variant_keys.add(href_ref.tobytes())
+            prefix_end_values.update(int(v) for v in np.unique(z["prefix_end"]))
             neq = ~np.all(hp == href_ref[None, :], axis=1)
-            href_distinct += int(neq.sum())
+            n_neq = int(neq.sum())
+            if n_neq:
+                href_n_deviating += n_neq
+                # Dedupe first, then measure per VARIANT — bounded work even if many rows deviate.
+                for variant in np.unique(hp[neq], axis=0):
+                    href_variant_keys.add(variant.tobytes())
+                    row = variant.astype(np.float64)
+                    denom = float(np.linalg.norm(row)) * href_ref_norm
+                    cos = float(row @ href_ref64) / denom if denom > 0 else 0.0
+                    href_min_cos = min(href_min_cos, cos)
+                if len(href_variant_keys) > PREFIX_MAX_VARIANTS:
+                    raise SystemExit(
+                        "[census] prefix degeneracy violated: "
+                        f"{len(href_variant_keys)} distinct h_prefix vectors "
+                        f"exceeds PREFIX_MAX_VARIANTS={PREFIX_MAX_VARIANTS} "
+                        f"(shard {si_ + 1}/{n_shards}) — prefixes appear to vary with context, "
+                        "so the plan's stated prefix-arm deviation no longer holds"
+                    )
             # Last-token CSR fill (per-row offsets from lengths).
             off = np.concatenate(([0], np.cumsum(z["psil_off"]))).astype(np.int64)
             idx_flat = np.asarray(z["psil_idx"], dtype=np.int32)
@@ -851,8 +889,28 @@ def phase_census(args) -> int:
             logger.info(
                 "[census] pass2 shard %d/%d elapsed=%.0fs", si_ + 1, n_shards, time.time() - t0
             )
-    if href_distinct != 0:
-        raise SystemExit(f"[census] prefix degeneracy violated: {href_distinct} distinct rows")
+    n_prefix_variants = len(href_variant_keys)
+    if n_prefix_variants > PREFIX_MAX_VARIANTS or href_min_cos < PREFIX_MIN_COS:
+        raise SystemExit(
+            f"[census] prefix degeneracy violated: {n_prefix_variants} distinct h_prefix vectors "
+            f"(cap {PREFIX_MAX_VARIANTS}), min cosine to reference {href_min_cos:.8f} "
+            f"(floor {PREFIX_MIN_COS}) over {href_n_deviating} deviating rows — the prefix appears "
+            "to vary with context, so the plan's stated prefix-arm deviation no longer holds"
+        )
+    if len(prefix_end_values) != 1:
+        raise SystemExit(
+            f"[census] prefix degeneracy violated: prefix_end is not uniform "
+            f"({sorted(prefix_end_values)}) — the prefix TEXT differs across rows, which the "
+            "stated prefix-arm deviation assumes it does not"
+        )
+    logger.info(
+        "[census] prefix degeneracy OK: %d distinct h_prefix vectors, %d deviating rows, "
+        "min cosine %.8f, prefix_end=%s",
+        n_prefix_variants,
+        href_n_deviating,
+        href_min_cos,
+        sorted(prefix_end_values),
+    )
 
     np.save(asm / "psil_indptr.npy", psil_indptr)
     np.save(asm / "y_indptr.npy", ans_indptr)
@@ -939,7 +997,16 @@ def phase_census(args) -> int:
             "universe_lmsys_frac_ref": 0.5498,
             "n_sentinel_row_ci_hits": 0,
         },
-        "prefix_degeneracy": {"n_distinct_rows_h_prefix": 1},
+        # REALIZED values, never a hardcoded constant: the clean-result must state the measured
+        # prefix-arm degeneracy (plan v6 §4 stated deviation + §12 A11), not an assumed "1".
+        "prefix_degeneracy": {
+            "n_distinct_h_prefix_vectors": n_prefix_variants,
+            "n_rows_deviating_from_reference": href_n_deviating,
+            "min_cosine_to_reference": href_min_cos,
+            "prefix_end_values": sorted(prefix_end_values),
+            "max_variants_allowed": PREFIX_MAX_VARIANTS,
+            "min_cosine_floor": PREFIX_MIN_COS,
+        },
         "lasttoken_covariates": {
             "mean_act_zero_imputed_features": int((~m).sum()),
             "span_ratio_zero_imputed_features": int((~mm).sum()),
