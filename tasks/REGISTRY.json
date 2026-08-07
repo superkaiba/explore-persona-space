@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2176,
+  "highest_id": 2177,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9089,6 +9089,13 @@
       "path": "tasks/planning/2176",
       "status": "planning",
       "title": "Smoke-architecture gate: per-arm enumeration is hand-listed, so the REAL-or-N/A invariant is unfalsifiable"
+    },
+    "2177": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2177",
+      "status": "proposed",
+      "title": "verify_plan.py: WARN when a \u00a79 compute row's own basis arithmetic contradicts its booked GPU-h or its pilot-abort threshold"
     },
     "218": {
       "has_clean_result": false,
