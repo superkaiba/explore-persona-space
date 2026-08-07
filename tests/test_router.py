@@ -6807,22 +6807,42 @@ def _claude_md_path() -> Path:
     return Path(__file__).resolve().parent.parent / "CLAUDE.md"
 
 
+def _compute_backends_rule_path() -> Path:
+    """Resolve the rule file carrying the § Compute backends prose.
+
+    #2166: the doc-compaction commit 40653b5dcf moved the full
+    `## Compute backends` section out of CLAUDE.md into
+    `.claude/rules/compute-backends.md`; the #656 contract wording lives
+    there now (CLAUDE.md keeps only a short always-on summary).
+    """
+    return Path(__file__).resolve().parent.parent / ".claude" / "rules" / "compute-backends.md"
+
+
 def test_claude_md_compute_backends_section_matches_656_contract() -> None:
-    """AC5 doc-drift guard: the CLAUDE.md `Compute backends` section reflects
-    the #656 reversed contract (RunPod is the documented terminal fallback)
-    and does NOT carry the retired no-auto-RunPod phrasing. Fail-loud if a
-    future edit reintroduces the stale wording or drops the new contract."""
-    text = _claude_md_path().read_text(encoding="utf-8")
-    # NEW contract wording MUST be present.
-    assert "auto_fallback_runpod" in text, "CLAUDE.md missing the new RunPod-fallback reason code"
-    assert "RunPod terminal rung" in text, "CLAUDE.md missing the 'RunPod terminal rung' contract"
-    # RETIRED phrasing MUST be gone (the reversed invariant).
-    assert "The auto chain NEVER calls RunPod" not in text, (
-        "CLAUDE.md still carries the retired no-auto-RunPod phrasing (#656 reversed it)"
+    """AC5 doc-drift guard: the compute-backends rule file (the section's
+    post-compaction home, 40653b5dcf) reflects the #656 reversed contract
+    (RunPod is the documented terminal fallback), and NEITHER it nor the
+    CLAUDE.md summary carries the retired no-auto-RunPod phrasing. Fail-loud
+    if a future edit reintroduces the stale wording or drops the new
+    contract."""
+    rule_text = _compute_backends_rule_path().read_text(encoding="utf-8")
+    claude_text = _claude_md_path().read_text(encoding="utf-8")
+    # NEW contract wording MUST be present (in the post-compaction home).
+    assert "auto_fallback_runpod" in rule_text, (
+        "compute-backends.md missing the new RunPod-fallback reason code"
     )
-    assert "test_no_auto_runpod_path_under_any_failure" not in text, (
-        "CLAUDE.md still references the replaced negative test by name"
+    assert "RunPod terminal rung" in rule_text, (
+        "compute-backends.md missing the 'RunPod terminal rung' contract"
     )
+    # RETIRED phrasing MUST be gone from BOTH files (#2166 strengthening: the
+    # reversed invariant holds wherever the contract is now written).
+    for name, text in (("CLAUDE.md", claude_text), ("compute-backends.md", rule_text)):
+        assert "The auto chain NEVER calls RunPod" not in text, (
+            f"{name} still carries the retired no-auto-RunPod phrasing (#656 reversed it)"
+        )
+        assert "test_no_auto_runpod_path_under_any_failure" not in text, (
+            f"{name} still references the replaced negative test by name"
+        )
 
 
 # ---------------------------------------------------------------------------

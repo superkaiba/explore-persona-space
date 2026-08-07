@@ -5,7 +5,6 @@ title: The Llama Tülu ladder's DPO→RLVR step needs at most a rotation of the 
 kind: experiment
 tags:
 - followup-manual
-- keep-running
 created_at: '2026-07-15T08:33:12Z'
 has_clean_result: true
 parent_id: 825

@@ -1,6 +1,6 @@
 ---
-title: 'workflow-fix: repoint 5 stale CLAUDE.md prose pins (4 files) red on main after
-  the 2026-08 compaction'
+title: '#2166 workflow-fix: 5 stale CLAUDE.md prose pins repointed at their rule-file
+  homes — main green (347 passed)'
 kind: infra
 tags:
 - wf-fix
