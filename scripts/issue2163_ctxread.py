@@ -2847,17 +2847,26 @@ def phase_figures(args) -> int:
         savefig_paper(fig, "fig_partials_forest_logU_W", dir=fdir)
         plt.close(fig)
 
-    # 2) Read vs carried scatter (+ raw axes companion).
+    # 2) Read vs carried scatter — round 2: TWO panels, so the section's headline quantity
+    #    (per-unit U vs carried, Spearman ~ -0.05) is plotted, not only the frequency-weighted
+    #    |A| vs carried (+0.59) that round 1 showed alone. y is linear in both panels.
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.8), sharey=True)
+    mu = np.isfinite(u_w) & (u_w > 0) & np.isfinite(car)
+    dec_u = np.minimum((np.argsort(np.argsort(ltc[mu])) * 10) // max(int(mu.sum()), 1), 9)
+    axes[0].scatter(u_w[mu], np.clip(car[mu], -1, 1), s=2, c=dec_u, cmap="viridis", alpha=0.3)
+    axes[0].set_xscale("log")
+    axes[0].set_xlabel("U_j — per-unit read (W map, log)")
+    axes[0].set_ylabel("Carried_j (univariate held-out R2)")
+    axes[0].set_title("per-unit read vs carried")
     m = np.isfinite(a_w) & np.isfinite(car)
-    fig, ax = plt.subplots(figsize=(6, 5))
     dec = np.minimum((np.argsort(np.argsort(ltc[m])) * 10) // max(int(m.sum()), 1), 9)
-    sc = ax.scatter(
+    sc = axes[1].scatter(
         np.abs(a_w[m]) + 1e-12, np.clip(car[m], -1, 1), s=2, c=dec, cmap="viridis", alpha=0.3
     )
-    ax.set_xscale("log")
-    ax.set_xlabel("|A_j| (W map, log)")
-    ax.set_ylabel("Carried_j (clipped to [-1, 1])")
-    fig.colorbar(sc, ax=ax, label="last-token activity decile")
+    axes[1].set_xscale("log")
+    axes[1].set_xlabel("|A_j| — frequency-weighted read (log)")
+    axes[1].set_title("frequency-weighted read vs carried")
+    fig.colorbar(sc, ax=list(axes), label="last-token activity decile")
     savefig_paper(fig, "fig_read_vs_carried", dir=fdir)
     plt.close(fig)
 
@@ -2921,9 +2930,10 @@ def phase_figures(args) -> int:
     cb = src / "confirm_B.json"
     if cb.exists():
         entries.append(("B", _read_json(cb)["knn"]))
+    map_names = {"W": "dense->SAE", "M": "dense->dense", "B": "last-token refit"}
     for i, (nm, blk) in enumerate(entries):
         for j, metric in enumerate(("euclidean", "cosine")):
-            labels.append(f"{nm}/{metric[:3]}")
+            labels.append(f"{map_names.get(nm, nm)}\n{metric}")
             vals.append(blk[metric]["acc_at_k"]["1"] if "acc_at_k" in blk[metric] else np.nan)
             colors.append(pal[i])
     ax.bar(np.arange(len(vals)), vals, color=colors)
@@ -2976,6 +2986,79 @@ def phase_figures(args) -> int:
         ax.set_ylabel("||B[j]|| (census restriction)")
         savefig_paper(fig, "fig_bnorm_vs_U", dir=fdir)
         plt.close(fig)
+
+    # 10) Round-2 population split (issue2163_population_partials.py output, when present):
+    #     paired forest of the activity-matched partials within the train-active vs the
+    #     never-active populations, each against its OWN stratified-permutation band, plus a
+    #     raw per-feature view of the composition (U_j vs proj_var, colored by population).
+    pp_path = src / "population_partials.json"
+    if pp_path.exists():
+        pp = _read_json(pp_path)
+        act = pp["populations"]["train_active"]
+        nev = pp["populations"]["never_active"]
+        degen_p = set(act["degenerate_partial"]) | set(nev["degenerate_partial"])
+        cols_p = [c for c in pp["selection_columns"] if c not in degen_p]
+        av = np.array([act["observed_partials"][c] for c in cols_p])
+        nv = np.array([nev["observed_partials"][c] for c in cols_p])
+        order_p = np.argsort(np.abs(nv))
+        y = np.arange(len(cols_p))
+        fig, ax = plt.subplots(figsize=(7.5, 8))
+        ax.barh(
+            y + 0.2,
+            nv[order_p],
+            height=0.38,
+            color=pal[1],
+            label=f"never-active at last token (n={nev['n']:,})",
+        )
+        ax.barh(
+            y - 0.2,
+            av[order_p],
+            height=0.38,
+            color=pal[0],
+            label=f"train-active at last token (n={act['n']:,})",
+        )
+        ax.set_yticks(y, [cols_p[i] for i in order_p], fontsize=7)
+        for b, c in ((nev["band_p97_5_of_max"], pal[1]), (act["band_p97_5_of_max"], pal[0])):
+            ax.axvline(b, color=c, linestyle="--", linewidth=1)
+            ax.axvline(-b, color=c, linestyle="--", linewidth=1)
+        ax.set_xlabel("partial Spearman vs log U_j (given lasttoken_count)")
+        ax.legend(loc="lower left", fontsize=8)
+        savefig_paper(fig, "fig_population_partials", dir=fdir)
+        plt.close(fig)
+        cov_p = (
+            Path(args.local_covariates) / "fullwidth_covariates_v2.npz"
+            if args.local_covariates
+            else None
+        )
+        if cov_p is not None and cov_p.exists():
+            pv = np.asarray(np.load(cov_p)["proj_var"], dtype=np.float64)
+            mm2 = np.isfinite(pv) & (pv > 0) & np.isfinite(u_w) & (u_w > 0)
+            nevm = mm2 & (ltc == 0)
+            actm = mm2 & (ltc > 0)
+            fig, ax = plt.subplots(figsize=(6.5, 5))
+            ax.scatter(
+                pv[nevm],
+                u_w[nevm],
+                s=2,
+                alpha=0.08,
+                color=pal[1],
+                label=f"never-active (n={int(nevm.sum()):,})",
+            )
+            ax.scatter(
+                pv[actm],
+                u_w[actm],
+                s=2,
+                alpha=0.3,
+                color=pal[0],
+                label=f"train-active (n={int(actm.sum()):,})",
+            )
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+            ax.set_xlabel("proj_var — residual-state variance along the decoder direction (log)")
+            ax.set_ylabel("U_j — per-unit read (log)")
+            ax.legend(loc="lower left", fontsize=8, markerscale=4)
+            savefig_paper(fig, "fig_population_raw_projvar", dir=fdir)
+            plt.close(fig)
 
     logger.info("[figures] rendered into %s", fdir)
     return 0
