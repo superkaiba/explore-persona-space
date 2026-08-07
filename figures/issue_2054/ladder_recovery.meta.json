@@ -5,7 +5,7 @@
   "git_dirty_paths": [
     "scripts/issue2054_analyzer_figs.py"
   ],
-  "created": "2026-08-07T14:23:26Z",
+  "created": "2026-08-07T15:06:19Z",
   "figsize": [
     7.5,
     4.4
@@ -14,63 +14,63 @@
     {
       "adaptation allowed on the source map (9-rung ladder)": 0.0,
       "transfer R\u00b2 / target's own ceiling": 0.46760991935015456,
-      "series": "model swapped (same text) (n=48)",
+      "series": "model swapped (n=48)",
       "_kind": "line",
       "_group": 0
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 1.0,
       "transfer R\u00b2 / target's own ceiling": 0.4384021850921449,
-      "series": "model swapped (same text) (n=48)",
+      "series": "model swapped (n=48)",
       "_kind": "line",
       "_group": 0
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 2.0,
       "transfer R\u00b2 / target's own ceiling": 0.6638453254360143,
-      "series": "model swapped (same text) (n=48)",
+      "series": "model swapped (n=48)",
       "_kind": "line",
       "_group": 0
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 3.0,
       "transfer R\u00b2 / target's own ceiling": 0.7900173928101903,
-      "series": "model swapped (same text) (n=48)",
+      "series": "model swapped (n=48)",
       "_kind": "line",
       "_group": 0
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 4.0,
       "transfer R\u00b2 / target's own ceiling": 0.7898743716411687,
-      "series": "model swapped (same text) (n=48)",
+      "series": "model swapped (n=48)",
       "_kind": "line",
       "_group": 0
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 5.0,
       "transfer R\u00b2 / target's own ceiling": 0.8655436360882159,
-      "series": "model swapped (same text) (n=48)",
+      "series": "model swapped (n=48)",
       "_kind": "line",
       "_group": 0
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 6.0,
       "transfer R\u00b2 / target's own ceiling": 0.8348213843863824,
-      "series": "model swapped (same text) (n=48)",
+      "series": "model swapped (n=48)",
       "_kind": "line",
       "_group": 0
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 7.0,
       "transfer R\u00b2 / target's own ceiling": 0.75093576662115,
-      "series": "model swapped (same text) (n=48)",
+      "series": "model swapped (n=48)",
       "_kind": "line",
       "_group": 0
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 8.0,
       "transfer R\u00b2 / target's own ceiling": 0.9248293758780834,
-      "series": "model swapped (same text) (n=48)",
+      "series": "model swapped (n=48)",
       "_kind": "line",
       "_group": 0
     },
@@ -140,63 +140,63 @@
     {
       "adaptation allowed on the source map (9-rung ladder)": 0.0,
       "transfer R\u00b2 / target's own ceiling": -0.1561300112432079,
-      "series": "boundary swapped (same prose) (n=56)",
+      "series": "boundary swapped (n=56)",
       "_kind": "line",
       "_group": 2
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 1.0,
       "transfer R\u00b2 / target's own ceiling": 0.19768548567177552,
-      "series": "boundary swapped (same prose) (n=56)",
+      "series": "boundary swapped (n=56)",
       "_kind": "line",
       "_group": 2
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 2.0,
       "transfer R\u00b2 / target's own ceiling": -0.12702526939530528,
-      "series": "boundary swapped (same prose) (n=56)",
+      "series": "boundary swapped (n=56)",
       "_kind": "line",
       "_group": 2
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 3.0,
       "transfer R\u00b2 / target's own ceiling": 0.4126737594702421,
-      "series": "boundary swapped (same prose) (n=56)",
+      "series": "boundary swapped (n=56)",
       "_kind": "line",
       "_group": 2
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 4.0,
       "transfer R\u00b2 / target's own ceiling": 0.4689841451955188,
-      "series": "boundary swapped (same prose) (n=56)",
+      "series": "boundary swapped (n=56)",
       "_kind": "line",
       "_group": 2
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 5.0,
       "transfer R\u00b2 / target's own ceiling": 0.596360716649329,
-      "series": "boundary swapped (same prose) (n=56)",
+      "series": "boundary swapped (n=56)",
       "_kind": "line",
       "_group": 2
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 6.0,
       "transfer R\u00b2 / target's own ceiling": 0.8434994725858735,
-      "series": "boundary swapped (same prose) (n=56)",
+      "series": "boundary swapped (n=56)",
       "_kind": "line",
       "_group": 2
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 7.0,
       "transfer R\u00b2 / target's own ceiling": 0.17671689090134585,
-      "series": "boundary swapped (same prose) (n=56)",
+      "series": "boundary swapped (n=56)",
       "_kind": "line",
       "_group": 2
     },
     {
       "adaptation allowed on the source map (9-rung ladder)": 8.0,
       "transfer R\u00b2 / target's own ceiling": 0.8743880379143223,
-      "series": "boundary swapped (same prose) (n=56)",
+      "series": "boundary swapped (n=56)",
       "_kind": "line",
       "_group": 2
     },
@@ -275,9 +275,9 @@
         "xlabel": "adaptation allowed on the source map (9-rung ladder)",
         "ylabel": "transfer R\u00b2 / target's own ceiling",
         "legend_labels": [
-          "model swapped (same text) (n=48)",
+          "model swapped (n=48)",
           "prose swapped (same boundary) (n=96)",
-          "boundary swapped (same prose) (n=56)",
+          "boundary swapped (n=56)",
           "authorship/presentation swapped (2\u00d72 edges) (n=208)"
         ],
         "annotations": [
@@ -307,9 +307,9 @@
       }
     ],
     "series": [
-      "model swapped (same text) (n=48)",
+      "model swapped (n=48)",
       "prose swapped (same boundary) (n=96)",
-      "boundary swapped (same prose) (n=56)",
+      "boundary swapped (n=56)",
       "authorship/presentation swapped (2\u00d72 edges) (n=208)"
     ]
   }

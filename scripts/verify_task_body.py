@@ -640,29 +640,54 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   direction of checks 4b/22/29 (which verify what the body CITES) —
   enumerate what the body's OWN cited figure SHAs contain under this
   task's `figures/issue_<N>/` (one `git ls-tree` per unique (SHA, dir)
-  pair; no network) and WARN on any committed PNG whose basename stem
-  matches `per[-_]?(context|unit|cell|pair)` (case-insensitive, word-start
+  pair; no network) and WARN on every PLAN-NAMED committed PNG (widened
+  #2169 from the per-unit family, then narrowed to the §3.0 plan-named
+  candidate set after the unfiltered widening flooded 56.7% of the
+  triggered corpus; the check NAME keeps its historical string — a
+  parsed contract) that the body neither embeds nor accounts for. The
+  candidate set: figures whose stem the task's own plan names — ALL
+  numeric `plans/v<int>.md` revisions (check 16's union precedent) plus
+  `artifacts/planned_manifest.json` — under the SAME naming predicate
+  as the body side; plan context unavailable (no issue / no `plans/`
+  dir / unreadable plan) ⇒ class C skipped fail-soft, the skip mode
+  stated in the detail, classes A/B untouched. A stem is NAMED by an
+  exact substring OR a backtick-quoted glob token under the bounded
+  glob bar (#2169: backticks required; basename component only; >= 3
+  literal chars before the first `*`) — the collective
+  family-disposition idiom ("the seven `f1_delta_scatter_*` siblings —
+  not embedded: ...").
+  Three WARN classes in ONE CheckResult: per-unit stems
+  (`per[-_]?(context|unit|cell|pair)`, case-insensitive, word-start
   lookbehind; `indiv` deliberately EXCLUDED — it names the per-question
-  REGIME in this project, not a per-unit view) that the body does not
-  embed. Two WARN classes in ONE CheckResult (#1510): class A — never
-  mentioned anywhere in the body (the original #928 class); class B —
-  stem named in body prose but embedded nowhere, with NO exemption
-  phrase (`not embedded` / `superseded by`, case-insensitive) in the
-  stem's blank-line-delimited paragraph — tagged
+  REGIME in this project, not a per-unit view) keep the stricter PHRASE
+  bar — class A: never named anywhere in the body (the original #928
+  class); class B: named but embedded nowhere, with NO exemption phrase
+  (`not embedded` / `superseded by`, case-insensitive) in a naming
+  blank-line-delimited paragraph — tagged
   `companion-named-not-embedded` in the detail (the token the
   clean-result-critic keys on; a bare provenance mention like #1426's
-  "committed at the same pin" does not exempt). The embedded set is
-  any-URL-form (raw-GitHub + blob / relative / HTML `<img>`,
-  SHA-independent, case-folded); paths markdown-LINKED in the v4
-  `## Results` prose layer are DEFERRED to check 38 (its WARN set is
-  subtracted — no double-WARN), while links outside 38's gates (a
-  Methodology link, any link in a v3/v2 body) stay class-B-eligible
-  here. Issue-scoped: with `--issue` / a numeric-parent
-  `--file` ONLY this task's dir is scanned (a cross-issue embed never
-  surfaces another task's orphans); `--body-stdin` falls back to
-  per-cited-dir scanning. WARN, never FAIL (prose-stated per-unit
-  exemptions are legitimate; clean-result-critic Lens 11 stays the
-  substantive owner — this is its mechanical backstop). Fail-soft:
+  "committed at the same pin" does not exempt; glob naming reaches the
+  phrase bar too — the one disclosed #2169 loosening). Every OTHER
+  plan-named committed PNG uses the looser MENTION bar — naming it
+  (individually or by bounded glob) silences it; class C (#2169):
+  plan-named but neither embedded nor named — tagged
+  `committed-figure-unmentioned`, citing Lens 13 (planned-vs-actual
+  coverage); a PNG the plan never names is not a candidate and never
+  WARNs. The embedded set is any-URL-form
+  (raw-GitHub + blob / relative / HTML `<img>`, SHA-independent,
+  case-folded); paths markdown-LINKED in the v4 `## Results` prose
+  layer are DEFERRED to check 38 (its WARN set is subtracted — no
+  double-WARN), while links outside 38's gates (a Methodology link, any
+  link in a v3/v2 body) stay class-B-eligible here. Issue-scoped: with
+  `--issue` / a numeric-parent `--file` ONLY this task's dir is scanned
+  (a cross-issue embed never surfaces another task's orphans);
+  `--body-stdin` (`issue=None`) falls back to per-cited-dir scanning
+  for classes A/B, while class C is SKIPPED there (§3.0 degradation
+  path 1 — no issue, so no plan to name candidates): thread the issue
+  number whenever it is known.
+  WARN, never FAIL, for every class (prose-stated exemptions are
+  legitimate; clean-result-critic Lenses 11 + 13 stay the substantive
+  owners — this is their mechanical backstop). Fail-soft:
   unreachable/unknown SHA → that SHA silently skipped (counted in the
   PASS detail, never a WARN); repo unresolved / no cited same-repo
   figure URLs → skip/vacuous PASS. Dispatched OUTSIDE the body-only
@@ -671,7 +696,10 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `mlp_indiv_percontext_delta.png` sat unreferenced at a body-cited SHA
   and reached the LM critic as a Lens 11 blocker (#1011); task #1426 —
   two companions named in prose ("committed at the same pin") but never
-  embedded cost a substantive Lens-11 REVISE round (#1510).
+  embedded cost a substantive Lens-11 REVISE round (#1510); task #2061 —
+  the plan-named headline figure `f5_arm_agreement.png`, committed at a
+  body-cited SHA, embedded nowhere, named nowhere, sailed past the
+  per-unit-only scan and was caught only by hand at Lens 13 (#2169).
 
 - **check 32** (`check_hf_adjacent_file_claims`, WARN): backtick FILENAME
   claims adjacent to hex-pinned HF `/tree/<sha>` markdown links — the
@@ -1153,6 +1181,7 @@ Exits 0 on PASS, 1 on FAIL, 2 on usage error.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import math
 import os
@@ -2673,6 +2702,19 @@ _PER_UNIT_EXEMPT_PHRASE_RE = re.compile(r"not\s+embedded|superseded\s+by", re.IG
 # disposition (the class the clean-result-critic keys on; the check-32
 # PAREN|LINKTEXT in-detail-tag precedent).
 _PER_UNIT_NAMED_CLASS = "companion-named-not-embedded"
+# Check 31 (widened, #2169; incident #2061): the greppable WARN-class token
+# for a committed NON-per-unit figure at a body-cited SHA that the body
+# neither embeds nor names (class C — #2061's `f5_arm_agreement.png` shape,
+# caught by hand at clean-result-critique Lens 13).
+_COMMITTED_FIGURE_UNMENTIONED_CLASS = "committed-figure-unmentioned"
+# Check 31 (#2169): backtick-quoted inline tokens — the ONLY tokens the
+# bounded glob-name bar reads (markdown emphasis `*text*` and stray prose
+# asterisks are excluded by construction).
+_BACKTICK_TOKEN_RE = re.compile(r"`([^`\n]+)`")
+# Check 31 (#2169): minimum LITERAL characters required before the first `*`
+# in a glob token's basename component — `f*` / `*` / `*.png` exempt nothing
+# (the third bound keeping the glob bar from becoming a blanket escape).
+_GLOB_NAME_MIN_LITERAL_PREFIX = 3
 
 # Check 49: declared-pair idiom for the sanctioned >1-figure-per-result
 # exception (the raw+processed / aggregate+per-unit pair — SPEC.md
@@ -3005,14 +3047,70 @@ def _paragraphs(body: str) -> list[str]:
     return re.split(r"\n\s*\n", body)
 
 
+def _glob_names_stem(text: str, stem: str) -> bool:
+    """True when ``text`` carries a backtick-quoted glob token that NAMES
+    ``stem`` under check 31's bounded glob bar (#2169) — the collective
+    family-disposition idiom house style actually uses ("the seven
+    `f1_delta_scatter_*` siblings — not embedded: ...", the corrected #2061
+    body). Three bounds keep the bar from becoming a blanket escape:
+
+    1. **Backticks required** — only `` `...` `` tokens containing `*` are
+       read (`_BACKTICK_TOKEN_RE`); markdown emphasis and stray prose
+       asterisks never match.
+    2. **Basename component only** — a path-shaped token is reduced to its
+       last `/`-separated component before matching, so
+       `figures/issue_2061/f1_delta_scatter_*` counts via its component
+       while `figures/issue_2061/*.png` does not (its component fails
+       bound 3).
+    3. **At least `_GLOB_NAME_MIN_LITERAL_PREFIX` literal characters before
+       the component's first `*`** — `f*` / `*` / `*.png` exempt nothing.
+       A component with NO `*` at all (the wildcard lives in a parent path
+       segment) also fails here by construction (`find` returns -1); such
+       tokens carry the full literal basename, which the exact-substring
+       naming bar already covers.
+
+    Matching is `fnmatch.fnmatchcase` against the stem and `stem + ".png"`,
+    case-SENSITIVE — inheriting the exact-substring bar's case-sensitivity,
+    which fails toward NOISE (a case-varying glob fails to exempt and the
+    WARN still fires), never toward silence."""
+    for m in _BACKTICK_TOKEN_RE.finditer(text):
+        token = m.group(1)
+        if "*" not in token:
+            continue
+        component = token.rsplit("/", 1)[-1]
+        if component.find("*") < _GLOB_NAME_MIN_LITERAL_PREFIX:
+            continue  # no `*` in the component (-1), or an under-anchored glob
+        if fnmatch.fnmatchcase(stem, component) or fnmatch.fnmatchcase(stem + ".png", component):
+            return True
+    return False
+
+
+def _stem_named_in_paragraph(para: str, stem: str) -> bool:
+    """True when ``para`` NAMES the stem — as an exact substring (the
+    pre-existing bar, case-sensitive) OR via a bounded backticked glob
+    token (`_glob_names_stem`, #2169)."""
+    return stem in para or _glob_names_stem(para, stem)
+
+
+def _stem_named_in_body(body: str, stem: str) -> bool:
+    """Body-level naming bar for check 31 (#2169): the stem appears as an
+    exact substring anywhere in the body, or some backtick-quoted bounded
+    glob token matches it (`_glob_names_stem`)."""
+    return stem in body or _glob_names_stem(body, stem)
+
+
 def _stem_exempt_in_paragraph(body: str, stem: str) -> bool:
-    """True when some paragraph of ``body`` contains BOTH the stem and an
-    exemption phrase (`_PER_UNIT_EXEMPT_PHRASE_RE`) — check 31's tightened
-    prose-exemption escape (#1510). Paragraph-level co-occurrence: one
-    phrase exempts every stem named in its paragraph (accepted
-    false-negative direction for a WARN-tier backstop)."""
+    """True when some paragraph of ``body`` both NAMES the stem — exact
+    substring, or a bounded backticked glob (the #2169 disclosed loosening:
+    a glob-named per-unit companion reaches this phrase bar instead of
+    class A) — and carries an exemption phrase
+    (`_PER_UNIT_EXEMPT_PHRASE_RE`): check 31's tightened prose-exemption
+    escape (#1510). Paragraph-level co-occurrence: one phrase exempts every
+    stem named in its paragraph (accepted false-negative direction for a
+    WARN-tier backstop)."""
     return any(
-        stem in para and _PER_UNIT_EXEMPT_PHRASE_RE.search(para) for para in _paragraphs(body)
+        _stem_named_in_paragraph(para, stem) and _PER_UNIT_EXEMPT_PHRASE_RE.search(para)
+        for para in _paragraphs(body)
     )
 
 
@@ -3064,44 +3162,219 @@ def _linked_unembedded_results_pngs(body: str, issue: int | None) -> dict[str, N
     return linked
 
 
-def _classify_per_unit_png(
+def _resolve_task_plans_dir(issue: int | None) -> Path | None:
+    """Resolve ``tasks/<status>/<issue>/plans/`` through the task_workflow
+    registry (``find_task_path`` — never a cwd-relative ``tasks/...`` path;
+    the resolver branch-guards to ``main``). A MODULE-LEVEL seam mirroring
+    ``_resolve_repo_root`` so tests can monkeypatch it (#2169 §3.0 — this
+    is load-bearing, not stylistic: ``issue=999`` resolves a REAL
+    registered task whose ``plans/v1.md`` exists, so without the seam a
+    test fixture's plan file would never be read and the no-``plans/``-dir
+    degradation case could not be constructed at all). Returns ``None``
+    when ``issue`` is ``None``, the registry lookup fails for ANY reason
+    (fail-soft — a task-state read must never crash the verifier), or the
+    task folder has no ``plans/`` directory."""
+    if issue is None:
+        return None
+    try:
+        from explore_persona_space.task_workflow import find_task_path  # local import
+
+        plans = find_task_path(issue) / "plans"
+    except Exception:
+        return None
+    return plans if plans.is_dir() else None
+
+
+def _plan_naming_text(issue: int | None) -> tuple[str | None, str]:
+    """Class-C candidate-naming text for check 31 (#2169 §3.0): the
+    concatenation of ALL persisted numeric plan revisions
+    (``plans/v<int>.md``, walked via the house
+    ``_numeric_plan_versions_newest_first`` — check 16's
+    all-versions-union precedent: a figure promised in v1 and dropped
+    from v9's prose is still a planned figure; enumeration is numeric
+    ``v<int>.md`` only, NOT a loose ``v*.md`` glob) plus
+    ``artifacts/planned_manifest.json`` when present (workflow v2).
+
+    Returns ``(text, mode)``. ``text is None`` means class C is SKIPPED
+    for this invocation and ``mode`` names which §3.0 degradation path
+    ran — ``issue`` unknown, no ``plans/`` directory, or an unreadable
+    plan file. All three fail SOFT: never an exception, never a WARN (a
+    task-state read failure must not manufacture one — the
+    ``_git_tracked_under`` unreachable-SHA contract is the model), and
+    the caller surfaces ``mode`` in the check detail so a silent class C
+    stays legible. Disclosed under-match on the plan side: GLOB naming
+    requires inline backticks (§3.1's bounded bar, shared with the body
+    side via ``_stem_named_in_body``), so a plan that names a family
+    ONLY inside a fenced command block registers no siblings as
+    candidates — failing silent, toward the pre-widening status quo."""
+    if issue is None:
+        return (
+            None,
+            "skipped — no issue number (--body-stdin / non-task --file): no plan to name "
+            "candidates",
+        )
+    plans_dir = _resolve_task_plans_dir(issue)
+    if plans_dir is None:
+        return (
+            None,
+            f"skipped — task {issue} has no plans/ directory (or the task lookup failed)",
+        )
+    files = [p for p in _numeric_plan_versions_newest_first(plans_dir / "plan.md") if p.is_file()]
+    manifest = plans_dir.parent / "artifacts" / "planned_manifest.json"
+    if manifest.is_file():
+        files.append(manifest)
+    if not files:
+        return None, f"skipped — task {issue} has no readable plan revisions under plans/"
+    parts: list[str] = []
+    for p in files:
+        try:
+            parts.append(p.read_text(errors="replace"))
+        except OSError:
+            return None, f"skipped — plan file unreadable ({p.name})"
+    return "\n".join(parts), f"{len(files)} plan file(s) read"
+
+
+def _classify_committed_issue_png(
     p: str,
     body: str,
     referenced_paths: set[str],
     embedded_any: set[str],
     linked_results: set[str],
+    plan_text: str | None,
 ) -> str | None:
-    """Disposition of ONE git-tracked path for check 31 (#1510): None
-    (not a per-unit PNG / embedded in any image-URL form / deferred to
-    check 38 / exemption-phrase-exempt), ``"named"`` (class B — stem in
-    body prose, no exemption phrase in its paragraph), or ``"orphan"``
-    (class A — never mentioned)."""
+    """Disposition of ONE git-tracked path for check 31 (#1510; widened
+    #2169 to every PLAN-NAMED committed issue-figure PNG): ``None`` (not
+    a PNG / embedded in any image-URL form / deferred to check 38 /
+    named-and-exempt for a per-unit stem / not a class-C candidate under
+    the §3.0 plan-named filter / merely NAMED for any other stem — the
+    looser mention bar), ``"named"`` (class B — per-unit stem named in
+    body prose, no exemption phrase in a naming paragraph), ``"orphan"``
+    (class A — per-unit stem never named), or ``"unmentioned"`` (class C —
+    a non-per-unit committed PNG the task's own PLAN names but the body
+    neither embeds nor names, #2061's `f5_arm_agreement.png` shape).
+    Naming = exact stem substring OR a bounded backticked glob
+    (`_stem_named_in_body`, #2169) — the SAME predicate on both the plan
+    and body sides (§3.0: two subtly different notions of "named" in one
+    check is how the next defect gets in). ``plan_text`` is the §3.0
+    candidate-naming text (`_plan_naming_text`); ``None`` disables class
+    C entirely (fail-soft — the per-unit classes A/B never consult it)."""
     base = p.rsplit("/", 1)[-1]
     if not base.lower().endswith(".png"):
         return None
     stem = base[: -len(".png")]
-    if not _PER_UNIT_FIG_RE.search(stem):
-        return None
     if p in referenced_paths or p.lower() in embedded_any:
         return None  # embedded (any image-URL form) — discipline satisfied
     if p.lower() in linked_results:
         return None  # markdown-linked in v4 Results — check 38 owns the WARN
-    if stem in body:
-        if _stem_exempt_in_paragraph(body, stem):
-            return None  # explicit exemption phrase beside the name
-        return "named"
-    return "orphan"
+    named = _stem_named_in_body(body, stem)
+    if _PER_UNIT_FIG_RE.search(stem):
+        # Per-unit family: the stricter PHRASE bar — a bare naming still
+        # WARNs class B (#1510). A GLOB naming routes here too (#2169's one
+        # disclosed per-unit behaviour change): a glob-named companion moves
+        # out of class A into this class-B/phrase-bar branch, where a
+        # co-located exemption idiom exempts it — loosening only, strictly
+        # fewer and weaker WARNs, never a new WARN.
+        if named:
+            if _stem_exempt_in_paragraph(body, stem):
+                return None  # explicit exemption phrase beside the name
+            return "named"
+        return "orphan"
+    # §3.0 candidate filter (#2169 v4), IN FRONT of the unmentioned branch:
+    # class C is restricted to figures the task's own PLAN names — the
+    # union of every numeric plans/v<int>.md revision plus
+    # planned_manifest.json — under the SAME §3.1 naming predicate as the
+    # body side. A None plan_text (no issue / no plans dir / unreadable
+    # plan) SKIPS class C entirely: fail-soft to the pre-widening status
+    # quo, never a WARN.
+    if plan_text is None or not _stem_named_in_body(plan_text, stem):
+        return None
+    # Widened superset (#2169): the looser MENTION bar — naming the figure,
+    # individually or by bounded family glob, silences it. Disclosed false
+    # negative: a figure mentioned in passing but never embedded or
+    # dispositioned goes unflagged (accepted for a WARN-tier backstop;
+    # Lens 13 stays the substantive owner).
+    if named:
+        return None
+    return "unmentioned"
+
+
+def _check31_warn_detail(
+    orphans: dict[str, list[str]],
+    named: dict[str, list[str]],
+    unmentioned: dict[str, list[str]],
+) -> str:
+    """Compose check 31's WARN detail from the three class dicts
+    (path -> short SHAs): one entry per path, the class token INSIDE that
+    entry's parenthetical — a class's token appears ONLY on entries of that
+    class — plus per-class remediation tails (Lens 11 for the per-unit
+    classes A/B, Lens 13 for the widened class C; #2169)."""
+    parts = []
+    if orphans:
+        parts.append(
+            "; ".join(
+                f"`{p}` (committed at {', '.join(sorted(set(shas)))}; never mentioned in the body)"
+                for p, shas in sorted(orphans.items())
+            )
+        )
+    if named:
+        parts.append(
+            "; ".join(
+                f"`{p}` (committed at {', '.join(sorted(set(shas)))}; "
+                f"{_PER_UNIT_NAMED_CLASS}: named in body prose but not embedded, "
+                "with no exemption phrase)"
+                for p, shas in sorted(named.items())
+            )
+        )
+    if unmentioned:
+        parts.append(
+            "; ".join(
+                f"`{p}` (committed at {', '.join(sorted(set(shas)))}; "
+                f"{_COMMITTED_FIGURE_UNMENTIONED_CLASS}: committed at a body-cited "
+                "SHA but neither embedded nor named anywhere in the body)"
+                for p, shas in sorted(unmentioned.items())
+            )
+        )
+    remedies = []
+    if orphans or named:
+        remedies.append(
+            "per-unit companions (classes A/B): embed the companion under the relevant "
+            "`### <result>`, or state the deliberate omission beside its name "
+            "('not embedded: <reason>' / 'superseded by …' in the same paragraph; a "
+            "bare provenance mention does not exempt); substantive owner: "
+            "clean-result-critic Lens 11 (incidents #928, #1426)"
+        )
+    if unmentioned:
+        remedies.append(
+            "unmentioned committed figures (class C — candidates are only figures the "
+            "task's own plan names, #2169 §3.0): embed the figure, or name it in "
+            "body prose — individually, or collectively by a backticked family glob "
+            "with at least 3 literal characters before the first `*` (e.g. the "
+            "corrected #2061 body's 'the seven `f1_delta_scatter_*` siblings — not "
+            "embedded: ...'); substantive owner: clean-result-critic Lens 13 "
+            "(planned-vs-actual coverage; incident #2061)"
+        )
+    n_total = len(orphans) + len(named) + len(unmentioned)
+    return (
+        f"{n_total} committed figure(s) at body-cited SHA(s) "
+        f"are not embedded by any body image: {'; '.join(parts)} — " + "; ".join(remedies)
+    )
 
 
 def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> CheckResult:
-    """Check 31 (WARN, #1011; tightened #1510): a committed per-unit
-    companion PNG at a body-cited figure SHA that the body does not embed.
+    """Check 31 (WARN, #1011; tightened #1510; widened #2169): a committed
+    PNG at a body-cited figure SHA that the body neither embeds nor
+    accounts for — any committed `figures/issue_<N>/*.png` the task's own
+    PLAN names (§3.0 candidate filter below), not only the per-unit
+    family (the check NAME keeps the historical "per-unit companion
+    figures embedded" string — a parsed contract, pinned as
+    `_PER_UNIT_ORPHAN_CHECK` and grepped by downstream review prose;
+    renaming is a separate out-of-scope change).
 
     INVERSE direction of checks 4b/22/29 (which verify what the body
     CITES): enumerate what the body's OWN cited commits contain under
     `figures/issue_<N>/` (one `git ls-tree` per unique (SHA, dir) pair,
-    10 s timeout, no network) and classify each committed `.png` whose
-    basename stem matches `_PER_UNIT_FIG_RE`:
+    10 s timeout, no network) and classify each committed `.png`
+    (`_classify_committed_issue_png`):
 
     - **embedded** — any image-URL form anywhere in the body: the
       raw-GitHub set (`_referenced_figure_paths`) OR the any-URL-form
@@ -3113,50 +3386,111 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
       WARN set, `_linked_unembedded_results_pngs`) → PASS here; check 38
       owns that WARN (single ownership, no double-WARN). Links OUTSIDE
       check 38's gates (a `## Methodology` link, any link in a v3/v2
-      body) stay with THIS check via the stem branch below.
-    - **stem named in body text + exemption phrase in the SAME
-      blank-line-delimited paragraph** (`_stem_exempt_in_paragraph`) →
-      PASS: the explicit deliberately-not-embedded disclosure. The
-      phrase set is the two ANCHORED idioms `not embedded` /
-      `superseded by` (case-insensitive) — an idiom must appear
-      verbatim-anchored ("cannot be embedded" does NOT match; a bare
-      provenance clause like #1426's "committed at the same pin" does
-      NOT exempt), while an incidental `superseded by` in a stem-bearing
-      paragraph DOES exempt — the accepted false-negative direction for
-      a WARN-tier backstop (Lens 11 stays the substantive owner).
-    - **stem named, no phrase in its paragraph** → WARN class B, tagged
-      `companion-named-not-embedded` (`_PER_UNIT_NAMED_CLASS`) in the
-      detail — the #1426 round-1 shape (named in prose, never embedded,
-      no stated omission).
-    - **never mentioned** → WARN class A (the original #928 class).
+      body) stay with THIS check via the naming branches below.
 
-    Deliberately NARROW pattern (`per{context,unit,cell,pair}` with `-`/`_`
-    variants; `pair` added #1607 — per-PAIR is the project's most common
-    per-unit grain and #1415's per-pair panels were invisible to this
-    check): `per_source` / `per_seed` / `per_question` / `indiv`
-    names do NOT match, by design — `indiv` names the per-question
-    REGIME in this project (#928's pooled hero `mlp_indiv_hero_4arm.png`),
-    and the substantive per-unit-data judgment belongs to
-    clean-result-critic Lens 11; this check is only its mechanical
-    backstop (incident #928: `mlp_indiv_percontext_delta.png` sat
-    committed-but-unembedded at a body-cited SHA through three review
-    passes; incident #1426: two prose-named companions "committed at the
-    same pin" cost a substantive Lens-11 REVISE round).
+    **NAMING (#2169):** a stem is *named* when it appears in the body as
+    an exact substring (the pre-existing bar), OR when the body carries a
+    backtick-quoted glob token matching it under the bounded glob bar
+    (`_glob_names_stem`: backticks required; basename component only; at
+    least 3 literal characters before the first `*`) — the collective
+    family-disposition idiom the conciseness caps push bodies toward
+    ("the seven `f1_delta_scatter_*` siblings — not embedded: ...").
+    Both bars are case-SENSITIVE (inherited from the per-unit branch;
+    fails toward noise, not silence — a case-varying mention does not
+    exempt and the WARN still fires; disclosed, deliberately untested
+    edge).
+
+    Per-unit stems (`_PER_UNIT_FIG_RE`) keep the stricter PHRASE bar:
+
+    - **named + exemption phrase in the SAME blank-line-delimited naming
+      paragraph** (`_stem_exempt_in_paragraph`) → PASS: the explicit
+      deliberately-not-embedded disclosure. The phrase set is the two
+      ANCHORED idioms `not embedded` / `superseded by`
+      (case-insensitive) — an idiom must appear verbatim-anchored
+      ("cannot be embedded" does NOT match; a bare provenance clause
+      like #1426's "committed at the same pin" does NOT exempt), while
+      an incidental `superseded by` in a stem-bearing paragraph DOES
+      exempt — the accepted false-negative direction for a WARN-tier
+      backstop (Lens 11 stays the substantive owner). Glob naming
+      reaches this branch too — the ONE disclosed #2169 behaviour change
+      to the per-unit classes (loosening only: a glob-named companion
+      leaves class A for this phrase bar).
+    - **named, no phrase in its naming paragraph** → WARN class B,
+      tagged `companion-named-not-embedded` (`_PER_UNIT_NAMED_CLASS`) in
+      the detail — the #1426 round-1 shape.
+    - **never named** → WARN class A (the original #928 class).
+
+    Every OTHER committed PNG first passes the **§3.0 plan-named
+    candidate filter** (#2169 v4 — the K1 corpus dry-run measured the
+    unfiltered widening flooding 56.7% of triggered bodies, max 79 WARNs
+    on one): a PNG is a class-C CANDIDATE only when the task's own plan
+    names its stem — the union of ALL persisted numeric `plans/v<int>.md`
+    revisions (check 16's all-versions precedent, walked via
+    `_numeric_plan_versions_newest_first`; a figure promised in v1 and
+    dropped from v9's prose is still planned) plus
+    `artifacts/planned_manifest.json` when present (workflow v2) — under
+    the SAME §3.1 naming predicate as the body side. Three degradation
+    paths fail SOFT (class C skipped entirely; classes A/B untouched;
+    never an exception, never a manufactured WARN; the PASS/WARN detail
+    states which mode ran so a silent class C stays legible): `issue`
+    unknown (`--body-stdin` / a non-task `--file`); no `plans/` directory
+    or a failed task lookup (many `kind: infra` tasks legitimately have
+    no plan); a plan file present but unreadable (the
+    `_git_tracked_under` unreachable-SHA contract is the model).
+    Disclosed plan-side under-match: glob naming requires inline
+    backticks (§3.1), so a plan naming a family ONLY inside a fenced
+    command block registers no siblings as candidates — failing silent,
+    toward the pre-widening status quo. Candidates then use the looser
+    MENTION bar (#2169):
+
+    - **named** (individually or by bounded family glob) → PASS — no
+      disposition idiom required. Rationale: the phrase bar applied
+      corpus-wide would fire on ordinary prose that names a figure
+      without a disposition idiom (a `## Reproducibility` artifact list,
+      a Methodology reference), converting a targeted backstop into
+      background noise; the disclosed cost is a real false negative (a
+      figure mentioned in passing goes unflagged).
+    - **neither embedded nor named** → WARN class C, tagged
+      `committed-figure-unmentioned`
+      (`_COMMITTED_FIGURE_UNMENTIONED_CLASS`), citing Lens 13
+      (planned-vs-actual coverage) — the #2061 shape: the plan-named
+      headline figure `f5_arm_agreement.png` was committed at the
+      body-cited SHA, embedded nowhere, named nowhere, and check 31
+      stayed silent because its stem matches no per-unit pattern.
+    - **not plan-named** → never a candidate, never a WARN (clean by
+      construction — the §3.0 narrowing).
+
+    The per-unit pattern stays deliberately NARROW
+    (`per{context,unit,cell,pair}` with `-`/`_` variants; `pair` added
+    #1607): `per_source` / `per_seed` / `per_question` / `indiv` names
+    are NOT per-unit, by design — `indiv` names the per-question REGIME
+    in this project (#928's pooled hero) — they are simply class-C
+    candidates like every other non-per-unit PNG. The substantive
+    judgment belongs to clean-result-critic Lens 11 (per-unit data) and
+    Lens 13 (planned-vs-actual coverage); this check is their mechanical
+    backstop (incidents #928, #1426, #2061).
 
     Issue scoping: with `issue` known (`--issue <N>` / a numeric-parent
     `--file`), ONLY `figures/issue_<issue>/` is scanned — a cross-issue
-    embed must not surface ANOTHER task's orphans. `issue=None`
+    embed must not surface ANOTHER task's orphans. **`issue=None`
     (`--body-stdin`, a non-task-layout `--file`) falls back to scanning
-    every cited `figures/issue_<K>/` dir, which CAN surface another
-    issue's orphans on a cross-issue embed (documented caveat of the
-    fallback).
+    EVERY cited `figures/issue_<K>/` dir for the per-unit classes A/B —
+    but class C is SKIPPED entirely there (§3.0 degradation path 1: no
+    issue, so no plan to name candidates), so the fallback can no longer
+    surface other issues' unmentioned figures as class-C noise. Thread
+    the issue number whenever it is known.**
 
     Fail-soft inventory: a WARN keeps `passed=True` (the overall verdict
     can never flip); an unreachable/unknown SHA is silently skipped
-    (counted in the PASS detail, never a WARN); repo unresolved →
-    skip-PASS; no cited same-repo figure URLs → vacuous PASS. PNG-only
-    (`.pdf` / `.meta.json` sidecars never flagged); orphans deduped by
-    path across cited SHAs.
+    (counted in the PASS detail, never a WARN); plan context unavailable
+    (no issue / no `plans/` dir / unreadable plan) → class C skipped,
+    the skip MODE stated in the detail, classes A/B unaffected; repo
+    unresolved → skip-PASS; no cited same-repo figure URLs → vacuous
+    PASS. PNG-only (`.pdf` / `.meta.json` sidecars never flagged — at
+    #2061's cited SHA those outnumber the PNGs 2:1, so this single
+    scoping decision removes most potential noise); entries deduped by
+    path across cited SHAs. Grade stays WARN for every class; each
+    class's token appears ONLY on entries of that class.
     """
     name = "per-unit companion figures embedded"
     # (1) cited (sha, issue-dir) pairs from the inline figure URLs.
@@ -3180,9 +3514,23 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     referenced_paths = _referenced_figure_paths(body)
     embedded_any = _embedded_issue_png_paths(body)
     linked_results = {p.lower() for p in _linked_unembedded_results_pngs(body, issue)}
-    # (4) enumerate per-unit PNGs at each reachable cited sha; union per dir.
-    orphans: dict[str, list[str]] = {}  # class A (never mentioned): path -> short-shas
-    named: dict[str, list[str]] = {}  # class B (named, unembedded, no exemption phrase)
+    # (3b) §3.0 (#2169): the class-C candidate set is plan-named figures
+    # only. Resolve the task's plan text ONCE — every numeric
+    # plans/v<int>.md revision plus the v2 planned_manifest.json — through
+    # the module-level `_resolve_task_plans_dir` seam. A None text disables
+    # class C for this invocation (the three fail-soft §3.0 degradation
+    # modes); the PASS/WARN detail states which mode ran either way, so a
+    # silent class C is legible rather than indistinguishable from a clean
+    # body.
+    plan_text, plan_mode = _plan_naming_text(issue)
+    if plan_text is None:
+        class_c_note = f"class-C scan {plan_mode}; classes A/B unaffected"
+    else:
+        class_c_note = f"class-C candidate set: plan-named figures only ({plan_mode})"
+    # (4) enumerate committed PNGs at each reachable cited sha; union per dir.
+    orphans: dict[str, list[str]] = {}  # class A (per-unit, never named): path -> short-shas
+    named: dict[str, list[str]] = {}  # class B (per-unit, named, no exemption phrase)
+    unmentioned: dict[str, list[str]] = {}  # class C (non-per-unit, never named; #2169)
     n_unreachable = 0
     for prefix, shas in sorted(cited.items()):
         for sha in sorted(shas):
@@ -3191,44 +3539,27 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
                 n_unreachable += 1  # hard constraint: skip SILENTLY, no WARN
                 continue
             for p in tracked:
-                cls = _classify_per_unit_png(
-                    p, body, referenced_paths, embedded_any, linked_results
+                cls = _classify_committed_issue_png(
+                    p, body, referenced_paths, embedded_any, linked_results, plan_text
                 )
                 if cls == "named":
                     named.setdefault(p, []).append(sha[:8])
                 elif cls == "orphan":
                     orphans.setdefault(p, []).append(sha[:8])
-    if orphans or named:
-        parts = []
-        if orphans:
-            parts.append(
-                "; ".join(
-                    f"`{p}` (committed at {', '.join(sorted(set(shas)))}; "
-                    "never mentioned in the body)"
-                    for p, shas in sorted(orphans.items())
-                )
-            )
-        if named:
-            parts.append(
-                "; ".join(
-                    f"`{p}` (committed at {', '.join(sorted(set(shas)))}; "
-                    f"{_PER_UNIT_NAMED_CLASS}: named in body prose but not embedded, "
-                    "with no exemption phrase)"
-                    for p, shas in sorted(named.items())
-                )
-            )
+                elif cls == "unmentioned":
+                    unmentioned.setdefault(p, []).append(sha[:8])
+    if orphans or named or unmentioned:
         return CheckResult(
             name,
             True,
-            f"{len(orphans) + len(named)} committed per-unit figure(s) at body-cited SHA(s) "
-            f"are not embedded by any body image: {'; '.join(parts)} — embed the companion "
-            "under the relevant `### <result>`, or state the deliberate omission beside its "
-            "name ('not embedded: <reason>' / 'superseded by …' in the same paragraph; a "
-            "bare provenance mention does not exempt); substantive owner: "
-            "clean-result-critic Lens 11 (incidents #928, #1426)",
+            _check31_warn_detail(orphans, named, unmentioned) + f" ({class_c_note})",
             is_warn=True,
         )
-    detail = "no orphaned per-unit figures at body-cited SHAs"
+    detail = (
+        "no orphaned per-unit figures at body-cited SHAs (widened scan, #2169: every committed "
+        "`figures/issue_<N>/*.png` at those SHAs whose stem the task's own plan names is a "
+        f"class-C candidate — one neither embedded nor named would WARN; {class_c_note})"
+    )
     if n_unreachable:
         detail += f" ({n_unreachable} cited SHA(s) not locally reachable — skipped)"
     return CheckResult(name, True, detail)

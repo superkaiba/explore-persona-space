@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2175,
+  "highest_id": 2178,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8468,8 +8468,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, test whether interventions (activation patching and steering) at single context positions \u2014 the context-end and prefix-end vectors, with last-3-token / query-span / full-context controls \u2014 causally move BOTH the answer state and behavior toward a target context, across three settings from one crossed context bank (matched query; matched prefix; cross), measured by one unified fraction-of-swap metric F at both levels (F_act signed projection with disjoint baseline halves; F_beh dual-judge contrast normalized between unpatched floor and generate-under-B ceiling), plus map-transport cosines against banked ridge maps only (context-end #779 963k L14/L19; prefix-end #1738 L14/L19/L26 \u2014 no new map training), an on-experiment linearity fit L (held out by pair; direction-aware vs banked M and the #1776 Jacobian J), coherence-gated reporting (judge > 60, coherent-only, <50%-coherent cells marked), and a fragility map vs the norm-matched shuffled-donor null.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2094",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2094",
+      "status": "awaiting_promotion",
       "title": "Context-end is the only single position where activation edits move behavior clear of the shuffled-donor null, and even its strongest patch falls well short of a full context swap (MODERATE confidence)"
     },
     "2095": {
@@ -8993,11 +8993,11 @@
     },
     "2163": {
       "goal": "Characterize, at full 131,072-feature dictionary width, which SAE features the context->answer map READS at the context vector v_C (the last prompt token, the newline of the assistant header) on Qwen-2.5-7B-Instruct layer 19; separate READ (used by the fitted map) from CARRIED (present at v_C but unused) and from FREQUENT (mechanically weighted by firing rate); and determine which mechanical feature properties predict being read, as activity-matched partials against a selection-symmetric null.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/verifying/2163",
-      "status": "verifying",
-      "title": "Which SAE features are read at the context vector by the context->answer map"
+      "path": "tasks/interpreting/2163",
+      "status": "interpreting",
+      "title": "The context\u2192answer map reads SAE features selectively: per-unit gain is lowest on high-variance directions and template-heavy features (HIGH confidence)"
     },
     "2164": {
       "has_clean_result": false,
@@ -9037,8 +9037,8 @@
     "2169": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2169",
-      "status": "running",
+      "path": "tasks/completed/2169",
+      "status": "completed",
       "title": "verify_task_body check 31: WARN on any committed-but-unmentioned figures/issue_<N> PNG (not only per-unit patterns)"
     },
     "2170": {
@@ -9082,6 +9082,27 @@
       "path": "tasks/proposed/2175",
       "status": "proposed",
       "title": "git_provenance() blind to untracked producing scripts \u2014 artifacts stamp a commit that lacks the code that made them"
+    },
+    "2176": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2176",
+      "status": "planning",
+      "title": "Smoke-architecture gate: per-arm enumeration is hand-listed, so the REAL-or-N/A invariant is unfalsifiable"
+    },
+    "2177": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2177",
+      "status": "planning",
+      "title": "verify_plan.py: WARN when a \u00a79 compute row's own basis arithmetic contradicts its booked GPU-h or its pilot-abort threshold"
+    },
+    "2178": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2178",
+      "status": "proposed",
+      "title": "verify_plan.py: validate a plan's stated smoke-fixture size against realized fixtures, and flag a smoke claim whose producing script is absent from the modified-file list"
     },
     "218": {
       "has_clean_result": false,

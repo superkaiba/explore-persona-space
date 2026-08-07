@@ -5,7 +5,7 @@
   "git_dirty_paths": [
     "scripts/issue2054_analyzer_figs.py"
   ],
-  "created": "2026-08-07T14:23:30Z",
+  "created": "2026-08-07T15:20:24Z",
   "figsize": [
     7.2,
     4.2
@@ -44,6 +44,18 @@
     {
       "category": "chat base\nrandom\nremoved",
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.20663317495375946,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "chat base\ndrifted\nremoved",
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.22374921602108538,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "chat base\nrandom\n(drift n)",
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.20040246314310978,
       "_kind": "bar",
       "_group": 0
     },
@@ -90,218 +102,278 @@
       "_group": 1
     },
     {
-      "x": 3.0,
-      "within-cell held-out R\u00b2 (ambient, context arm)": 0.20856492767057844,
-      "_kind": "scatter",
-      "_group": 2
-    },
-    {
-      "x": 3.0,
-      "within-cell held-out R\u00b2 (ambient, context arm)": 0.20615954969385253,
-      "_kind": "scatter",
-      "_group": 2
-    },
-    {
-      "x": 3.0,
-      "within-cell held-out R\u00b2 (ambient, context arm)": 0.2106930104563468,
-      "_kind": "scatter",
-      "_group": 2
-    },
-    {
-      "x": 3.0,
-      "within-cell held-out R\u00b2 (ambient, context arm)": 0.20423663662892466,
-      "_kind": "scatter",
-      "_group": 2
-    },
-    {
-      "x": 3.0,
-      "within-cell held-out R\u00b2 (ambient, context arm)": 0.20715026221424848,
-      "_kind": "scatter",
-      "_group": 2
-    },
-    {
-      "x": 6.0,
-      "within-cell held-out R\u00b2 (ambient, context arm)": 0.4947448766277378,
-      "_kind": "scatter",
-      "_group": 3
-    },
-    {
-      "x": 6.0,
-      "within-cell held-out R\u00b2 (ambient, context arm)": 0.4914248540152918,
-      "_kind": "scatter",
-      "_group": 3
-    },
-    {
-      "x": 6.0,
-      "within-cell held-out R\u00b2 (ambient, context arm)": 0.4926195052810065,
-      "_kind": "scatter",
-      "_group": 3
-    },
-    {
-      "x": 6.0,
-      "within-cell held-out R\u00b2 (ambient, context arm)": 0.4920308965420399,
-      "_kind": "scatter",
-      "_group": 3
-    },
-    {
-      "x": 6.0,
-      "within-cell held-out R\u00b2 (ambient, context arm)": 0.4898426889098322,
-      "_kind": "scatter",
-      "_group": 3
-    },
-    {
       "x": 1.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.39417714443353014,
       "_kind": "scatter",
-      "_group": 4
+      "_group": 2
     },
     {
       "x": 1.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.3897920870992253,
       "_kind": "scatter",
-      "_group": 4
+      "_group": 2
     },
     {
       "x": 1.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.39665737977799875,
       "_kind": "scatter",
-      "_group": 4
+      "_group": 2
     },
     {
       "x": 1.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.3940961366665984,
       "_kind": "scatter",
-      "_group": 4
+      "_group": 2
     },
     {
       "x": 1.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.3745408479085911,
       "_kind": "scatter",
-      "_group": 4
+      "_group": 2
     },
     {
       "x": 2.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.18623856650658643,
       "_kind": "scatter",
-      "_group": 5
+      "_group": 3
     },
     {
       "x": 2.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.19427283994506106,
       "_kind": "scatter",
-      "_group": 5
+      "_group": 3
     },
     {
       "x": 2.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.19322495354806868,
       "_kind": "scatter",
-      "_group": 5
+      "_group": 3
     },
     {
       "x": 2.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.20247044823808025,
       "_kind": "scatter",
-      "_group": 5
+      "_group": 3
     },
     {
       "x": 2.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.20090260557143735,
       "_kind": "scatter",
-      "_group": 5
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.20856492767057844,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.20615954969385253,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.2106930104563468,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.20423663662892466,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.20715026221424848,
+      "_kind": "scatter",
+      "_group": 4
     },
     {
       "x": 4.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.21635158181155278,
       "_kind": "scatter",
-      "_group": 6
+      "_group": 5
     },
     {
       "x": 4.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.2142525265648203,
       "_kind": "scatter",
-      "_group": 6
+      "_group": 5
     },
     {
       "x": 4.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.21732207722116537,
       "_kind": "scatter",
-      "_group": 6
+      "_group": 5
     },
     {
       "x": 4.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.2085471288529186,
       "_kind": "scatter",
-      "_group": 6
+      "_group": 5
     },
     {
       "x": 4.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.21502599843777193,
       "_kind": "scatter",
-      "_group": 6
+      "_group": 5
     },
     {
       "x": 5.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.21116965642975583,
       "_kind": "scatter",
-      "_group": 7
+      "_group": 6
     },
     {
       "x": 5.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.20783767675955023,
       "_kind": "scatter",
-      "_group": 7
+      "_group": 6
     },
     {
       "x": 5.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.2109650686778931,
       "_kind": "scatter",
-      "_group": 7
+      "_group": 6
     },
     {
       "x": 5.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.20228873087033572,
       "_kind": "scatter",
-      "_group": 7
+      "_group": 6
     },
     {
       "x": 5.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.20090474203126252,
       "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.2178626596382096,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.21784686353069982,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.23318832020025093,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.22631731225573348,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.22353092448053324,
+      "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 7.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.20018571682913278,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.19489576809553677,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.2077300621875524,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.19548566767438635,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.20371510092894052,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.4947448766277378,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.4914248540152918,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.4926195052810065,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.4920308965420399,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "within-cell held-out R\u00b2 (ambient, context arm)": 0.4898426889098322,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 9.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.48120188300126976,
       "_kind": "scatter",
-      "_group": 8
+      "_group": 10
     },
     {
-      "x": 7.0,
+      "x": 9.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.47841981593527627,
       "_kind": "scatter",
-      "_group": 8
+      "_group": 10
     },
     {
-      "x": 7.0,
+      "x": 9.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.47983730414450276,
       "_kind": "scatter",
-      "_group": 8
+      "_group": 10
     },
     {
-      "x": 7.0,
+      "x": 9.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.4837350736352277,
       "_kind": "scatter",
-      "_group": 8
+      "_group": 10
     },
     {
-      "x": 7.0,
+      "x": 9.0,
       "within-cell held-out R\u00b2 (ambient, context arm)": 0.4759613568061132,
       "_kind": "scatter",
-      "_group": 8
+      "_group": 10
     }
   ],
-  "n_series": 9,
-  "total_points": 48,
+  "n_series": 11,
+  "total_points": 60,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -319,6 +391,8 @@
           "chat base\nall rows",
           "chat base\ncapped\nremoved",
           "chat base\nrandom\nremoved",
+          "chat base\ndrifted\nremoved",
+          "chat base\nrandom\n(drift n)",
           "chat ins.\nall rows",
           "chat ins.\nsubsampled"
         ],
