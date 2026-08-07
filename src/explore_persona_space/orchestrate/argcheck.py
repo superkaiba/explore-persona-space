@@ -47,10 +47,11 @@ __all__ = ["assert_args_attributes_defined"]
 def _permissive_dests(opts: list[str | None]) -> set[str]:
     """Permissive fallback: every resolvable option contributes its name.
 
-    Used ONLY when the call's option strings are not all statically
-    resolvable (see ``_add_argument_dests``); the runtime value could
-    displace any constant as the dest, so every constant candidate enters
-    the DEFINED set to avoid false positives on dynamically-built parsers.
+    Used ONLY when the call is not fully statically resolvable — a
+    non-constant option string, or a present-but-non-constant ``dest=``
+    kwarg (see ``_add_argument_dests``); the runtime value could displace
+    any constant as the dest, so every constant candidate enters the
+    DEFINED set to avoid false positives on dynamically-built parsers.
     """
     out: set[str] = set()
     for opt in opts:
@@ -90,28 +91,43 @@ def _add_argument_dests(call: ast.Call) -> set[str]:
       ``src_dir`` is a genuine AttributeError and stays flagged).
 
     Narrow permissive fallback — the ONE place superset behavior remains:
-    when any leading positional arg is NOT a constant string (a
+    when the call is not fully statically resolvable, in EITHER of two
+    shapes — (a) any leading positional arg is NOT a constant string (a
     dynamically-built parser: ``ap.add_argument(flag_var, ...)`` /
-    ``ap.add_argument(*flags)``), the option-string set is not statically
-    resolvable, so the runtime value could displace any constant as the
-    dest; every constant that IS present then contributes its derived name
-    (``_permissive_dests``) rather than raising — a dynamic parser must
-    not turn into a false positive.
+    ``ap.add_argument(*flags)``), or (b) a ``dest=`` kwarg is PRESENT but
+    not a constant string (``ap.add_argument("-n", "--dry-run",
+    dest=some_var)`` — the runtime dest is unknowable, strictly LESS
+    resolvable than a missing ``dest=``, so it must not be handled more
+    strictly) — the runtime value could displace any constant as the
+    dest; every constant option string that IS present then contributes
+    its derived name (``_permissive_dests``) rather than raising — a
+    dynamic parser must not turn into a false positive. A constant
+    ``dest=None`` stays on the exact path: argparse treats it as "derive
+    the default dest".
     """
+    dynamic_dest = False
     for kw in call.keywords:
-        if (
-            kw.arg == "dest"
-            and isinstance(kw.value, ast.Constant)
-            and isinstance(kw.value.value, str)
-        ):
-            return {kw.value.value}
+        if kw.arg != "dest":
+            continue
+        if isinstance(kw.value, ast.Constant):
+            if isinstance(kw.value.value, str):
+                return {kw.value.value}
+            # dest=None (or another non-str constant) IS statically
+            # resolvable: argparse treats None as "derive the default
+            # dest", which the exact derivation below implements.
+            continue
+        # Present-but-non-constant dest (dest=SOME_VAR / dest=f(...)):
+        # the runtime dest is unknowable — strictly LESS resolvable than
+        # a missing dest= — so the call takes the same permissive path
+        # as non-constant option strings (round-2 review NIT).
+        dynamic_dest = True
     opts: list[str | None] = [
         arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None
         for arg in call.args
     ]
     if not opts:
         return set()
-    if any(o is None for o in opts):
+    if dynamic_dest or any(o is None for o in opts):
         return _permissive_dests(opts)
     resolved = [o for o in opts if o is not None]  # == opts; narrows the type
     if len(resolved) == 1 and not resolved[0].startswith("-"):

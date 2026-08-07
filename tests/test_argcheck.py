@@ -15,6 +15,10 @@ all-candidates superset — or to single-first-string derivation — is
 test-breaking), the short+long / short-only false-positive guards, the
 dynamic-option permissive fallback, the hyphenated-positional verbatim
 dest, and the ``del args.<attr>`` reference pin.
+
+Round 3 (round-2 review NIT) adds the dynamic-``dest=`` pin: a
+present-but-non-constant ``dest=`` kwarg routes to the permissive path,
+exactly like non-constant option strings.
 """
 
 from __future__ import annotations
@@ -365,6 +369,37 @@ def test_dynamic_option_strings_keep_permissive_fallback(tmp_path):
             ap.add_argument(EXTRA_FLAG, "--aaa", "--bbb")
             args = ap.parse_args()
             print(args.aaa, args.bbb)
+        """,
+    )
+    assert_args_attributes_defined(driver)
+
+
+def test_dynamic_dest_kwarg_takes_permissive_fallback(tmp_path):
+    """R3.1 — round-2 NIT: a present-but-non-constant ``dest=`` is dynamic.
+
+    Under ``add_argument("-n", "--dry-run", dest=DEST_NAME)`` the runtime
+    dest is whatever ``DEST_NAME`` holds — unknowable statically, strictly
+    LESS resolvable than a missing ``dest=`` — so the call takes the same
+    permissive path as non-constant option strings: every constant option
+    string contributes its derived name, and ``args.n`` (which exact
+    derivation would NOT define — the first long option wins) must not be
+    flagged. Round 2 fell through to exact derivation here (defining
+    ``{dry_run}`` only), a false positive on ``args.n``; this pin FAILS
+    against the round-2 implementation.
+    """
+    driver = _write(
+        tmp_path,
+        "driver.py",
+        """
+        import argparse
+
+        DEST_NAME = "dry_run"
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.add_argument("-n", "--dry-run", dest=DEST_NAME, action="store_true")
+            args = ap.parse_args()
+            print(args.n, args.dry_run)
         """,
     )
     assert_args_attributes_defined(driver)
