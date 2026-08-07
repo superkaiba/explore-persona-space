@@ -628,7 +628,11 @@ def kernel_logistic_auc(
     n_layers = gram.shape[0]
     n_folds = fold_masks.shape[0]
     assert gram.shape == (n_layers, n, n), gram.shape
-    assert bool(fold_masks.any(dim=0).all()), "fold masks must cover every row"
+    covered = fold_masks.any(dim=0)
+    # LOCO: the folds PARTITION n (every row held out exactly once). Transfer:
+    # a single non-covering holdout is legal — AUC is then scored over the
+    # held rows only (never over never-held rows, whose held-score is 0).
+    assert n_folds == 1 or bool(covered.all()), "multi-fold masks must cover every row"
     train = (~fold_masks).float()  # (F, n)
     a = torch.zeros(n_perm, n_layers, n_folds, n, requires_grad=True)
     b = torch.zeros(n_perm, n_layers, n_folds, requires_grad=True)
@@ -650,7 +654,7 @@ def kernel_logistic_auc(
         am = a * tm
         logits = torch.einsum("plfn,lnm->plfm", am, gram) + b.unsqueeze(-1)
         held = (logits * fold_masks.float()[None, None]).sum(dim=2)  # (P, L, n)
-        return _auc_ranked(held, labels)
+        return _auc_ranked(held[:, :, covered], labels[:, covered])
 
 
 def _auc_ranked(scores: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
