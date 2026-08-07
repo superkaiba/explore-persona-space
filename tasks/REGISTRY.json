@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2167,
+  "highest_id": 2168,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9026,6 +9026,13 @@
       "path": "tasks/planning/2167",
       "status": "planning",
       "title": "workflow-fix: pin MALLOC_MMAP_THRESHOLD_ in launch-prefix rules"
+    },
+    "2168": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2168",
+      "status": "proposed",
+      "title": "workflow-fix: UnicodeDecodeError escapes 112 json-guard except tuples (53 in the watcher, all on read_text paths)"
     },
     "218": {
       "has_clean_result": false,
