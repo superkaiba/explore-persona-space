@@ -492,7 +492,16 @@ class PodInfo:
     ``created_at`` is the ISO-8601 timestamp from the GraphQL ``createdAt``
     field, used for the AGE column in ``pod.py list-ephemeral``. ``None`` when
     the field is missing from the response (older pods or partial GraphQL
-    selections)."""
+    selections).
+
+    ``pod_host_id`` / ``data_center_id`` (#2011) identify the PLACEMENT — the
+    physical host and datacenter RunPod put the pod on — for the bad-host
+    avoidance record (``pod_lifecycle.note_bad_placement``). Selected ONLY on
+    :func:`get_pod` and the ``_deploy_once`` create mutation (live-schema
+    verified 2026-08-06: ``machine { podHostId dataCenterId }`` parses on the
+    team-scoped Pod type); deliberately NOT on :func:`list_team_pods` — see
+    the in-file warning below about speculative fields on the hot query.
+    ``None`` on responses whose selection omits them."""
 
     pod_id: str
     name: str
@@ -502,6 +511,8 @@ class PodInfo:
     ssh_host: str | None = None
     ssh_port: int | None = None
     created_at: str | None = None
+    pod_host_id: str | None = None
+    data_center_id: str | None = None
 
 
 def _parse_pod(raw: dict[str, Any]) -> PodInfo:
@@ -526,6 +537,8 @@ def _parse_pod(raw: dict[str, Any]) -> PodInfo:
         ssh_host=ssh_host,
         ssh_port=ssh_port,
         created_at=raw.get("createdAt"),
+        pod_host_id=machine.get("podHostId"),
+        data_center_id=machine.get("dataCenterId"),
     )
 
 
@@ -667,6 +680,10 @@ def _deploy_once(
         return None
 
     inputs_block = _build_inputs_block(inputs)
+    # machine { podHostId dataCenterId } — placement identity for the #2011
+    # bad-host record. Live-schema verified 2026-08-06 (read-only probe on the
+    # team-scoped Pod type); gated to THIS mutation + get_pod only, never the
+    # hot list_team_pods query (an invalid field fails the WHOLE query).
     query = f"""
     mutation {{
       podFindAndDeployOnDemand(input: {{ {inputs_block} }}) {{
@@ -675,7 +692,7 @@ def _deploy_once(
         desiredStatus
         gpuCount
         createdAt
-        machine {{ gpuTypeId }}
+        machine {{ gpuTypeId podHostId dataCenterId }}
         runtime {{ ports {{ ip publicPort privatePort type isIpPublic }} }}
       }}
     }}
@@ -921,11 +938,16 @@ def create_cpu_pod(
 
 
 def get_pod(pod_id: str) -> PodInfo:
+    """Fetch one pod by id (team-scoped). The ``machine { podHostId
+    dataCenterId }`` placement fields (#2011) are selected here + in the
+    ``_deploy_once`` mutation ONLY (live-schema verified 2026-08-06);
+    ``list_team_pods`` deliberately stays without them (hot query — a schema
+    break there would blind the whole lifecycle)."""
     query = """
     query Pod($id: String!) {
       pod(input: {podId: $id}) {
         id name desiredStatus gpuCount createdAt
-        machine { gpuTypeId }
+        machine { gpuTypeId podHostId dataCenterId }
         runtime { ports { ip publicPort privatePort type isIpPublic } }
       }
     }
@@ -969,6 +991,21 @@ def get_pod_by_name(name: str) -> PodInfo | None:
         if pod.name == name:
             return pod
     return None
+
+
+def get_datacenters() -> list[dict[str, Any]]:
+    """Enumerate RunPod datacenters: ``[{"id": ..., "name": ..., "location":
+    ...}, ...]`` (#2011 — candidates for the different-DC retry hint after a
+    bad placement).
+
+    Query shape live-schema verified 2026-08-06 (read-only probe): the
+    top-level ``dataCenters { id name location }`` selection parses on the
+    team-scoped endpoint. Raises :class:`RunPodError` on transport / GraphQL
+    failure — callers degrade gracefully (print the hint WITHOUT candidates),
+    never block a provision on this enumeration.
+    """
+    data = graphql("query { dataCenters { id name location } }")
+    return list(data.get("dataCenters") or [])
 
 
 def stop_pod(pod_id: str) -> PodInfo:
