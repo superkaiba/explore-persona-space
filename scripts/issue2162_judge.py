@@ -19,7 +19,11 @@ and adds the 2162-specific pieces:
   which-question family, ~440 draws total, plan §7 gate 5) + the live
   forced-batch request-shape probe,
 - the coherence-baseline sanity gate (plan §7 gate 4, #2094 thresholds
-  verbatim via ``issue2094_judge.coherence_baseline_gate``).
+  verbatim via ``issue2094_judge.coherence_baseline_gate``),
+- the TF-margin POOLS builder (``--phase pools``, r1 C4): fixed judge-filtered
+  4+4 pools per value-pair key from the judged anchor waves (score > 50 kept,
+  plan §4.4 / §11), written to ``<work_root>/pools.json`` for staging to the
+  pod's margin phase.
 
 Gate 4 mechanical routing (the r1 review gate): every judge call goes through
 ``eval.graded_judge.judge_graded`` -> ``eval.batch_judge`` ->
@@ -547,14 +551,17 @@ def phase_pilot(cfg: J94.JudgeConfig) -> int:
 # ── phases ────────────────────────────────────────────────────────────
 
 
-def _require_gates(cfg: J94.JudgeConfig) -> None:
-    """Behavior-wave spend requires the pilot + coherence + separation gates
-    present AND PASS (plan §7 gates 3/4/5)."""
-    for name in (
-        "pilot_gate_report.json",
-        "coherence_baseline_gate.json",
-        "separation_gate_report.json",
-    ):
+_ALL_GATE_REPORTS = (
+    "pilot_gate_report.json",
+    "coherence_baseline_gate.json",
+    "separation_gate_report.json",
+)
+
+
+def _require_gates(cfg: J94.JudgeConfig, names: tuple[str, ...] = _ALL_GATE_REPORTS) -> None:
+    """Behavior-wave spend requires the named gate reports present AND PASS
+    (plan §7 gates 3/4/5; default = all three)."""
+    for name in names:
         path = cfg.gates_dir / name
         if not path.is_file():
             raise RuntimeError(f"gate report missing: {path} — run the gate phase first")
@@ -564,7 +571,14 @@ def _require_gates(cfg: J94.JudgeConfig) -> None:
 
 
 def phase_anchors(cfg: J94.JudgeConfig) -> int:
-    """Coherence-baseline gate over anchors, then the anchor behavior waves."""
+    """Coherence-baseline gate over anchors, then the anchor behavior waves.
+
+    Entry gate (r1 M5): the anchor behavior waves are an order-10^4-call
+    production spend, so the pilot (gate 5) + separation (gate 3) reports must
+    be present-and-passed BEFORE launch. Gate 4 (coherence baseline) is exempt
+    — this phase PRODUCES it."""
+    if not cfg.dry_run:
+        _require_gates(cfg, names=("pilot_gate_report.json", "separation_gate_report.json"))
     pairs = BANK.build_pairs()
     anchor_rows = load_anchor_rows(cfg.anchors_file)
     audits = J94.run_audits("anchors", anchor_rows, cfg.audits_dir)
@@ -663,6 +677,137 @@ def phase_audits(cfg: J94.JudgeConfig) -> int:
     return RC_OK
 
 
+# ── TF-margin pools builder (plan §4.4 / llm-judging rule 19; r1 C4) ──
+
+# Plan §11: "Margin pool 4+4 per type, filter threshold >50" — fixed
+# judge-filtered pools, persona-vectors keep-threshold (score > 50).
+POOL_PER_SIDE = 4
+POOL_FILTER_MIN = 50.0
+
+
+def pool_key(pair: BANK.Pair2162) -> str:
+    """MUST equal ``issue2162_run.pool_key`` byte-for-byte — the margin
+    consumer's join key (pinned by tests/test_issue2162_judge.py)."""
+    return f"{pair.cell}|{pair.value_a}-{pair.value_b}"
+
+
+def _anchor_behavior_scores(cfg: J94.JudgeConfig) -> dict[tuple[str, int, str], float]:
+    """(context_id, draw, rubric_id) -> kept mean score, from the persisted
+    anchor behavior wave score rows (coherence rows carry no ``rubric`` key
+    and are skipped; rule-9 dropped items carry ``score: null`` and are
+    skipped — never coerced)."""
+    files = sorted(cfg.scores_dir.glob("*.anchors.scores.jsonl"))
+    assert files, (
+        f"no anchor score files under {cfg.scores_dir} — run --phase anchors first "
+        "(the pools are a pure re-reduction of the judged anchor waves)"
+    )
+    scores: dict[tuple[str, int, str], float] = {}
+    for f in files:
+        for row in J94._iter_jsonl(f):
+            rid = row.get("rubric")
+            if rid is None or row.get("score") is None:
+                continue
+            scores[(row["context_id"], int(row["draw"]), rid)] = float(row["score"])
+    assert scores, "anchor score files present but zero scored behavior rows"
+    return scores
+
+
+def build_margin_pools(
+    pairs: list[BANK.Pair2162],
+    anchor_rows: list[dict],
+    scores: dict[tuple[str, int, str], float],
+) -> tuple[dict[str, list[dict]], dict]:
+    """Fixed judge-filtered pools per value-pair key (plan §4.4): side A from
+    the pairs' FLOOR contexts (A-descriptor score > 50), side B from the
+    CEILING contexts (B-descriptor score > 50), top ``POOL_PER_SIDE`` per side
+    by descending score (ties broken by (context_id, draw) — deterministic).
+
+    A key whose EITHER side yields zero kept items is OMITTED (the margin
+    consumer records explicit skip rows for it); a 1..3-item side is kept and
+    flagged ``short`` in the report — below-floor yield is REPORTED, never
+    silently backfilled."""
+    text_by = {(r["context_id"], int(r["draw"])): r["text"] for r in anchor_rows}
+    ctxs_by_key: dict[str, dict] = {}
+    for p in pairs:
+        cores = pair_rubric_cores(p)
+        if cores is None:
+            continue  # filler_swap: no rubric, no pool (explicit skip downstream)
+        rid_a, rid_b = (rubric_core_id(c) for c in cores)
+        rec = ctxs_by_key.setdefault(
+            pool_key(p), {"rid_a": rid_a, "rid_b": rid_b, "a": set(), "b": set()}
+        )
+        assert rec["rid_a"] == rid_a and rec["rid_b"] == rid_b, (
+            pool_key(p),
+            "pairs sharing a pool key disagree on rubric cores",
+        )
+        rec["a"].add(p.a)
+        rec["b"].add(p.b)
+
+    pools: dict[str, list[dict]] = {}
+    report_keys: dict[str, dict] = {}
+    for key, rec in sorted(ctxs_by_key.items()):
+        sides: dict[str, list[dict]] = {}
+        for side, ctxs, rid in (("A", rec["a"], rec["rid_a"]), ("B", rec["b"], rec["rid_b"])):
+            cands = []
+            for (ctx, draw), text in text_by.items():
+                if ctx not in ctxs:
+                    continue
+                score = scores.get((ctx, draw, rid))
+                if score is None or score <= POOL_FILTER_MIN:
+                    continue
+                cands.append(
+                    {"side": side, "text": text, "context_id": ctx, "draw": draw, "score": score}
+                )
+            cands.sort(key=lambda c: (-c["score"], c["context_id"], c["draw"]))
+            sides[side] = cands[:POOL_PER_SIDE]
+        n_a, n_b = len(sides["A"]), len(sides["B"])
+        report_keys[key] = {
+            "n_kept_a": n_a,
+            "n_kept_b": n_b,
+            "short": 0 < min(n_a, n_b) and (n_a < POOL_PER_SIDE or n_b < POOL_PER_SIDE),
+            "omitted": min(n_a, n_b) == 0,
+        }
+        if min(n_a, n_b) == 0:
+            continue
+        pools[key] = sides["A"] + sides["B"]
+    report = {
+        "criterion": "TF-margin fixed pools (plan §4.4; 4+4 per key, score > 50 kept)",
+        "pool_per_side": POOL_PER_SIDE,
+        "filter_min": POOL_FILTER_MIN,
+        "n_keys_total": len(ctxs_by_key),
+        "n_keys_built": len(pools),
+        "n_keys_omitted": sum(1 for r in report_keys.values() if r["omitted"]),
+        "n_keys_short": sum(1 for r in report_keys.values() if r["short"]),
+        "per_key": report_keys,
+        "repro": J94._repro(),
+    }
+    return pools, report
+
+
+def phase_pools(cfg: J94.JudgeConfig) -> int:
+    """Build + persist the TF-margin pools file (zero API calls — a pure
+    re-reduction of the judged anchor waves). The orchestrator stages the
+    written ``pools.json`` to the pod for ``issue2162_run.py --phase margin``
+    (the dispatcher's margin leg HALTs rc=24 without it; r1 C4)."""
+    pairs = BANK.build_pairs()
+    anchor_rows = load_anchor_rows(cfg.anchors_file)
+    scores = _anchor_behavior_scores(cfg)
+    pools, report = build_margin_pools(pairs, anchor_rows, scores)
+    assert pools, "zero pools built — the anchor waves' judge-filter kept nothing at > 50"
+    out = cfg.work_root / "pools.json"
+    J94._write_json_atomic(out, {"pools": pools, "meta": report})
+    J94._write_json_atomic(cfg.gates_dir / "pools_report.json", report)
+    logger.info(
+        "[pools] %d/%d keys built (%d omitted, %d short) -> %s",
+        report["n_keys_built"],
+        report["n_keys_total"],
+        report["n_keys_omitted"],
+        report["n_keys_short"],
+        out,
+    )
+    return RC_OK
+
+
 def phase_upload_raw(cfg: J94.JudgeConfig) -> int:
     """One folder commit of the judge work root -> the 2162 judge_raw prefix."""
     from explore_persona_space.orchestrate import hub
@@ -686,6 +831,7 @@ PHASES = {
     "anchors": phase_anchors,
     "waves": phase_waves,
     "stage2": phase_stage2,
+    "pools": phase_pools,
     "audits": phase_audits,
     "upload-raw": phase_upload_raw,
 }
