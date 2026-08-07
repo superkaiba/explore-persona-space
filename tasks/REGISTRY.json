@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2177,
+  "highest_id": 2178,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9096,6 +9096,13 @@
       "path": "tasks/proposed/2177",
       "status": "proposed",
       "title": "verify_plan.py: WARN when a \u00a79 compute row's own basis arithmetic contradicts its booked GPU-h or its pilot-abort threshold"
+    },
+    "2178": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2178",
+      "status": "proposed",
+      "title": "verify_plan.py: validate a plan's stated smoke-fixture size against realized fixtures, and flag a smoke claim whose producing script is absent from the modified-file list"
     },
     "218": {
       "has_clean_result": false,
