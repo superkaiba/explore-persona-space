@@ -1,0 +1,26 @@
+{
+  "selection_rule": "Holm-IUT pass AND disjoint 95% CIs vs BOTH nulls; cap 12 by descending steered F_beh (plan §6 exclusion 5; stage-2 labeled post-selection)",
+  "cells": [
+    {
+      "cell": "load_instr_format_l5",
+      "slot": "ce"
+    },
+    {
+      "cell": "load_instr_format_l3",
+      "slot": "ce"
+    },
+    {
+      "cell": "conflict_format_fwd",
+      "slot": "ce"
+    },
+    {
+      "cell": "instr_format",
+      "slot": "ce"
+    },
+    {
+      "cell": "conflict_format_rev",
+      "slot": "ce"
+    }
+  ],
+  "n_survivors": 5
+}
