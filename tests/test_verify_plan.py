@@ -186,10 +186,11 @@ def test_good_plan_passes_all():
         "c46_dispatch_cmd_cli_parse": "SKIP",
         "c47_wall_cell_parseable": "SKIP",
         "c48_basis_booked_arithmetic": "SKIP",
+        "c49_authorized_stub_block": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 47
+    assert len(results) == 48
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6252,16 +6253,20 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   conditional, #2161)
     # + c47 (SKIP: GOOD_PLAN carries no planned_wall_h table; trigger-
     #   conditional, #2172).
-    assert payload["n_skip"] == 41
+    assert payload["n_skip"] == 42
     #   conditional, #2161)
     # + c47 (SKIP: GOOD_PLAN carries no basis-column compute table; trigger-
     #   conditional, #2177).
-    assert payload["n_skip"] == 41
+    assert payload["n_skip"] == 42
+    #   conditional, #2172)
+    # + c49 (SKIP: GOOD_PLAN declares no '### Authorized smoke stubs' block;
+    #   trigger-conditional, #2171).
+    assert payload["n_skip"] == 42
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 49
-    assert len({c["id"] for c in payload["checks"]}) == 49
+    assert len(payload["checks"]) == 50
+    assert len({c["id"] for c in payload["checks"]}) == 50
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -10474,3 +10479,58 @@ def test_c26_c32_unchanged_by_parser_extraction():
 
 def test_c48_registered_in_checks():
     assert verify_plan.check_basis_booked_arithmetic in verify_plan.CHECKS
+
+
+# ─── Check 48 — authorized-smoke-stubs block well-formed (#2171) ────────────
+
+C49 = "c49_authorized_stub_block"
+
+# The verbatim #2163 plan-v5 block (the motivating incident's REAL artifact;
+# byte-verbatim fixture shared with tests/test_task_workflow.py).
+_C47_V5_BLOCK = (
+    Path(__file__).resolve().parent / "fixtures" / "issue2163_plan_v5_authorized_stub_block.md"
+).read_text(encoding="utf-8")
+
+
+def test_c49_registered_in_checks():
+    assert verify_plan.check_authorized_stub_block in verify_plan.CHECKS
+
+
+def test_c49_skips_when_block_absent():
+    # GOOD_PLAN carries no '### Authorized smoke stubs' heading — trigger-
+    # conditional SKIP (a plan merely NAMING PASS_AUTHORIZED_STUB in prose
+    # does not trigger; the runtime checker owns that shape).
+    _, by_id = _run(GOOD_PLAN)
+    assert by_id[C49].status == "SKIP"
+
+
+def test_c49_passes_on_2163_v5_block():
+    # Calibrated on the offender (#633 lesson): the motivating incident's
+    # REAL plan block must PASS, arms named in the detail.
+    _, by_id = _run(GOOD_PLAN + "\n" + _C47_V5_BLOCK)
+    r = by_id[C49]
+    assert r.status == "PASS"
+    assert "upload-verify" in r.detail
+    assert "confirm-b-gpu" in r.detail
+
+
+def test_c49_fails_on_empty_control_cell():
+    plan = GOOD_PLAN + (
+        "\n### Authorized smoke stubs\n\n"
+        "| Stubbed arm | Why it cannot run at smoke | Compensating control |\n"
+        "|---|---|---|\n"
+        "| `upload-verify` | must not write HF from smoke | |\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C49]
+    assert r.status == "FAIL"
+    assert "compensating control" in r.detail
+    assert "Step 6d.0" in r.detail  # the post-provision cost the FAIL pre-empts
+
+
+def test_c49_fails_on_heading_without_table():
+    plan = GOOD_PLAN + "\n### Authorized smoke stubs\n\nprose only, no table.\n"
+    _, by_id = _run(plan)
+    r = by_id[C49]
+    assert r.status == "FAIL"
+    assert "no markdown table" in r.detail

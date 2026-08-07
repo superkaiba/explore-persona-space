@@ -135,13 +135,15 @@ Check catalog (id — classification — kind scope)
       parse (poller tripwire)
   c48 §9 basis-vs-booked        WARN-only, conditional    experiment +
       arithmetic                                          analysis
+  c49 authorized-smoke-stubs    FAIL, conditional         all kinds
+      block well-formed
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47) also SKIP when their content
-trigger does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49) also SKIP when their
+content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -8925,6 +8927,95 @@ def check_basis_booked_arithmetic(plan: str, kind: str) -> CheckResult:
     )
 
 
+#: Trigger for c49 — keep in sync with
+#: ``task_workflow._AUTH_STUB_HEADING_RE`` (trigger-only mirror; the PARSER
+#: is shared via the lazy import below, so trigger drift is the only
+#: possible divergence and c49 FAILs loud on it).
+_C49_HEADING_RE = re.compile(r"^###\s+Authorized smoke stubs\b", re.IGNORECASE | re.MULTILINE)
+
+
+def _c49_parser():
+    """Lazy import of the SHARED authorized-stub block parser (#2171).
+
+    The parser lives in ``explore_persona_space.task_workflow`` and is the
+    SAME code the Step 6d.0 runtime grant (``task.py check-authorized-stub``)
+    executes — zero plan-time/runtime drift by construction. Paid ONLY when
+    the c49 heading trigger fires. ImportError → the caller SKIPs loud naming
+    the cause (the c41 off-repo doctrine: ``--plan-file`` off-repo must never
+    crash).
+    """
+    try:
+        from explore_persona_space.task_workflow import (
+            AuthorizedStubBlockError,
+            parse_authorized_stub_block,
+        )
+    except ImportError as exc:  # off-repo --plan-file run
+        return None, None, str(exc)
+    return parse_authorized_stub_block, AuthorizedStubBlockError, ""
+
+
+def check_authorized_stub_block(plan: str, kind: str) -> CheckResult:
+    """FAIL, conditional, all kinds: a PRESENT '### Authorized smoke stubs'
+    block must parse — one markdown-table data row per arm with a backticked
+    arm token in column 1 and non-empty impossibility-reason + compensating-
+    control cells, exactly one heading occurrence (#2171; the #2163 unwired-
+    escape incident).
+
+    Trigger: any line matching ``_C49_HEADING_RE``. Absent → SKIP. Present →
+    lazy-import ``parse_authorized_stub_block`` from
+    ``explore_persona_space.task_workflow`` (the c34 lazy-import idiom;
+    ImportError → loud SKIP naming the cause). Well-formed → PASS naming the
+    arms; ``AuthorizedStubBlockError`` → FAIL with the parser's message +
+    remedy. FAIL (not the WARN doctrine) is deliberate: the trigger is an
+    exact heading, the parser is the SAME code the runtime grant uses (zero
+    heuristic gap), and a malformed block otherwise refuses mechanically at
+    Step 6d.0 AFTER pod provisioning — plan-time is strictly cheaper.
+
+    Disclosed under-trigger: a plan naming ``PASS_AUTHORIZED_STUB`` with NO
+    block heading does not trigger c49 (quoting-a-sibling residual class, per
+    the c41 incident-citation precedent); the runtime checker refuses that
+    shape at Step 6d.0.
+    """
+    del kind  # all kinds: an authorized-stub block parses identically everywhere
+    cid, name = "c49_authorized_stub_block", "authorized-smoke-stubs block well-formed"
+    if not _C49_HEADING_RE.search(plan):
+        return _skip(cid, name, "no authorized-smoke-stubs block declared")
+    parse_fn, err_cls, load_detail = _c49_parser()
+    if parse_fn is None:
+        return _skip(
+            cid,
+            name,
+            f"task_workflow parser unavailable ({load_detail}) — off-repo --plan-file run",
+        )
+    try:
+        block = parse_fn(plan)
+    except err_cls as exc:
+        return _fail(
+            cid,
+            name,
+            f"malformed '### Authorized smoke stubs' block: {exc} — fix the block "
+            "(one table row per arm: backticked arm | non-empty impossibility reason | "
+            "non-empty compensating control) BEFORE approval; a malformed block "
+            "otherwise refuses mechanically at Step 6d.0 AFTER pod provisioning "
+            "(task.py check-authorized-stub, #2171)",
+        )
+    if block is None:
+        return _fail(
+            cid,
+            name,
+            "trigger/parser drift: _C49_HEADING_RE matched but the shared parser "
+            "found no block heading — re-align _C49_HEADING_RE with "
+            "task_workflow._AUTH_STUB_HEADING_RE",
+        )
+    arms = ", ".join(f"`{a}`" for a in sorted(block))
+    return _pass(
+        cid,
+        name,
+        f"block parses: {len(block)} authorized arm(s) ({arms}), impossibility "
+        "reason + compensating control non-empty per row",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -8974,6 +9065,7 @@ CHECKS = [
     check_dispatch_cmd_cli_parse,
     check_wall_cell_parseable,
     check_basis_booked_arithmetic,
+    check_authorized_stub_block,
 ]
 
 

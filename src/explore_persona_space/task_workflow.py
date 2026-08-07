@@ -2194,6 +2194,398 @@ def _ensemble_event_matches(
     return True
 
 
+# --- Authorized-stub grant (#2171; Step 6d.0 `PASS_AUTHORIZED_STUB`) -------
+
+#: The fifth smoke-architecture verdict token — granted ONLY by
+#: :func:`check_authorized_stub` (rc=0 at the `task.py check-authorized-stub`
+#: CLI), never by orchestrator judgment (#397/#2163).
+AUTHORIZED_STUB_VERDICT = "PASS_AUTHORIZED_STUB"
+SMOKE_ARCH_MARKER_KIND = "epm:smoke-architecture-check"
+PLAN_APPROVED_KIND = "epm:plan-approved"
+
+#: Keep in sync with ``verify_plan._C49_HEADING_RE`` (the plan-time trigger;
+#: the PARSER below is shared via lazy import so only this regex is mirrored).
+_AUTH_STUB_HEADING_RE = re.compile(r"^###\s+Authorized smoke stubs\b", re.IGNORECASE)
+_ARM_TOKEN_RE = re.compile(r"`([^`]+)`")
+_PER_ARM_ROW_RE = re.compile(r"^\s*-?\s*([^:`*]+?|`[^`]+`)\s*:\s*(REAL|FALLBACK|N/A)\b")
+_MARKER_TOP_KEY_RE = re.compile(
+    r"^(verdict|notes|import-resolution|per-arm-resolution|resume-matrix|"
+    r"production-outroot-unit):"
+)
+_ARMS_STUBBED_RE = re.compile(r"arms_stubbed=(?:\[([^\]]*)\]|(\S+))")
+_TABLE_SEPARATOR_CELL_RE = re.compile(r"^:?-+:?$")
+
+
+class AuthorizedStubBlockError(ValueError):
+    """A PRESENT '### Authorized smoke stubs' plan block is malformed.
+
+    Raised by :func:`parse_authorized_stub_block`; converted to a REFUSE by
+    :func:`authorized_stub_grant` (runtime never crashes on a malformed plan
+    block — plan-time loudness is ``verify_plan.py`` c49's job).
+    """
+
+
+def parse_authorized_stub_block(plan_text: str) -> dict[str, tuple[str, str]] | None:
+    """``{arm: (reason, control)}`` from the plan's '### Authorized smoke stubs' block.
+
+    None when the heading is absent. Raises :class:`AuthorizedStubBlockError`
+    when the heading is present but the block is malformed: >1 heading
+    occurrence (ambiguous), no markdown table with >=1 data row before the
+    next '#'-level heading, a data row with <3 cells, a first cell with no
+    backticked arm token, an empty reason or control cell, or a duplicate arm
+    name. Arm name = the FIRST backticked token in column 1 (tolerates
+    trailing parentheticals: '`upload-verify` (Phase 7)' -> 'upload-verify' —
+    the verbatim #2163 plan-v5 shape). Header + separator rows are skipped by
+    shape (separator cells match ``^:?-+:?$``; rows before the separator are
+    the header), not by position. Deliberate simplifications (#2171 plan §4):
+    the heading is matched anywhere in the plan text, not §4-position-enforced;
+    a literal escaped ``\\|`` inside a cell mis-splits and fails loud on cell
+    count (no silent misparse).
+    """
+    lines = plan_text.splitlines()
+    heading_idxs = [i for i, ln in enumerate(lines) if _AUTH_STUB_HEADING_RE.match(ln)]
+    if not heading_idxs:
+        return None
+    if len(heading_idxs) > 1:
+        raise AuthorizedStubBlockError(
+            f"{len(heading_idxs)} '### Authorized smoke stubs' headings found (lines "
+            + ", ".join(str(i + 1) for i in heading_idxs)
+            + ") — ambiguous; keep exactly one block"
+        )
+    start = heading_idxs[0] + 1
+    end = len(lines)
+    for j in range(start, len(lines)):
+        if lines[j].startswith("#"):
+            end = j
+            break
+    table_rows = [ln for ln in lines[start:end] if ln.lstrip().startswith("|")]
+    sep_idx: int | None = None
+    for k, row in enumerate(table_rows):
+        cells = [c.strip() for c in row.strip().strip("|").split("|")]
+        if cells and all(_TABLE_SEPARATOR_CELL_RE.fullmatch(c) for c in cells):
+            sep_idx = k
+            break
+    data_rows = table_rows[sep_idx + 1 :] if sep_idx is not None else table_rows
+    if not data_rows:
+        raise AuthorizedStubBlockError(
+            "'### Authorized smoke stubs' heading present but no markdown table "
+            "with >=1 data row before the next '#'-level heading"
+        )
+    out: dict[str, tuple[str, str]] = {}
+    for row in data_rows:
+        cells = [c.strip() for c in row.strip().strip("|").split("|")]
+        if len(cells) < 3:
+            raise AuthorizedStubBlockError(
+                f"authorized-stub table row has {len(cells)} cell(s), need >=3 "
+                f"(backticked arm | impossibility reason | compensating control): "
+                f"{row.strip()!r}"
+            )
+        arm_match = _ARM_TOKEN_RE.search(cells[0])
+        if not arm_match:
+            raise AuthorizedStubBlockError(
+                f"authorized-stub table row's first cell carries no backticked arm "
+                f"token: {cells[0]!r}"
+            )
+        arm = arm_match.group(1).strip()
+        reason, control = cells[1], cells[2]
+        if not reason or not control:
+            missing = "impossibility reason" if not reason else "compensating control"
+            raise AuthorizedStubBlockError(
+                f"authorized-stub row for `{arm}` has an empty {missing} cell — every "
+                "authorized arm needs a stated impossibility reason AND a named "
+                "compensating control"
+            )
+        if arm in out:
+            raise AuthorizedStubBlockError(f"duplicate arm `{arm}` in the authorized-stub table")
+        out[arm] = (reason, control)
+    return out
+
+
+@dataclass(frozen=True)
+class SmokeArchMarker:
+    """Structured read of an ``epm:smoke-architecture-check`` note."""
+
+    verdict: str | None
+    arms_stubbed: tuple[str, ...]
+    per_arm: dict[str, str]  # arm -> REAL | FALLBACK | N/A
+    has_import_resolution: bool
+
+
+def parse_smoke_arch_marker(note: str) -> SmokeArchMarker:
+    """Parse ONLY the machine-shaped lines of a smoke-architecture-check note.
+
+    - ``verdict``: first whitespace token after the FIRST line-anchored
+      ``verdict:``;
+    - ``arms_stubbed``: from ``arms_stubbed=`` on the verdict line — BOTH
+      forms accepted: bare ``a,b`` and bracketed ``[a, b]`` (the #2163 v3
+      form); split on commas, whitespace/backticks stripped; empty -> ();
+    - ``per_arm``: rows matching ``_PER_ARM_ROW_RE`` between the line-anchored
+      ``per-arm-resolution:`` key and the next ``_MARKER_TOP_KEY_RE`` line (or
+      end of note); arm names normalized (backticks/asterisks/whitespace
+      stripped); non-matching lines in the span are prose continuations and
+      are ignored;
+    - ``has_import_resolution``: a line-anchored ``import-resolution:`` exists.
+
+    DELIBERATE consequence (pinned by
+    ``test_authorized_stub_refuse_verbatim_2163_v3_freeprose``): a note whose
+    per-arm rows are introduced by FREE PROSE instead of the line-anchored
+    key — #2163's real orchestrator-posted v3 marker uses 'Per-arm resolution
+    (unchanged from v2 except the token and the arms_stubbed list):' — parses
+    ``per_arm == {}``. Rows are collected ONLY inside the keyed span; there is
+    NO whole-note fallback (a whole-note collector would widen the match
+    surface with nothing policing it, and that very v3 note carries
+    per-arm-shaped lines in its prose body). The downstream refusal reason
+    names the exact expected key, so a free-prose re-post self-corrects in one
+    bounce.
+    """
+    lines = note.splitlines()
+    verdict: str | None = None
+    arms_stubbed: tuple[str, ...] = ()
+    for ln in lines:
+        if ln.startswith("verdict:"):
+            rest = ln[len("verdict:") :].split()
+            verdict = rest[0] if rest else None
+            arms_match = _ARMS_STUBBED_RE.search(ln)
+            if arms_match:
+                raw = (
+                    arms_match.group(1) if arms_match.group(1) is not None else arms_match.group(2)
+                )
+                arms_stubbed = tuple(
+                    a.strip().strip("`") for a in raw.split(",") if a.strip().strip("`")
+                )
+            break
+    per_arm: dict[str, str] = {}
+    in_span = False
+    for ln in lines:
+        key_match = _MARKER_TOP_KEY_RE.match(ln)
+        if key_match:
+            in_span = key_match.group(1) == "per-arm-resolution"
+            continue
+        if not in_span:
+            continue
+        row = _PER_ARM_ROW_RE.match(ln)
+        if row:
+            arm = row.group(1).strip().strip("`*").strip()
+            per_arm[arm] = row.group(2)
+    has_import = any(ln.startswith("import-resolution:") for ln in lines)
+    return SmokeArchMarker(verdict, arms_stubbed, per_arm, has_import)
+
+
+@dataclass(frozen=True)
+class AuthorizedStubDecision:
+    """One grant/refuse verdict from the authorized-stub checker."""
+
+    grant: bool
+    reason: str  # one machine-legible line
+    arms_stubbed: tuple[str, ...]
+    authorized: tuple[str, ...]
+
+
+_NO_PER_ARM_SUBBLOCK_REASON = (
+    "no `per-arm-resolution:` sub-block found — re-post carrying the latest "
+    "implementer marker's `per-arm-resolution:` sub-block + `import-resolution:` "
+    "line verbatim, changing only the `verdict:` line"
+)
+
+
+def authorized_stub_grant(marker_note: str, plan_text: str) -> AuthorizedStubDecision:
+    """The pure marker-vs-plan grant predicate (clauses 1-4; #2171).
+
+    Grant iff ALL of:
+
+    1. verdict == ``PASS_AUTHORIZED_STUB`` and ``arms_stubbed`` is non-empty;
+    2. an ``import-resolution:`` line is present (PASS_PARTIAL preconditions
+       are inherited — the new token is never a weaker path);
+    3. per-arm rows exist and ``set(arms_stubbed)`` == the FALLBACK-rowed arms
+       (set-EQUALITY, scoped to ``per-arm-resolution:`` rows only —
+       PASS_PARTIAL parity; ``resume-matrix:`` / ``production-outroot-unit:``
+       FALLBACKs never count);
+    4. :func:`parse_authorized_stub_block` is well-formed and non-None, and
+       ``set(arms_stubbed) <= set(authorized arms)`` (subset, NOT equality —
+       an unused plan authorization is harmless).
+
+    Every refusal returns ``grant=False`` with a reason naming the exact
+    failure (offending arms listed); :class:`AuthorizedStubBlockError` is
+    caught and converted to a refusal (runtime never crashes on a malformed
+    plan block — ``verify_plan.py`` c49 owns plan-time loudness). Clause 5
+    (approval provenance) lives in :func:`check_authorized_stub`, which needs
+    task context.
+    """
+    marker = parse_smoke_arch_marker(marker_note)
+    arms = marker.arms_stubbed
+
+    def _refuse(reason: str, authorized: tuple[str, ...] = ()) -> AuthorizedStubDecision:
+        return AuthorizedStubDecision(False, reason, arms, authorized)
+
+    if marker.verdict != AUTHORIZED_STUB_VERDICT:
+        return _refuse(
+            f"verdict is {marker.verdict!r}, not {AUTHORIZED_STUB_VERDICT!r} — only "
+            "that token consults this checker (PASS_PARTIAL keeps refusing at Step 6d.0)"
+        )
+    if not arms:
+        return _refuse(
+            "arms_stubbed is empty — PASS_AUTHORIZED_STUB requires >=1 named stubbed "
+            "arm (a stub-free round posts PASS_UNIFIED)"
+        )
+    if not marker.has_import_resolution:
+        return _refuse(
+            "no line-anchored `import-resolution:` line in the marker — the "
+            "PASS_PARTIAL preconditions (Axis 1) are inherited, never weakened"
+        )
+    if not marker.per_arm:
+        return _refuse(_NO_PER_ARM_SUBBLOCK_REASON)
+    fallback_arms = {arm for arm, res in marker.per_arm.items() if res == "FALLBACK"}
+    if set(arms) != fallback_arms:
+        parts: list[str] = []
+        extra_fallback = sorted(fallback_arms - set(arms))
+        not_fallback = sorted(set(arms) - fallback_arms)
+        if extra_fallback:
+            parts.append(
+                "FALLBACK-rowed arm(s) missing from arms_stubbed: " + ", ".join(extra_fallback)
+            )
+        if not_fallback:
+            parts.append(
+                "arms_stubbed name(s) with no FALLBACK per-arm row: " + ", ".join(not_fallback)
+            )
+        return _refuse(
+            "arms_stubbed must set-equal the FALLBACK-rowed arms (scoped to the "
+            "`per-arm-resolution:` sub-block's rows only) — " + "; ".join(parts)
+        )
+    try:
+        block = parse_authorized_stub_block(plan_text)
+    except AuthorizedStubBlockError as exc:
+        return _refuse(
+            f"malformed '### Authorized smoke stubs' plan block: {exc} (fix the block "
+            "and land it through the plan-approval gate; plan-time gate: verify_plan.py c49)"
+        )
+    if block is None:
+        return _refuse(
+            "the current plan has no '### Authorized smoke stubs' block — land the "
+            "authorization through the plan-revision + approval gate, then re-post"
+        )
+    uncovered = sorted(set(arms) - set(block))
+    if uncovered:
+        return _refuse(
+            "arms_stubbed not covered by the plan's '### Authorized smoke stubs' "
+            "block: " + ", ".join(uncovered),
+            tuple(sorted(block)),
+        )
+    return AuthorizedStubDecision(
+        True,
+        "clauses 1-4 hold: arms_stubbed set-equals the FALLBACK rows and every arm is "
+        "plan-authorized (" + ", ".join(arms) + ")",
+        arms,
+        tuple(sorted(block)),
+    )
+
+
+def _plan_persist_time(task_id: int, plan_version_path: Path) -> datetime:
+    """Persist time of a ``plans/v{K}.md``, for the clause-5 comparison.
+
+    Resolution order (both legs pinned by tests):
+
+    1. The canonical persist commit's committer time: enumerate
+       ``git log --format='%cI%x09%s' --fixed-strings --grep='task #<N>: plan v<K>'``
+       at the repo root and keep rows whose SUBJECT equals that exact message
+       (:func:`new_plan_version` is the single canonical writer and commits
+       with exactly this message; exact-subject equality guards the
+       v5-vs-v55 substring case), newest first.
+    2. Fallback when no commit matches (a deferred-commit sweep landed the
+       file under another message, or a non-git test fixture): the resolved
+       ``v{K}.md`` file's mtime (``git mv`` preserves mtime, and the checker
+       runs on the canonical repo-root tree).
+
+    REJECTED mechanisms, with measured #2163 evidence (task #2171 plan §11
+    D-9): the naive ``git log -1 -- <path>`` reads the latest STATUS-MOVE
+    commit (measured: the approved->running mv, postdating the approval —
+    a FALSE REFUSE of the honest motivating chain), and
+    ``git log --follow --diff-filter=A`` mis-resolves via rename detection
+    (measured: returns the 'plan v1' commit).
+    """
+    version_match = re.fullmatch(r"v(\d+)\.md", plan_version_path.name)
+    if version_match:
+        subject = f"task #{task_id}: plan v{version_match.group(1)}"
+        proc = subprocess.run(
+            ["git", "log", "--format=%cI%x09%s", "--fixed-strings", f"--grep={subject}"],
+            cwd=repo_root(),
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode == 0:
+            for line in proc.stdout.splitlines():
+                ts_raw, _, subj = line.partition("\t")
+                if subj == subject:
+                    return datetime.fromisoformat(ts_raw)
+    return datetime.fromtimestamp(plan_version_path.stat().st_mtime, tz=UTC)
+
+
+def check_authorized_stub(task_id: int) -> AuthorizedStubDecision:
+    """The full Step 6d.0 authorized-stub grant: clauses 1-4 PLUS clause 5.
+
+    Clauses 1-4: :func:`authorized_stub_grant` over the latest
+    ``epm:smoke-architecture-check`` note + the resolved ``plans/plan.md``
+    text. Clause 5 — approval provenance: the latest ``epm:plan-approved``
+    must exist AND its ``ts`` >= :func:`_plan_persist_time` of the resolved
+    plan version (timezone-aware comparison; marker ts is UTC 'Z', git %cI
+    carries an offset). Clause 5 is what closes the quiet self-grant route:
+    :func:`new_plan_version` is a bare write+symlink+commit with NO approval
+    coupling, so plan TEXT alone is forgeable by one command; requiring an
+    approval that postdates the persist forces the block through the recorded
+    plan-gate path. (Honest limitation, #2171 plan §4: in ``--auto`` sessions
+    that gate is the code-enforced autonomous plan-gate — clause 5 buys
+    durable code-enforced provenance logging, not human review.)
+
+    Also owns the no-marker / no-plan refusals (rc=1 at the CLI), so the
+    whole decision surface is unit-testable in-process. Read-only.
+    """
+    marker = latest_event(task_id, prefix=SMOKE_ARCH_MARKER_KIND)
+    if marker is None:
+        return AuthorizedStubDecision(
+            False,
+            f"no {SMOKE_ARCH_MARKER_KIND} marker on task #{task_id} — the implementer "
+            "posts it at pre-flight (experiment-implementer.md item 5)",
+            (),
+            (),
+        )
+    plan_link = find_task_path(task_id) / "plans" / "plan.md"
+    if not plan_link.exists():
+        return AuthorizedStubDecision(
+            False,
+            f"no plans/plan.md for task #{task_id} — no plan version to authorize against",
+            (),
+            (),
+        )
+    plan_path = plan_link.resolve()
+    decision = authorized_stub_grant(
+        marker.get("note", "") or "", plan_path.read_text(encoding="utf-8")
+    )
+    if not decision.grant:
+        return decision
+    approval = latest_event(task_id, prefix=PLAN_APPROVED_KIND)
+    if approval is None:
+        return AuthorizedStubDecision(
+            False,
+            f"no {PLAN_APPROVED_KIND} marker on task #{task_id} — the block-bearing "
+            "plan version must traverse the plan-approval gate (set-status "
+            "plan_pending) before the grant",
+            decision.arms_stubbed,
+            decision.authorized,
+        )
+    approved_at = datetime.fromisoformat(approval["ts"])
+    persisted_at = _plan_persist_time(task_id, plan_path)
+    if approved_at < persisted_at:
+        return AuthorizedStubDecision(
+            False,
+            f"plans/{plan_path.name} persisted {persisted_at.isoformat()} postdates "
+            f"the latest {PLAN_APPROVED_KIND} {approved_at.isoformat()} — land the "
+            "block through the plan-revision + approval gate (set-status "
+            "plan_pending), then re-post",
+            decision.arms_stubbed,
+            decision.authorized,
+        )
+    return decision
+
+
 # --- Verdict-disagree observer predicate (#1170; origin incident #825) ---
 
 # The four MARKER-MODE doubled review sites (workflow.yaml § ensemble_review

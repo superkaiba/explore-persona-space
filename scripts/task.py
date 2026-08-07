@@ -17,6 +17,7 @@ Subcommands (see `task.py --help`):
     list-children <N> [--json]                         # tasks with parent_id == N
     list-markers <N> [--prefix epm:] [--json]
     latest-marker <N>                                  # alias: latest-event
+    check-authorized-stub <N>                # Step 6d.0 PASS_AUTHORIZED_STUB grant (rc=0 = GRANT)
     set-body <N> --body "..." | --file path           # snapshots old → original-body.md
     set-title <N> "..."
     set-goal <N> "..." [--by user|clarifier|planner] [--reason ...]
@@ -65,6 +66,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     add_tag,
     address_concern,
     audit,
+    check_authorized_stub,
     create_task,
     defer_concern,
     duplicate_task_dirs,
@@ -814,6 +816,25 @@ def cmd_latest_marker(args: argparse.Namespace) -> None:
     _safe_print(json.dumps(ev, indent=2), context="task.py latest-marker")
 
 
+def cmd_check_authorized_stub(args: argparse.Namespace) -> None:
+    """Step 6d.0 mechanical grant for `PASS_AUTHORIZED_STUB` (#2171).
+
+    rc=0 (prints `GRANT arms_stubbed=<list>`) is the ONLY grant path the
+    Step 6d.0 routing table consumes; rc=1 prints `REFUSE — <reason>`.
+    Read-only: no lock, no commit, no status mutation (the clause-5 git
+    probe is a read-only `git log`).
+    """
+    decision = check_authorized_stub(args.number)
+    if decision.grant:
+        _safe_print(
+            f"GRANT arms_stubbed={','.join(decision.arms_stubbed)}",
+            context="task.py check-authorized-stub",
+        )
+        sys.exit(0)
+    _safe_print(f"REFUSE — {decision.reason}", context="task.py check-authorized-stub")
+    sys.exit(1)
+
+
 _SET_BODY_MIN_CHARS = 500
 _SET_BODY_STUB_TOKENS = {"placeholder", "tbd", "todo", "stub"}
 
@@ -1552,6 +1573,17 @@ def main() -> None:
         p.add_argument("number", type=int)
         p.add_argument("--prefix", default=None, help="restrict to events with this prefix")
         p.set_defaults(func=cmd_latest_marker)
+
+    p = sub.add_parser(
+        "check-authorized-stub",
+        help=(
+            "Step 6d.0 mechanical grant check for a PASS_AUTHORIZED_STUB "
+            "smoke-architecture marker (rc=0 prints GRANT and is the ONLY grant "
+            "path; rc=1 prints REFUSE — <reason>). Read-only (#2171)."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.set_defaults(func=cmd_check_authorized_stub)
 
     p = sub.add_parser(
         "set-body",

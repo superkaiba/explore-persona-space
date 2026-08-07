@@ -21,6 +21,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -5955,3 +5956,307 @@ def test_task_status_dir_pathspecs_unchanged_after_refactor(fake_repo):
     assert specs == sorted([f"tasks/proposed/{tid}", f"tasks/planning/{tid}"])
     # The extracted tracked-side probe returns ONLY the index-tracked dir.
     assert tw._tracked_status_dirs(tid, repo) == {f"tasks/proposed/{tid}"}
+
+
+# ─── Authorized-stub grant (#2171; Step 6d.0 PASS_AUTHORIZED_STUB) ──────────
+#
+# Ground-truth fixtures are BYTE-VERBATIM copies of the #2163 incident
+# artifacts (tests/fixtures/): the plan-v5 '### Authorized smoke stubs'
+# block and the orchestrator-posted epm:smoke-architecture-check v3 note
+# (whose per-arm rows sit under a FREE-PROSE intro, not the line-anchored
+# `per-arm-resolution:` key — the designed REFUSE shape).
+
+_AUTH_STUB_FIXTURES = Path(__file__).resolve().parent / "fixtures"
+_V5_BLOCK = (_AUTH_STUB_FIXTURES / "issue2163_plan_v5_authorized_stub_block.md").read_text(
+    encoding="utf-8"
+)
+_V3_NOTE = (_AUTH_STUB_FIXTURES / "issue2163_smoke_arch_v3_note.txt").read_text(encoding="utf-8")
+
+
+def _v3_real_per_arm_rows() -> list[str]:
+    """The 10 REAL per-arm rows out of the verbatim v3 note (8 REAL + 2 FALLBACK)."""
+    lines = _V3_NOTE.splitlines()
+    i = next(k for k, ln in enumerate(lines) if ln.startswith("Per-arm resolution ("))
+    rows: list[str] = []
+    for ln in lines[i + 1 :]:
+        if ln.startswith("- "):
+            rows.append(ln)
+        elif rows:
+            break
+    assert len(rows) == 10, rows
+    return rows
+
+
+def _conforming_repost_note() -> str:
+    """The schema-CONFORMING re-post the D5(ii)/D6(i) bounce text instructs:
+    v3's real per-arm ROWS under an actual line-anchored `per-arm-resolution:`
+    key, plus the `import-resolution:` line, verdict re-tokened."""
+    return (
+        "verdict: PASS_AUTHORIZED_STUB arms_stubbed=[upload-verify,confirm-b-gpu]\n"
+        "import-resolution: rc=0 (`--import-check`).\n"
+        "per-arm-resolution:\n" + "\n".join(_v3_real_per_arm_rows()) + "\n"
+    )
+
+
+def test_authorized_stub_grant_happy_path_2163_shape():
+    """#2163 shape: verbatim plan-v5 block + a schema-conforming re-post → GRANT
+    on clauses 1-4 (the §12 #1287 predicate-trace pin)."""
+    tw = _tw()
+    d = tw.authorized_stub_grant(_conforming_repost_note(), _V5_BLOCK)
+    assert d.grant, d.reason
+    assert set(d.arms_stubbed) == {"upload-verify", "confirm-b-gpu"}
+    assert d.authorized == ("confirm-b-gpu", "upload-verify")
+
+
+def test_authorized_stub_refuse_arm_not_in_plan_block():
+    """An arms_stubbed arm absent from the plan block REFUSES naming it
+    (acceptance criterion 2)."""
+    tw = _tw()
+    note = (
+        _conforming_repost_note().replace(
+            "arms_stubbed=[upload-verify,confirm-b-gpu]",
+            "arms_stubbed=[upload-verify,confirm-b-gpu,extra-arm]",
+        )
+        + "- extra-arm: FALLBACK — stub not in the plan block\n"
+    )
+    d = tw.authorized_stub_grant(note, _V5_BLOCK)
+    assert not d.grant
+    assert "extra-arm" in d.reason
+    assert "not covered by the plan" in d.reason
+
+
+def test_authorized_stub_refuse_unauthorized_fallback_row():
+    """A FALLBACK row NOT in arms_stubbed → set-equality REFUSE (criterion 3)."""
+    tw = _tw()
+    note = _conforming_repost_note().replace(
+        "- partials: REAL (32 s)", "- partials: FALLBACK — stub this round"
+    )
+    d = tw.authorized_stub_grant(note, _V5_BLOCK)
+    assert not d.grant
+    assert "partials" in d.reason
+    assert "set-equal" in d.reason
+
+
+def test_authorized_stub_refuse_wrong_verdict():
+    """The verbatim #2163 v3 note AS-IS (`PASS_PARTIAL`) → REFUSE (only the
+    new token consults the checker; the honest refusal keeps refusing)."""
+    tw = _tw()
+    d = tw.authorized_stub_grant(_V3_NOTE, _V5_BLOCK)
+    assert not d.grant
+    assert "PASS_PARTIAL" in d.reason
+    assert "PASS_AUTHORIZED_STUB" in d.reason
+
+
+def test_authorized_stub_refuse_missing_block():
+    tw = _tw()
+    d = tw.authorized_stub_grant(_conforming_repost_note(), "# Plan\n\n### 4. Design\n\nno block\n")
+    assert not d.grant
+    assert "Authorized smoke stubs" in d.reason
+
+
+def test_authorized_stub_refuse_malformed_block():
+    """An empty control cell REFUSES (converted AuthorizedStubBlockError — no crash)."""
+    tw = _tw()
+    plan = (
+        "### Authorized smoke stubs\n\n"
+        "| Stubbed arm | Why it cannot run at smoke | Compensating control |\n"
+        "|---|---|---|\n"
+        "| `upload-verify` | must not write HF | |\n"
+    )
+    d = tw.authorized_stub_grant(_conforming_repost_note(), plan)
+    assert not d.grant
+    assert "malformed" in d.reason
+    assert "compensating control" in d.reason
+
+
+def test_authorized_stub_refuse_missing_import_resolution():
+    tw = _tw()
+    note = _conforming_repost_note().replace("import-resolution: rc=0 (`--import-check`).\n", "")
+    d = tw.authorized_stub_grant(note, _V5_BLOCK)
+    assert not d.grant
+    assert "import-resolution" in d.reason
+
+
+def test_parse_authorized_stub_block_verbatim_2163_v5():
+    """The verbatim plan-v5 block parses: first-backtick arm extraction
+    tolerates the '(Phase 7)' / '(Phase 6 venue-switch cell)' parentheticals."""
+    tw = _tw()
+    block = tw.parse_authorized_stub_block(_V5_BLOCK)
+    assert set(block) == {"upload-verify", "confirm-b-gpu"}
+    for arm, (reason, control) in block.items():
+        assert reason.strip(), arm
+        assert control.strip(), arm
+
+
+def test_parse_arms_stubbed_bracketed_and_bare_forms():
+    tw = _tw()
+    bare = tw.parse_smoke_arch_marker("verdict: PASS_AUTHORIZED_STUB arms_stubbed=a,b\n")
+    bracketed = tw.parse_smoke_arch_marker("verdict: PASS_AUTHORIZED_STUB arms_stubbed=[a, b]\n")
+    assert bare.arms_stubbed == ("a", "b")
+    assert bracketed.arms_stubbed == ("a", "b")
+    assert bare.verdict == bracketed.verdict == "PASS_AUTHORIZED_STUB"
+
+
+def test_authorized_stub_refuse_verbatim_2163_v3_freeprose():
+    """The VERBATIM v3 body re-tokened PASS_AUTHORIZED_STUB, its free-prose
+    'Per-arm resolution (…):' intro intact: pins the artifact fact
+    ``per_arm == {}`` AND that the refusal names the missing line-anchored
+    `per-arm-resolution:` key — any future parser loosening to whole-note row
+    collection breaks this test (round-1 MF-A)."""
+    tw = _tw()
+    retok = _V3_NOTE.replace("verdict: PASS_PARTIAL", "verdict: PASS_AUTHORIZED_STUB")
+    parsed = tw.parse_smoke_arch_marker(retok)
+    assert parsed.verdict == "PASS_AUTHORIZED_STUB"
+    assert parsed.per_arm == {}
+    d = tw.authorized_stub_grant(retok, _V5_BLOCK)
+    assert not d.grant
+    assert "`per-arm-resolution:`" in d.reason
+    assert "verbatim" in d.reason  # the one-bounce re-post instruction
+
+
+def test_parse_smoke_arch_marker_rows_outside_keyed_span_ignored():
+    """Per-arm-shaped FALLBACK rows under `resume-matrix:` (or any other
+    sub-block) never enter per_arm — an otherwise-conforming note still
+    GRANTs (round-1 MF-A(vi) keyed-span scoping pin)."""
+    tw = _tw()
+    note = _conforming_repost_note() + (
+        "resume-matrix:\n"
+        "- census-sentinel: FALLBACK — not exercised this round\n"
+        "production-outroot-unit:\n"
+        "- out-root: FALLBACK — pod-side only\n"
+    )
+    parsed = tw.parse_smoke_arch_marker(note)
+    assert "census-sentinel" not in parsed.per_arm
+    assert "out-root" not in parsed.per_arm
+    d = tw.authorized_stub_grant(note, _V5_BLOCK)
+    assert d.grant, d.reason
+
+
+@pytest.mark.parametrize(
+    ("case", "note_mut", "plan_mut", "reason_substr"),
+    [
+        (
+            "empty-arms",
+            lambda n: n.replace(" arms_stubbed=[upload-verify,confirm-b-gpu]", ""),
+            lambda p: p,
+            "arms_stubbed is empty",
+        ),
+        (
+            "duplicate-plan-arm",
+            lambda n: n,
+            lambda p: p + "| `upload-verify` | duplicate row | second control |\n",
+            "duplicate arm",
+        ),
+        (
+            "duplicate-heading",
+            lambda n: n,
+            lambda p: p + "\n### Authorized smoke stubs\n\nsecond block\n",
+            "ambiguous",
+        ),
+    ],
+)
+def test_authorized_stub_refuse_parametrized_edges(case, note_mut, plan_mut, reason_substr):
+    tw = _tw()
+    d = tw.authorized_stub_grant(note_mut(_conforming_repost_note()), plan_mut(_V5_BLOCK))
+    assert not d.grant, case
+    assert reason_substr in d.reason, (case, d.reason)
+
+
+def _make_authorized_stub_task(repo, tw, *, plan_text: str | None = None) -> int:
+    """A fake-repo task carrying plans/v1.md (+ plan.md symlink) with the
+    verbatim v5 block and the conforming marker note."""
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="authorized-stub fixture"))
+    plans = repo / "tasks" / "proposed" / str(tid) / "plans"
+    plans.mkdir(parents=True, exist_ok=True)
+    v1 = plans / "v1.md"
+    v1.write_text(plan_text if plan_text is not None else f"# Plan\n\n{_V5_BLOCK}")
+    (plans / "plan.md").symlink_to(v1.name)
+    return tid
+
+
+def test_authorized_stub_clause5_approval_ordering(fake_repo):
+    """Clause 5 (round-1 MF-C pin), both arms on the #2163-shaped ordering:
+    block-bearing plan persisted BEFORE the latest epm:plan-approved → GRANT;
+    the resolved plan file's persist time moved AFTER the approval (the
+    2-command self-grant shape: bare new-plan-version + re-post) → REFUSE
+    naming both timestamps. The no-git-commit fixture exercises
+    `_plan_persist_time`'s mtime fallback leg."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(repo, tw)
+    v1 = repo / "tasks" / "proposed" / str(tid) / "plans" / "v1.md"
+    past = time.time() - 3600
+    os.utime(v1, (past, past))  # persisted BEFORE the approval below
+    tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert d.grant, d.reason
+
+    # Self-grant shape: the resolved plan version now postdates the approval.
+    future = time.time() + 3600
+    os.utime(v1, (future, future))
+    d2 = tw.check_authorized_stub(tid)
+    assert not d2.grant
+    assert "postdates" in d2.reason
+    assert "epm:plan-approved" in d2.reason
+    assert "plan_pending" in d2.reason  # the remedy: land it through the plan gate
+
+
+def test_authorized_stub_clause5_refuses_without_any_approval(fake_repo):
+    """No epm:plan-approved event at all → REFUSE naming the missing marker
+    (round-1 MF-C pin)."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(repo, tw)
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert not d.grant
+    assert "epm:plan-approved" in d.reason
+
+
+def test_check_authorized_stub_cli_end_to_end(fake_repo, capsys):
+    """Round-1 MF-B: execute the ACTUAL `task.py check-authorized-stub`
+    handler (the rc contract Step 6d.0 consumes) — an unconditional
+    `sys.exit(0)` stub or wrong plan-symlink resolution would leave all
+    pure-function tests green while the only layer the gate reads leaks
+    grants."""
+    repo, tw = fake_repo
+    task_cli = _import_task_cli()
+
+    # (c) no marker present → rc=1.
+    tid_bare = _make_authorized_stub_task(repo, tw)
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_check_authorized_stub(argparse.Namespace(number=tid_bare))
+    assert exc.value.code == 1
+    assert capsys.readouterr().out.startswith("REFUSE — ")
+
+    # (a) unauthorized-arm marker → rc=1 + a `REFUSE — ` line.
+    tid_refuse = _make_authorized_stub_task(repo, tw)
+    bad_note = (
+        _conforming_repost_note().replace(
+            "arms_stubbed=[upload-verify,confirm-b-gpu]",
+            "arms_stubbed=[upload-verify,confirm-b-gpu,extra-arm]",
+        )
+        + "- extra-arm: FALLBACK — stub not in the plan block\n"
+    )
+    tw.post_event(tid_refuse, "epm:plan-approved", by="autonomous-gate")
+    tw.post_event(tid_refuse, "epm:smoke-architecture-check", note=bad_note)
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_check_authorized_stub(argparse.Namespace(number=tid_refuse))
+    assert exc.value.code == 1
+    out = capsys.readouterr().out
+    assert out.startswith("REFUSE — ")
+    assert "extra-arm" in out
+
+    # (b) conforming happy path (clause-5 satisfied by backdating the plan
+    # file's mtime under a LATER approval — the mtime fallback leg) → rc=0.
+    tid_grant = _make_authorized_stub_task(repo, tw)
+    v1 = repo / "tasks" / "proposed" / str(tid_grant) / "plans" / "v1.md"
+    past = time.time() - 3600
+    os.utime(v1, (past, past))
+    tw.post_event(tid_grant, "epm:plan-approved", by="autonomous-gate")
+    tw.post_event(tid_grant, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_check_authorized_stub(argparse.Namespace(number=tid_grant))
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    assert out.startswith("GRANT arms_stubbed=")
+    assert "upload-verify" in out and "confirm-b-gpu" in out
