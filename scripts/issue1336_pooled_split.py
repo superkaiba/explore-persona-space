@@ -5,7 +5,7 @@ Prepares the pooled_split_v3 assignment table consumed by Phase FIT_pool /
 LAD_pool. Steps (fail-loud in order):
 
   1. Measure the 5-way (base, sft, dpo, rlvr, rlvr_long) x 7-corpus
-     `raw_completions/generation{,_v2}/<slug>/<corpus>/answers.jsonl`
+     `raw_completions/generation/<slug>/<corpus>/answers.jsonl`
      prompt_id (conv_id) intersection FIRST — plan §4 "5-way intersection
      sizing" + CONCERN M1: measure BEFORE dedup/embed/split so the count
      is grounded on the pinned generation shards, never on a downstream
@@ -23,8 +23,8 @@ LAD_pool. Steps (fail-loud in order):
      side into 5 folds preserving cluster structure.
   5. Persist the assignment to
      ``analysis_tensors/pooled_split_v3/split_manifest.json`` with fields:
-     ``pinned_revisions`` (mpnet + generation_v2 per corpus + wave-1 for
-     lmsys/gsm8k_train), ``n_kept_pre_dedup``, ``n_kept_post_dedup``,
+     ``pinned_revisions`` (mpnet + generation revision per model x corpus:
+     wave-1 pin for lmsys/gsm8k_train stems, resolved main for v2 shards), ``n_kept_pre_dedup``, ``n_kept_post_dedup``,
      ``per_corpus_kept`` (before AND after dedup), ``n_clusters``,
      ``cluster_to_corpora_counts`` (per-cluster corpus histogram),
      ``train_test_by_cluster``, ``pooled_folds_by_cluster``, plus the
@@ -120,8 +120,11 @@ DATA_ROOT = _REPO_ROOT / "data" / "issue_1336"
 POOLED_OUT_SUBDIR = "pooled_split_v3"
 POOLED_OUT_SUBDIR_SMOKE = "pooled_split_v3_smoke"
 
-# HF prefixes for the answers.jsonl shards. Wave-1 generations live under
-# `generation/`, round-3 v2 under `generation_v2/`.
+# HF prefixes for the answers.jsonl shards. ALL generation shards — wave-1
+# AND round-3 v2 — live under `raw_completions/generation/<model>/<stem>/`
+# (round-4 live probe: `raw_completions/` has exactly one child, `generation`;
+# a `generation_v2/` prefix 404s). Wave-1 vs v2 is a REVISION split, not a
+# prefix split: wave-1 stems pin WAVE1_HF_REV, v2 shards resolve main.
 _WAVE1_CORPORA: frozenset[str] = frozenset({"lmsys5k", "gsm8k_train5k", "gsm8k_test1319"})
 
 
@@ -151,13 +154,15 @@ def _hub_helpers():
 
 
 def _round3_per_corpus_keep_rate(corpora: tuple[str, ...]) -> dict[str, float]:
-    """Best-effort round-3 per-corpus keep-rate lookup.
+    """Round-3 per-corpus keep-rate reference for the keep-rate floor.
 
     Reads ``eval_results/issue_1336/corpora_v2_stage_meta.json`` when present
-    (round-3 stage-corpora recorded per-corpus keep rates there). Missing keys
-    default to 1.0 (no floor to enforce), so the assertion becomes trivially
-    satisfied — the WARN in that case documents the fallback so a reviewer
-    can inspect.
+    (round-3 stage-corpora recorded per-corpus keep rates there). A MISSING
+    file falls back to a 1.0 reference for every corpus — the STRICTEST floor
+    (current keep-rate must be >= 0.99 x 1.0), never a relaxation — with a
+    WARN documenting the fallback. A PRESENT-but-unparseable meta raises
+    (fail-loud): a corrupt reference must never silently rewrite the floor.
+    Slugs absent from a parsed meta default to the same strictest 1.0.
     """
     meta_path = _REPO_ROOT / "eval_results" / "issue_1336" / "corpora_v2_stage_meta.json"
     fallback = {slug: 1.0 for slug in corpora}
@@ -167,11 +172,10 @@ def _round3_per_corpus_keep_rate(corpora: tuple[str, ...]) -> dict[str, float]:
             meta_path,
         )
         return fallback
-    try:
-        meta = json.loads(meta_path.read_text())
-    except Exception as exc:  # noqa: BLE001 - fail-open with WARN
-        logger.warning("[pool] failed to parse %s (%s); using 1.0 floor", meta_path, exc)
-        return fallback
+    # Present-but-corrupt fails loud (json.loads raises) — the crash IS the
+    # signal; a swallowed parse error would silently substitute the fallback
+    # reference for the recorded round-3 rates.
+    meta = json.loads(meta_path.read_text())
     out: dict[str, float] = {}
     for slug in corpora:
         rate = None
@@ -198,11 +202,16 @@ def _resolve_mpnet_revision(api) -> str:
 
 
 def _resolve_generation_prefix(slug: str) -> tuple[str, str]:
-    """Return (prefix, stem) for a corpus_v2 slug.
+    """Return (subprefix, stem) for a corpus_v2 slug — subprefix is ALWAYS
+    ``generation``.
 
-    Wave-1 lmsys/gsm8k paths use `generation/<model>/<wave1-stem>/answers.jsonl`
-    where the stem differs from the v2 slug. Non-wave-1 corpora live under
-    `generation_v2/<model>/<slug>/answers.jsonl`.
+    Round-4 live probe: `raw_completions/` on the data repo has exactly ONE
+    child, `generation` (`generation_v2/` 404s); the writer
+    (issue1336_gen_answers.py:326) uploads every v2 cell to
+    `raw_completions/generation/{slug}/{cell}`. Wave-1 lmsys/gsm8k paths use
+    the wave-1 stem (differs from the v2 slug) at the WAVE1_HF_REV pin; v2
+    corpora use the slug itself at the resolved main revision (the caller
+    keys the revision on ``stem in _WAVE1_CORPORA``).
     """
     if slug == "lmsys23k":
         # Wave-1 generations covered prompt_idx 0..4999 under `lmsys5k`.
@@ -211,47 +220,7 @@ def _resolve_generation_prefix(slug: str) -> tuple[str, str]:
         return ("generation", "gsm8k_train5k")
     if slug == "gsm8k_test1319":
         return ("generation", "gsm8k_test1319")
-    return ("generation_v2", slug)
-
-
-def _resolve_generation_revision(api, model: str, slug: str) -> tuple[str, str]:
-    """Return (revision_sha, stem) for the model x corpus generation prefix.
-
-    Wave-1 shards are pinned at ``WAVE1_HF_REV`` (plan §10). Round-3 v2 shards
-    default to ``main`` — we resolve the current data-repo main sha once per
-    invocation and reuse it for every v2 corpus. Fail-loud when the resulting
-    prefix does not exist on the pin.
-    """
-    from explore_persona_space.orchestrate import hub
-
-    subprefix, stem = _resolve_generation_prefix(slug)
-    revision = cm.WAVE1_HF_REV if subprefix == "generation" else "main"
-
-    prefix = f"{cm.HF_PREFIX_1336}/raw_completions/{subprefix}/{model}/{stem}"
-
-    def _resolve():
-        entries = list(
-            # HUB_VERIFY_RETRY_EXEMPT: _resolve is retried by hub.retry_transient below
-            api.list_repo_tree(
-                cm.HF_DATA_REPO,
-                path_in_repo=prefix,
-                repo_type="dataset",
-                revision=revision,
-                recursive=True,
-            )
-        )
-        return entries
-
-    entries = hub.retry_transient(
-        _resolve,
-        what=f"pooled_split list_repo_tree {prefix}@{revision}",
-    )
-    files = [e.path for e in entries if hasattr(e, "size")]
-    assert files, (
-        f"no generation shards under {prefix} on {cm.HF_DATA_REPO}@{revision} "
-        f"(model={model}, corpus={slug})"
-    )
-    return revision, stem
+    return ("generation", slug)
 
 
 def _download_answers_jsonl(
@@ -279,11 +248,16 @@ def _download_answers_jsonl(
 
     dest_dir.mkdir(parents=True, exist_ok=True)
     for rel in sorted(files):
-        # Filter for answers.jsonl proper and its shard manifest+parts.
+        # Only stage answers.jsonl + its shard manifest + shard parts. The
+        # gen-phase shard contract is `answers.shard{NN}.jsonl` (per
+        # `scripts/issue1336_gen_answers.py::_split_answers_for_upload`),
+        # NOT `answers.jsonl.part*`. Accept both spellings so any future
+        # shard-naming change stays reasonably tolerant.
         base = Path(rel).name
         if not (
             base == "answers.jsonl"
             or base == "answers.manifest.json"
+            or base.startswith("answers.shard")
             or base.startswith("answers.jsonl.part")
         ):
             continue
@@ -449,13 +423,16 @@ def measure_5way_intersection(ctx: SplitContext) -> tuple[dict[str, Any], dict[s
         model_sets = {}
         for model in INTERSECTION_MODELS:
             subprefix, stem = _resolve_generation_prefix(corpus)
-            revision = cm.WAVE1_HF_REV if subprefix == "generation" else v2_main_sha
+            # Wave-1 vs v2 is a REVISION split (same `generation/` prefix):
+            # wave-1 stems pin WAVE1_HF_REV, v2 shards read the resolved main.
+            revision = cm.WAVE1_HF_REV if stem in _WAVE1_CORPORA else v2_main_sha
             if corpus in cm.V2_CONCAT_SOURCES:
                 # Two halves: wave-1 stem below the boundary (+ pin), v2
-                # extension at/above it (read_offpolicy_rows convention).
+                # extension at/above it (read_offpolicy_rows convention) —
+                # the extension lives under `generation/<model>/<corpus>`.
                 boundary = cm.V2_CONCAT_BOUNDARY[corpus]
                 w1_ids = _half_ids(model, subprefix, stem, revision, max_idx=boundary)
-                ext_ids = _half_ids(model, "generation_v2", corpus, v2_main_sha, min_idx=boundary)
+                ext_ids = _half_ids(model, "generation", corpus, v2_main_sha, min_idx=boundary)
                 ids = w1_ids | ext_ids
                 ctx.pinned_generation_revisions[f"{model}::{corpus}::ext"] = v2_main_sha
                 ctx.generation_stems[f"{model}::{corpus}::ext"] = corpus
@@ -598,7 +575,6 @@ def kmeans_assign(vectors: list[list[float]], k: int, seed: int) -> list[int]:
 
 def cluster_train_test_split(
     labels: list[int],
-    corpora_list: list[str],
     seed: int,
     test_ratio: float,
     test_tol: float,
@@ -607,6 +583,9 @@ def cluster_train_test_split(
 
     Also partition the train-side clusters across POOLED_N_FOLDS folds (per
     plan §4). Returns (train_test_by_cluster, pooled_folds_by_cluster).
+    Fail-loud when the greedy whole-cluster packing cannot land the realized
+    test share inside [test_ratio - test_tol, test_ratio + test_tol] (the
+    plan's 80/20 +/- 2% contract) — never a silent overshoot.
     """
     cluster_ids = sorted(set(labels))
     n = len(labels)
@@ -632,6 +611,11 @@ def cluster_train_test_split(
             # Check upper bound.
             if test_size <= upper:
                 break
+    assert lower <= test_size <= upper, (
+        f"cluster train/test split misses the {test_ratio:.2f} +/- {test_tol:.2f} window: "
+        f"test_size={test_size} of n={n} (window [{lower:.1f}, {upper:.1f}]) — whole-cluster "
+        "packing cannot realize the planned share on this cluster-size profile"
+    )
     train_test = {cid: ("test" if cid in test_clusters else "train") for cid in cluster_ids}
 
     # Fold partition over TRAIN clusters (round-robin over shuffled list).
@@ -684,6 +668,9 @@ def build_manifest(
         "dedup_order": list(DEDUP_ORDER),
         "pinned_revisions": {
             "mpnet": ctx.pinned_mpnet_revision,
+            # ALL generation shards live under this ONE subprefix (round-4
+            # live probe: generation_v2/ does not exist on the Hub).
+            "generation_subprefix": "generation",
             "generation_by_model_corpus": ctx.pinned_generation_revisions,
             "generation_stems_by_model_corpus": ctx.generation_stems,
             "wave1_hf_rev": cm.WAVE1_HF_REV,
@@ -898,9 +885,8 @@ def run(args) -> int:
 
     # (4) K-means + train/test split.
     labels = kmeans_assign(vecs, POOLED_K, POOLED_SPLIT_SEED)
-    corpora_list = [r["corpus"] for r in ordered_rows]
     train_test, folds = cluster_train_test_split(
-        labels, corpora_list, POOLED_SPLIT_SEED, POOLED_TEST_RATIO, POOLED_TEST_TOL
+        labels, POOLED_SPLIT_SEED, POOLED_TEST_RATIO, POOLED_TEST_TOL
     )
 
     # Row-level index for downstream consumers.

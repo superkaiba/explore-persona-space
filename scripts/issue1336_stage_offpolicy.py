@@ -10,21 +10,31 @@ staging transformation (plan §4 "reuses the round-3 verbatim-mirror
 layout"). ONE consumer (the off-policy capture rig) opens the staged
 tree; the map from HF prefix to local relative path is identity.
 
-Sources:
+Sources — ALL under the ONE Hub subprefix ``raw_completions/generation/``
+(round-4 live probe: `raw_completions/` has exactly one child, `generation`;
+a `generation_v2/` prefix 404s — wave-1 vs v2 is a REVISION split, not a
+prefix split; the writer `issue1336_gen_answers.py` uploads every v2 cell to
+`raw_completions/generation/{slug}/{cell}`):
   - wave-1 generation shards @ ``cm.WAVE1_HF_REV = 8c54f9fc`` for the
-    three wave-1 corpora (lmsys5k -> slug_j==base/sft/dpo/rlvr/rlvr_long
+    three wave-1 stems (lmsys5k -> slug_j==base/sft/dpo/rlvr/rlvr_long
     at layout `gen/<slug_j>/lmsys5k/answers.jsonl`; gsm8k_train5k;
     gsm8k_test1319) — the reused-verbatim wave-1 pins from cm.
   - round-3 v2 generation shards @ the round-3-final data-repo revision
-    (resolved at invocation via HfApi().repo_info) for the extended
-    corpora (lmsys23k, gsm8k_train_full, math7500, if11k, uf11k, sft11k).
+    (resolved at invocation via HfApi().repo_info) for the v2 corpora
+    (math7500, if11k, uf11k, sft11k) AND the concat EXTENSION halves
+    (`generation/<slug_j>/lmsys23k`, `generation/<slug_j>/gsm8k_train_full`).
     The pin used for staging is recorded in the output manifest so the
     consumer sees exactly which shards were staged.
 
-For extended corpora the on-disk root is `data/issue_1336/gen_v2/<slug_j>/<slug>/`.
-For wave-1 corpora the on-disk root is `data/issue_1336/gen/<slug_j>/<stem>/`
-where ``stem`` matches the wave-1 generation naming (lmsys5k / gsm8k_train5k /
-gsm8k_test1319).
+Concat corpora (``cm.V2_CONCAT_SOURCES``: lmsys23k, gsm8k_train_full) stage
+BOTH halves — the consumer ``read_offpolicy_rows``
+(issue1336_extract_turnstore.py) hard-asserts wave-1 stem AND extension:
+  - wave-1 stem -> `data/issue_1336/gen/<slug_j>/<stem>/answers.jsonl`;
+  - v2 extension -> `data/issue_1336/gen_v2/<slug_j>/<corpus>/answers.jsonl`.
+Pure-v2 corpora stage under `data/issue_1336/gen_v2/<slug_j>/<slug>/` only;
+wave-1-only corpora (gsm8k_test1319) under `data/issue_1336/gen/<slug_j>/<stem>/`
+only. The LOCAL layout is unchanged from round 3 (verbatim mirror) — only
+the Hub-side source prefix differs from the pre-round-4 code.
 
 Manifest-aware staging: the answers.jsonl file MAY have been sharded on
 upload (the ">9.5MB shard contract" enforced by
@@ -102,28 +112,36 @@ def _resolve_v2_revision(api) -> str:
     return str(sha)
 
 
-def _prefix_and_layout(model_j: str, corpus: str) -> tuple[str, str, Path]:
-    """Return (hf_prefix, revision, local_dest_dir) for a text-source (j, corpus).
+def _prefix_and_layout(model_j: str, corpus: str) -> tuple[tuple[str, str, Path], ...]:
+    """Return the staging LEGS for a text-source (j, corpus): a tuple of
+    (hf_prefix, revision, local_dest_dir) triples.
 
-    Wave-1 corpora live under `raw_completions/generation/<model_j>/<stem>/`
-    at `WAVE1_HF_REV`; v2 corpora under `raw_completions/generation_v2/<model_j>/<corpus>/`
-    at the resolved main revision.
+    ALL generation shards live under `raw_completions/generation/<model_j>/<stem>/`
+    (round-4 live probe: `raw_completions/` has exactly one child,
+    `generation` — `generation_v2/` 404s; the writer
+    `issue1336_gen_answers.py` uploads v2 cells to
+    `raw_completions/generation/{slug}/{cell}`). Wave-1 stems pin
+    `WAVE1_HF_REV`; v2 shards carry the "main" placeholder, resolved once
+    per StageContext.
+
+    Concat corpora (``cm.V2_CONCAT_SOURCES``) return TWO legs — the consumer
+    ``read_offpolicy_rows`` hard-asserts BOTH halves (wave-1 stem below the
+    boundary + v2 extension at/above it). The LOCAL destination layout is the
+    unchanged round-3 verbatim mirror: wave-1 stems under `gen/<j>/<stem>`,
+    v2 corpora/extensions under `gen_v2/<j>/<corpus>`.
     """
-    if corpus == "lmsys23k":
-        subprefix, stem, root = "generation", "lmsys5k", GEN_ROOT
-        revision = cm.WAVE1_HF_REV
-    elif corpus == "gsm8k_train_full":
-        subprefix, stem, root = "generation", "gsm8k_train5k", GEN_ROOT
-        revision = cm.WAVE1_HF_REV
-    elif corpus == "gsm8k_test1319":
-        subprefix, stem, root = "generation", "gsm8k_test1319", GEN_ROOT
-        revision = cm.WAVE1_HF_REV
-    else:
-        subprefix, stem, root = "generation_v2", corpus, GEN_V2_ROOT
-        revision = "main"  # placeholder — resolved once per StageContext
-    prefix = f"{cm.HF_PREFIX_1336}/raw_completions/{subprefix}/{model_j}/{stem}"
-    dest = root / model_j / stem
-    return prefix, revision, dest
+    prefix_root = f"{cm.HF_PREFIX_1336}/raw_completions/generation/{model_j}"
+    if corpus in cm.V2_CONCAT_SOURCES:
+        stem = cm.V2_CONCAT_SOURCES[corpus]
+        return (
+            (f"{prefix_root}/{stem}", cm.WAVE1_HF_REV, GEN_ROOT / model_j / stem),
+            # "main" placeholder — resolved once per StageContext.
+            (f"{prefix_root}/{corpus}", "main", GEN_V2_ROOT / model_j / corpus),
+        )
+    if corpus in cm.V2_FULLY_REUSED_GEN:
+        return ((f"{prefix_root}/{corpus}", cm.WAVE1_HF_REV, GEN_ROOT / model_j / corpus),)
+    # Pure-v2 corpora: "main" placeholder — resolved once per StageContext.
+    return ((f"{prefix_root}/{corpus}", "main", GEN_V2_ROOT / model_j / corpus),)
 
 
 def _stage_answers_files(
@@ -243,20 +261,40 @@ def _build_cells(
 
 def _run_stage(ctx: StageContext) -> int:
     api, dl, hub = _hub_helpers()
-    if any(_prefix_and_layout(m_j, c)[1] == "main" for _m_i, m_j, c in ctx.cells):
-        # At least one v2 corpus is in the set — resolve the main sha once.
+    if any(
+        revision == "main"
+        for _m_i, m_j, c in ctx.cells
+        for _prefix, revision, _dest in _prefix_and_layout(m_j, c)
+    ):
+        # At least one v2 shard/extension is in the set — resolve main once.
         ctx.v2_main_revision = _resolve_v2_revision(api)
         logger.info("[offpol] resolved v2 data-repo revision: %s", ctx.v2_main_revision)
 
     staged_paths_seen: set[str] = set()
     for i, j, corpus in ctx.cells:
-        prefix, revision, dest = _prefix_and_layout(j, corpus)
-        if revision == "main":
-            assert ctx.v2_main_revision, "v2_main_revision unresolved"
-            revision = ctx.v2_main_revision
-        # Idempotent per (j, corpus) — many cells share the same TEXT source.
-        key = f"{j}::{corpus}"
-        if key in staged_paths_seen:
+        # Concat corpora carry TWO legs (wave-1 stem + v2 extension) — the
+        # consumer read_offpolicy_rows hard-asserts both halves staged.
+        for prefix, revision, dest in _prefix_and_layout(j, corpus):
+            if revision == "main":
+                assert ctx.v2_main_revision, "v2_main_revision unresolved"
+                revision = ctx.v2_main_revision
+            # Idempotent per (j, corpus, leg) — many cells share the same
+            # TEXT source; the prefix identifies the leg.
+            key = f"{j}::{corpus}::{prefix}"
+            if key in staged_paths_seen:
+                row = {
+                    "activation_checkpoint_i": i,
+                    "text_source_j": j,
+                    "corpus": corpus,
+                    "prefix": prefix,
+                    "revision": revision,
+                    "dest": str(dest.relative_to(_REPO_ROOT)),
+                    "skipped_reuse": True,
+                }
+                ctx.manifest_rows.append(row)
+                continue
+            answers_path, staged_files = _stage_answers_files(api, dl, hub, prefix, revision, dest)
+            staged_paths_seen.add(key)
             row = {
                 "activation_checkpoint_i": i,
                 "text_source_j": j,
@@ -264,31 +302,19 @@ def _run_stage(ctx: StageContext) -> int:
                 "prefix": prefix,
                 "revision": revision,
                 "dest": str(dest.relative_to(_REPO_ROOT)),
-                "skipped_reuse": True,
+                "answers_path": str(answers_path.relative_to(_REPO_ROOT)),
+                "staged_files": staged_files,
             }
             ctx.manifest_rows.append(row)
-            continue
-        answers_path, staged_files = _stage_answers_files(api, dl, hub, prefix, revision, dest)
-        staged_paths_seen.add(key)
-        row = {
-            "activation_checkpoint_i": i,
-            "text_source_j": j,
-            "corpus": corpus,
-            "prefix": prefix,
-            "revision": revision,
-            "dest": str(dest.relative_to(_REPO_ROOT)),
-            "answers_path": str(answers_path.relative_to(_REPO_ROOT)),
-            "staged_files": staged_files,
-        }
-        ctx.manifest_rows.append(row)
-        logger.info(
-            "[offpol] staged (i=%s, j=%s, %s) -> %s (%d files)",
-            i,
-            j,
-            corpus,
-            dest,
-            len(staged_files),
-        )
+            logger.info(
+                "[offpol] staged (i=%s, j=%s, %s) %s -> %s (%d files)",
+                i,
+                j,
+                corpus,
+                prefix,
+                dest,
+                len(staged_files),
+            )
     return 0
 
 
@@ -320,7 +346,9 @@ def _build_context(args) -> StageContext:
     if args.smoke:
         # Smoke: ONE off-diagonal cell — the smallest possible exercise of
         # the verbatim-mirror layout leg. i=dpo/j=rlvr on the sole
-        # SMOKE_CORPORA_V2 corpus (lmsys23k -> wave-1 lmsys5k prefix).
+        # SMOKE_CORPORA_V2 corpus (lmsys23k — a CONCAT corpus, so the smoke
+        # exercises BOTH legs: wave-1 lmsys5k stem @ WAVE1_HF_REV + v2
+        # extension generation/<j>/lmsys23k @ resolved main).
         # Restricts fetches to a single (j, corpus) pair, so the smoke
         # tolerates the HF path staying reachable but adds no additional
         # cells beyond what's needed to prove the layout mirror.
