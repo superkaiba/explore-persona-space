@@ -297,7 +297,7 @@ completion provenance (on-policy-first; multi-behavior datagen: standardized
 persona-vectors-shape behavior definitions) · marker / behavior-implant stopping
 recipe (overrides parent parity) · persona-vectors extraction recipe ·
 multi-arm resolution-band designs · few-shot / ICL demonstration content ·
-smoke/sweep architectural parity · no all-or-nothing eligibility gates ·
+smoke/sweep architectural parity · smoke blind-spot enumeration (what the PASS does NOT certify) · no all-or-nothing eligibility gates ·
 equalize-down on per-unit N · baseline propensity on BOTH sides ·
 generation-and-reduce stages persist their rollout TEXT ·
 **symbol-existence grep-at-plan-time** — every `module.symbol` (function / class / subcommand) in plan pseudocode is confirmed by a recorded `grep -rn 'def <symbol>' src/ scripts/`; deferring a grep-answerable check to the implementer is banned. ·
