@@ -197,6 +197,14 @@ e.g. "What's my name again?", "When was the Zorbian treaty signed?" — plus 6 n
   `demo_format`), language ID (`instr_language`, `language_implied`), exact string match
   (`fact_user_name`, `fact_assistant_animal`, `fact_novel_queried`), token count
   (`verbosity`). Sanity companions only; the judge stays primary.
+- **Activation-level twin ($F_{act}$).** #2094's second level, run alongside $F_{beh}$ at
+  every cell: the signed projection of the patched-minus-floor answer-state shift onto the
+  ceiling-minus-floor axis, with disjoint floor halves (`fmetrics.f_act`). Judge-free and
+  essentially free to compute — those activations are already captured for the read probe —
+  and across a 21-rubric roster a judge-independent continuous cross-check matters more
+  than it did at #2094's 2 rubrics, where the two levels agreed at Spearman ρ = 0.43–0.50
+  over 929 cell families. Reported per cell beside $F_{beh}$, with the same nulls; the
+  cell-level rank agreement between the two levels is itself a reported diagnostic.
 - **Read probe.** Per type × slot-state × layer, a **linear** (logistic) probe predicting
   which value is present, with GROUP-level held-out folds by carrier query and by
   value-pair. Report AUC against chance. Crossed with $F$ this gives the read × write 2×2.
@@ -295,6 +303,35 @@ Stage 1 ≈ 29k patched rollouts; anchors ≈ 5k; Stage 2 ≈ 7k on survivors �
 rollouts**, comparable to #2094's 42k (≈4 h on 1× H100). With capture, probes, and
 analysis: **12–20 GPU-h** on 1× H100. Judge ≈ 125k Batch-API calls, pilot-gated. The read
 probe is ~0 GPU on activations already captured.
+
+### Parallelization is a standing requirement of this task (user directive, 2026-08-06)
+
+Verbatim: *"run in background with happy coder as parallelized as possible."* Wall-clock is
+the scarce resource; the grid is embarrassingly parallel along several independent axes, so
+a serial realization is a plan defect here, not merely an inefficiency. Binding
+requirements for plan §9 and for the implementation:
+
+1. **Provision WIDE, shard the grid.** The 39 type-cells × 2 slots × 3 arms are
+   independent; shard across all GPUs of a multi-GPU pod (one process per GPU with an
+   explicit `CUDA_VISIBLE_DEVICES` split, never `+gpu_id=N`, which clobbers — see
+   `.claude/rules/gotchas.md`). Size the pod to saturate; state the realized width and the
+   per-shard cell assignment in the launch marker.
+2. **Batch the inner loop.** No Python loop of batch-1 forwards. Context-state capture is
+   one right-padded forward pass per context (#2094 convention). Patched generation batches
+   across pairs and arms within a cell via `PositionEditHookStack.arm_batch_per_layer`.
+3. **Vectorize the statistics.** The pair-clustered bootstrap (B = 10,000 × ~78 confirmatory
+   cells × 2 metric levels) and the 21 × 2 × 28 probe fits are batched-tensor work, not
+   per-cell loops — `.claude/rules/vectorize-many-cell-fits.md`, and #2094's own batched
+   bootstrap implementation is the reuse target.
+4. **Overlap the judge with generation.** Batch-API waves dispatch per completed shard
+   rather than after the whole grid; the pilot gate runs first, once.
+5. **Release width before the tail.** Judge waves and the probe/bootstrap analysis are
+   CPU/API-bound — the wide GPU pod is released before those phases start, per the
+   per-phase GPU-width right-sizing rule.
+
+The plan's §9 compute-character statement must give the ops arithmetic, the named batched
+helper per stage, the realized parallel width, and a MEASURED 1-cell pilot wall at the
+production venue before any fence or wall-time claim.
 
 ## Explicitly out of scope
 
