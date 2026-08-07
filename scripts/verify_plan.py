@@ -8656,6 +8656,13 @@ def check_wall_cell_parseable(plan: str, kind: str) -> CheckResult:
 #     RETAINS `cap\b` (strictly more suppressive); the forward set OMITS
 #     bare `gate` (deliberate — including it would re-admit `pilot-gated`
 #     as a back-door escape; see the non-escapes in the check docstring).
+#   - A THIRD divergence, from plan §3.4's literal rather than the critic
+#     candidate: `_C48_ABORT_RE` carries `(?i)` (admits `Abort`/`ABORT`),
+#     which the plan's written pattern does not. Strictly widening,
+#     verified hit-set-neutral by the same corpus sweep. Recorded because
+#     this task's whole history is regex-fidelity drift — a future editor
+#     diffing the shipped regexes against plan #2177 must be able to tell
+#     a deliberate divergence from drift.
 # Condition (a) is the ONLY shield holding ~50 citation-FPs out: 56 corpus
 # rows sit >2x booked and window-clean and are suppressed by (a) alone
 # (`#411 trained 11 sources ... in 12 GPU-h`-class citations whose citation
@@ -8849,9 +8856,10 @@ def check_basis_booked_arithmetic(plan: str, kind: str) -> CheckResult:
     and FABRICATED reconciliation vocabulary passes — a mechanical check
     cannot verify intent (a PASS here is never "arithmetic verified").
 
-    Two disclosed window divergences from the round-2 measured candidate,
-    both re-measured hit-set-neutral (plan #2177 §13): the backward set
-    RETAINS ``cap\\b``; the forward set OMITS bare ``gate``."""
+    Three disclosed divergences, all re-measured hit-set-neutral (plan
+    #2177 §13). From the round-2 measured candidate: the backward window
+    RETAINS ``cap\\b``; the forward window OMITS bare ``gate``. From plan
+    §3.4's written literal: ``_C48_ABORT_RE`` carries ``(?i)``."""
     cid, name = "c48_basis_booked_arithmetic", "§9 basis-vs-booked arithmetic"
     if kind not in ("experiment", "analysis"):
         return _skip(
