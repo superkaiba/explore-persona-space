@@ -17,6 +17,16 @@ scored from the SAME generation/judging/capture:
   held-out dataset is the primary eval; the included datasets' 20%
   remainders are scored as secondary `heldin:<name>` rungs.
 
+- **P-C** (the 2026-08-07 LODO-consistent round, user inline override): per
+  holdout, the MAP is refit too — on the generic fit pool + the SAME 80%
+  GROUP-level slices P-B's readout trains on (whitening stays frozen at the
+  behavior-level ADD fit, which contains no holdout rows) — and the readout
+  is the P-B pool verbatim. The holdout is unseen by map AND readout
+  (hard context-id disjointness asserts, readout- and map-side). Per-holdout
+  results persist to ``<out_root>/<behavior>/percell/pc_holdout_<name>.json``
+  the moment each cell lands, with a regime-keyed resume that skips
+  completed cells at entry.
+
 P-B's pool assembly is PARAMETERIZED for the Result-5 leave-one-dataset-out
 (LODO) ablations: :func:`assemble_readout_pool` takes the dataset roster +
 `holdout` + `include` + `train_frac`, group-membership sides are a pure
@@ -454,7 +464,7 @@ def _leakage_assert(readout_ids: set, eval_sets: dict[str, set], label: str) -> 
 # ---------------------------------------------------------------------------
 
 
-def fit_linear_add_map(args, loaded, variant: str, layers: list[int]):
+def fit_linear_add_map(args, loaded, variant: str, layers: list[int], gen_sink: dict | None = None):
     """The r2fair ADD-condition LINEAR map/whitening recipe with staged frees.
 
     Same pool composition + seed + reviewed compose/fit path as
@@ -464,7 +474,16 @@ def fit_linear_add_map(args, loaded, variant: str, layers: list[int]):
     OOM): the staged u_store arrays are freed the moment the pool is built,
     and each fp16 pool array is freed as soon as its fp64 whitened copy
     exists — peak drops ~40 GiB with bit-identical outputs.
+
+    ``gen_sink`` (P-C, per-holdout map refits): when a dict is passed, the
+    WHITENED generic pool block is copied out before the fp64 pool copies are
+    freed (keys ``x_gen_w`` / ``y_gen_w`` / ``n_gen``) — the ADD pool is
+    [generic | eliciting] along axis 1, so the leading ``n_gen`` columns of
+    the whitened pool ARE the whitened generic pool. The P-C map pools reuse
+    these verbatim (identical generic component across holdouts).
     """
+    import numpy as np
+
     from explore_persona_space.experiments.issue_1739 import fits
     from scripts.issue1739_fits import _fit_map
     from scripts.issue1739_jobd_r2aug import _fitmap_ns, build_pool
@@ -482,6 +501,12 @@ def fit_linear_add_map(args, loaded, variant: str, layers: list[int]):
     _log_rss("map-pool-whitened")
     t1 = time.time()
     mapfit = _fit_map(_fitmap_ns(args), x_w, y_w)
+    if gen_sink is not None:
+        n_gen = int(pool_meta["add_n_generic"])
+        # basic slices are VIEWS keeping the whole pool alive — copy, then free
+        gen_sink["x_gen_w"] = np.ascontiguousarray(x_w[:, :n_gen])
+        gen_sink["y_gen_w"] = np.ascontiguousarray(y_w[:, :n_gen])
+        gen_sink["n_gen"] = n_gen
     del x_w, y_w
     diag = {
         **mapfit.diagnostics,
@@ -526,8 +551,16 @@ def prepare_behavior(args, behavior: str, layers: list[int]) -> SimpleNamespace:
     _drop_unused_arrays(loaded, tbl_ood, variant)
     _log_rss("tables-loaded")
 
-    # map + whitening: IDENTICAL across P-A and P-B (linear ADD recipe)
-    wh, mapfit, map_diag_linear, u_label, n_u = fit_linear_add_map(args, loaded, variant, layers)
+    # map + whitening: IDENTICAL across P-A and P-B (linear ADD recipe).
+    # P-C refits the MAP per holdout but keeps THIS whitening frozen (fit on
+    # the ADD pool = generic + eliciting-train — holdout-clean by
+    # construction: no eval-rung / OOD dataset row enters the ADD pool), so
+    # the whitened generic block is retained for the per-holdout map pools.
+    keep_gen = "C" in str(getattr(args, "protocols", ""))
+    gen_sink: dict | None = {} if keep_gen else None
+    wh, mapfit, map_diag_linear, u_label, n_u = fit_linear_add_map(
+        args, loaded, variant, layers, gen_sink=gen_sink
+    )
     map_diags = {"linear": map_diag_linear}
 
     # ---- merged labeled table: [train | wc | ev | ood] ----------------------
@@ -649,6 +682,7 @@ def prepare_behavior(args, behavior: str, layers: list[int]) -> SimpleNamespace:
         eval_datasets=eval_datasets,
         frozen=frozen,
         frozen_src=frozen_src,
+        gen_sink=gen_sink,
         t0=t0,
     )
 
@@ -681,6 +715,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
     lmax, elic_cell = prep.lmax, prep.elic_cell
     datasets, ds_by_name, eval_datasets = prep.datasets, prep.ds_by_name, prep.eval_datasets
     frozen, frozen_src, t0 = prep.frozen, prep.frozen_src, prep.t0
+    gen_sink = prep.gen_sink
     del prep  # locals hold the (large) references from here on
 
     rows_all: list[dict] = []
@@ -697,11 +732,16 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         dv_z,
         eval_specs: list[tuple[str, object]],
         extra_prov: dict,
+        mapfit_use=None,
+        map_train_ids: set | None = None,
     ) -> None:
-        """One full-union transfer fit + per-rung evaluation (both protocols).
+        """One full-union transfer fit + per-rung evaluation (all protocols).
 
         ``eval_specs`` = [(rung_label, merged_rows | ("pv", None))]; pvsynth
-        rows come from the separate whitened pvsynth arrays.
+        rows come from the separate whitened pvsynth arrays. ``mapfit_use``
+        (P-C) swaps the frozen behavior-level map for a per-holdout refit;
+        ``map_train_ids`` (P-C) additionally hard-asserts the MAP pool's
+        eliciting context ids are disjoint from every eval setting.
         """
         readout_rows = np.asarray(readout_rows, dtype=np.int64)
         _assert_well_posed(len(readout_rows), loaded.dim, f"{behavior}/{fit_label}")
@@ -739,6 +779,9 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         del ev_z_parts, ev_za_parts
 
         leak = _leakage_assert({ctx_ids[i] for i in readout_rows}, eval_id_sets, fit_label)
+        map_leak = None
+        if map_train_ids is not None:
+            map_leak = _leakage_assert(map_train_ids, eval_id_sets, f"{fit_label}-map")
         cell = fits.BudgetCell(
             row_idx=readout_rows,
             fold_ids=np.zeros(len(readout_rows), dtype=np.int64),
@@ -748,8 +791,9 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
             seed=args.seed,
             fold_scheme=f"r2v2-{protocol}-full-union",
         )
+        mf = mapfit_use if mapfit_use is not None else mapfit
         data = arms.CellData(
-            z_ctx=z_ctx, z_ans=z_ans, dv=dv_z, rb=rb_w, mapfit=mapfit, layers=tuple(layers)
+            z_ctx=z_ctx, z_ans=z_ans, dv=dv_z, rb=rb_w, mapfit=mf, layers=tuple(layers)
         )
         prov = {
             "mode": "r2v2",
@@ -792,21 +836,22 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         )
         rows_all.extend(rows)
         skips_all.extend(skips)
-        fit_reports.append(
-            {
-                "protocol": protocol,
-                "fit": fit_label,
-                "n_readout": int(len(readout_rows)),
-                "d": int(loaded.dim),
-                "well_posed": f"n_train {len(readout_rows)} > d {loaded.dim}",
-                "leakage": leak,
-                "ridge_lambda_diagnostics": lam_sink,
-                "recon": _eval_rung_reconstruction(
-                    mapfit, z_ev, za_ev, rungs=[str(r) for r in rungs_ev], knn=True
-                ),
-                "fit_wall_s": wall,
-            }
-        )
+        report = {
+            "protocol": protocol,
+            "fit": fit_label,
+            "n_readout": int(len(readout_rows)),
+            "d": int(loaded.dim),
+            "well_posed": f"n_train {len(readout_rows)} > d {loaded.dim}",
+            "leakage": leak,
+            "ridge_lambda_diagnostics": lam_sink,
+            "recon": _eval_rung_reconstruction(
+                mf, z_ev, za_ev, rungs=[str(r) for r in rungs_ev], knn=True
+            ),
+            "fit_wall_s": wall,
+        }
+        if map_leak is not None:
+            report["map_leakage"] = map_leak
+        fit_reports.append(report)
         del scores, z_ev, za_ev, data
         _free_cuda(args.device)
         _log(
@@ -964,6 +1009,169 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
                 },
             )
 
+    # ---- P-C: LODO-consistent map+readout — the MAP is refit per holdout on
+    # generic pool + the SAME 80% slices the readout trains on (whitening
+    # frozen per behavior; holdout unseen by map AND readout, hard-asserted).
+    pc_map_diags: dict[str, dict] = {}
+    if "C" in args.protocols:
+        from scripts.issue1739_fits import _fit_map
+        from scripts.issue1739_jobd_r2aug import _fitmap_ns
+
+        if not gen_sink or "x_gen_w" not in gen_sink:
+            raise RuntimeError(
+                f"[{behavior}] P-C requires the retained whitened generic pool "
+                "(gen_sink) — prepare_behavior must see 'C' in args.protocols"
+            )
+        x_gen_w, y_gen_w, n_gen = gen_sink["x_gen_w"], gen_sink["y_gen_w"], gen_sink["n_gen"]
+        percell_dir = args.out_root / behavior / "percell"
+        percell_dir.mkdir(parents=True, exist_ok=True)
+        holdouts = args.pb_holdouts or eval_datasets
+        unknown = sorted(set(holdouts) - set(eval_datasets))
+        if unknown:
+            raise ValueError(f"--pb-holdouts {unknown} not in eval datasets {eval_datasets}")
+        # per-cell resume key: EVERY output-affecting regime knob + input shas
+        regime_key = {
+            "behavior": behavior,
+            "protocol": "P-C",
+            "variant": variant,
+            "regime": args.regime,
+            "train_frac": args.train_frac,
+            "seed": args.seed,
+            "draw": args.draw,
+            "min_n": args.min_n,
+            "n_boot": args.n_boot,
+            "roster": list(ROSTER),
+            "map_condition": "add",
+            "map_source": "per-holdout-refit",
+            "budget_l": lmax,
+            "frozen_layers": {a: int(i) for a, i in frozen.items()},
+            "inputs_fingerprint": hashlib.sha256(
+                json.dumps(sorted(loaded.shas.items())).encode()
+            ).hexdigest()[:16],
+        }
+        for holdout in holdouts:
+            cell_path = percell_dir / f"pc_holdout_{holdout}.json"
+            if cell_path.exists():
+                prev = json.loads(cell_path.read_text())
+                if prev.get("regime_key") == regime_key:
+                    rows_all.extend(prev["rows"])
+                    skips_all.extend(prev["skips"])
+                    per_layer_all.extend(prev["per_layer"])
+                    fit_reports.extend(prev["fit_reports"])
+                    pools_record.extend(prev["pools"])
+                    pc_map_diags[holdout] = prev["map_diag"]
+                    _log(f"[{behavior}] [P-C holdout={holdout}] RESUME: completed cell loaded")
+                    continue
+                _log(f"[{behavior}] [P-C holdout={holdout}] stale regime key — recomputing")
+            n0 = (
+                len(rows_all),
+                len(skips_all),
+                len(per_layer_all),
+                len(fit_reports),
+                len(pools_record),
+            )
+            pool = assemble_readout_pool(
+                datasets, holdout=holdout, train_frac=args.train_frac, seed=args.seed
+            )
+            pool_rows = [pool.train_rows[n] for n in sorted(pool.train_rows)]
+            elic_rows = np.concatenate(pool_rows).astype(np.int64)
+            # ---- per-holdout MAP refit (the P-C delta vs the frozen ADD map)
+            t_m = time.time()
+            x_w_pc = np.concatenate([x_gen_w, z_ctx[:, elic_rows]], axis=1)
+            y_w_pc = np.concatenate([y_gen_w, z_ans[:, elic_rows]], axis=1)
+            n_pool_pc = int(x_w_pc.shape[1])
+            _assert_well_posed(n_pool_pc, loaded.dim, f"{behavior}/P-C-map-{holdout}")
+            mapfit_pc = _fit_map(_fitmap_ns(args), x_w_pc, y_w_pc)
+            del x_w_pc, y_w_pc
+            assert mapfit_pc is not mapfit, "P-C must fit a FRESH map, never the frozen one"
+            map_fit_s = round(time.time() - t_m, 1)
+            map_diag_pc = {
+                **mapfit_pc.diagnostics,
+                "map_kind": "linear",
+                "map_source": "per-holdout-refit",
+                "protocol": "P-C",
+                "holdout": holdout,
+                "map_fit_s": map_fit_s,
+                "n_map_pool": n_pool_pc,
+                "map_n_generic": int(n_gen),
+                "map_n_eliciting": int(elic_rows.size),
+                "map_pool": "whitened generic fit pool + 80% GROUP-level slice of every "
+                "trait-eliciting dataset except the holdout (whitening FROZEN per "
+                "behavior — fit on the ADD pool, which contains no holdout rows)",
+            }
+            pc_map_diags[holdout] = map_diag_pc
+            _log(
+                f"[{behavior}] [P-C holdout={holdout}] MAP REFIT engaged: "
+                f"n_pool={n_pool_pc} (gen {n_gen} + elic {elic_rows.size}), "
+                f"map_fit_s={map_fit_s}s — frozen map NOT reused"
+            )
+            _log_rss(f"pc-map-refit-{holdout}")
+            readout_pc = np.concatenate(pool_rows + [wc_train_rows]).astype(np.int64)
+            dv_z_pc = _multi_pool_zscored_dv(dv_raw, pool_rows + [wc_train_rows])
+            eval_specs_pc: list[tuple[str, object]] = [
+                (holdout, ds_by_name[holdout].rows),
+                (WC_RUNG, wc_eval_rows),
+                (PV_RUNG, None),
+            ]
+            eval_specs_pc += [
+                (f"heldin:{name}", pool.heldin_eval_rows[name])
+                for name in sorted(pool.heldin_eval_rows)
+            ]
+            pools_record.append(
+                {
+                    "behavior": behavior,
+                    "protocol": "P-C",
+                    "holdout": holdout,
+                    "train_frac": pool.train_frac,
+                    "seed": pool.seed,
+                    "per_dataset_train_n": {k: int(len(v)) for k, v in pool.train_rows.items()},
+                    "per_dataset_heldin_n": {
+                        k: int(len(v)) for k, v in pool.heldin_eval_rows.items()
+                    },
+                    "n_wc_train": int(len(wc_train_rows)),
+                    "n_readout_total": int(len(readout_pc)),
+                    "n_map_pool": n_pool_pc,
+                    "map_n_generic": int(n_gen),
+                    "map_n_eliciting": int(elic_rows.size),
+                }
+            )
+            _fit_and_score(
+                "P-C",
+                f"P-C-holdout-{holdout}",
+                readout_pc,
+                dv_z_pc,
+                eval_specs_pc,
+                {
+                    "holdout": holdout,
+                    "train_frac": args.train_frac,
+                    "map_source": "per-holdout-refit",
+                    "n_map_pool": n_pool_pc,
+                    "readout_train": "union: 80% GROUP-level slice of every trait-eliciting "
+                    "dataset except the holdout (whole) + judged WildChat train split; the "
+                    "MAP is refit on the generic pool + those same slices (LODO-consistent)",
+                    "included_datasets": sorted(pool.train_rows),
+                },
+                mapfit_use=mapfit_pc,
+                map_train_ids={ctx_ids[i] for i in elic_rows},
+            )
+            del mapfit_pc
+            # ---- per-cell persistence: write the moment the cell lands ------
+            cell_payload = {
+                "regime_key": regime_key,
+                "holdout": holdout,
+                "rows": rows_all[n0[0] :],
+                "skips": skips_all[n0[1] :],
+                "per_layer": per_layer_all[n0[2] :],
+                "fit_reports": fit_reports[n0[3] :],
+                "pools": pools_record[n0[4] :],
+                "map_diag": map_diag_pc,
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+            tmp = cell_path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(cell_payload, indent=1))
+            os.replace(tmp, cell_path)
+            _log(f"[{behavior}] [P-C holdout={holdout}] persisted -> {cell_path}")
+
     _free_cuda(args.device)
     return {
         "rows": rows_all,
@@ -971,7 +1179,10 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         "per_layer": per_layer_all,
         "fit_reports": fit_reports,
         "pools": pools_record,
-        "map_diagnostics": {f"{variant}|add|linear|{u_label}": map_diags["linear"]},
+        "map_diagnostics": {
+            f"{variant}|add|linear|{u_label}": map_diags["linear"],
+            **{f"{variant}|add|linear|pc_holdout_{h}": d for h, d in pc_map_diags.items()},
+        },
         "frozen": {a: int(i) for a, i in frozen.items()},
         "frozen_source": frozen_src,
         "datasets": {d.name: int(len(np.asarray(d.rows))) for d in datasets},
@@ -1002,14 +1213,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--protocols",
         default="AB",
-        choices=["A", "B", "AB"],
-        help="which readout protocols to fit (A = r2fair, B = LODO-mixture)",
+        choices=["A", "B", "AB", "C", "ABC"],
+        help="which readout protocols to fit (A = r2fair, B = LODO-mixture readout, "
+        "C = LODO-consistent map+readout: the MAP is refit per holdout too)",
     )
     ap.add_argument(
         "--pb-holdouts",
         nargs="+",
         default=None,
-        help="P-B holdout datasets (default: every non-train dataset)",
+        help="P-B / P-C holdout datasets (default: every non-train dataset)",
     )
     ap.add_argument("--train-frac", type=float, default=0.8)
     ap.add_argument("--regime", default="e1", choices=("e1",))
@@ -1165,7 +1377,13 @@ def main(argv: list[str] | None = None) -> int:
                     "judged WildChat train split (the r2fair protocol)",
                     "P-B": f"readout = {args.train_frac:.0%} GROUP-level slice of every "
                     "trait-eliciting dataset except one held out whole + judged WildChat "
-                    "train split; one fit per holdout (LODO)",
+                    "train split; one fit per holdout (LODO); map FROZEN (behavior-level "
+                    "ADD fit)",
+                    "P-C": f"map AND readout refit per holdout: map = generic fit pool + "
+                    f"{args.train_frac:.0%} GROUP-level slice of every trait-eliciting "
+                    "dataset except the holdout (whitening frozen per behavior); readout "
+                    "= those same slices + judged WildChat train split (the P-B pool); "
+                    "holdout unseen by map AND readout (hard-asserted)",
                 },
                 "lodo_parameterization": "assemble_readout_pool(datasets, holdout=..., "
                 "include=..., train_frac=..., seed=...) — group-membership sides are a pure "

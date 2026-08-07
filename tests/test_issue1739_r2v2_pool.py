@@ -167,3 +167,22 @@ def test_selected_lambda_sink_records_ridge_diagnostics():
     sink2: list[dict] = []
     fits.ridge_gcv_predict_per_target(x, y, [x_ev], device="cpu")
     assert not sink2
+
+
+def test_pc_protocol_and_driver_leg_wiring():
+    """P-C wiring pins: scorer accepts --protocols C; the driver's pc leg
+    composes the scorer argv against the P-C out root with no env overlay,
+    and the composed argv parses under the scorer's own parse_args."""
+    from scripts.issue1739_r2v2_run import PC_OUT_ROOT, leg_cmd_env
+    from scripts.issue1739_r2v2_run import parse_args as run_parse_args
+    from scripts.issue1739_r2v2_score import parse_args as score_parse_args
+
+    s_args = score_parse_args(["--protocols", "C", "--pb-holdouts", "nqopen"])
+    assert s_args.protocols == "C" and s_args.pb_holdouts == ["nqopen"]
+
+    d_args = run_parse_args(["--behaviors", "hallucination", "--legs", "pc", "--protocols", "C"])
+    cmd, env = leg_cmd_env(d_args, "hallucination", "pc")
+    assert env == {}
+    parsed = score_parse_args(cmd[2:])
+    assert parsed.protocols == "C"
+    assert str(parsed.out_root) == str(PC_OUT_ROOT)

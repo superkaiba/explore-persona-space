@@ -50,6 +50,10 @@ FACT_OUT_ROOT = Path("eval_results/issue_1739/r2v2_factorial")
 WIDE_HF_OUT_PREFIX = "issue1739_r2v2_fits_widegrid"
 WIDE_OUT_ROOT = Path("eval_results/issue_1739/r2v2_fits_widegrid")
 WIDE_RIDGE_LAMBDAS = "0.01,0.1,1.0,10.0,100.0,1000.0,10000.0,100000.0,1000000.0"
+# P-C LODO-consistent map+readout (2026-08-07 inline round): own out root +
+# HF prefix; the scorer runs with --protocols C (per-holdout map refit).
+PC_HF_OUT_PREFIX = "issue1739_r2v2_pc"
+PC_OUT_ROOT = Path("eval_results/issue_1739/r2v2_pc")
 CTXMAP_PREFIX = "issue1739_ctxmap"
 BANK_PREFIX = f"{CTXMAP_PREFIX}/rb_fc_bank"
 HALLU_PR_FILE = f"{CTXMAP_PREFIX}/judge/hallucination/labeling_per_rollout.json"
@@ -224,6 +228,7 @@ LEG_DESTS = {
     "fits": (OUT_ROOT, HF_OUT_PREFIX),
     "factorial": (FACT_OUT_ROOT, FACT_HF_OUT_PREFIX),
     "fits-widegrid": (WIDE_OUT_ROOT, WIDE_HF_OUT_PREFIX),
+    "pc": (PC_OUT_ROOT, PC_HF_OUT_PREFIX),
 }
 
 
@@ -240,6 +245,10 @@ def leg_cmd_env(args, behavior: str, leg: str) -> tuple[list[str], dict[str, str
         )
     if leg == "factorial":
         return factorial_cmd(args, behavior), {}
+    if leg == "pc":
+        # P-C rides the same scorer with --protocols C (the driver caller
+        # passes --protocols C) and its own out root / HF prefix.
+        return score_cmd(args, behavior, out_root=PC_OUT_ROOT), {}
     raise ValueError(f"unknown leg {leg!r}")
 
 
@@ -278,7 +287,7 @@ def reap_labeling_slice(args, behavior: str) -> None:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--behaviors", nargs="+", default=["sycophancy"], choices=list(BEHAVIOR_ORDER))
-    ap.add_argument("--protocols", default="AB", choices=["A", "B", "AB"])
+    ap.add_argument("--protocols", default="AB", choices=["A", "B", "AB", "C", "ABC"])
     ap.add_argument("--pb-holdouts", nargs="+", default=None)
     ap.add_argument("--store-root", type=Path, default=Path("data/issue_1739/hf_dl"))
     ap.add_argument("--main-root", type=Path, default=Path("eval_results/issue_1739"))
@@ -297,7 +306,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--legs",
         nargs="+",
         default=["fits"],
-        choices=["fits", "factorial", "fits-widegrid"],
+        choices=["fits", "factorial", "fits-widegrid", "pc"],
         help="which scoring legs to run per behavior (in the given order)",
     )
     ap.add_argument("--device", default="cpu")
@@ -340,6 +349,9 @@ def main(argv: list[str] | None = None) -> None:
         wide_cmd, wide_env = leg_cmd_env(args, "evil", "fits-widegrid")
         _score_parse_args(wide_cmd[2:])
         assert wide_env["EPS_I1739_RIDGE_LAMBDAS"] == WIDE_RIDGE_LAMBDAS
+        pc_cmd, pc_env = leg_cmd_env(args, "hallucination", "pc")
+        pc_args = _score_parse_args(pc_cmd[2:])
+        assert pc_env == {} and str(pc_args.out_root) == str(PC_OUT_ROOT)
         _log("import-check OK")
         sys.stdout.flush()
         sys.stderr.flush()
