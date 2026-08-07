@@ -9058,8 +9058,8 @@
     "2172": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2172",
-      "status": "approved",
+      "path": "tasks/running/2172",
+      "status": "running",
       "title": "Parenthesized \u00a79 planned_wall_h cell silently disables the poller phase-ETA tripwire"
     },
     "2173": {
