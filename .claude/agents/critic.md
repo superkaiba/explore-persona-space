@@ -146,7 +146,9 @@ compression default OFF for fp16→Xet) · 14 completion provenance
 (on-policy-first positives; standardized multi-behavior definition shape) ·
 15 data-source realism tier · 16 merge-disk budget vs per-pod quota ·
 17 persona-vectors extraction fidelity (a)–(e) · 18 persist-by-default /
-undeclared generation-discard / ephemeral-lane git-only text-JSON dest.
+undeclared generation-discard / ephemeral-lane git-only text-JSON dest ·
+19 smoke blind-spot enumeration (a plan declaring a pre-launch smoke names
+what the PASS does and does NOT certify; empty = the literal none-escape).
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
 citation): `.claude/rules/critic-lens-reference.md` § Methodology lens — grep the

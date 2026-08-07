@@ -54,6 +54,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - replication-fidelity.md — the Goal replicates a published finding (match the paper's data + recipe FIRST; change only the tested variable).
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).
 - selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI (selection rides per draw / freeze held-out; band vs ceiling), or difference-vector legs sharing one SAMPLED baseline vs noise-free nulls (disjoint halves / shared-B).
+- smoke-blind-spots.md — a plan declares a pre-launch smoke run, or code adds/edits a smoke-conditional branch that substitutes an implementation, downgrades an assertion, or leaves a production-only third-party import (enumerate what the smoke PASS does NOT certify).
 - trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus, composing briefs on such targets (#1503/#1413), orchestrator run-failure ingest (#1546), judge-monitor reads (#1871), or ANY orchestrator turn on a guard-surface round (#1563).
 - upload-policy.md — you write training/Hub/sweep code, or sequence phases around a regeneration-costly store (Hub-API verification, verify + staging-download transport retry, delete-after-eval persist, store-before-long-fit #825, quota-403 recovery, upload-wedge ladder).
 - upload-verifier-section-reference.md — the upload-verifier runs a Step 2/2.5/2.6/2.9/3/4/6 recipe (pointer-loaded span).
