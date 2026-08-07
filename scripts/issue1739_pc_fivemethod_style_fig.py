@@ -198,6 +198,60 @@ def _se_from_ci(row: dict, where: str) -> float:
     return max(0.0, (float(ci[1]) - float(ci[0])) / (2.0 * _Z95))
 
 
+def _sem(v: list[float]) -> float:
+    """Bare s.e.m. across cell means — the SUPERSEDED rule, kept for --old-ci only."""
+    return float(st.stdev(v) / math.sqrt(len(v))) if len(v) > 1 else 0.0
+
+
+def _legacy_err(rhos: list[float], use: list) -> tuple[float, dict]:
+    """The pre-``cad915214a`` error bar, restored for side-by-side comparison ONLY.
+
+    Two branches that are not in the same units, selected by cell count:
+
+    * ``K == 1`` -- that cell's FULL 95% bootstrap half-width (~1.96 SE), so
+      single-cell bars are ~2x WIDER here than under the calibrated rule.
+    * ``K >= 2`` -- bare s.e.m. across the cell means. Each cell's own
+      bootstrap CI is DISCARDED, so the bar reads EXACTLY 0.000 whenever the
+      cells agree exactly (the non-label-consuming arms in every
+      shared-context regime, where the K LODO fits return one repeated
+      number).
+
+    Not valid for inference; see ``_combine_se`` for the definition in use.
+    """
+    if len(rhos) == 1:
+        ci = use[0][1].get("ci_frozen")
+        if ci and len(ci) == 2 and not any(x is None or math.isnan(float(x)) for x in ci):
+            err = float(max(0.0, max(float(ci[1]) - rhos[0], rhos[0] - float(ci[0]))))
+        else:
+            err = 0.0
+        return err, {"k": 1, "legacy_branch": "bootstrap-half-width"}
+    return _sem(rhos), {"k": len(rhos), "legacy_branch": "sem-across-cells"}
+
+
+def legacy_vs_calibrated_stats(old_vals: dict, new_vals: dict) -> dict:
+    """Measured legacy-vs-calibrated comparison over the PLOTTED bars of one protocol.
+
+    Computed over drawn bars — (panel, regime, arm) keys — NOT over raw
+    transfer-row cells: the figure aggregates cells into regimes, so the two
+    units give materially different counts and ratios.
+    """
+    keys = [k for k in new_vals if k in old_vals]
+    single = [k for k in keys if new_vals[k][3] == 1]
+    multi = [k for k in keys if new_vals[k][3] > 1]
+    sr = [old_vals[k][1] / new_vals[k][1] for k in single if new_vals[k][1] > 0]
+    mr = [new_vals[k][1] / old_vals[k][1] for k in multi if old_vals[k][1] > 0]
+    return {
+        "n_bars": len(keys),
+        "n_single": len(single),
+        "single_ratio": st.median(sr) if sr else float("nan"),
+        "n_multi": len(multi),
+        "n_zero": sum(1 for k in multi if old_vals[k][1] == 0.0),
+        "multi_ratio": st.median(mr) if mr else float("nan"),
+        "multi_max": max(mr) if mr else float("nan"),
+        "n_narrower": sum(1 for k in multi if old_vals[k][1] < new_vals[k][1]),
+    }
+
+
 def _combine_se(rhos: list[float], ses: list[float], *, shared: bool) -> tuple[float, dict]:
     """SE of the PLOTTED MEAN: within-cell bootstrap error + between-cell spread.
 
@@ -235,7 +289,12 @@ def _combine_se(rhos: list[float], ses: list[float], *, shared: bool) -> tuple[f
 
 
 def collect(
-    fits: dict, spread: dict, protocol: str, methods, avg_exclude: frozenset = frozenset()
+    fits: dict,
+    spread: dict,
+    protocol: str,
+    methods,
+    avg_exclude: frozenset = frozenset(),
+    ci_mode: str = "calibrated",
 ) -> tuple[dict, dict]:
     """(behavior, regime, arm) -> (rho, err, n_eval, n_use, n_in_scope, kept, gate_dropped, scope_dropped, all_failed)."""  # noqa: E501
     vals: dict = {}
@@ -297,8 +356,11 @@ def collect(
                         f"{beh}/{key}/{arm}: regime is declared shared-context but its cells "
                         "disagree on n_eval — the shared-context SE rule does not apply"
                     )
-                ses = [_se_from_ci(r, f"{beh}/{key}/{arm}/{rn}") for rn, r in use]
-                err, ci_parts = _combine_se(rhos, ses, shared=shared)
+                if ci_mode == "legacy":
+                    err, ci_parts = _legacy_err(rhos, use)
+                else:
+                    ses = [_se_from_ci(r, f"{beh}/{key}/{arm}/{rn}") for rn, r in use]
+                    err, ci_parts = _combine_se(rhos, ses, shared=shared)
                 # A shared-context regime reports ONE eval set, not K copies of it.
                 n_eval = (
                     int(use[0][1].get("n_eval") or 0)
@@ -338,9 +400,13 @@ def collect(
                 # Behaviours are disjoint corpora, so the panel mean propagates
                 # each behaviour bar's own SE and adds the behaviour-to-behaviour
                 # heterogeneity on top.
-                avg_err, avg_parts = _combine_se(
-                    [p[0] for p in per], [p[1] for p in per], shared=False
-                )
+                if ci_mode == "legacy":
+                    avg_err = _sem([p[0] for p in per])
+                    avg_parts = {"k": len(per), "legacy_branch": "sem-across-behaviours"}
+                else:
+                    avg_err, avg_parts = _combine_se(
+                        [p[0] for p in per], [p[1] for p in per], shared=False
+                    )
                 vals[("average", key, arm)] = (
                     float(st.mean([p[0] for p in per])),
                     avg_err,
@@ -490,6 +556,8 @@ def build_caption(
     methods,
     arm12_behaviors: frozenset = frozenset(),
     avg_excluded: bool = False,
+    ci_mode: str = "calibrated",
+    legacy_stats: dict | None = None,
 ) -> str:
     proto = {
         "P-A": "P-A: the readout trains on ONE trait-eliciting dataset (the `train` budget cell) "
@@ -563,6 +631,58 @@ def build_caption(
             "was built, so the arm is MISSING here rather than withheld. Nothing in this figure "
             "should be read as evidence about how ridge-on-the-real-answer performs.\n"
         )
+    if ci_mode == "legacy":
+        ls = legacy_stats or {}
+        measured = (
+            f"Measured on THIS figure's own {ls.get('n_bars', 0)} plotted bars, against the "
+            f"calibrated definition: the {ls.get('n_single', 0)} single-cell bars are "
+            f"{ls.get('single_ratio', float('nan')):.2f}x TOO WIDE; of the {ls.get('n_multi', 0)} "
+            f"multi-cell bars, {ls.get('n_zero', 0)} read EXACTLY 0.000 (an invisible bar) and "
+            f"{ls.get('n_narrower', 0)} are too NARROW, by a median factor of "
+            f"{ls.get('multi_ratio', float('nan')):.2f}x and up to "
+            f"{ls.get('multi_max', float('nan')):.1f}x. "
+            if ls
+            else ""
+        )
+        err_note = (
+            "!! ERROR BARS ARE THE SUPERSEDED (WRONG) DEFINITION -- this figure exists ONLY to "
+            "show what the bars looked like before cad915214a. DO NOT use it for inference or "
+            "publication; the calibrated twin is the same filename without the _oldci suffix. "
+            "The rule restored here picks one of two branches BY CELL COUNT, and the two are not "
+            "in the same units: a single-cell bar gets that cell's FULL 95% bootstrap half-width "
+            "(~1.96 SE), while a multi-cell bar gets a bare s.e.m. across the cell MEANS, "
+            "DISCARDING each cell's own bootstrap CI entirely -- so the multi-cell branch measures "
+            "only how much the cells disagree with each other, treating every cell mean as exact. "
+            + measured
+            + "The exact zeros are the shared-context regimes, where the K LODO fits read ONE "
+            "common eval set and the non-label-consuming arms return literally one repeated "
+            "number, so their spread is 0 by construction. The understatement is systematic "
+            "rather than occasional because the between-cell spread is almost always SMALLER "
+            "than the within-cell bootstrap noise this rule omits. n_eval below is still the "
+            "CORRECTED shared-context count (ONE eval set, not K copies); only the error rule "
+            "was reverted.\n"
+        )
+    else:
+        err_note = (
+            "ERROR BARS -- one definition for every bar in both figures: +/-1 standard error of "
+            "the PLOTTED MEAN, combining (i) within-cell sampling error over eval contexts, taken "
+            "as half-width/1.96 of each cell's committed 95% bootstrap CI (the bootstrap resamples "
+            "eval contexts), and (ii) between-cell spread. The combination rule follows whether "
+            "the averaged cells share eval contexts. The three non-OOD regimes do: under P-B the K "
+            "holdout fits all read ONE common pvsynth grid / WildChat slice / 20% held-in slice, "
+            "so the context error is COMMON and does not average down -- var = v_within + "
+            "s2_between/K. The completely-OOD regime does not (each cell is a different held-out "
+            "corpus), nor do the three behaviours in the average panel, so there var = (v_within + "
+            "tau2)/K with tau2 = max(0, s2_between - v_within) correcting the observed spread for "
+            "the within-cell noise it already contains. A single-cell bar reduces to that cell's "
+            "own bootstrap SE under both rules. This SUPERSEDES the previous mixed convention "
+            "(bootstrap CI for single-dataset bars, bare s.e.m. across cells otherwise), whose "
+            "s.e.m. branch read EXACTLY 0.000 for the persona-vector arms in every shared-context "
+            "P-B regime -- those arms are not label-consuming, so the K LODO fits return literally "
+            "one repeated number and their spread measures nothing; the bars looked precise where "
+            "no precision had been estimated. Correspondingly, n_eval for a shared-context regime "
+            "below now counts that ONE eval set, not K copies of it. "
+        )
     return (
         f"{proto}\n"
         "The context->answer MAP is identical under both protocols: fit once per behaviour on the "
@@ -589,24 +709,7 @@ def build_caption(
         "whole evil OOD set. Removing it therefore REMOVES the one setting where the mapped-answer "
         "readout was decisively worse than the context readout; read evil's OOD bar as 'MHJ only', "
         "never as evil OOD in general.\n"
-        "ERROR BARS -- one definition for every bar in both figures: +/-1 standard error of the "
-        "PLOTTED MEAN, combining (i) within-cell sampling error over eval contexts, taken as "
-        "half-width/1.96 of each cell's committed 95% bootstrap CI (the bootstrap resamples eval "
-        "contexts), and (ii) between-cell spread. The combination rule follows whether the "
-        "averaged cells share eval contexts. The three non-OOD regimes do: under P-B the K holdout "
-        "fits all read ONE common pvsynth grid / WildChat slice / 20% held-in slice, so the "
-        "context error is COMMON and does not average down -- var = v_within + s2_between/K. The "
-        "completely-OOD regime does not (each cell is a different held-out corpus), nor do the "
-        "three behaviours in the average panel, so there var = (v_within + tau2)/K with tau2 = "
-        "max(0, s2_between - v_within) correcting the observed spread for the within-cell noise it "
-        "already contains. A single-cell bar reduces to that cell's own bootstrap SE under both "
-        "rules. This SUPERSEDES the previous mixed convention (bootstrap CI for single-dataset "
-        "bars, bare s.e.m. across cells otherwise), whose s.e.m. branch read EXACTLY 0.000 for the "
-        "persona-vector arms in every shared-context P-B regime -- those arms are not "
-        "label-consuming, so the K LODO fits return literally one repeated number and their spread "
-        "measures nothing; the bars looked precise where no precision had been estimated. "
-        "Correspondingly, n_eval for a shared-context regime below now counts that ONE eval set, "
-        "not K copies of it. "
+        f"{err_note}"
         "Only the CONTEXT-based variant is scored (variant=context_end); the prefix-end arm is a "
         "stated scope deviation inherited from the parent round. Mapping is LINEAR throughout; no "
         "MLP or kernel arm.\n" + roster_note + "result2_methods also carries arm8_map_ridge_true "
@@ -661,6 +764,12 @@ def main() -> None:
     ap.add_argument(
         "--no-arm12", action="store_true", help="draw the original 4-arm roster even if present"
     )
+    ap.add_argument(
+        "--old-ci",
+        action="store_true",
+        help="restore the SUPERSEDED pre-cad915214a error bars (comparison only, not for "
+        "inference); writes to a *_oldci.png so the calibrated figures are never overwritten",
+    )
     args = ap.parse_args()
 
     base = PV_METHODS if args.pv_only else REF_METHODS
@@ -682,16 +791,34 @@ def main() -> None:
     spread = json.loads(Path(args.spread_json).read_text())
     out_dir = _REPO_ROOT / args.out_dir
     sfx = "_pvonly" if args.pv_only else ""
+    # A distinct suffix so a superseded-error-bar render can never overwrite,
+    # or be mistaken for, the calibrated figure.
+    ci_mode = "legacy" if args.old_ci else "calibrated"
+    if args.old_ci:
+        sfx += "_oldci"
+        print("WARNING: --old-ci restores the SUPERSEDED error-bar definition (comparison only)")
 
     for protocol in ("P-A", "P-B"):
         methods = methods_for(protocol, base, arm12_behaviors)
-        vals, _ = collect(fits, spread, protocol, methods, avg_exclude=avg_exclude)
+        vals, _ = collect(fits, spread, protocol, methods, avg_exclude=avg_exclude, ci_mode=ci_mode)
+        # Under --old-ci the caption quotes a MEASURED legacy-vs-calibrated
+        # comparison over this protocol's own plotted bars, so the warning can
+        # never drift from what the figure actually shows.
+        legacy_stats = None
+        if ci_mode == "legacy":
+            ref, _ = collect(
+                fits, spread, protocol, methods, avg_exclude=avg_exclude, ci_mode="calibrated"
+            )
+            legacy_stats = legacy_vs_calibrated_stats(vals, ref)
+            print(f"  [{protocol}] legacy-vs-calibrated: {legacy_stats}")
         cap = build_caption(
             vals,
             protocol,
             methods,
             arm12_behaviors=arm12_behaviors,
             avg_excluded=bool(avg_exclude),
+            ci_mode=ci_mode,
+            legacy_stats=legacy_stats,
         )
         draw(
             vals,
