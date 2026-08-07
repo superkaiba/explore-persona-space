@@ -97,6 +97,17 @@ ROSTER = (
 )
 LABEL_CONSUMING = ("arm4_ridge_ctx", "arm7_map_ridge_pred")
 
+# Arms that MAY be appended to ROSTER via --extra-arms. Restricted to the
+# arm-registry slugs whose scoring path needs nothing the r2v2 CellData does
+# not already carry, and whose frozen layer the committed train summary
+# already records (committed_frozen() raises on a roster arm it cannot
+# resolve). arm12_oracle_reg fits ridge on TRUE answer summaries and scores on
+# TRUE answer summaries -- both already materialized here for arm11 -- so it is
+# a pure additional fit, no new inputs. It CONSUMES DV labels, so it joins
+# LABEL_CONSUMING (P-B holds out its readout slice like the other two).
+EXTRA_ARMS_ALLOWED = {"arm12_oracle_reg"}
+EXTRA_ARMS_LABEL_CONSUMING = {"arm12_oracle_reg"}
+
 # NEW OOD stores/DVs (the r2v2 generation+capture round). Store paths are
 # RELATIVE to --ood-store-root (a verbatim HF-prefix mirror of
 # issue1739_ctxmap/...); tomgibbs is ONE dataset captured in two store halves
@@ -1248,6 +1259,40 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
 # ---------------------------------------------------------------------------
 
 
+def _apply_extra_arms(extra: list[str]) -> None:
+    """Append --extra-arms slugs to the module-level ROSTER / LABEL_CONSUMING.
+
+    A module-global rebind rather than threading a roster parameter: ROSTER is
+    read at eight downstream sites (frozen-layer resolution, the P-A/P-B/P-C
+    fit seam, the train-OOF pass, the per-layer sweep, and three metadata
+    blocks), this is a single-process entrypoint, and the rebind happens once
+    at parse time before any of them run -- so threading would touch every one
+    of those call sites to buy nothing.
+
+    Idempotent and order-preserving; a slug already in ROSTER is a no-op. Empty
+    ``extra`` (the default) leaves both tuples untouched, which is what keeps
+    every flagless run -- including the live P-C legs sharing this script --
+    byte-identical.
+    """
+    global ROSTER, LABEL_CONSUMING
+    if not extra:
+        return
+    unknown = sorted(set(extra) - EXTRA_ARMS_ALLOWED)
+    if unknown:
+        raise ValueError(
+            f"--extra-arms {unknown} not in EXTRA_ARMS_ALLOWED "
+            f"{sorted(EXTRA_ARMS_ALLOWED)}; adding an arm requires checking its scoring "
+            "path against the r2v2 CellData AND that the committed train summary records "
+            "a frozen layer for it (committed_frozen raises otherwise)"
+        )
+    added = [a for a in dict.fromkeys(extra) if a not in ROSTER]
+    if not added:
+        return
+    ROSTER = ROSTER + tuple(added)
+    LABEL_CONSUMING = LABEL_CONSUMING + tuple(a for a in added if a in EXTRA_ARMS_LABEL_CONSUMING)
+    print(f"[extra-arms] roster extended with {added}; roster now {list(ROSTER)}", flush=True)
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--behaviors", nargs="+", default=list(BEHAVIORS), choices=list(BEHAVIORS))
@@ -1313,9 +1358,22 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "another full re-score (the sibling --transfer-preds in issue1739_fits.py does "
         "the same for the bare-query transfer leg).",
     )
+    ap.add_argument(
+        "--extra-arms",
+        nargs="+",
+        default=[],
+        choices=sorted(EXTRA_ARMS_ALLOWED),
+        help="APPEND these arm slugs to ROSTER for this run. Default EMPTY: with the flag "
+        "absent the roster is the committed five and every other lane -- including the "
+        "live P-C legs that share this script -- is byte-identical. arm12_oracle_reg is "
+        "the ridge-on-TRUE-answer oracle companion to arm11_oracle_proj (PV on the true "
+        "answer); the r2v2 round never scored it, so adding it to a P-A/P-B figure needs "
+        "a re-score, not a re-read.",
+    )
     ap.add_argument("--allow-overwrite-committed", action="store_true")
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
+    _apply_extra_arms(args.extra_arms)
     if args.u_store is None:
         args.u_store = args.store_root / "u_store"
     if args.train_dv_root is None:
