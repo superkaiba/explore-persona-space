@@ -126,7 +126,7 @@ section wins on invocation form.
    (the plan §4 justified the divergence in two sentences AND named the
    canary cell; same REAL/N/A per-arm invariant) | `FAIL_NO_CANARY`
    (unjustified divergence, a failed import-resolution leg, a missing
-   per-arm row for a plan-named arm, a phase re-enumerating the full grid
+   per-arm row for a registry or plan-named arm, a phase re-enumerating the full grid
    outside the smoke subset, or an under-floor slice you cannot resize up).
    **Axis 1 — import-resolution on the REAL branch:** for every changed
    entrypoint, execute its deferred/function-body imports via (a) the
@@ -136,11 +136,19 @@ section wins on invocation form.
    <mod>` ONLY for pure top-level-import entrypoints, stated as
    `import-resolution-mode: top-level-only`; record the EXACT command under
    `import-resolution:` (#1689 r2/3/4: a function-body import behind a
-   mock-only branch false-passed top-level import checks). **Axis 2 —
-   per-arm resolution:** one `per-arm-resolution:` row per plan-named arm —
+   mock-only branch false-passed top-level import checks). For a
+   phase-dispatch driver, `--import-check` is expected to include the
+   args-attribute completeness assert (`orchestrate.argcheck`,
+   code-style.md § Argparse-attribute completeness) — the recorded command
+   makes adoption visible in the durable marker. **Axis 2 —
+   per-arm resolution:** derive the arm list MECHANICALLY from the driver's
+   own registry — state the command (e.g. `uv run python -c "from <driver>
+   import PHASES; print(sorted(PHASES))"` or the driver's `--list-phases`)
+   and emit the line-anchored `arm-registry:` line (structured or N/A form,
+   #2176) — then one `per-arm-resolution:` row per registry or plan-named arm —
    `REAL — <which real computation ran>` | `FALLBACK — <stub / bias-refit /
    default>` | `N/A — no computation path`; vacuous single-line form for a
-   `kind: infra` plan naming no arms; a missing row for a plan-named arm is
+   `kind: infra` plan naming no arms; a missing row for a registry or plan-named arm is
    `FAIL_NO_CANARY`. Per-phase subset threading is part of the PASS_UNIFIED
    definition (name where each phase's cell list comes from; #546 r1: train
    honored the subset, cross-eval enumerated the full 120-cell grid), and

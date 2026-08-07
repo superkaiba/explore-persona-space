@@ -189,12 +189,26 @@ is presence-on-task (any version), NEVER presence-per-round. Genuine absence
 blocker), AND still read the diff (Step 0.7). A present `verdict:
 FAIL_NO_CANARY` is NOT a reviewer FAIL (Step 6d.0 owns that adjudication) —
 note it as CONCERNS. On any PASS verdict, verify the marker's internal SHAPE:
-a `notes: per-arm-resolution:` row for every plan-named arm (REAL / FALLBACK
+a `notes: per-arm-resolution:` row for every registry or plan-named arm
+(`arm-registry:` members ∪ plan-named arms; REAL / FALLBACK
 <reason> / N/A vocabulary), verdict↔row consistency (a FALLBACK row under
 `PASS_UNIFIED` / `PASS_CANARY`, or an `arms_stubbed` list ≠ the set of
 FALLBACK-rowed arms under `PASS_PARTIAL` OR `PASS_AUTHORIZED_STUB`, is a
-`marker-shape` blocker), and a `notes:
-import-resolution:` line matching one of the three accepted shapes (Axis 1).
+`marker-shape` blocker), a `notes:
+import-resolution:` line matching one of the three accepted shapes (Axis 1),
+and an `arm-registry:` line in either accepted form (missing/malformed →
+`marker-shape` blocker, #2176). Substance split:
+members==driver-registry SET-EQUALITY is the MECHANICAL arm's when the
+marker's `file=` resolves in the worktree (Step 6d.0's checker in
+driver-recompute mode); YOURS as the fallback arm when it does not (the
+checker's OK line reads `marker-only`) and as defence-in-depth when the
+diff touches the named driver — enumerate the `source=` symbol's keys
+(the dict literal at the diff, or `task.py
+check-smoke-arch-registry <N> --repo-root <worktree>`) and assert
+set-equality with `members=`: a mismatch is a **substantive** blocker, NOT
+`marker-shape`; a symbol-presence grep is EXPLICITLY INSUFFICIENT
+(existence ≠ key-set equality). On the N/A form, verify the no-registry
+claim against the diff (`grep -n '^PHASES' <changed entrypoints>`).
 You do NOT re-adjudicate whether a REAL row actually ran real code — that
 substance stays Step 6d.0's. Full shape-binding recipe + FAIL template
 (incident #811): `.claude/rules/code-reviewer-section-reference.md` § Step 0.55 detail — smoke-architecture marker presence and shape.
