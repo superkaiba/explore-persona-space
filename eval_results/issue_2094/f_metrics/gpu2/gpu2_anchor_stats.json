@@ -1,0 +1,191 @@
+{
+  "separations": [
+    {
+      "pair_id": "mq--bare__q1--conv2__q1",
+      "setting": "matched_query",
+      "kind": "prefix",
+      "context_a": "bare__q1",
+      "context_b": "conv2__q1",
+      "floor": {
+        "mean": -0.9949999999999999,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "ceiling": {
+        "mean": 0.021000000000000005,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "separation": 1.0159999999999998
+    },
+    {
+      "pair_id": "mq--bare__q2--conv2__q2",
+      "setting": "matched_query",
+      "kind": "prefix",
+      "context_a": "bare__q2",
+      "context_b": "conv2__q2",
+      "floor": {
+        "mean": 0.0,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "ceiling": {
+        "mean": 0.004,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "separation": 0.004
+    },
+    {
+      "pair_id": "mq--bare__q3--conv2__q3",
+      "setting": "matched_query",
+      "kind": "prefix",
+      "context_a": "bare__q3",
+      "context_b": "conv2__q3",
+      "floor": {
+        "mean": -0.975,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "ceiling": {
+        "mean": -0.17400000000000002,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "separation": 0.8009999999999999
+    },
+    {
+      "pair_id": "mq--bare__q4--conv2__q4",
+      "setting": "matched_query",
+      "kind": "prefix",
+      "context_a": "bare__q4",
+      "context_b": "conv2__q4",
+      "floor": {
+        "mean": -0.9949999999999999,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "ceiling": {
+        "mean": -0.4069999999999999,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "separation": 0.588
+    },
+    {
+      "pair_id": "mq--bare__q5--conv2__q5",
+      "setting": "matched_query",
+      "kind": "prefix",
+      "context_a": "bare__q5",
+      "context_b": "conv2__q5",
+      "floor": {
+        "mean": -1.0,
+        "n": 10,
+        "n_incoherent": 0,
+        "n_judge_missing": 0
+      },
+      "ceiling": {
+        "mean": -0.48666666666666664,
+        "n": 9,
+        "n_incoherent": 1,
+        "n_judge_missing": 0
+      },
+      "separation": 0.5133333333333334
+    }
+  ],
+  "verdict": {
+    "passed": true,
+    "n_passing": 4,
+    "n_pairs": 5,
+    "min_abs_separation": 0.5,
+    "min_passing": 4,
+    "per_pair": [
+      {
+        "pair_id": "mq--bare__q1--conv2__q1",
+        "separation": 1.0159999999999998,
+        "passes": true
+      },
+      {
+        "pair_id": "mq--bare__q2--conv2__q2",
+        "separation": 0.004,
+        "passes": false
+      },
+      {
+        "pair_id": "mq--bare__q3--conv2__q3",
+        "separation": 0.8009999999999999,
+        "passes": true
+      },
+      {
+        "pair_id": "mq--bare__q4--conv2__q4",
+        "separation": 0.588,
+        "passes": true
+      },
+      {
+        "pair_id": "mq--bare__q5--conv2__q5",
+        "separation": 0.5133333333333334,
+        "passes": true
+      }
+    ]
+  },
+  "reproduction_check": {
+    "passed": true,
+    "compared": "verdict (all fields incl. per_pair) + per-pair separations (separation, floor, ceiling stats) + floor/ceiling row counts, float-exact",
+    "recorded_regime_fp": "3d250450a8336cb8",
+    "recorded_judge_mode": "live"
+  },
+  "n_floor_rows": 50,
+  "n_ceiling_rows": 50,
+  "floor_source": "parent bare-context anchor rollouts (draw < 10), re-judged pod-side in the gate waves — parent anchor SCORES untouched",
+  "ceiling_source": "issue2094_singlepos/raw_completions/gpu2_mq_replacement/anchors/anchors_gpu2.jsonl (conv2 contexts, K=10 temp-1.0 unpatched draws)",
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1,
+    "coherence_threshold": 60.0
+  },
+  "gate_waves": {
+    "coherence.gpu2anchors": {
+      "n_items": 100,
+      "complete": true
+    },
+    "fp-bare.gpu2anchors": {
+      "n_items": 100,
+      "complete": true
+    },
+    "fp-conv2.gpu2anchors": {
+      "n_items": 100,
+      "complete": true
+    }
+  },
+  "instrument_validity_note": "fp-conv2's de-facto pilot is the pod gate waves: 100/100 scored per wave x 3 waves, 0 truncation, all end_turn (telemetry at HF issue2094_singlepos/raw_completions/gpu2_mq_replacement/judge_gate/scores/*.gpu2anchors.meta.json)",
+  "wellsep_restriction": {
+    "min_abs_separation": 0.5,
+    "passing_pairs": [
+      "mq--bare__q1--conv2__q1",
+      "mq--bare__q3--conv2__q3",
+      "mq--bare__q4--conv2__q4",
+      "mq--bare__q5--conv2__q5"
+    ],
+    "excluded_pairs": [
+      "mq--bare__q2--conv2__q2"
+    ]
+  },
+  "repro": {
+    "git_commit": "6a8cb4b7",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp": "2026-08-07T13:19:59.641834+00:00",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/analyzer/MEMORY.md"
+    ]
+  }
+}
