@@ -16,6 +16,12 @@ User-chat inline round (2026-08-07, monitoring session). All values are **replac
 
 ![Coherence heatmaps](https://raw.githubusercontent.com/superkaiba/explore-persona-space/59e993e85a72d0a30c10e3bfc7959260422d8074/figures/issue_2094/userchat_heatmaps/coherence_heatmaps.png)
 
+**Banked-map transport — how well the fitted mapping predicts the realized answer-vector shift** (cos(map-predicted shift, realized shift); computed only where a banked map exists — context-end and prefix-end at L14/L19/L26, the #779 963k ridge + #1738 prefix-end maps; grey = no map / degenerate-by-design (matched-prefix × prefix-end); cell text = steered mean (n pairs) + the donor-null cosine for the same cell):
+
+![Transport heatmaps](https://raw.githubusercontent.com/superkaiba/explore-persona-space/de16b5cc3d6e992827ac245adb30ec0385dc3b26/figures/issue_2094/userchat_heatmaps/transport_heatmaps.png)
+
+Reading: prediction quality peaks at context-end@L14 (cos 0.15–0.21 in the settings where patching works — matched query and cross), decays across deeper layers, and prefix-end sits at its donor-null everywhere. Matched prefix (query transfer) is ≈0 at every map cell — the banked maps carry no query-transfer signal. Even the best cell is far from 1.0: the realized patch-induced shift is mostly NOT the map's prediction, consistent with the body's nonlinearity takeaway (one-operator held-out R² 0.084).
+
 Reading guide: single-position slots (context-end, prefix-end, 2nd/3rd-to-last) ran the full 28-layer sweep + joints and essentially never break coherence; multi-token slots ran joint layers only (grey elsewhere). The action is all in the two joint rows: **query text (template stripped)** is the standout — strong query transfer while staying coherent — while **prefix span (+template) at joint-mid is 0/15 coherent** (fully broken) and query-span (+template) breaks fluency even as it smuggles query content.
 
 ## Qualitative examples
