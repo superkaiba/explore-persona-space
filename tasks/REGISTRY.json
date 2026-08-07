@@ -9018,7 +9018,7 @@
       "kind": "infra",
       "path": "tasks/completed/2166",
       "status": "completed",
-      "title": "#2166 workflow-fix: repoint 5 stale CLAUDE.md prose \u00b7 verifying \u00b7 \u2588\u2588\u2588\u258c\u2591 70%"
+      "title": "#2166 workflow-fix: 5 stale CLAUDE.md prose pins repointed at their rule-file homes \u2014 main green (347 passed)"
     },
     "2167": {
       "has_clean_result": false,

@@ -1,5 +1,6 @@
 ---
-title: '#2166 workflow-fix: repoint 5 stale CLAUDE.md prose · verifying · ███▌░ 70%'
+title: '#2166 workflow-fix: 5 stale CLAUDE.md prose pins repointed at their rule-file
+  homes — main green (347 passed)'
 kind: infra
 tags:
 - wf-fix
