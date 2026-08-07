@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2184,
+  "highest_id": 2185,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9152,6 +9152,13 @@
       "path": "tasks/proposed/2184",
       "status": "proposed",
       "title": "CPU-intent RunPod provisioning: type the no-port wedge, rotate DC, and document a residual route when every CPU DC is dry"
+    },
+    "2185": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2185",
+      "status": "proposed",
+      "title": "Document the RunPod HF-CDN zero-byte large-blob trap (206 + 0 bytes) and its curl discriminator + rsync-relay recovery"
     },
     "22": {
       "has_clean_result": false,
