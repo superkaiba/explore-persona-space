@@ -11,6 +11,8 @@ Pattern: tests/test_issue_skill_guard_excerpt_brief.py (#1231/#1252).
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 CLAUDE_MD = REPO / "CLAUDE.md"
@@ -29,7 +31,7 @@ MARKER_MODE_TWINS = (
 
 
 def _step5b_to_5c_section() -> str:
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.index("5b. Read both markers")
     end = text.index("5c. Apply ensemble decision rule")
     return text[start:end]

@@ -11,11 +11,13 @@ silently deleted by a later Step 9c edit.
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
 
 
 def _step9c_section() -> str:
-    text = SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     return text[text.index("9c. Test-verdict gate") : text.index("### Step 10: Auto-complete")]
 
 
@@ -39,6 +41,6 @@ def test_step9c_urgent_park_substep_scoping_note():
     # The 1e trigger covers the WORKFLOW_INVARIANT subset ONLY; the Step 10d
     # broad-glob #1713 duty stays binding for non-invariant reds.
     assert "WORKFLOW_INVARIANT subset ONLY" in sec
-    text = SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     # The Step 10d broad-glob duty itself is untouched by #1742:
     assert "Mandatory urgent-park emission on workflow-surface pre-existing red" in text

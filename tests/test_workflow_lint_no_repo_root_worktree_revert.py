@@ -63,6 +63,8 @@ if str(_SCRIPTS) not in sys.path:
 import workflow_lint  # noqa: E402
 from workflow_lint import check_no_repo_root_worktree_revert  # noqa: E402
 
+from tests.issue_skill_source import issue_skill_text  # noqa: E402
+
 # The worktree / repo root the live-tree tests read (T9 + the anti-regression
 # lock). Resolving from the test file keeps this worktree-agnostic — it is
 # whatever tree the suite runs in (an issue worktree during a workflow-fix
@@ -367,8 +369,7 @@ def test_live_skill_md_additive_checkout_is_dash_c_qualified() -> None:
     override. Located by CONTENT ANCHOR (the flag-tolerant ``xargs ... -a``
     list-file prefix), never by line number (the fence drifts). Also guards
     against a future SKILL.md edit reintroducing the unqualified fence."""
-    skill = _REPO / ".claude" / "skills" / "issue" / "SKILL.md"
-    text = skill.read_text(encoding="utf-8")
+    text = issue_skill_text()
     # The `checkout issue-<N> --` conjunct pins the CHECKOUT fence line
     # specifically — the sibling `git commit -m "...: surgical additive
     # checkout ..."` fence line also carries the xargs prefix + the word

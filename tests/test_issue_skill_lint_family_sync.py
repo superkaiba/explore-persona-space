@@ -87,6 +87,8 @@ matching assertions here IN THE SAME COMMIT, or the suite goes red.
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
 
 # The banned full-message commit-filter literal, built by CONCATENATION so
@@ -96,7 +98,7 @@ _FULL_MESSAGE_INVERT = _FULL_MESSAGE_FILTER + " --invert-grep"
 
 
 def _text() -> str:
-    return SKILL.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _step5a_span(text: str) -> str:

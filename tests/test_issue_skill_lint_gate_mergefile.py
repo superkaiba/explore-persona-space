@@ -20,12 +20,14 @@ assertions here IN THE SAME COMMIT, or the suite goes red.
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
 
 
 def _gate_span() -> str:
     """SKILL.md text from the (first) gate-tree assignment to the auto-merge heading."""
-    text = SKILL.read_text()
+    text = issue_skill_text()
     start = text.index("GT=/tmp/issue-<N>-lint-gate-tree")
     return text[start : text.index("#### The auto-merge procedure", start)]
 

@@ -32,12 +32,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
 
 
 def _step10d_span() -> str:
     """SKILL.md text from the unique ``### Step 10d`` heading onward."""
-    text = SKILL.read_text()
+    text = issue_skill_text()
     return text[text.index("### Step 10d") :]
 
 
@@ -49,7 +51,7 @@ def _step10_step6_span() -> str:
     ``### Step 10b`` header. Anchoring on those tokens keeps this pin
     stable under Step-10 prose churn.
     """
-    text = SKILL.read_text()
+    text = issue_skill_text()
     start = text.index("- **No `type` frontmatter**")
     end = text.index("### Step 10b", start)
     return text[start:end]
@@ -63,7 +65,7 @@ def test_step10d_exit_site_named_in_teardown_exit_list():
     name Step 10d as its own exit site so the exit-site enumeration
     matches the reordered teardown behavior on the code-change path.
     """
-    text = SKILL.read_text()
+    text = issue_skill_text()
     anchor = "It is torn down ONLY at the true terminal / park"
     assert anchor in text, "CRON-TEARDOWN exit-site-list anchor missing"
 
@@ -87,7 +89,7 @@ def test_step10d_exit_site_named_in_parallel_prose():
     # ``status=done``". Anchor on its unique H5 header token and read
     # the following window so a soft-wrapped "torn\ndown only at the
     # true terminal ..." break does not defeat the substring probe.
-    text = SKILL.read_text()
+    text = issue_skill_text()
     anchor = "##### Step 6d.3: On `status=done`"
     assert anchor in text, "parallel-prose Step 6d.3 header missing"
 

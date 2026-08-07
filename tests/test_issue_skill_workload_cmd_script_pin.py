@@ -14,13 +14,15 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import read_workflow_doc
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
 
 def _normalized(path: Path) -> str:
     """File text with all whitespace runs collapsed to single spaces."""
-    return re.sub(r"\s+", " ", path.read_text(encoding="utf-8"))
+    return re.sub(r"\s+", " ", read_workflow_doc(path))
 
 
 def test_committed_script_workload_cmd_prescription_pinned() -> None:

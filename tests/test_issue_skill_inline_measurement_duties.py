@@ -17,6 +17,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 CLAUDE_MD = REPO / "CLAUDE.md"
@@ -27,7 +29,7 @@ PIN_FILE_RELPATH = "tests/test_issue_skill_inline_measurement_duties.py"
 
 
 def test_skill_9a_ter_duties_block_present():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     idx = text.index(ANCHOR)  # ValueError = hard fail
     # Window 2200: the drafted block MEASURES ~1912 chars from the anchor
     # (all pinned tokens sit <=1678 in; fact-checked 2026-07-23); headroom
@@ -64,7 +66,7 @@ def test_claude_md_carveout_duties_present():
 
 
 def test_step_pointer_sentences_present():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     assert "ALSO carries the both-arms line" in text  # step 1 pointer
     assert "Read each regenerated PNG" in text  # step 3 pointer
     # Both pointers sit inside the Auto-run procedure.

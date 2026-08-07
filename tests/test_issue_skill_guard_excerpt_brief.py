@@ -7,11 +7,13 @@ in both reviewer briefs (arms trigger-dense-review.md discipline 3).
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL_MD = Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
 
 
 def _step5a_section() -> str:
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.index("5a. Spawn both reviewers")
     end = text.index("5b. Read both markers")
     return text[start:end]
@@ -37,5 +39,5 @@ def test_step5a_brief_carries_return_text_contract():
 
 
 def test_reconciler_brief_forwards_excerpt_path():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     assert "Step 5a excerpt-file path" in text

@@ -16,6 +16,8 @@ import json
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL = _REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 HOOK = _REPO_ROOT / ".claude" / "hooks" / "guard_root_code_commit.sh"
@@ -27,7 +29,7 @@ CERT_PATH_LITERAL = "/tmp/eps-inline-lint-cert-v1.txt"
 
 def _gate_section() -> str:
     """The Step 9a-ter § Inline payload lint gate span of SKILL.md."""
-    text = SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.index("**Inline payload lint gate")
     # The section ends at the next numbered step heading after it.
     m = re.search(r"\n\d+\. \*\*Capture the headline", text[start:])
@@ -101,7 +103,7 @@ def test_step9ater_worker_brief_duty_present() -> None:
 def test_step9ater_step2_brief_points_at_worker_brief_duty() -> None:
     """Durability pin (#1673): the Auto-run step-2 brief contract points at
     the worker-brief duty (the arming site for 9a-ter worker briefs)."""
-    text = SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.index("**Auto-run procedure.**")
     end = text.index("**Inline payload lint gate")
     assert "worker-brief composition duty" in text[start:end].lower()

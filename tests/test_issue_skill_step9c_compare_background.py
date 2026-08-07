@@ -6,6 +6,8 @@ SLOW_TESTS pristine oracle run legitimately derives 600-4950s.
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL = Path(__file__).resolve().parents[1] / ".claude/skills/issue/SKILL.md"
 
 
@@ -15,7 +17,7 @@ def _step1d_region(text: str) -> str:
 
 
 def test_step1d_compare_backgrounded_with_rc_file():
-    text = SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     region = _step1d_region(text)
     assert "run_in_background" in region
     assert "/tmp/step9c-compare-issue-<N>.rc" in region
@@ -25,6 +27,6 @@ def test_step1d_compare_backgrounded_with_rc_file():
 
 
 def test_step1d_foreground_prescription_gone():
-    text = SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     assert "short/bounded foreground" not in text
     assert "COMPARE_OUT=$(uv run python" not in text  # old command substitution

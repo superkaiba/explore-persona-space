@@ -15,6 +15,8 @@ import subprocess
 import time
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL_MD = REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 CODE_STYLE_MD = REPO_ROOT / ".claude" / "rules" / "code-style.md"
@@ -23,7 +25,7 @@ VECTORIZE_MD = REPO_ROOT / ".claude" / "rules" / "vectorize-many-cell-fits.md"
 
 def test_skill_md_mandates_setsid_detach_and_pid_breadcrumb() -> None:
     """SKILL.md carries the detached launch shape, breadcrumb fields, and successor rule."""
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     assert "setsid nohup" in text
     assert "Detached VM-side long compute phases" in text
     assert "pid=<PHASE_PID>" in text
@@ -41,7 +43,7 @@ def test_code_style_nohup_bullet_covers_vm_side() -> None:
 
 def test_step9c_gate_choom_defaults_pinned() -> None:
     """Step 9c gates self-choom by default; 1d refresh pid-captures + sweeps (#1045)."""
-    skill_text = SKILL_MD.read_text(encoding="utf-8")
+    skill_text = issue_skill_text()
     # Gate self-choom: 2x Step 9c (1b + 1c) + 1x Step 9c 1d compare (#1197)
     # + 2x Step 10d lint gate (#1211). (== 5 also pins placement.)
     # NOTE: this also repairs the pre-existing red assertion — #1197 added
@@ -60,7 +62,7 @@ def test_step9c_gate_choom_defaults_pinned() -> None:
 
 def test_step10d_lint_gate_choom_pinned() -> None:
     """Step 10d pre-push lint-gate blocks self-choom by default, fail-open (#1211)."""
-    skill_text = SKILL_MD.read_text(encoding="utf-8")
+    skill_text = issue_skill_text()
     # Preamble in BOTH executable blocks: shared form (i)/(ii) + form (iii) surgical
     assert skill_text.count("[step10d] lint-gate earlyoom protection choom=$LINT_GATE_CHOOM") == 2
     assert "LINT_GATE_CHOOM=failed" in skill_text

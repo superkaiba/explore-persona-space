@@ -40,6 +40,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 ISSUE_TICK_SKILL = ROOT / ".claude" / "skills" / "issue-tick" / "SKILL.md"
@@ -93,7 +95,7 @@ def test_issue_skill_step4b_quotes_canonical_h3_labels_verbatim():
     because the SKILL spec said only "Required `report-back` fields"
     with no verbatim contract.
     """
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     for label in CANONICAL_H3_LABELS:
         assert label in body, (
             f"Step 4b brief must quote the canonical H3 label verbatim: {label!r}. "
@@ -108,7 +110,7 @@ def test_issue_skill_step4b_mentions_smoke_run_h2():
     (`### (d) Smoke run`) was the round-1 #506 anti-pattern that
     displaced the canonical (d) slot.
     """
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     assert "## Smoke run" in body, (
         "Step 4b brief must explicitly name the `## Smoke run` H2 contract "
         "so the orchestrator does not fold the smoke run into `### (d)`."
@@ -122,7 +124,7 @@ def test_issue_skill_step4b_does_not_template_adhoc_labels_as_h3():
     the heading form is the template the orchestrator would copy
     verbatim into the brief, which is exactly what regressed #506.
     """
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     for bad in ADHOC_BAD_LABELS:
         pat = _line_anchored_h3_pattern(bad)
         match = pat.search(body)
@@ -253,7 +255,7 @@ def test_item3_data_gate_exercise_clause_present():
 
 def test_step6d0bis_smoke_covers_class_regime_axes():
     """#1611: Step 6d.0-bis arm-class clause names the class-defining axes (#1586)."""
-    text = ISSUE_SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     heading = "##### Step 6d.0-bis"
     assert text.count(heading) == 1, "Step 6d.0-bis H5 heading literal must stay unique"
     i = text.index(heading)

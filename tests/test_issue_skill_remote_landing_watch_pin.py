@@ -35,6 +35,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -50,7 +52,7 @@ def _norm(text: str) -> str:
 def _heartbeat_block() -> str:
     """The § Long-phase heartbeat duty block, whitespace-normalized."""
     assert SKILL_MD.exists(), f"missing {SKILL_MD}"
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.find(HEARTBEAT_HEADING)
     assert start != -1, f"anchor {HEARTBEAT_HEADING!r} not found in SKILL.md"
     end = text.find(REVIVAL_HEADING, start)

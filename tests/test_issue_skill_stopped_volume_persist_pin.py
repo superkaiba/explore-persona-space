@@ -25,6 +25,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 POD_CONFIG_RULE = ROOT / ".claude" / "rules" / "pod-config.md"
@@ -58,7 +60,7 @@ def _step_8bis_section(body: str) -> str:
 def test_pause_affordance_persist_duty_present():
     """Pause-affordance step 1 carries the persist-first duty AND no longer
     carries the #1112-falsified stopped-volume durability claim."""
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     section = _pause_affordance_section(body)
     for token in ("NOT durable", "done-JSONs", "HF prefix"):
         assert token in section, (
@@ -75,7 +77,7 @@ def test_pause_affordance_persist_duty_present():
 def test_step_8bis_persist_sentence_present():
     """Step 8-bis carries the persist-before-stop sentence (resume state,
     non-durability, the #1112 incident)."""
-    section = _step_8bis_section(ISSUE_SKILL.read_text())
+    section = _step_8bis_section(issue_skill_text())
     for token in ("resume state", "NOT durable", "#1112"):
         assert token in section, (
             f"Step 8-bis must carry the persist-before-stop token {token!r} "

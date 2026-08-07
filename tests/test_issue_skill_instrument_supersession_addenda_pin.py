@@ -22,6 +22,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 CLAUDE_MD = REPO / "CLAUDE.md"
@@ -65,15 +67,20 @@ def _extract_clause(text: str, anchor: str, start: int) -> str:
 
 
 def test_header_exactly_once_in_each_file():
-    for path in (SKILL_MD, CLAUDE_MD):
-        text = path.read_text(encoding="utf-8")
+    # The /issue spec is read as its LOGICAL self (SKILL.md + steps/*.md
+    # spliced back at their pointers, #2155) — the 9a-ter block now lives in
+    # a step companion, and the pin binds on the composed document.
+    for label, text in (
+        (SKILL_MD, issue_skill_text()),
+        (CLAUDE_MD, CLAUDE_MD.read_text(encoding="utf-8")),
+    ):
         assert text.count(HEADER) == 1, (
-            f"{path}: expected exactly one header, got {text.count(HEADER)}"
+            f"{label}: expected exactly one header, got {text.count(HEADER)}"
         )
 
 
 def test_skill_block_sits_inside_9a_ter():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     idx = text.index(HEADER)
     # After the estimator-validity duties block, before the pod-safety block
     # (both anchors verified unique on the live tree at authoring time).
@@ -85,7 +92,7 @@ def test_skill_block_sits_inside_9a_ter():
 
 
 def test_clause_sentences_byte_identical():
-    skill = SKILL_MD.read_text(encoding="utf-8")
+    skill = issue_skill_text()
     claude = CLAUDE_MD.read_text(encoding="utf-8")
     s0 = skill.index(HEADER)
     c0 = claude.index(HEADER)

@@ -26,6 +26,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 CLAUDE_MD = ROOT / "CLAUDE.md"
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
@@ -71,7 +73,7 @@ def test_issue_skill_9a_ter_carries_inline_upload_verify_recipe():
     """SKILL.md Step 9a-ter's completion-side teardown block mirrors the
     recipe + duty (whole-file whitespace-normalized — the SKILL.md wrapper
     soft-wraps the recipe across lines)."""
-    norm = _norm(ISSUE_SKILL.read_text(encoding="utf-8"))
+    norm = _norm(issue_skill_text())
     for token in (*RECIPE_TOKENS, DUTY_TOKEN):
         assert token in norm, (
             f"SKILL.md Step 9a-ter must carry the inline upload-verify recipe "

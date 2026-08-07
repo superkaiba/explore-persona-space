@@ -24,6 +24,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -49,7 +51,7 @@ def _step2_span(body: str) -> str:
 
 def test_step2_floor_h4_header_present():
     """The 'Minimum plan-review floor ...' header phrase must appear in Step 2."""
-    span = _step2_span(ISSUE_SKILL.read_text(encoding="utf-8"))
+    span = _step2_span(issue_skill_text())
     assert "Minimum plan-review floor" in span, (
         "Step 2 must carry the 'Minimum plan-review floor' header phrase "
         "so the recorded-skip contract has an anchor sessions can find. "
@@ -63,7 +65,7 @@ def test_step2_floor_h4_header_present():
 
 def test_step2_floor_carve_out_disclaimer_present():
     """Step 2 must state the CLAUDE.md carve-out does NOT reach wf-fix tasks."""
-    span = _step2_span(ISSUE_SKILL.read_text(encoding="utf-8"))
+    span = _step2_span(issue_skill_text())
     assert "carve-out does NOT reach" in span, (
         "Step 2 must state the CLAUDE.md /adversarial-planner carve-out "
         "does NOT reach kind:infra workflow-fix tasks. Without the "
@@ -77,7 +79,7 @@ def test_step2_floor_carve_out_disclaimer_present():
 
 def test_step2_floor_leg1_new_plan_version():
     """Leg 1: persist a plan version via `new-plan-version`."""
-    span = _step2_span(ISSUE_SKILL.read_text(encoding="utf-8"))
+    span = _step2_span(issue_skill_text())
     assert "new-plan-version" in span, (
         "Step 2 must name `new-plan-version` as the persistence path "
         "(a Write-authored plan is invisible to verify_plan.py --issue)."
@@ -86,7 +88,7 @@ def test_step2_floor_leg1_new_plan_version():
 
 def test_step2_floor_leg2_epm_plan_verify():
     """Leg 2: run verify_plan.py and post `epm:plan-verify`."""
-    span = _step2_span(ISSUE_SKILL.read_text(encoding="utf-8"))
+    span = _step2_span(issue_skill_text())
     assert "epm:plan-verify" in span, (
         "Step 2 must name the `epm:plan-verify` marker as leg-2's "
         "durable proof the mechanical pre-pass ran."
@@ -101,7 +103,7 @@ def test_step2_floor_leg3_at_least_one_claude_critic():
     legitimate reword (e.g. picking a specific lens name inside the
     span) doesn't false-positive.
     """
-    span = _step2_span(ISSUE_SKILL.read_text(encoding="utf-8"))
+    span = _step2_span(issue_skill_text())
     m = re.search(r"(?:at minimum ONE|at least one) Claude .*?critic", span)
     assert m is not None, (
         "Step 2 must name leg 3 as spawning at minimum ONE Claude "
@@ -118,7 +120,7 @@ def test_step2_floor_leg3_at_least_one_claude_critic():
 
 def test_step2_recorded_skip_contract_present():
     """The 'Recorded-skip contract' sub-header and its shape must be present."""
-    span = _step2_span(ISSUE_SKILL.read_text(encoding="utf-8"))
+    span = _step2_span(issue_skill_text())
     assert "Recorded-skip contract" in span, (
         "Step 2 must carry a 'Recorded-skip contract' sub-header so "
         "sessions know skipping a leg is auditable ex post."
@@ -155,7 +157,7 @@ _LINE_ANCHORED_H3_BAD_LABELS = (
 
 def test_step2_floor_no_adhoc_h3_labels():
     """Ad-hoc floor-leg labels must not appear as line-anchored H3 headings."""
-    body = ISSUE_SKILL.read_text(encoding="utf-8")
+    body = issue_skill_text()
     for bad in _LINE_ANCHORED_H3_BAD_LABELS:
         pat = re.compile(rf"^### {re.escape(bad)}\s*$", flags=re.MULTILINE)
         m = pat.search(body)

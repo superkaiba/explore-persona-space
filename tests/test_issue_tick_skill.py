@@ -39,6 +39,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_TICK_SKILL = ROOT / ".claude" / "skills" / "issue-tick" / "SKILL.md"
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
@@ -196,7 +198,7 @@ def test_tick_skills_digest_only_reads():
 
 
 def test_issue_skill_cron_create_uses_issue_tick_prompt():
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     # The Step 6d.2 CronCreate line.
     assert 'prompt="/issue-tick <N>"' in body, (
         "Step 6d.2 must arm CronCreate with prompt='/issue-tick <N>' — the "
@@ -205,7 +207,7 @@ def test_issue_skill_cron_create_uses_issue_tick_prompt():
 
 
 def test_issue_skill_arm_sites_use_45_min_cadence():
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     assert 'cron="*/45 * * * *"' in body, (
         "the Step 0 / Step 6d.2 CronCreate sites must arm the */45 cadence "
         "(lengthened from */20 on 2026-06-12 — the 10-min watcher carries "
@@ -228,7 +230,7 @@ def test_issue_tick_skill_teardown_is_hardened():
 
 
 def test_issue_skill_arm_guard_matches_issue_tick_prompt():
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     # The Step 6d.2 ARM-GUARD AND every CRON-TEARDOWN must reference the
     # SAME literal: `/issue-tick <N>` (or `"/issue-tick <N>"` quoted in
     # prose). A drift would mean the guard arms a duplicate cron, or the
@@ -252,7 +254,7 @@ def test_issue_skill_no_residual_issue_cron_match():
     and ``test_issue_skill_exit_sites_carry_widened_pointer``; it must
     never be written in any of the banned shapes.
     """
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     # Catch both `prompt.strip() == "/issue <N>"` and `prompt="/issue <N>"`
     # specifically. We allow `/issue <N>` to appear in prose for OTHER
     # purposes (the skill is invoked as `/issue <N>` by the user), just not
@@ -307,7 +309,7 @@ def test_teardown_match_set_includes_one_shot_wakeups():
     stray one-shot wakeups — and the arm sites still fire ONLY the tick
     prompt (leg 2 is teardown-only, checked by the untouched arm-site
     assertions above)."""
-    issue_body = ISSUE_SKILL.read_text()
+    issue_body = issue_skill_text()
     span = _cron_teardown_procedure_span(issue_body)
     # (i) leg 2 is named with the distinctive phrase in the canonical
     # procedure span itself, not merely somewhere in the 9000-line file.
@@ -363,7 +365,7 @@ def test_teardown_cron_delete_not_found_is_success():
         "campaign-tick": (
             ISSUE_TICK_SKILL.parent.parent / "campaign-tick" / "SKILL.md"
         ).read_text(),
-        "issue": ISSUE_SKILL.read_text(),
+        "issue": issue_skill_text(),
     }
     for name, body in bodies.items():
         assert "No scheduled job with id" in body, (
@@ -422,7 +424,7 @@ def test_issue_skill_exit_sites_carry_widened_pointer():
     rebinding the scoped assertion to the wrong occurrence. Table-row
     sites assert the fragment on the anchor's OWN line so an adjacent
     sibling row can never satisfy a reverted row's pin."""
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     lines = body.splitlines()
     for site, (anchor, scope) in _EXIT_SITE_ANCHORS.items():
         hits = [i for i, line in enumerate(lines) if anchor in line]
@@ -499,7 +501,7 @@ def test_campaign_skill_teardown_sites_carry_widened_pointer():
 
 
 def test_issue_skill_documents_push_notification():
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     # The Step 9b awaiting_promotion exit must fire PushNotification.
     # The Step 2c parked_over_cap exit must fire PushNotification.
     assert "PushNotification" in body, (
@@ -510,7 +512,7 @@ def test_issue_skill_documents_push_notification():
 
 
 def test_issue_skill_autonomous_section_documents_issue_tick():
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     # The autonomous-behavior section's "Stop the [loop|cron]" bullet must
     # name the new lightweight driver so a maintainer reading the
     # autonomous-behavior section understands what the cron actually fires.

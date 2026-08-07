@@ -10,6 +10,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CODE_REVIEWER_MD = REPO_ROOT / ".claude" / "agents" / "code-reviewer.md"
 CODEX_CODE_REVIEWER_MD = REPO_ROOT / ".claude" / "agents" / "codex-code-reviewer.md"
@@ -60,7 +62,7 @@ def test_new_tags_are_substantive_never_stripped() -> None:
     and `consumer-contract-post-init` are SUBSTANTIVE tags — a regression that
     adds either to that strip set would silently drop this gate's verdicts.
     """
-    text = ISSUE_SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
 
     # Locate the canonical mechanical-strip declaration line and slice the
     # brace-content — a set literal spanning up to a few lines.

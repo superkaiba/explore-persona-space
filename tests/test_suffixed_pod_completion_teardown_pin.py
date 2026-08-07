@@ -23,6 +23,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 CLAUDE_MD = ROOT / "CLAUDE.md"
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
@@ -78,7 +80,7 @@ def test_claude_md_carries_completion_side_teardown_contract():
 def test_issue_skill_9a_ter_carries_completion_side_teardown_mirror():
     """SKILL.md Step 9a-ter carries the executing mirror of the contract
     (whole-file whitespace-normalized — the token appears exactly once)."""
-    norm = _norm(ISSUE_SKILL.read_text())
+    norm = _norm(issue_skill_text())
     for token in (
         "Completion-side teardown",
         "--name-suffix <slug>",

@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL_MD = Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
 
 _HEADING = "Tick-parse field-preservation (REQUIRED — #1841; incident #1768)."
@@ -39,7 +41,7 @@ _MANDATED_FIELDS = (
 def _paragraph_span() -> str:
     """The mandate paragraph + its canonical one-liner fence (bounded below
     by the Forensics-ingest paragraph that follows it in Step 6d.2)."""
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.index(_HEADING)
     end = text.index("Forensics-ingest discipline (#1546)", start)
     return text[start:end]
@@ -69,7 +71,7 @@ def test_canonical_one_liner_uses_d_get():
 def test_pseudocode_pointer_line_present():
     # The polling-loop comment must point readers at the mandate BEFORE the
     # decision branches — the "invites compaction" gap #1768 fell through.
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     assert "parse per § Tick-parse" in text, (
         "the polling-loop pseudocode comment lost its Tick-parse pointer"
     )

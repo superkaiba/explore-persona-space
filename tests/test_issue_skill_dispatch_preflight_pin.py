@@ -20,6 +20,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 CRASH_FIX_MD = REPO / ".claude" / "rules" / "crash-fix-rounds.md"
@@ -31,7 +33,7 @@ ANCHOR = "Dispatch-input/env/flag preflight"
 
 
 def test_dispatch_preflight_block_present():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     idx = text.index(ANCHOR)  # ValueError = hard fail
     # Window 5000: the landed block is ~4.4k chars anchor-to-tail; 5000
     # leaves headroom for wording tweaks without letting the pin drift
@@ -55,7 +57,7 @@ def test_dispatch_preflight_block_present():
 
 
 def test_block_placement_inside_step_6b():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     idx = text.index(ANCHOR)
     # Sits after the argv dry-run block's anchor, inside Step 6b, before 6c.
     assert text.index("Hand-composed phase argv dry-run") < idx

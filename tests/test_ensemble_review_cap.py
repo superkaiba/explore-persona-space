@@ -40,6 +40,7 @@ from explore_persona_space.orchestrate.ensemble_strip import (
     should_strip_git_provenance,
 )
 from explore_persona_space.workflow import load_workflow_yaml
+from tests.issue_skill_source import issue_skill_text
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = REPO_ROOT / ".claude" / "workflow.yaml"
@@ -159,7 +160,7 @@ def test_no_stale_cap_3_in_ensemble_prose():
     """No in-scope cap-3 prose OR numeric surface survives in workflow.yaml or
     SKILL.md (widened per §3.6; out-of-scope look-alikes excluded by context)."""
     wf_hits = _stale_cap3_hits(WORKFLOW_PATH.read_text())
-    skill_hits = _stale_cap3_hits(SKILL_PATH.read_text())
+    skill_hits = _stale_cap3_hits(issue_skill_text())
     assert not wf_hits, "stale in-scope cap-3 surface in workflow.yaml:\n" + "\n".join(wf_hits)
     assert not skill_hits, "stale in-scope cap-3 surface in SKILL.md:\n" + "\n".join(skill_hits)
 
@@ -168,7 +169,7 @@ def test_code_review_flow_diagram_and_exit_kind_updated():
     """The SKILL.md code-review flow diagram uses count<5 and the >=5 branch
     routes to the cap-hit rule (not a bare `blocked`), and the Step 5b exit-kind
     table row uses revision_round>=5 with a conditional exit-kind (§3.6 A8)."""
-    skill = SKILL_PATH.read_text()
+    skill = issue_skill_text()
     assert "FAIL + count<5 --> running" in skill
     # The >=5 diagram branch must reference the cap-hit rule, not a bare blocked terminal.
     assert re.search(r"FAIL \+ count>=5 --> .*Step 5d cap-hit rule", skill)
@@ -192,7 +193,7 @@ def test_step9c_pytest_rc_captured_before_compare():
     The bounded spans are FENCE-SAFE — they exclude backticks, so a match can
     never cross a code-fence boundary into a neighboring block: the rc write
     must sit on the same command tail as its pytest invocation."""
-    skill = SKILL_PATH.read_text()
+    skill = issue_skill_text()
     sec = skill[skill.index("9c. Test-verdict gate") : skill.index("### Step 10: Auto-complete")]
     touched = re.search(
         r"timeout --kill-after=60s <T>s uv run pytest <files>[^\x60]{0,300}?"
@@ -347,7 +348,7 @@ def test_adopt_severe_reconciler_ban_pinned():
     Pins both placements: the Step 5c canonical ban paragraph and the
     Step 9a incident-site pointer. Dropping either silently reverts #1134.
     """
-    text = SKILL_PATH.read_text()
+    text = issue_skill_text()
     assert text.count("UNSANCTIONED at every doubled site") == 1
     assert text.count("#825 skipped the reconciler") == 1
     assert text.count("the #825 deviation site") == 1

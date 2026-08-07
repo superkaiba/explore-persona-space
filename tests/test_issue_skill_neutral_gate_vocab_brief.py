@@ -19,6 +19,8 @@ brief-composition pointers.
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 _REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = _REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 CLAUDE_MD = _REPO / "CLAUDE.md"
@@ -28,7 +30,7 @@ LESSONS_MD = _REPO / ".claude" / "rules" / "LESSONS.md"
 
 
 def _step5a_section() -> str:
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.index("5a. Spawn both reviewers")
     end = text.index("5b. Read both markers")
     return text[start:end]
@@ -75,14 +77,14 @@ def test_adversarial_planner_phase3_critique_by_file():
 
 
 def test_step5d_bounce_by_reference():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.index("**5d. Loop on FAIL")
     s5d = text[start : text.index("CAP-HIT", start)]
     assert "File-only Codex verdict posting" in s5d
 
 
 def test_step9a_analyzer_respawn_by_reference():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.index("If `final_verdict == REVISE`")
     s9a = text[start : text.index("Max 5 rounds per reviewer", start)]
     assert "critique events by reference" in s9a

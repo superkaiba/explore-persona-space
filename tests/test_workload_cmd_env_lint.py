@@ -35,6 +35,7 @@ from explore_persona_space.backends.issue_dispatch import (
     lint_workload_cmd_lane_env,
     strip_sentinel_append,
 )
+from tests.issue_skill_source import issue_skill_text
 from tests.test_dispatch_issue_cli import (
     _backend_selected_extras,
     _build_mock_factory,
@@ -594,7 +595,7 @@ def test_skill_step6b_lane_portable_repo_root_pin() -> None:
     """Plan test 19 / §10 durability pin: SKILL.md Step 6b no longer
     prescribes the bare ``REPO_ROOT="$WORKLOAD_ROOT" bash`` composition and
     DOES carry the lane-portable ``${WORKLOAD_ROOT:-`` recommendation."""
-    skill = (REPO / ".claude" / "skills" / "issue" / "SKILL.md").read_text(encoding="utf-8")
+    skill = issue_skill_text()
     assert 'REPO_ROOT="$WORKLOAD_ROOT" bash' not in skill, (
         "SKILL.md re-prescribes the bare $WORKLOAD_ROOT composition (#825/#1329)"
     )

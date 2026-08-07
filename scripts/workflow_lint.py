@@ -2756,6 +2756,66 @@ def _other_worktree_prefix(repo_root: Path) -> str | None:
     return None
 
 
+def _issue_step_companions(skills_root: Path) -> list[Path]:
+    """``<skills_root>/issue/steps/*.md`` — the per-step bodies split out of
+    ``.claude/skills/issue/SKILL.md`` (#2155).
+
+    Every check that scans ``skills/**/SKILL.md`` MUST also scan these, or the
+    split silently drops enforcement over the relocated prose instead of
+    failing loud — the inverse of the #850/#1159 pointer-reachability rule and
+    the same coverage-loss class that makes a grandfathered size entry go
+    stale. This mirrors how ``markers.md`` and ``templates/*.md`` are already
+    appended alongside the SKILL.md glob.
+
+    Returns [] when the directory is absent, so callers are split-agnostic.
+    """
+    steps = skills_root / "issue" / "steps"
+    if not steps.is_dir():
+        return []
+    return sorted(p for p in steps.glob("*.md") if p.is_file())
+
+
+_ISSUE_STEP_POINTER = re.compile(
+    r"^>\s+\*\*Full procedure:\*\*\s+`\.claude/skills/issue/steps/(\S+?)`"
+)
+_ISSUE_STEP_BODY_SPLIT = "\n---\n\n"
+
+
+def _read_workflow_doc(path: Path) -> str:
+    """Read a workflow doc as its LOGICAL self.
+
+    For ``.claude/skills/issue/SKILL.md`` that means splicing each relocated
+    step body back in at its ``> **Full procedure:**`` pointer, reconstructing
+    the pre-split document (#2155). Every anchor/region check that asserts
+    something lives "in SKILL.md" must see the logical document — otherwise
+    the split silently drops enforcement instead of failing loud, the same
+    coverage-loss class the ``_issue_step_companions`` glob extension closes
+    for the per-file scanners. Any other path reads through unchanged.
+    """
+    text = path.read_text(encoding="utf-8")
+    if path.name != "SKILL.md" or path.parent.name != "issue":
+        return text
+    steps_dir = path.parent / "steps"
+    if not steps_dir.is_dir():
+        return text
+    out: list[str] = []
+    lines = text.split("\n")
+    i = 0
+    while i < len(lines):
+        m = _ISSUE_STEP_POINTER.match(lines[i])
+        if m is None:
+            out.append(lines[i])
+            i += 1
+            continue
+        while i < len(lines) and lines[i].startswith(">"):
+            i += 1
+        companion = steps_dir / m.group(1)
+        body = companion.read_text(encoding="utf-8") if companion.is_file() else ""
+        _, sep, tail = body.partition(_ISSUE_STEP_BODY_SPLIT)
+        out.append((tail if sep else body).rstrip("\n"))
+    return "\n".join(out)
+
+
 def _is_other_worktree_path(path: Path, current_worktree_prefix: str | None) -> bool:
     """Return True iff ``path`` lives under a DIFFERENT worktree than the
     one we are currently running from.
@@ -2872,6 +2932,11 @@ def _iter_ask_target_files(repo_root: Path) -> list[Path]:
             p
             for p in skills_root.glob("**/SKILL.md")
             if p.is_file() and not _is_other_worktree_path(p, current_prefix)
+        )
+        files.extend(
+            p
+            for p in _issue_step_companions(skills_root)
+            if not _is_other_worktree_path(p, current_prefix)
         )
     return sorted(files)
 
@@ -3300,6 +3365,11 @@ def _iter_skill_ref_target_files(repo_root: Path) -> list[Path]:
             p
             for p in skills.glob("**/SKILL.md")
             if p.is_file() and not _is_other_worktree_path(p, current_prefix)
+        ]
+        files += [
+            p
+            for p in _issue_step_companions(skills)
+            if not _is_other_worktree_path(p, current_prefix)
         ]
     if rules.exists():
         files += [
@@ -4349,6 +4419,7 @@ def _grep_qv_target_files(roots: list[Path] | None) -> list[Path]:
         scripts = _REPO_ROOT / "scripts"
         if skills.exists():
             files.extend(sorted(p for p in skills.rglob("SKILL.md") if p.is_file()))
+            files.extend(_issue_step_companions(skills))
         if agents.exists():
             files.extend(sorted(p for p in agents.glob("*.md") if p.is_file()))
         if scripts.exists():
@@ -4727,6 +4798,7 @@ def check_marker_registry(
         canonical_skills = _REPO_ROOT / ".claude" / "skills"
         if canonical_skills.is_dir():
             targets.extend(sorted(p for p in canonical_skills.glob("**/SKILL.md") if p.is_file()))
+            targets.extend(_issue_step_companions(canonical_skills))
         canonical_agents = _REPO_ROOT / ".claude" / "agents"
         if canonical_agents.is_dir():
             targets.extend(sorted(p for p in canonical_agents.glob("*.md") if p.is_file()))
@@ -4735,6 +4807,7 @@ def check_marker_registry(
             targets.append(skill_md)
         if skills_dir is not None and skills_dir.is_dir():
             targets.extend(sorted(p for p in skills_dir.glob("**/SKILL.md") if p.is_file()))
+            targets.extend(_issue_step_companions(skills_dir))
         if agents_dir is not None and agents_dir.is_dir():
             targets.extend(sorted(p for p in agents_dir.glob("*.md") if p.is_file()))
     registered = {m.kind for m in workflow.markers}
@@ -4907,6 +4980,7 @@ def check_poller_marker_consumers(
         consumers: list[Path] = []
         if skills_dir.is_dir():
             consumers.extend(sorted(p for p in skills_dir.glob("**/SKILL.md") if p.is_file()))
+            consumers.extend(_issue_step_companions(skills_dir))
         consumers.extend(
             _REPO_ROOT / "scripts" / name
             for name in (
@@ -10101,6 +10175,7 @@ def check_no_literal_round_marker_versions(*, repo_root: Path | None = None) -> 
     skills_dir = root / ".claude" / "skills"
     if skills_dir.is_dir():
         targets.extend(p for p in sorted(skills_dir.rglob("SKILL.md")) if p.is_file())
+        targets.extend(_issue_step_companions(skills_dir))
     markers_md = root / ".claude" / "skills" / "issue" / "markers.md"
     if markers_md.is_file():
         targets.append(markers_md)
@@ -11243,7 +11318,7 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
             f"marker-shape sub-recipe must live in the /issue skill."
         )
     else:
-        text = skill.read_text(encoding="utf-8")
+        text = _read_workflow_doc(skill)
         start = text.find("**5c-bis.")
         end = text.find("**5c-ter.")
         region = text[start:end] if (start != -1 and end != -1 and end > start) else ""
@@ -11299,7 +11374,7 @@ def check_stale_label_disposition_clause(*, repo_root: Path | None = None) -> li
     skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
     if not skill.is_file():
         return [f"{skill}: missing — the Step 0 stale-label disposition paragraph must exist."]
-    text = skill.read_text(encoding="utf-8")
+    text = _read_workflow_doc(skill)
     n_anchors = text.count(_STALE_LABEL_ANCHOR)
     if n_anchors == 0:
         return [
@@ -11411,7 +11486,7 @@ def check_smoke_output_hygiene(*, repo_root: Path | None = None) -> list[str]:
                 f"{name}."
             )
             continue
-        text = path.read_text(encoding="utf-8")
+        text = _read_workflow_doc(path)
         start_m = re.search(start_re, text, flags=re.MULTILINE)
         if start_m is None:
             errors.append(
@@ -11535,7 +11610,7 @@ def check_crash_fix_relaunch_contract(*, repo_root: Path | None = None) -> list[
                 f"({name}) must live here (#1181)."
             )
             continue
-        text = path.read_text(encoding="utf-8")
+        text = _read_workflow_doc(path)
         n_anchors = text.count(anchor)
         if n_anchors == 0:
             errors.append(
@@ -11641,7 +11716,7 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
                 f"must live in all four VM-launch surfaces."
             )
             continue
-        n = p.read_text(encoding="utf-8").count(_VM_THREAD_CAP_PREFIX)
+        n = _read_workflow_doc(p).count(_VM_THREAD_CAP_PREFIX)
         if n < min_count:
             errors.append(
                 f"{p}: {n} occurrence(s) of the shared-VM thread-cap prefix "
@@ -11796,9 +11871,7 @@ def check_awk_elision_parity(*, repo_root: Path | None = None) -> list[str]:
                 f"program deliberately moved, update _AWK_ELISION_HOMES (#1153)."
             )
             continue
-        anchor_lines = [
-            ln for ln in p.read_text(encoding="utf-8").split("\n") if _AWK_ELISION_ANCHOR in ln
-        ]
+        anchor_lines = [ln for ln in _read_workflow_doc(p).split("\n") if _AWK_ELISION_ANCHOR in ln]
         if len(anchor_lines) != 1:
             errors.append(
                 f"{p}: expected exactly 1 line containing the awk elision anchor "
@@ -12433,7 +12506,7 @@ def check_inline_round_duty_mirror(*, repo_root: Path | None = None) -> list[str
         errors.append(f"check-inline-round-duty-mirror: {claude_path} not found")
         return errors
     try:
-        skill_text = skill_path.read_text(encoding="utf-8")
+        skill_text = _read_workflow_doc(skill_path)
     except FileNotFoundError:
         errors.append(f"check-inline-round-duty-mirror: {skill_path} not found")
         return errors
@@ -13055,10 +13128,22 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 897,435 B post-t3b story->citation trim; the remaining mass is
-    # the judgment tranche (bash-block extraction to step10d_guards.sh-style
-    # scripts, 9a-quater legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 900_000,
+    # measured 68,967 B post-#2155: every `### Step` body relocated to
+    # issue/steps/*.md, leaving the state machine, the Orchestration
+    # Procedure router, each step heading and a pointer. Prior: 900_000 —
+    # measured 897,435 B post-t3b story->citation trim.
+    "issue/SKILL.md": 70_000,
+    # The #2155 step companions. These are NOT boot-loaded — SKILL.md carries
+    # a pointer and the orchestrator reads one only when the run reaches that
+    # step — so their cost moved from every /issue session to the sessions
+    # that actually execute the step. Sizes are the pre-split bodies verbatim;
+    # trimming them is the follow-up, and the 60 KB threshold is what keeps
+    # that visible. Step 9 has no internal heading seams (one #### over ~3.5k
+    # lines), so sub-splitting it means inventing boundaries in prose.
+    "issue/steps/09-step-5.md": 78_800,
+    "issue/steps/10-step-6.md": 134_900,
+    "issue/steps/13-step-9.md": 223_000,
+    "issue/steps/18-step-10d.md": 227_800,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,

@@ -53,6 +53,8 @@ if str(SRC) not in sys.path:
 import autonomous_session_watch as asw  # noqa: E402
 import tick_triage  # noqa: E402
 
+from tests.issue_skill_source import issue_skill_text  # noqa: E402
+
 HEARTBEAT_PREFIX = "[long-phase-heartbeat]"
 
 DUTY_HEADING_RE = re.compile(r"\*\*Long-phase heartbeat duty")
@@ -65,7 +67,7 @@ def _norm(text: str) -> str:
 
 def _skill_text() -> str:
     assert SKILL_MD.exists(), f"missing {SKILL_MD}"
-    return SKILL_MD.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _duty_block(text: str) -> str:

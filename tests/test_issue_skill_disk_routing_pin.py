@@ -32,6 +32,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import read_workflow_doc
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 CLAUDE_MD = ROOT / "CLAUDE.md"
@@ -45,7 +47,7 @@ def _normalized(path: Path) -> str:
     re-wrap. Collapsing whitespace makes the pins wrap-insensitive while
     keeping them verbatim in substance.
     """
-    return re.sub(r"\s+", " ", path.read_text(encoding="utf-8"))
+    return re.sub(r"\s+", " ", read_workflow_doc(path))
 
 
 def test_9a_ter_disk_routing_element_pinned() -> None:
