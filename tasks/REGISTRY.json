@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2180,
+  "highest_id": 2181,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9124,6 +9124,13 @@
       "path": "tasks/proposed/2180",
       "status": "proposed",
       "title": "Headline matched-partial needs a support-restricted companion when the matching covariate is degenerate on most of the sample"
+    },
+    "2181": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2181",
+      "status": "proposed",
+      "title": "Ban repo_root()-derived sys.path inserts in tests (worktree runs silently exercise main's code)"
     },
     "22": {
       "has_clean_result": false,
