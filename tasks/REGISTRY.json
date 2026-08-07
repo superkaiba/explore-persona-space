@@ -7848,8 +7848,8 @@
     "2012": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2012",
-      "status": "approved",
+      "path": "tasks/completed/2012",
+      "status": "completed",
       "title": "daily-fix: finally-block raise must never mask in-flight exc"
     },
     "2013": {
