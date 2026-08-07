@@ -1563,12 +1563,17 @@ def _run_anchor_batch(
             len(order),
             time.monotonic() - t0,
         )
+    # Persist the rollout TEXT the moment generation completes, BEFORE the
+    # capture reduce (#779 / r1 m2): a capture crash must never lose ~1,650
+    # generated rollouts. The post-capture write below atomically REPLACES
+    # this file with the capture-enriched rows (adds token counts / cap_hit).
+    jsonl = cfg.anchors_dir / f"anchors_{batch}_w{cfg.worker_index}.jsonl"
+    _write_jsonl_atomic(jsonl, rows)
     states = capture_answer_states(cfg, model, tok, flat_ctx, flat_text, eot)
     for r, n_tok in zip(rows, states["n_completion_tokens"], strict=True):
         r["n_completion_tokens"] = n_tok
         r["cap_hit"] = cap_hit(n_tok, cfg.max_new_tokens)
         r["cap_hit_basis"] = "retokenized_completion_len >= max_new_tokens"
-    jsonl = cfg.anchors_dir / f"anchors_{batch}_w{cfg.worker_index}.jsonl"
     _write_jsonl_atomic(jsonl, rows)
     _save_pt_atomic(
         cfg.anchors_dir / f"va_anchors_{batch}_w{cfg.worker_index}.pt",

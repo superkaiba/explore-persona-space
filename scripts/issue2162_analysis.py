@@ -153,32 +153,53 @@ def _grid_behavior_score(
 
 
 def _load_va_store(va_dir: Path) -> dict[tuple[str, str, str, int], torch.Tensor]:
-    """(block_key, pair_id, context_a, draw) -> layer-26 span-mean V_a (H,)."""
+    """(block_key, pair_id, context_a, draw) -> layer-26 span-mean V_a (H,).
+
+    Rows listed in the shard's ``empty_rows`` (empty completion => zero-vector
+    ``va_span``) are EXCLUDED — a zero vector is not a state read (r1 m1).
+    """
     out: dict[tuple[str, str, str, int], torch.Tensor] = {}
+    n_empty = 0
     for shard in sorted(va_dir.glob("shard_*.pt")):
         payload = torch.load(shard, map_location="cpu", weights_only=False)
         layers = payload["layers"]
         li = layers.index(READ_LAYER) if READ_LAYER in layers else len(layers) - 1
         va = payload["va_span"]
+        empty = set(payload.get("empty_rows", []))
+        n_empty += len(empty)
         for j, meta in enumerate(payload["index"]):
+            if j in empty:
+                continue
             out[(payload["block_key"], meta["pair_id"], meta["context_a"], meta["draw"])] = va[
                 j, li
             ].float()
     assert out, f"no V_a shards under {va_dir}"
+    if n_empty:
+        logger.info("[va-store] excluded %d empty-completion zero-vector rows", n_empty)
     return out
 
 
 def _load_anchor_va(anchors_dir: Path) -> dict[tuple[str, int], torch.Tensor]:
-    """(context_id, draw) -> layer-26 span-mean anchor V_a (H,)."""
+    """(context_id, draw) -> layer-26 span-mean anchor V_a (H,).
+
+    ``empty_rows`` excluded — same zero-vector rationale as ``_load_va_store``.
+    """
     out: dict[tuple[str, int], torch.Tensor] = {}
+    n_empty = 0
     for shard in sorted(anchors_dir.glob("va_anchors_*.pt")):
         payload = torch.load(shard, map_location="cpu", weights_only=False)
         layers = payload["layers"]
         li = layers.index(READ_LAYER) if READ_LAYER in layers else len(layers) - 1
         va = payload["va_span"]
+        empty = set(payload.get("empty_rows", []))
+        n_empty += len(empty)
         for j, meta in enumerate(payload["index"]):
+            if j in empty:
+                continue
             out[(meta["context_id"], meta["draw"])] = va[j, li].float()
     assert out, f"no anchor V_a shards under {anchors_dir}"
+    if n_empty:
+        logger.info("[anchor-va] excluded %d empty-completion zero-vector rows", n_empty)
     return out
 
 
@@ -413,6 +434,15 @@ def step_stats(args: argparse.Namespace) -> None:
     for r in steered:
         cells[(r["cell"], r["slot"])].append(r)
 
+    # Plan §4.5 (r1 m5): cells below 50% coherent are MARKED explicitly.
+    # Pooled over all three arms' rollouts for the (cell x slot) unit.
+    coh_counts: dict[tuple[str, str], list[int]] = defaultdict(lambda: [0, 0])
+    for rows_list in (steered, nulls["shuffled"], nulls["crosstype"]):
+        for r in rows_list:
+            c = coh_counts[(r["cell"], r["slot"])]
+            c[0] += r["n_coherent"]
+            c[1] += r["n_draws"]
+
     per_cell: dict[str, dict] = {}
     family_p: dict[str, dict[str, float]] = defaultdict(dict)
     boot_values: list[np.ndarray] = []
@@ -485,6 +515,16 @@ def step_stats(args: argparse.Namespace) -> None:
             ),
             "p_iut": p_iut,
             "realized_mde_single_test": (1.02 / math.sqrt(n)) if n else None,
+            # Plan §4.5 coherence mark (r1 m5): pooled over all three arms.
+            "coherent_fraction": (
+                coh_counts[(cell, slot)][0] / coh_counts[(cell, slot)][1]
+                if coh_counts[(cell, slot)][1]
+                else None
+            ),
+            "low_coherence": bool(
+                coh_counts[(cell, slot)][1]
+                and coh_counts[(cell, slot)][0] / coh_counts[(cell, slot)][1] < 0.5
+            ),
             # Plan §4.1 length-matched sensitivity recount (r1 M7): the same
             # per-cell means over |Δlen| <= 2 pairs only ("where the varied
             # span permits" — n=0 means the type's spans never length-match).
