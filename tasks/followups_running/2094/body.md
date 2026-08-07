@@ -271,11 +271,11 @@ Whole-prefix patches yield zero clean reads: 42 of 50 template-inclusive reads a
 
 ### A replacement conversation prefix recovers four of the five weak matched-query pairs, and the parent's clean reads reproduce their direction on them
 
-The scatter plots each matched-query context-end family's steered-minus-null mean F gap on the parent grid (10 well-separated pairs) against its gap on the 4 recovered pairs, per metric (150 families each); the parent's clean-separating families are filled and labeled.
+The scatter plots each matched-query context-end family's steered-minus-null mean F gap on the parent grid (10 well-separated pairs) against its gap on the 4 pairs recovered by the persistence-instructed replacement prefix, per metric (150 families each); the parent's clean-separating families are filled and labeled.
 
 ![Parent-grid versus replacement-prefix re-run steered-minus-null gap per family across behavior and activation panels](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d84c87d6cff0bbf5fd2af281b257beb84ea3fbe5/figures/issue_2094/gpu2_parent_gap_scatter.png)
 
-> **Figure.** *Every parent-clean family reproduces its gap direction on the recovered pairs, and grid-mean gaps match.* Steered-minus-null mean F per family, parent grid (x axis) vs replacement-prefix re-run (y axis); 150 families per panel, one greedy draw per pair at a 2048-token cap; filled markers are the parent's clean-separating families; the dashed line is identity.
+> **Figure.** *Every parent-clean family reproduces its gap direction on the recovered pairs, and grid-mean gaps match.* Steered-minus-null mean F per family, parent grid (x axis) vs replacement-prefix re-run (y axis); 150 families per panel, one greedy draw per pair (parent grid at a 1024-token cap, re-run at 2048); filled markers are the parent's clean-separating families; the dashed line is identity.
 
 The five weak matched-query pairs shared the conversation prefix, whose register does not carry into its own unpatched answers (0.22 vs 74.86 of 100 on the two rubrics), so their ceilings never separated. The replacement prefix recovers four (anchor separations 0.51-1.02); the fifth stays at 0.004 — unresolved, with the query side the surviving suspect.
 
