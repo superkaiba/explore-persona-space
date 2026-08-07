@@ -3159,6 +3159,7 @@ judgment, just structural presence:
   separate `epm:smoke-architecture-check` events row exists in canonical task
   state with a `verdict:` line matching `PASS_UNIFIED` | `PASS_CANARY
   canary_cell=<id>` | `PASS_PARTIAL arms_stubbed=<comma-list>` |
+  `PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>` |
   `FAIL_NO_CANARY` — present + parseable → STRIP (a stale-worktree false
   absence); absent or verdict-less → leave the FAIL in place (the gate is
   doing its job; do NOT check the implementation marker's H3s for this
@@ -3170,7 +3171,10 @@ judgment, just structural presence:
   row" / "marker missing" / "verdict-less". A SHAPE-VIOLATION blocker
   (marker present, verdict parseable, but internal-shape inconsistent —
   e.g. "PASS_UNIFIED verdict but arm foo reads FALLBACK", "per-arm-resolution
-  row missing for plan-named arm bar", "import-resolution shape unrecognized")
+  row missing for plan-named arm bar", "import-resolution shape unrecognized",
+  "PASS_AUTHORIZED_STUB verdict but arms_stubbed ≠ the FALLBACK-rowed arm
+  set", "PASS_UNIFIED verdict but an N/A row reads 'authorized smoke stub'" —
+  authorized stubs take `PASS_AUTHORIZED_STUB`, the #2163-v4 improvisation)
   is `substantive`-adjacent: the strip does NOT fire and the FAIL stands.
   Distinguish by the blocker body phrasing (absence vocabulary → strip
   when marker present; verdict-vs-rows / row-missing / import-shape vocabulary
@@ -4514,7 +4518,8 @@ Verdict routing:
 |---|---|
 | `PASS_UNIFIED` | Advance to Step 6d.1 — smoke IS sweep with one cell; the architecture is unified end-to-end AND every planned arm resolved REAL or N/A. |
 | `PASS_CANARY canary_cell=<id>` | Advance to Step 6d.1 — paths diverge but the plan §4 Design justifies the divergence in two sentences AND names the canary cell that exercised the sweep path during smoke. Log to chat: `divergence accepted; canary cell <id> exercised the subprocess path during smoke`. |
-| `PASS_PARTIAL arms_stubbed=<comma-list>` | **REFUSE to dispatch.** Bounce back to status:planning; re-invoke `/adversarial-planner` with pivot scope: "arms {arms_stubbed} resolved to fallback/stub in smoke — phase coverage + import-resolution passed BUT ≥1 planned arm is not exercising its production computation path; resolve them in the diff, OR re-authorize the stubs in §4 Design (canary-like exception, not yet wired)." Round counter does NOT increment (strategy pivot, mirroring `FAIL_NO_CANARY`). |
+| `PASS_PARTIAL arms_stubbed=<comma-list>` | **REFUSE to dispatch.** Bounce back to status:planning; re-invoke `/adversarial-planner` with pivot scope: "arms {arms_stubbed} resolved to fallback/stub in smoke — phase coverage + import-resolution passed BUT ≥1 planned arm is not exercising its production computation path; resolve them in the diff, OR re-authorize the stubs in a plan §4 '### Authorized smoke stubs' block (one table row per arm: backticked arm name \| why it cannot run at smoke \| compensating control), landing the amendment through the plan-revision + APPROVAL gate (planning bounce → new-plan-version → plan approval; the checker refuses a block-bearing plan version persisted AFTER the latest epm:plan-approved, so a bare new-plan-version edit cannot self-grant), then re-post the marker as 'PASS_AUTHORIZED_STUB arms_stubbed=<same list>', carrying the latest IMPLEMENTER marker's per-arm-resolution: sub-block and import-resolution: line VERBATIM with only the verdict: line changed (the checker parses only those line-anchored machine keys — a free-prose row intro like #2163-v3's 'Per-arm resolution (...):' parses as NO sub-block and refuses) — Step 6d.0 grants it mechanically (see that row)." Round counter does NOT increment (strategy pivot, mirroring `FAIL_NO_CANARY`). |
+| `PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>` | Run the mechanical grant check: `uv run python scripts/task.py check-authorized-stub <N>`. rc=0 (prints `GRANT arms_stubbed=<list>`) → advance to Step 6d.1; log to chat: `authorized stubs granted mechanically: <list> — plan §4 "Authorized smoke stubs" names each with an impossibility reason + compensating control`. rc≠0 (prints `REFUSE — <reason>`) → **REFUSE to dispatch**; route exactly as `PASS_PARTIAL`, appending the checker's printed reason to the pivot scope. The orchestrator NEVER grants this token by prose judgment — the checker's exit code is the only grant path (#2171; retires the #2163 improvised `PASS_UNIFIED` grant). |
 | `FAIL_NO_CANARY` | **REFUSE to dispatch.** Bounce back to status:planning; re-invoke `/adversarial-planner` with pivot scope: "the smoke/sweep architectural divergence has no justification + canary; re-architect toward UNIFICATION (smoke = sweep with one cell), OR add the two-sentence justification + named canary cell to §4 Design." Round counter does NOT increment (this is a strategy pivot, not a fresh review round). |
 | (marker missing) | **REFUSE to dispatch.** Bounce back to implementer with a one-line prompt: `post epm:smoke-architecture-check v1 per the mandatory checklist before code-review-PASS`. |
 

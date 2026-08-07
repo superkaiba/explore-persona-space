@@ -107,7 +107,8 @@ For `type:experiment` tasks, verify a separate `epm:smoke-architecture-check`
 events row EXISTS in canonical task state — `uv run python scripts/task.py
 view <N> --json`, never a possibly-stale worktree `events.jsonl` (the same
 false-absence caution as Step 0.5) — with a parseable `verdict:` line, one of
-`PASS_UNIFIED` | `PASS_CANARY canary_cell=<id>` | `FAIL_NO_CANARY`. The
+`PASS_UNIFIED` | `PASS_PARTIAL arms_stubbed=<list>` | `PASS_AUTHORIZED_STUB
+arms_stubbed=<list>` | `PASS_CANARY canary_cell=<id>` | `FAIL_NO_CANARY`. The
 implementer posts it ONCE at pre-flight (experiment-implementer.md "Before
 writing code" item 5); fix rounds do NOT re-post, so the check is
 presence-on-task (any version), NEVER presence-per-round — a fix-round review
@@ -125,7 +126,9 @@ with a round-1 marker PASSes this gate.
   > state. experiment-implementer.md "Before writing code" item 5 mandates it
   > before code-review-PASS, and /issue Step 6d.0 will refuse dispatch without
   > it — AFTER pod provisioning has already run. Post it as a separate events
-  > row (`verdict: PASS_UNIFIED` | `PASS_CANARY canary_cell=<id>` |
+  > row (`verdict: PASS_UNIFIED` | `PASS_PARTIAL arms_stubbed=<list>` |
+  > `PASS_AUTHORIZED_STUB arms_stubbed=<list>` |
+  > `PASS_CANARY canary_cell=<id>` |
   > `FAIL_NO_CANARY`); prose in a dispatcher header or an HTML comment inside
   > the `epm:experiment-implementation` note does NOT count (incident #811:
   > the claim lived in a dispatcher header across 5 rounds, both reviewers
@@ -153,9 +156,18 @@ with a round-1 marker PASSes this gate.
   per verdict:
   - `verdict: PASS_UNIFIED` — every per-arm row must read `REAL` or
     `N/A`. Any `FALLBACK` row is a `marker-shape` blocker (the
-    verdict should have been `PASS_PARTIAL`).
+    verdict should have been `PASS_PARTIAL`). An `N/A` row whose text
+    cites authorized-stub vocabulary (e.g. `N/A — authorized smoke
+    stub`) is likewise a `marker-shape` blocker — authorized stubs
+    take `PASS_AUTHORIZED_STUB`, never a re-labeled `N/A` (the
+    #2163-v4 improvisation, retired by #2171).
   - `verdict: PASS_PARTIAL arms_stubbed=<list>` — the `<list>` must
     equal (as a set) the names of every `FALLBACK`-rowed arm.
+  - `verdict: PASS_AUTHORIZED_STUB arms_stubbed=<list>` — same
+    set-equality binding as `PASS_PARTIAL` (the `<list>` must equal
+    the `FALLBACK`-rowed arms); the marker-vs-PLAN subset check is NOT
+    the reviewer's — Step 6d.0's `task.py check-authorized-stub`
+    checker owns it (#2171).
   - `verdict: PASS_CANARY canary_cell=<id>` — same REAL / N/A
     invariant as `PASS_UNIFIED` (a `FALLBACK` row here is a
     `marker-shape` blocker).

@@ -331,8 +331,9 @@ gates:
         FAIL_NO_CANARY, /issue bounces back to status:planning for a
         UNIFICATION re-architect (or, if unification is genuinely
         impossible, the planner re-drafts with the canary section).
-        PASS_UNIFIED and PASS_CANARY both advance to Step 6a (pod
-        provision). Rationale: task #397 rounds 9/10/10' burned three
+        PASS_UNIFIED and PASS_CANARY advance directly;
+        PASS_AUTHORIZED_STUB advances only on a rc=0
+        'task.py check-authorized-stub' grant (#2171). Rationale: task #397 rounds 9/10/10' burned three
         full implementer rounds on subprocess-vs-in-process divergence
         the smoke phase silently satisfied; the gate forces the
         divergence to be explicit at plan time.
@@ -1622,10 +1623,35 @@ markers:
           Step 6d.0 gate (inline gates id=10) refuses to dispatch
           experimenter on PASS_PARTIAL — bounces to planner to either
           resolve the stubbed arms in the diff or re-authorize the stubs
-          in §4 Design (canary-like exception, v1.1). Closes the #1689
+          in the plan's '### Authorized smoke stubs' block, land the
+          amendment through the plan-approval gate, then re-post
+          PASS_AUTHORIZED_STUB (wired: Step 6d.0 grants via task.py
+          check-authorized-stub). Closes the #1689
           rounds-2/3/4 false-pass class where literal fallback stubs
           satisfied phase coverage but delivered arms of the wrong
           science.
+        `verdict: PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>` — the
+          PASS_PARTIAL shape (phase coverage + the Axis 1 leg passed;
+          arms_stubbed set-equals the FALLBACK-rowed arms, scoped to the
+          `per-arm-resolution:` sub-block's rows only) PLUS plan
+          authorization AND approval provenance: every arms_stubbed arm
+          appears backticked in the CURRENT plan's `### Authorized smoke
+          stubs` block with a non-empty impossibility reason AND
+          compensating control, and the latest `epm:plan-approved`
+          postdates that plan version's persist (a bare new-plan-version
+          edit after approval cannot self-grant). A re-post after a
+          PASS_PARTIAL bounce carries the latest IMPLEMENTER marker's
+          `per-arm-resolution:` sub-block + `import-resolution:` line
+          VERBATIM, changing only the `verdict:` line — the checker
+          parses only those line-anchored machine keys, so a free-prose
+          row intro parses as NO sub-block and refuses, naming the
+          expected key. Step 6d.0 grants ONLY via
+          `task.py check-authorized-stub <N>` (rc=0 = GRANT); an arm
+          missing from the plan block, an extra FALLBACK row outside
+          arms_stubbed, a malformed block, or a post-approval plan edit
+          each REFUSE (routed as PASS_PARTIAL). The per-arm FALLBACK
+          rows keep the residual untested seams in the durable record.
+          Wired by #2171 (the #2163 unwired-escape incident).
         `verdict: FAIL_NO_CANARY` — paths diverge without the §4
           justification + canary; implementer also emits a
           `workflow-fix-candidate v1` suggesting re-architect toward
