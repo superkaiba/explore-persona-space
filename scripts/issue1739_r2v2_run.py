@@ -54,6 +54,15 @@ WIDE_RIDGE_LAMBDAS = "0.01,0.1,1.0,10.0,100.0,1000.0,10000.0,100000.0,1000000.0"
 # HF prefix; the scorer runs with --protocols C (per-holdout map refit).
 PC_HF_OUT_PREFIX = "issue1739_r2v2_pc"
 PC_OUT_ROOT = Path("eval_results/issue_1739/r2v2_pc")
+# arm12 re-score (2026-08-07 inline round): the committed P-A/P-B round scored
+# five arms and never arm12_oracle_reg ("Ridge regression on real answer"), so
+# putting that arm on a P-A/P-B figure needs a re-score, not a re-read. Same
+# protocols + same inputs as the `fits` leg, roster extended by one arm, OWN
+# out root + HF prefix so the committed five-arm results are never overwritten
+# (which also makes the five shared arms a free reproduction check).
+ARM12_HF_OUT_PREFIX = "issue1739_r2v2_fits_arm12"
+ARM12_OUT_ROOT = Path("eval_results/issue_1739/r2v2_fits_arm12")
+ARM12_EXTRA_ARMS = ("arm12_oracle_reg",)
 CTXMAP_PREFIX = "issue1739_ctxmap"
 BANK_PREFIX = f"{CTXMAP_PREFIX}/rb_fc_bank"
 HALLU_PR_FILE = f"{CTXMAP_PREFIX}/judge/hallucination/labeling_per_rollout.json"
@@ -193,7 +202,19 @@ def factorial_cmd(args, behavior: str) -> list[str]:
     return cmd
 
 
-def score_cmd(args, behavior: str, out_root: Path = OUT_ROOT) -> list[str]:
+def score_cmd(
+    args,
+    behavior: str,
+    out_root: Path = OUT_ROOT,
+    extra_arms: tuple[str, ...] = (),
+    transfer_preds: bool = False,
+) -> list[str]:
+    """Compose the scorer argv for one behavior.
+
+    ``extra_arms`` / ``transfer_preds`` default to the committed `fits`-leg
+    shape (empty / off), so every existing caller composes a byte-identical
+    argv; only the arm12 leg passes them.
+    """
     cmd = [
         sys.executable,
         str(_REPO_ROOT / "scripts" / "issue1739_r2v2_score.py"),
@@ -218,6 +239,10 @@ def score_cmd(args, behavior: str, out_root: Path = OUT_ROOT) -> list[str]:
         "--ood-dv-max-null-frac",
         str(args.ood_dv_max_null_frac),
     ]
+    if extra_arms:
+        cmd += ["--extra-arms", *extra_arms]
+    if transfer_preds:
+        cmd.append("--transfer-preds")
     if args.pb_holdouts:
         cmd += ["--pb-holdouts", *args.pb_holdouts]
     return cmd
@@ -229,6 +254,7 @@ LEG_DESTS = {
     "factorial": (FACT_OUT_ROOT, FACT_HF_OUT_PREFIX),
     "fits-widegrid": (WIDE_OUT_ROOT, WIDE_HF_OUT_PREFIX),
     "pc": (PC_OUT_ROOT, PC_HF_OUT_PREFIX),
+    "fits-arm12": (ARM12_OUT_ROOT, ARM12_HF_OUT_PREFIX),
 }
 
 
@@ -249,6 +275,21 @@ def leg_cmd_env(args, behavior: str, leg: str) -> tuple[list[str], dict[str, str
         # P-C rides the same scorer with --protocols C (the driver caller
         # passes --protocols C) and its own out root / HF prefix.
         return score_cmd(args, behavior, out_root=PC_OUT_ROOT), {}
+    if leg == "fits-arm12":
+        # Same protocols + inputs as `fits`, roster extended by arm12, own out
+        # root. --transfer-preds rides along: this leg re-runs the fits anyway,
+        # so banking per-context predictions here makes any later CI/subset
+        # re-read a pure re-analysis instead of a third re-score.
+        return (
+            score_cmd(
+                args,
+                behavior,
+                out_root=ARM12_OUT_ROOT,
+                extra_arms=ARM12_EXTRA_ARMS,
+                transfer_preds=True,
+            ),
+            {},
+        )
     raise ValueError(f"unknown leg {leg!r}")
 
 
@@ -306,7 +347,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--legs",
         nargs="+",
         default=["fits"],
-        choices=["fits", "factorial", "fits-widegrid", "pc"],
+        choices=["fits", "factorial", "fits-widegrid", "pc", "fits-arm12"],
         help="which scoring legs to run per behavior (in the given order)",
     )
     ap.add_argument("--device", default="cpu")
@@ -352,6 +393,18 @@ def main(argv: list[str] | None = None) -> None:
         pc_cmd, pc_env = leg_cmd_env(args, "hallucination", "pc")
         pc_args = _score_parse_args(pc_cmd[2:])
         assert pc_env == {} and str(pc_args.out_root) == str(PC_OUT_ROOT)
+        # arm12 leg: own out root, roster extended, preds on. Binding it here
+        # also proves the scorer accepts the slug (its --extra-arms choices are
+        # restricted, so a slug drift fails at parse rather than on the pod).
+        # NOTE: this bind mutates the scorer module's ROSTER in THIS process --
+        # harmless, we exit below, and it is what proves the flag takes effect.
+        a12_cmd, a12_env = leg_cmd_env(args, "evil", "fits-arm12")
+        a12_args = _score_parse_args(a12_cmd[2:])
+        assert a12_env == {} and str(a12_args.out_root) == str(ARM12_OUT_ROOT)
+        assert tuple(a12_args.extra_arms) == ARM12_EXTRA_ARMS and a12_args.transfer_preds
+        # every OTHER leg stays byte-identical: no --extra-arms, no --transfer-preds
+        assert "--extra-arms" not in pc_cmd and "--transfer-preds" not in pc_cmd
+        assert "--extra-arms" not in wide_cmd and "--transfer-preds" not in wide_cmd
         _log("import-check OK")
         sys.stdout.flush()
         sys.stderr.flush()
