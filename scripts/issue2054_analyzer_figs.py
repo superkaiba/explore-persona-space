@@ -147,20 +147,24 @@ def fig_hero_boundary_vs_prose(ladder: list[dict]) -> None:
 def fig_boundary_vs_prose_pairs(ladder: list[dict]) -> None:
     """Raw sibling: every ordered pair's direct-transfer R^2, by single-axis class."""
     ctx = [r for r in ladder if r["arm"] == "context"]
+    # Label precision (round-2 critique): 20 of the 56 boundary-swap pairs are
+    # assistant form swaps that cross story<->non-story renders, so the class is
+    # not "same prose" throughout; 24 of the 48 model-swap pairs are on-policy,
+    # where the answer text differs by construction.
     buckets = {
-        "boundary swapped\n(same prose)": [],
+        "boundary swapped": [],
         "prose swapped\n(same boundary)": [],
-        "model swapped\n(same text)": [],
+        "model swapped": [],
     }
     for r in ctx:
         S, T = parse_cell(r["src"]), parse_cell(r["tgt"])
         diffs = [k for k in ("variant", "cond", "form", "model") if S[k] != T[k]]
         if diffs == ["form"]:
-            buckets["boundary swapped\n(same prose)"].append(r["rungs"]["1_direct"])
+            buckets["boundary swapped"].append(r["rungs"]["1_direct"])
         elif diffs == ["variant"]:
             buckets["prose swapped\n(same boundary)"].append(r["rungs"]["1_direct"])
         elif diffs == ["model"]:
-            buckets["model swapped\n(same text)"].append(r["rungs"]["1_direct"])
+            buckets["model swapped"].append(r["rungs"]["1_direct"])
     set_paper_style("blog")
     fig, ax = plt.subplots()
     rng = np.random.default_rng(42)
@@ -383,10 +387,11 @@ def fig_ladder(ladder: list[dict]) -> None:
             return "cross_character"
         return "twobytwo"
 
+    # Label precision (round-2 critique): see fig_boundary_vs_prose_pairs note.
     CLS_LABEL = {
-        "cross_framing": "boundary swapped (same prose)",
+        "cross_framing": "boundary swapped",
         "cross_character": "prose swapped (same boundary)",
-        "cross_model": "model swapped (same text)",
+        "cross_model": "model swapped",
         "twobytwo": "authorship/presentation swapped (2×2 edges)",
     }
     set_paper_style("blog")
@@ -420,6 +425,55 @@ def fig_ladder(ladder: list[dict]) -> None:
         "median with interquartile band over ordered pairs; context arm",
     )
     savefig_paper(fig, "issue_2054/ladder_recovery", dir=MAIN_FIG)
+    plt.close(fig)
+
+
+def fig_ks_pairs() -> None:
+    """Per-pair answer-length KS D (inserted vs on-policy, matched conversations).
+
+    Round 2: the low-level view behind the re-scoped parity claim — all 16
+    character-cell pairs breach the 0.30 bound; two assistant pairs pass.
+    """
+    par = json.load(
+        open(WT / "eval_results/issue_2054/analyzer_companions/answer_length_parity.json")
+    )
+    pairs = par["pairs"]
+    groups = {
+        "character pairs (n=16)": [
+            (k, v["ks_matched"]) for k, v in pairs.items() if k.startswith("char_")
+        ],
+        "assistant pairs (n=8)": [
+            (k, v["ks_matched"]) for k, v in pairs.items() if not k.startswith("char_")
+        ],
+    }
+    set_paper_style("blog")
+    fig, ax = plt.subplots(figsize=(6.8, 4.2))
+    rng = np.random.default_rng(42)
+    cols = [PAL[3], PAL[0]]
+    for i, (name, vals) in enumerate(groups.items()):
+        x = i + rng.uniform(-0.10, 0.10, size=len(vals))
+        ax.scatter(x, [v for _, v in vals], s=26, alpha=0.8, color=cols[i])
+        if i == 1:  # label the two passing assistant pairs + the maximum
+            for xi, (k, v) in zip(x, vals):
+                short = {
+                    "conversation_paired_stories_assistant__bare_text__qwen2.5-7b": "bare text, base",
+                    "conversation_paired_stories_assistant__chat__qwen2.5-7b-instruct": "chat, instruct",
+                    "conversation_paired_stories_assistant__bare_text__qwen2.5-7b-instruct": "bare text, instruct",
+                }.get(k)
+                if short:
+                    ax.text(xi + 0.03, v, short, fontsize=7, va="center")
+    ax.axhline(0.30, color="#888888", lw=1.0, ls="--")
+    ax.text(1.42, 0.305, "parity bound (D = 0.30)", fontsize=7.5, color="#666666")
+    ax.set_xticks(range(len(groups)))
+    ax.set_xticklabels(list(groups.keys()))
+    ax.set_ylabel("answer-length KS D, inserted vs on-policy")
+    ax.set_ylim(0, 0.65)
+    set_title_subtitle(
+        ax,
+        "The answer-length parity bound fails in every character cell",
+        "one dot per (identity, boundary form, model) pair; matched conversations (n ≈ 7,985–7,989)",
+    )
+    savefig_paper(fig, "issue_2054/ks_parity_pairs", dir=MAIN_FIG)
     plt.close(fig)
 
 
@@ -486,8 +540,16 @@ def fig_length_hist() -> None:
 
 
 def fig_caphit(fits: list[dict]) -> None:
-    """Cap-hit censoring + equalize-down companion refits."""
+    """Cap-hit censoring + equalize-down companion refits.
+
+    Round 2: also plots the language-drift-excluded chat-base refit
+    (/tmp/issue2054_drift_refit.json) beside the cap-hit bars when present.
+    """
     ref = json.load(open("/tmp/issue2054_companion_refits.json"))
+    try:
+        ref.update(json.load(open("/tmp/issue2054_drift_refit.json")))
+    except FileNotFoundError:
+        pass
     committed = {}
     for d in fits:
         committed[
@@ -510,57 +572,47 @@ def fig_caphit(fits: list[dict]) -> None:
     set_paper_style("blog")
     fig, ax = plt.subplots(figsize=(7.2, 4.2))
     bars = [
-        ("bare text on-policy (instruct)\nall rows n=8,000", bt_full[0], PAL[5]),
-        (
-            "bare text on-policy (instruct)\ncap-hit rows removed n=4,599",
-            pooled("bare_text_instr_excl_caphit"),
-            PAL[2],
-        ),
-        (
-            "bare text on-policy (instruct)\nrandom rows removed n=4,599",
-            pooled("bare_text_instr_random_matched_n"),
-            PAL[6],
-        ),
-        ("chat on-policy (base)\nall rows n=7,999", ch_full[0], PAL[5]),
-        (
-            "chat on-policy (base)\ncap-hit rows removed n=7,551",
-            pooled("chat_base_excl_caphit"),
-            PAL[2],
-        ),
-        (
-            "chat on-policy (base)\nrandom rows removed n=7,551",
-            pooled("chat_base_random_matched_n"),
-            PAL[6],
-        ),
-        ("chat inserted (instruct, cell a)\nall rows n=11,901", a_full[0], PAL[4]),
-        (
-            "chat inserted (instruct, cell a)\nsubsampled n=8,000",
-            pooled("cell_a_instr_sub8000"),
-            PAL[6],
-        ),
+        ("bare text\nall rows", bt_full[0], PAL[5]),
+        ("bare text\ncapped\nremoved", pooled("bare_text_instr_excl_caphit"), PAL[2]),
+        ("bare text\nrandom\nremoved", pooled("bare_text_instr_random_matched_n"), PAL[6]),
+        ("chat base\nall rows", ch_full[0], PAL[5]),
+        ("chat base\ncapped\nremoved", pooled("chat_base_excl_caphit"), PAL[2]),
+        ("chat base\nrandom\nremoved", pooled("chat_base_random_matched_n"), PAL[6]),
+    ]
+    if "chat_base_excl_drift" in ref:
+        bars += [
+            ("chat base\ndrifted\nremoved", pooled("chat_base_excl_drift"), PAL[3]),
+            ("chat base\nrandom\n(drift n)", pooled("chat_base_random_matched_n_drift"), PAL[6]),
+        ]
+    bars += [
+        ("chat ins.\nall rows", a_full[0], PAL[4]),
+        ("chat ins.\nsubsampled", pooled("cell_a_instr_sub8000"), PAL[6]),
     ]
     xs = np.arange(len(bars))
     ax.bar(xs, [b[1] for b in bars], color=[b[2] for b in bars], width=0.62)
-    # per-fold points where available
-    fold_pts = {
-        0: bt_full[1],
-        3: ch_full[1],
-        6: a_full[1],
+    # per-fold points where available (index-robust: keyed by bar label)
+    label_folds = {
+        "bare text\nall rows": bt_full[1],
+        "chat base\nall rows": ch_full[1],
+        "chat ins.\nall rows": a_full[1],
     }
-    for tag, xi in [
-        ("bare_text_instr_excl_caphit", 1),
-        ("bare_text_instr_random_matched_n", 2),
-        ("chat_base_excl_caphit", 4),
-        ("chat_base_random_matched_n", 5),
-        ("cell_a_instr_sub8000", 7),
-    ]:
-        pf = ref[tag].get("per_fold_r2") or []
-        if pf:
-            fold_pts[xi] = pf
-    for xi, pts in fold_pts.items():
-        ax.scatter([xi] * len(pts), pts, s=10, color="#333333", zorder=4, alpha=0.8)
+    label_tags = {
+        "bare text\ncapped\nremoved": "bare_text_instr_excl_caphit",
+        "bare text\nrandom\nremoved": "bare_text_instr_random_matched_n",
+        "chat base\ncapped\nremoved": "chat_base_excl_caphit",
+        "chat base\nrandom\nremoved": "chat_base_random_matched_n",
+        "chat base\ndrifted\nremoved": "chat_base_excl_drift",
+        "chat base\nrandom\n(drift n)": "chat_base_random_matched_n_drift",
+        "chat ins.\nsubsampled": "cell_a_instr_sub8000",
+    }
+    for xi, (label, _, _) in enumerate(bars):
+        pts = label_folds.get(label) or (
+            ref[label_tags[label]].get("per_fold_r2") if label in label_tags else None
+        )
+        if pts:
+            ax.scatter([xi] * len(pts), pts, s=10, color="#333333", zorder=4, alpha=0.8)
     ax.set_xticks(xs)
-    ax.set_xticklabels([b[0] for b in bars], fontsize=6.6)
+    ax.set_xticklabels([b[0] for b in bars], fontsize=8)
     ax.set_ylabel("within-cell held-out R² (ambient, context arm)")
     set_title_subtitle(
         ax,
@@ -580,6 +632,7 @@ def main() -> None:
     fig_ceilings_folds(fits)
     fig_twobytwo(fits)
     fig_ladder(ladder)
+    fig_ks_pairs()
     fig_length_hist()
     try:
         fig_caphit(fits)
