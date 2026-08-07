@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2166,
+  "highest_id": 2167,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9019,6 +9019,13 @@
       "path": "tasks/running/2166",
       "status": "running",
       "title": "#2166 workflow-fix: repoint 5 stale CLAUDE.md prose \u00b7 running \u00b7 \u2588\u2588\u258c\u2591\u2591 50%"
+    },
+    "2167": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2167",
+      "status": "proposed",
+      "title": "workflow-fix: pin MALLOC_MMAP_THRESHOLD_ in launch-prefix rules"
     },
     "218": {
       "has_clean_result": false,
