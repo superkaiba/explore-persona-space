@@ -2426,6 +2426,26 @@ def test_resolve_task_plans_dir_real_body_no_monkeypatch():
     text, mode = verify_task_body._plan_naming_text(999)
     assert text is not None
     assert "plan file(s) read" in mode
+    # Hermeticity guard: every UNMONKEYPATCHED check-31 invocation in this file
+    # (the 20 pre-existing tests, plus the per-unit pins that bypass the §3.0
+    # filter) reads THIS real plan. Their green depends on it naming none of
+    # the DISTINCTIVE fixture stems — an implicit coupling to a terminal-status
+    # task's plans dir. Assert it so a future edit to task 999 fails HERE with a
+    # legible message instead of flipping unrelated tests non-obviously.
+    #
+    # `second` (from `test_orphan_deduped_across_cited_shas`'s `second.png`) is
+    # deliberately NOT guarded: task 999's plan contains the ordinary English
+    # word in "seconds-long", so the stem-substring predicate matches it. That
+    # is a real property of the predicate — short common-word stems collide with
+    # prose — and it is harmless here in both directions: `second.png` is
+    # EMBEDDED in that test's body, so it never reaches the class-C branch, and
+    # corpus-wide the collision fails toward silence (a body discussing the same
+    # subject matter as its plan almost always contains the same common word).
+    for fixture_stem in ("hero", "f5_arm_agreement", "f6_extra", "f1_delta_scatter"):
+        assert fixture_stem not in text, (
+            f"task 999's real plan now names the fixture stem {fixture_stem!r}; "
+            "check-31 fixtures in this file assume it names none of them"
+        )
     assert verify_task_body._resolve_task_plans_dir(None) is None
     text_none, mode_none = verify_task_body._plan_naming_text(None)
     assert text_none is None
