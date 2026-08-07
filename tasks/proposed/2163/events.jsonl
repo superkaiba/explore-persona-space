@@ -1,1 +1,2 @@
 {"ts": "2026-08-07T06:53:39Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-08-07T06:56:18Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #2163 to open question(s) spec-context-as-vector; created_new=none; mode=auto-match. Question 1.1 'Can a context be treated as a vector or a compact code?' already carries the whole context→answer-map line (#1482 parent, #1738, #1739, #1946, #2162) in its evidence list; this task is the input-side mirror of #1482's output-side characterization."}
