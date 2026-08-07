@@ -509,6 +509,30 @@ verdict line (PASS — <N> smoke-scoped variables correctly gated / FAIL naming
 `<var>` at `<file>:<L>` / N/A). Full grep triggers + FAIL templates:
 `.claude/rules/code-reviewer-section-reference.md` § Step 0.70 detail — smoke-variable gating.
 
+### Step 0.71: Smoke blind-spot enumeration gate (any diff type; smoke-conditional branches only)
+
+Trigger: the diff ADDS or EDITS a `smoke`-conditional branch (an `if smoke:` /
+`if not smoke:` / `if ctx.smoke` / ternary / `smoke=` kwarg-gated path) that
+(a) SUBSTITUTES an implementation — the production import / model constructor /
+API call runs only on the non-smoke branch (toy embedding, stub model, fake
+judge) — or (b) DOWNGRADES or skips an assertion / raise when smoke is set
+(early-return before gates, `assert` only on the production branch). No such
+branch in the diff → record `Step 0.71: N/A — diff adds/edits no
+smoke-conditional substitution or gate-downgrade`. Check: every such branch is
+NAMED in the SMOKE BLIND-SPOT ENUMERATION (the plan's smoke section, or the
+implementation marker's `## Smoke run` block, per
+`.claude/rules/smoke-blind-spots.md`) — a line stating what the smoke's PASS
+does NOT certify for exactly this branch; the empty form is the literal
+`none — smoke executes every production gate`, FALSIFIED by any (a)/(b) branch
+in the diff. Unenumerated branch → verdict FAIL, a single Critical tagged
+`smoke-blind-spot-unenumerated` (SUBSTANTIVE — never stripped; #1336: a
+`smoke=False`-only `SentenceTransformer` hid a missing `sentence_transformers`
+dep — SLURM 4684 — and `assert_split(..., smoke=ctx.smoke)` downgraded split
+gates the smoke then "PASSed" — SLURM 5005). Record one verdict line (PASS —
+<N> smoke-conditional branches all enumerated / FAIL naming `<file>:<L>` /
+N/A). Full trigger grammar + FAIL templates + the worked #1336 shapes:
+`.claude/rules/code-reviewer-section-reference.md` § Step 0.71 detail — smoke blind-spot enumeration.
+
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
 Steps 0.5, 0.55, 0.6, 0.65, and 0.67 are pre-diff *contract* checks, not a
@@ -635,6 +659,26 @@ was a silent non-finding. This fires even when Step 0.68 records N/A
 (nothing plan-named); when Step 0.68 already verified a plan-named twin
 for the same loop, cite that record — one line satisfies both checks,
 never double-FAIL one loop.
+
+**Exception-masking teardown paths (any diff type).** Flag as Major any
+`finally` / teardown / close-gate / drain-wait path in the diff that raises
+as part of its OWN gating logic (a timeout gate, drain-wait, teardown
+assert, raise-on-failure wait) while an inner exception may already be
+propagating, and does NOT either chain (`raise ... from exc`) or
+suppress-and-log under an in-flight check
+(`sys.exc_info()[0] is not None`). The replacing raise becomes the
+exception that leaves the frame, so every final-exception-only consumer —
+a status/sentinel `reason` built from `str(e)`, a marker note, a
+last-error log grep — reports the teardown stage as the whole failure and
+each retry round debugs the wrong one: a silent-failure defect, blocker tag
+`substantive`, never a style nit (#1947: two relaunch rounds chased a
+"GPU-drain timeout" while the true `EADDRINUSE` port race stayed masked).
+Plain cleanup that merely propagates its own I/O error (`finally:
+f.close()`) does NOT trigger this. Same finding applies to the reporting
+side: a per-unit failure record built from `str(e)` instead of the
+exception CHAIN re-creates the mask downstream. Reference impl:
+`scripts/issue1947_worker.py::_teardown_marker_cell`; full recipe in
+`.claude/rules/gotchas.md` (the `finally`-raise entry).
 
 ### Step 3: Read the Surrounding Code
 
@@ -1239,7 +1283,7 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 / 4.6-presence genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`; a 4.6 presence blocker body names `Gate-scope check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 / 4.6-presence genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`; a 4.6 presence blocker body names `Gate-scope check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract), `smoke-blind-spot-unenumerated` (Step 0.71 — a smoke-conditional branch substitutes an implementation or downgrades an assertion and the blind-spot enumeration does not name it; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)

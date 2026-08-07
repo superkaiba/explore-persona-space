@@ -680,6 +680,27 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     destination-vs-lane check could flag a clause-(iv) ephemeral-lane text/JSON row whose only
     stated destination is git.
 
+19. **Smoke blind-spot enumeration (any plan declaring a pre-launch smoke run — verify the §-smoke
+    declaration).** If the plan declares a pre-launch smoke run, its smoke section must carry the
+    SMOKE BLIND-SPOT ENUMERATION per `.claude/rules/smoke-blind-spots.md`: every production
+    gate/assertion the smoke downgrades or skips, every implementation it substitutes, every
+    third-party import reached only on the production branch — or the literal empty form
+    `none — smoke executes every production gate`. REVISE when (i) the plan declares a smoke run
+    with NO enumeration and no empty-form literal — the PASS would certify less than it appears to
+    (#1336: SLURM 4684 died on a `ModuleNotFoundError` behind a smoke-substituted MPNet embedding;
+    SLURM 5005 on an `assert_split` downgraded under a `smoke` kwarg — two consecutive production
+    launches, each on a check the smoke structurally bypassed), or (ii) the §4 design ITSELF
+    introduces a smoke-conditional substitution or gate-downgrade the enumeration does not name
+    (an enumeration falsified by the design's own branches is worse than absent). Not a REVISE
+    when the plan runs no pre-launch smoke ("N/A — no pre-launch smoke run"), or the enumeration
+    names every §4 smoke-conditional divergence, or the smoke parameter only shrinks N (cells /
+    seeds / rows) on an unchanged code path (that class is owned by smoke/sweep architectural
+    parity + the #1611/#1727 gates). mechanizable: partial —
+    `workflow_lint.py --check-smoke-blind-spots` WARNs when named scripts carry
+    smoke-conditional substitution/downgrade branches and the plan lacks the enumeration
+    (grep-level; naming-completeness stays reviewer-owned), and
+    `--check-smoke-blind-spot-review-lens` pins the enforcement surfaces.
+
 ### Statistics & Measurement lens
 
 1. **Metric mismatch.** Does the headline metric actually measure what the hypothesis predicts? If

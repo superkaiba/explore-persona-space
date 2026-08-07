@@ -122,6 +122,16 @@ reduction + cheap per-λ updates.
    tens-of-MB-per-pass eigh bootstrap ballooned to 20-21.7 GB, earlyoom-killed
    twice; the arena cap held the identical run at ~1 GB) — choom only
    re-orders victim selection; the arena cap removes the pressure itself.
+   `MALLOC_MMAP_THRESHOLD_=131072` rides the same launch env for THIS phase
+   class: glibc's dynamic mmap-threshold ratchet produces the identical
+   grows-across-passes signature UNDER the arena cap, and the pin — glibc's
+   default initial threshold, so numerically inert; its per-block mmap +
+   kernel-zeroing throughput cost is why it stays scoped to this class —
+   freezes the ratchet (#825 run 5: kernel OOM at 14.9 GiB anon RSS; #1336
+   surface 7: rc=137 `oom_kill=1`, 8 of 32 cells lost). Carry it by default
+   unless the loop is KNOWN to churn only sub-128-KiB blocks; mechanism + the
+   3-branch fragmentation/ratchet/leak ordering:
+   `.claude/rules/code-style.md` § Shared-VM CPU thread caps.
    AND per-cell
    checkpoints + a resume predicate are REQUIRED for any loop projected >~1h
    (`.claude/rules/code-style.md` § "Checkpoint per phase", intra-phase grain):
@@ -137,11 +147,16 @@ reduction + cheap per-λ updates.
    protection as the reviewed ORIGINAL launch command. A relaunch composes a
    FRESH command, so pins do not carry over by inertia (#811: a relaunch
    supervisor omitted the OMP/MKL pins — ~55 min at 0/108 checkpoints). The
-   supervisor/relauncher VERIFIES all five pins are present in the composed
-   command string BEFORE dispatch — e.g.
+   supervisor/relauncher VERIFIES every pin of the reviewed ORIGINAL is
+   present in the composed command string BEFORE dispatch — e.g.
    `for pin in OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS MALLOC_ARENA_MAX; do case "$CMD" in *"$pin="*) ;; *) echo "FATAL: relaunch missing $pin" >&2; exit 1;; esac; done`
    — and records `pins=verified` in the relaunch breadcrumb alongside
-   `pid= log= choom=`. The helper-side default cap in
+   `pid= log= choom=`. The loop's pin list tracks the ORIGINAL, never a
+   hardcoded count: a phase whose reviewed original launch carried
+   `MALLOC_MMAP_THRESHOLD_=131072` adds `MALLOC_MMAP_THRESHOLD_` to the pin
+   list — and never hardcode a sixth pin either, since the knob is
+   conditional and a blanket sixth would FATAL every legitimately-5-pin
+   relaunch. The helper-side default cap in
    `vectorized_mlp_skill.py` (`_resolve_num_threads`, #1079) is
    defense-in-depth for the torch intra-op pool only; the env pins remain
    REQUIRED (they also cap numpy/BLAS and subprocesses the helper cannot
