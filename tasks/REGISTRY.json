@@ -9016,8 +9016,8 @@
     "2166": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/verifying/2166",
-      "status": "verifying",
+      "path": "tasks/completed/2166",
+      "status": "completed",
       "title": "#2166 workflow-fix: repoint 5 stale CLAUDE.md prose \u00b7 verifying \u00b7 \u2588\u2588\u2588\u258c\u2591 70%"
     },
     "2167": {
