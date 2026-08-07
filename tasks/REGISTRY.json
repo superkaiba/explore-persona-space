@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2174,
+  "highest_id": 2175,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9075,6 +9075,13 @@
       "path": "tasks/proposed/2174",
       "status": "proposed",
       "title": "Fact-checker: exact-identity premise from a sample must be verified at the assert's grain"
+    },
+    "2175": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2175",
+      "status": "proposed",
+      "title": "git_provenance() blind to untracked producing scripts \u2014 artifacts stamp a commit that lacks the code that made them"
     },
     "218": {
       "has_clean_result": false,
