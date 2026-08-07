@@ -7834,8 +7834,8 @@
     "2010": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2010",
-      "status": "proposed",
+      "path": "tasks/planning/2010",
+      "status": "planning",
       "title": "daily-fix: corpus-replay gate test reds stale branches on fl"
     },
     "2011": {
