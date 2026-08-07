@@ -11488,9 +11488,11 @@ def check_smoke_blind_spot_enumeration(  # noqa: C901 -- best-effort AST scan: p
     (the binding gate); its DISCLOSED false negatives: module-local helper
     resolution is ONE level deep (a production import nested two-plus calls
     down, or wrapped in a helper imported from ANOTHER module, escapes),
-    dynamic dispatch escapes, and smoke flags not literally named ``smoke``
-    escape. NOT bundled into the no-flags run (requires explicit script
-    arguments via ``--smoke-blind-spot-scripts``).
+    ``ast.Match`` case bodies are not recursed by the statement-form rules
+    (an ``ast.If`` inside a match arm escapes), dynamic dispatch escapes,
+    and smoke flags not literally named ``smoke`` escape. NOT bundled into
+    the no-flags run (requires explicit script arguments via
+    ``--smoke-blind-spot-scripts``).
 
     Two hit rules, walked per enclosing statement body (module body, every
     function body, and every nested compound-statement body), on any
@@ -11508,6 +11510,14 @@ def check_smoke_blind_spot_enumeration(  # noqa: C901 -- best-effort AST scan: p
     - EARLY-EXIT form: the smoke body contains a top-level ``return`` and
       the enclosing body AFTER the ``If`` carries implementation work /
       a gate.
+
+    The BRANCH form's ``substituted-implementation`` half ALSO runs over
+    every smoke-conditional ``ast.IfExp`` (whole-tree walk; plan §4.10(B)
+    names ``ast.If`` AND ``ast.IfExp``): implementation work on exactly one
+    arm of the ternary fires, with the SAME ``has_impl`` classifier (incl.
+    the one-level resolution). The ``downgraded-gate`` half does NOT run on
+    ternaries — ``assert``/``raise`` are statements and cannot occur inside
+    an expression, so a downgraded-gate ternary is structurally impossible.
 
     Plan cross-check (when ``plan_path`` is given; escape literal checked
     FIRST): hits + the empty-form escape literal present → the escape is
@@ -11629,6 +11639,23 @@ def check_smoke_blind_spot_enumeration(  # noqa: C901 -- best-effort AST scan: p
             for child in _child_bodies(stmt):
                 _scan_body(path, child, local_fns)
 
+    def _scan_ifexps(path: Path, tree: ast.AST, local_fns: dict[str, ast.stmt]) -> None:
+        """BRANCH form over ternaries (plan section 4.10(B) names ``ast.If``
+        AND ``ast.IfExp``): implementation work on exactly one arm of a
+        smoke-conditional ``ast.IfExp`` fires ``substituted-implementation``.
+        Each arm is wrapped in ``ast.Expr`` so the SAME ``_has_impl``
+        classifier (incl. the one-level module-local lowercase-callee
+        resolution) runs unchanged. Deliberately NO ``_has_gate`` arm:
+        ``assert``/``raise`` are statements, so a downgraded-gate ternary is
+        structurally impossible -- do not "fix" that by adding one."""
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.IfExp) and _mentions_smoke(node.test)):
+                continue
+            impl_body = _has_impl([ast.Expr(value=node.body)], local_fns)
+            impl_orelse = _has_impl([ast.Expr(value=node.orelse)], local_fns)
+            if impl_body != impl_orelse:
+                _add_hit(path, node.lineno, "substituted-implementation")
+
     for path in script_paths:
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -11641,6 +11668,7 @@ def check_smoke_blind_spot_enumeration(  # noqa: C901 -- best-effort AST scan: p
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
         }
         _scan_body(path, tree.body, local_fns)
+        _scan_ifexps(path, tree, local_fns)
 
     if not hits:
         return []

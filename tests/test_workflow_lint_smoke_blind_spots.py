@@ -38,6 +38,11 @@ branch — NOT durable at test time, so the fixtures are self-contained):
     ``if smoke: log else: raise`` with NO early exit (branch-form rule).
 15. ``test_helper_resolution_is_one_level_only`` — the DISCLOSED one-level
     false-negative boundary, pinned as documented behavior.
+16. ``test_detects_ternary_substitution`` — ``ast.IfExp`` branch form (plan
+    section 4.10(B) names ``ast.If`` AND ``ast.IfExp``): a substituted
+    implementation inside a ternary fires.
+17. ``test_no_warn_on_shrink_only_ternary`` — a shrink-only ternary
+    (``n = 2 if smoke else 500``) stays a non-trigger.
 """
 
 from __future__ import annotations
@@ -158,6 +163,38 @@ def run(rows, smoke=False):
     return rows[:n]
 """
 
+# Ternary (ast.IfExp) variants for the branch-form rule -- plan section
+# 4.10(B) names ast.If AND ast.IfExp (round-2 fix of the
+# warn-scanner-ifexp-dropped concern).
+_FIXTURE_TERNARY_SUBSTITUTION = """\
+def _toy(prompts):
+    # Pure-python toy: no import, no capitalized constructor.
+    return [[float(len(p) % 7)] * 32 for p in prompts]
+
+
+def _load_model(revision):
+    from sentence_transformers import SentenceTransformer
+
+    return SentenceTransformer("sentence-transformers/all-mpnet-base-v2", revision=revision)
+
+
+def embed_prompts(prompts, revision, smoke=False):
+    # Ternary form of #1336 shape 1: the substitution lives in an ast.IfExp,
+    # with the production import one module-local call away (one-level
+    # lowercase-callee resolution must apply on the ternary arm too).
+    vecs = _toy(prompts) if smoke else _load_model(revision).encode(prompts)
+    return vecs
+"""
+
+_FIXTURE_TERNARY_SHRINK = """\
+def run(rows, smoke=False):
+    # Shrink-only ternaries: same code path on both arms, no substituted
+    # implementation -- must NOT fire under the ast.IfExp branch rule.
+    n = 2 if smoke else 500
+    limit = min(n, len(rows)) if smoke else n
+    return rows[:limit]
+"""
+
 _PLAN_WITH_ENUMERATION = """\
 ## Smoke run
 
@@ -261,6 +298,29 @@ def test_detects_ifelse_downgrade_shape(tmp_path: Path) -> None:
     )
 
 
+def test_detects_ternary_substitution(tmp_path: Path) -> None:
+    """``ast.IfExp`` branch form (plan section 4.10(B)): a smoke-conditional
+    ternary substituting the production implementation fires, including
+    through the one-level module-local lowercase-callee resolution on the
+    production arm. Gate-downgrade has NO ternary analogue by construction
+    (``assert``/``raise`` are statements), so only the
+    substituted-implementation class is asserted here."""
+    _, sink, paths = _scan(tmp_path, {"ternary.py": _FIXTURE_TERNARY_SUBSTITUTION})
+    lineno = _lineno_of(_FIXTURE_TERNARY_SUBSTITUTION, "if smoke else")
+    marker = f"{paths['ternary.py']}:{lineno}:"
+    assert any("substituted-implementation" in w and marker in w for w in sink), (
+        f"expected a substituted-implementation WARN at the ternary {marker}; got: {sink}"
+    )
+
+
+def test_no_warn_on_shrink_only_ternary(tmp_path: Path) -> None:
+    """Negative arm of the ``ast.IfExp`` rule: shrink-only ternaries
+    (``n = 2 if smoke else 500``) carry no implementation work on either
+    arm and must stay non-triggers."""
+    _, sink, _ = _scan(tmp_path, {"shrink.py": _FIXTURE_TERNARY_SHRINK})
+    assert sink == [], f"shrink-only ternaries are not triggers; got: {sink}"
+
+
 def test_helper_resolution_is_one_level_only(tmp_path: Path) -> None:
     """The DISCLOSED false-negative boundary: an import TWO module-local
     calls down does NOT fire (non-recursive resolution — the reviewer lens
@@ -325,6 +385,7 @@ def test_returns_empty_fail_list_always(tmp_path: Path) -> None:
         ({"both.py": _FIXTURE_BOTH_SHAPES}, _PLAN_WITH_ENUMERATION),
         ({"helper.py": _FIXTURE_HELPER_WRAPPED}, None),
         ({"ifelse.py": _FIXTURE_IFELSE_DOWNGRADE}, None),
+        ({"ternary.py": _FIXTURE_TERNARY_SUBSTITUTION}, None),
         ({"clean.py": _FIXTURE_CLEAN}, None),
         ({"broken.py": "def broken(:\n"}, None),
     ]

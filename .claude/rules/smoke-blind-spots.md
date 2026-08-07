@@ -84,9 +84,11 @@ instrument exactly where parity (prohibition) is legitimately waived.
   a plan; the reviewer lens is the binding gate). The scanner's KNOWN false
   negatives, disclosed by design: module-local helper resolution is ONE
   level deep (a production import nested two-plus calls down, or wrapped in
-  a helper imported from ANOTHER module, escapes), dynamic dispatch escapes,
-  and smoke flags not literally named `smoke` escape — the reviewer lens is
-  the catching arm for all of these.
+  a helper imported from ANOTHER module, escapes), `ast.Match` case bodies
+  are not recursed by the statement-form rules (an `ast.If` inside a match
+  arm escapes), dynamic dispatch escapes, and smoke flags not literally
+  named `smoke` escape — the reviewer lens is the catching arm for all of
+  these.
 
 ## Files of record
 
