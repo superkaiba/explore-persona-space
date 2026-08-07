@@ -81,7 +81,7 @@ import re
 import shutil
 import subprocess
 import time
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -157,6 +157,41 @@ PARK_STATUS = "awaiting_promotion"
 # tasks (no `workflow:` key) resolve to the current pipeline everywhere.
 WORKFLOW_VERSIONS = ("v1", "v2")
 DEFAULT_WORKFLOW_VERSION = "v1"
+
+# Env var carrying the Step-2c autonomous plan-approval GPU-hour cap
+# (spawn_session injects it into every `--auto` session's env).
+PLAN_GATE_CAP_ENV = "EPM_PLAN_AUTOAPPROVE_GPU_HOURS"
+
+# The ONE code default for that cap (#2164). Before this constant existed the
+# DECIDING site (scripts/task.py `_resolve_autonomous_plan_gate`) defaulted to
+# 24 while every reporting / spawning / documenting site used 100, so an
+# env-less autonomous park decided against 24 and then reported "over 100
+# GPU-h cap" — naming a threshold the plan never crossed. 100 is the realized
+# cap in every live `--auto` session (spawn_session's argparse default), so
+# aligning the code default here is a no-op for spawned sessions and fixes
+# only the env-less path (decision recorded in #2164 `epm:clarify v1`).
+AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS: float = 100.0
+
+
+def resolve_plan_gate_cap(env: Mapping[str, str] | None = None) -> float:
+    """Single resolution point for the Step-2c autonomous plan-approval cap.
+
+    Every deciding, reporting, and respawn site reads the cap through this
+    function so the decided threshold and the reported threshold cannot
+    diverge (#2164). An absent, blank, or unparseable
+    ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` falls back to
+    ``AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS`` (a blank value resolves like
+    an absent one rather than raising). Negative / zero values parse as-is —
+    no clamping, so a deliberate cap of 0 still means "park everything".
+
+    ``env`` defaults to ``os.environ``; pass a mapping only in tests.
+    """
+    source: Mapping[str, str] = os.environ if env is None else env
+    raw = source.get(PLAN_GATE_CAP_ENV, "")
+    try:
+        return float(raw.strip())
+    except (TypeError, ValueError):
+        return AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
 def workflow_version(frontmatter: dict[str, Any]) -> str:
@@ -7534,6 +7569,7 @@ def __dir__() -> list[str]:
 # tell ruff to allow them — they resolve at attribute-access time via
 # ``__getattr__``.
 __all__ = [
+    "AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS",
     "CODE_KINDS",
     "COMMENT_KINDS",
     "CONCERN_EVENTS",
@@ -7547,6 +7583,7 @@ __all__ = [
     "KEEP_RUNNING_TAG",
     "KINDS",
     "PARK_STATUS",
+    "PLAN_GATE_CAP_ENV",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "REPO",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "STATUSES",
@@ -7594,6 +7631,7 @@ __all__ = [
     "registry_path",
     "remove_tag",
     "repo_root",
+    "resolve_plan_gate_cap",
     "set_body",
     "set_clean_result",
     "set_goal",
