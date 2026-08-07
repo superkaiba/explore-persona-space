@@ -97,6 +97,13 @@ launch as validated. The three mechanisms that silently narrow smoke coverage ar
 
 ## Provenance
 
+- workflow_fix_target: .claude/rules/smoke-blind-spots.md
+- fingerprint: d683272f741c
+- origin: /issue 1336 round 4 (pooled-multidataset, plan v15) — two consecutive
+  production launches died on checks the pre-launch smoke structurally bypassed.
+- Workflow-surface rules apply; `scripts/workflow_lint.py --check-asks` passes; ruff on touched files passes.
+- This session runs under `EPM_WORKFLOW_FIX_SESSION=1` (Provenance `workflow_fix_target:` line) -- it MUST NOT auto-route its own subagents' workflow-fix candidates (recursion guard).
+
 Surfaced by #1336 round 4. Evidence: SLURM 4684 (`ModuleNotFoundError:
 sentence_transformers`, dependency fixed in 04b36b2743) and SLURM 5005
 (`AssertionError` in `assert_split`) — two consecutive production launches, each dying
