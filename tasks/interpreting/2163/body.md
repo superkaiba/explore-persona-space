@@ -1,6 +1,7 @@
 ---
-title: 'The context→answer map reads SAE features selectively: per-unit gain is lowest
-  on high-variance directions and template-heavy features (HIGH confidence)'
+title: The context→answer map's per-unit-gain discounts on high-variance and template-heavy
+  features are carried entirely by features that never fire at the context vector
+  (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-07T06:53:39Z'

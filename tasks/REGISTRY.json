@@ -8997,7 +8997,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2163",
       "status": "interpreting",
-      "title": "The context\u2192answer map reads SAE features selectively: per-unit gain is lowest on high-variance directions and template-heavy features (HIGH confidence)"
+      "title": "The context\u2192answer map's per-unit-gain discounts on high-variance and template-heavy features are carried entirely by features that never fire at the context vector (HIGH confidence)"
     },
     "2164": {
       "has_clean_result": false,
