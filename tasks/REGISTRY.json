@@ -9156,8 +9156,8 @@
     "2185": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2185",
-      "status": "proposed",
+      "path": "tasks/planning/2185",
+      "status": "planning",
       "title": "Document the RunPod HF-CDN zero-byte large-blob trap (206 + 0 bytes) and its curl discriminator + rsync-relay recovery"
     },
     "22": {
