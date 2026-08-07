@@ -5,7 +5,7 @@ kind: experiment
 tags:
 - trigger-dense
 created_at: '2026-08-03T22:07:42Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1345
 origin_prompt: run the 6000 row thing in the background with happy coder
 workflow: v1
