@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:345e455b6f4a
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-08-02T07:15:58Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-08-01 problem sweep (route 2): Session reported a guard-BLOCKED
