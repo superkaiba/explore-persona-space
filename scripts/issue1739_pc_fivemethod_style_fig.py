@@ -6,17 +6,22 @@ Restyles the P-A / P-B setting figures to match the committed
 (d78aff9e5c):
 
   * one row of four panels -- evil / sycophancy / hallucination / average
-  * four evaluation-regime groups per panel, each x label naming the CORPUS
-  * one colour per method, no hatch used for method identity
-  * HATCHED + muted bars where the DV spread gate fails (kept for
-    completeness, flagged as not interpretable) -- not a shaded band
-  * the average panel EXCLUDES spread-failed cells
-  * a caption block carrying protocol provenance + per-group n_eval
+  * evaluation-regime groups per panel, each x label naming the CORPUS that
+    actually contributed plus the protocol-specific readout qualifier
+    (P-B reads are LODO: 20% held-in in-distribution, each OOD dataset held
+    out whole)
+  * one colour per method, no hatch anywhere
+  * DV-spread-gate failures are DROPPED, never plotted: a floored dataset
+    leaves its bar's mean AND its regime sub-label, and a regime whose every
+    dataset is floored is removed from that panel entirely (evil loses its
+    whole generic-chat group, so evil shows 3 regimes and the others 4)
+  * a caption block carrying protocol provenance, what was dropped, and
+    per-group n_eval
 
-Methods: the persona-vector projection arms the user scoped
-(2026-08-07) -- PV on context, PV on the linear-mapped answer, PV on the
-real answer (oracle upper bound). ``--with-ridge`` adds the two r2v2 ridge
-arms for the fuller five-method comparison.
+Methods: the result2_fivemethod reference roster MINUS arm12_oracle_reg
+("Ridge regression on real answer"), which P-A/P-B never scored -- ridge on
+context, ridge on the mapped answer, PV on the mapped answer, PV on the real
+answer. ``--pv-only`` switches to the three persona-vector arms instead.
 
 Usage
 -----
@@ -31,6 +36,7 @@ import math
 import statistics as st
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
@@ -52,30 +58,43 @@ import numpy as np  # noqa: E402
 
 BEHAVIORS = ("evil", "sycophancy", "hallucination")
 
-# arms in the reference roster that this protocol never scored
-MISSING_ARMS = frozenset({"arm12_oracle_reg"})
-
 OOD_RUNGS = {
     "evil": ("hhrt", "toxicchat", "evil_mhj", "evil_pair", "evil_tomgibbs"),
     "sycophancy": ("aita", "sycoans", "sycoays", "sycofb", "sycomim", "sycomwe"),
     "hallucination": ("nqopen", "simpleqa"),
 }
 
-# per-behaviour corpus names for the two behaviour-specific regimes
-CORPUS = {
-    "evil": {
-        "indist": "jailbreak x forbidden Qs",
-        "ood": "hh-rlhf, ToxicChat, MHJ,\nPAIR, TomGibbs",
-    },
-    "sycophancy": {
-        "indist": "Reddit personal-advice posts",
-        "ood": "AITA, SycophancyEval x4,\nMWE",
-    },
-    "hallucination": {
-        "indist": "TriviaQA (rc.nocontext)",
-        "ood": "NQ-Open + SimpleQA",
-    },
+# Display name per OOD rung -- the 'completely OOD' sub-label is built from the
+# rungs that actually SURVIVE the spread gate, so a dropped floored dataset
+# never appears in the label of a bar it did not contribute to.
+RUNG_NAME = {
+    "hhrt": "hh-rlhf",
+    "toxicchat": "ToxicChat",
+    "evil_mhj": "MHJ",
+    "evil_pair": "PAIR",
+    "evil_tomgibbs": "TomGibbs",
+    "aita": "AITA",
+    "sycoans": "SycEval-answer",
+    "sycoays": "SycEval-are-you-sure",
+    "sycofb": "SycEval-feedback",
+    "sycomim": "SycEval-mimicry",
+    "sycomwe": "MWE",
+    "nqopen": "NQ-Open",
+    "simpleqa": "SimpleQA",
 }
+
+# per-behaviour in-distribution corpus (the OOD side is built from RUNG_NAME)
+INDIST_CORPUS = {
+    "evil": "jailbreak x forbidden Qs",
+    "sycophancy": "Reddit personal-advice posts",
+    "hallucination": "TriviaQA (rc.nocontext)",
+}
+# protocol-specific qualifier on the two readout-dependent regimes: under P-B
+# the in-distribution read is the LODO 20% held-in slice and each OOD bar is
+# that fit's own whole-held-out dataset.
+INDIST_QUALIFIER = {"P-A": "out-of-fold", "P-B": "LODO, 20% held-in"}
+OOD_QUALIFIER = {"P-A": "single fit", "P-B": "LODO, held out whole"}
+
 SHARED = {"pvsynth": "persona-vector grid", "generic": "random WildChat"}
 REGIMES = (
     ("pvsynth", "synthetic"),
@@ -84,13 +103,11 @@ REGIMES = (
     ("ood", "completely OOD"),
 )
 
-# The result2_fivemethod reference roster (d78aff9e5c), same order + colours.
-# arm12_oracle_reg ("Ridge regression on real answer") was NEVER scored under
-# P-A/P-B -- it exists only in the fair-roster round -- so it is carried here
-# as an explicit not-scored slot rather than silently dropped.
+# The result2_fivemethod reference roster (d78aff9e5c), same order + colours,
+# MINUS arm12_oracle_reg ("Ridge regression on real answer"), which this
+# protocol never scored -- see the caption for where that arm does exist.
 REF_METHODS = (
     ("arm4_ridge_ctx", "Ridge regression on context", "#1f77b4"),
-    ("arm12_oracle_reg", "Ridge regression on real answer", "#2ca489"),
     ("arm7_map_ridge_pred", "Ridge regression on mapped answer", "#e8b23a"),
     ("arm6_map_proj_e1", "Persona vector on mapped answer", "#8c3b1e"),
     ("arm11_oracle_proj", "Persona vector on real answer", "#1a6b54"),
@@ -156,9 +173,14 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                 items = [(rn, r) for rn, r in pick[key] if r.get("rho_frozen") is not None]
                 if not items:
                     continue
-                keep = [(rn, r) for rn, r in items if ok(rn)]
-                all_failed = not keep
-                use = items if all_failed else keep
+                # Floored (spread-gate-failing) datasets are DROPPED outright --
+                # never averaged into a bar, never drawn hatched. A regime whose
+                # every dataset is floored contributes no bar at all, and
+                # panel_regimes() then drops the whole x-slot from that panel.
+                use = [(rn, r) for rn, r in items if ok(rn)]
+                dropped = tuple(rn for rn, _r in items if not ok(rn))
+                if not use:
+                    continue
                 rho = float(st.mean([r["rho_frozen"] for _rn, r in use]))
                 if len(use) == 1 and use[0][1].get("ci_frozen"):
                     lo, hi = use[0][1]["ci_frozen"]
@@ -166,15 +188,19 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                 else:
                     err = _sem([r["rho_frozen"] for _rn, r in use])
                 n_eval = sum(int(r.get("n_eval") or 0) for _rn, r in use)
-                vals[(beh, key, arm)] = (rho, err, n_eval, len(keep), len(items), all_failed)
+                vals[(beh, key, arm)] = (
+                    rho,
+                    err,
+                    n_eval,
+                    len(use),
+                    len(items),
+                    tuple(rn for rn, _r in use),
+                    dropped,
+                )
 
     for key, _ in REGIMES:
         for arm, *_ in methods:
-            per = [
-                vals[(b, key, arm)]
-                for b in BEHAVIORS
-                if (b, key, arm) in vals and not vals[(b, key, arm)][5]
-            ]
+            per = [vals[(b, key, arm)] for b in BEHAVIORS if (b, key, arm) in vals]
             if per:
                 vals[("average", key, arm)] = (
                     float(st.mean([p[0] for p in per])),
@@ -182,9 +208,44 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                     sum(p[2] for p in per),
                     len(per),
                     len(BEHAVIORS),
-                    False,
+                    (),
+                    (),
                 )
     return vals, {}
+
+
+def panel_regimes(vals: dict, panel: str, methods) -> list[tuple[str, str]]:
+    """Regimes with >=1 drawable bar in this panel (floored ones already gone)."""
+    return [
+        (key, lab) for key, lab in REGIMES if any((panel, key, arm) in vals for arm, *_ in methods)
+    ]
+
+
+def regime_sublabel(vals: dict, panel: str, key: str, protocol: str, methods) -> str:
+    """Corpus text under a regime label, naming only datasets that CONTRIBUTED."""
+    if key in SHARED:
+        return f"({SHARED[key]})"
+    if key == "indist":
+        return textwrap.fill(INDIST_CORPUS[panel], width=20) + f"\n({INDIST_QUALIFIER[protocol]})"
+    kept: tuple = ()
+    for arm, *_ in methods:
+        v = vals.get((panel, key, arm))
+        if v is not None:
+            kept = v[5]
+            break
+    # Collapse the four SycophancyEval sub-corpora to one token when ALL four
+    # survive; if any is dropped the survivors are named individually so the
+    # label can never over-claim coverage.
+    syceval = ("sycoans", "sycoays", "sycofb", "sycomim")
+    if all(s in kept for s in syceval):
+        names = ", ".join(
+            "SycophancyEval x4" if r == syceval[0] else RUNG_NAME.get(r, r)
+            for r in kept
+            if r not in syceval[1:]
+        )
+    else:
+        names = ", ".join(RUNG_NAME.get(r, r) for r in kept)
+    return textwrap.fill(names, width=20) + f"\n({OOD_QUALIFIER[protocol]})"
 
 
 def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> None:
@@ -194,26 +255,14 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
     width = 0.72 / n_m
 
     for ax, panel in zip(axes, panels, strict=True):
-        centers = np.arange(len(REGIMES))
+        regimes = panel_regimes(vals, panel, methods)
+        centers = np.arange(len(regimes))
         for j, (arm, _label, color) in enumerate(methods):
-            for i, (key, _lab) in enumerate(REGIMES):
+            for i, (key, _lab) in enumerate(regimes):
                 v = vals.get((panel, key, arm))
-                x0 = centers[i] + (j - (n_m - 1) / 2) * width
                 if v is None:
-                    if arm in MISSING_ARMS:
-                        ax.text(
-                            x0,
-                            0.012,
-                            "not scored",
-                            transform=ax.get_xaxis_transform(),
-                            rotation=90,
-                            ha="center",
-                            va="bottom",
-                            fontsize=6.4,
-                            color="#8a8a8a",
-                        )
                     continue
-                rho, err, _n, _nok, _ntot, failed = v
+                rho, err = v[0], v[1]
                 x = centers[i] + (j - (n_m - 1) / 2) * width
                 ax.bar(
                     x,
@@ -221,23 +270,19 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
                     width * 0.9,
                     yerr=max(0.0, err),
                     color=color,
-                    alpha=0.35 if failed else 1.0,
                     edgecolor=color,
-                    hatch="//" if failed else None,
                     linewidth=1.0,
                     error_kw=dict(lw=1.0, capsize=2.0, ecolor="#333333"),
                     zorder=3,
                 )
         labels = []
-        for i, (key, lab) in enumerate(REGIMES):
+        for key, lab in regimes:
             if panel == "average":
-                labels.append(lab if i % 2 == 0 else f"\n\n{lab}")
+                labels.append(lab)
                 continue
-            sub = SHARED.get(key) or CORPUS[panel][key]
-            txt = f"{lab}\n({sub})"
-            labels.append(txt if i % 2 == 0 else f"\n\n{txt}")
+            labels.append(f"{lab}\n{regime_sublabel(vals, panel, key, protocol, methods)}")
         ax.set_xticks(centers)
-        ax.set_xticklabels(labels, fontsize=8.4)
+        ax.set_xticklabels(labels, fontsize=7.0, linespacing=1.35)
         ax.axhline(0.0, color="#666666", lw=0.9, zorder=2)
         ax.set_ylim(-0.18, 0.95)
         ax.grid(axis="y", alpha=0.25, zorder=0)
@@ -251,25 +296,17 @@ def draw(vals: dict, protocol: str, methods, out_png: Path, caption: str) -> Non
             ax.set_ylabel("Spearman rho, prediction vs judged behaviour expression", fontsize=10)
 
     handles = [mpatches.Patch(facecolor=c, label=lab) for _a, lab, c in methods]
-    handles.append(
-        mpatches.Patch(
-            facecolor="#999999",
-            alpha=0.35,
-            hatch="//",
-            label="spread gate failed — not interpretable",
-        )
-    )
     fig.legend(
         handles=handles,
         loc="lower left",
         bbox_to_anchor=(0.012, 0.155),
-        ncol=3,
+        ncol=4,
         frameon=False,
         fontsize=9.5,
     )
     fig.suptitle(
-        f"Result 2 ({protocol} protocol), persona-vector spread-flagged view: "
-        f"reads across evaluation regimes, hatched where the DV spread gate fails",
+        f"Result 2 ({protocol} protocol): reads across evaluation regimes — "
+        f"datasets failing the DV spread gate are dropped, not plotted",
         fontsize=12.5,
         x=0.012,
         ha="left",
@@ -294,13 +331,19 @@ def build_caption(vals: dict, protocol: str, methods) -> str:
         "dataset.",
     }[protocol]
     ns = []
+    dropped_note: list[str] = []
     for b in BEHAVIORS:
         row = []
         for key, lab in REGIMES:
             v = next((vals[(b, key, a)] for a, *_ in methods if (b, key, a) in vals), None)
-            if v:
-                row.append(f"{lab} {v[2]:,}" + (f" [{v[3]}/{v[4]} rungs kept]" if v[4] > 1 else ""))
+            if v is None:
+                row.append(f"{lab} DROPPED (every dataset floored)")
+                continue
+            row.append(f"{lab} {v[2]:,}" + (f" [{v[3]}/{v[4]} rungs kept]" if v[4] > 1 else ""))
+            if v[6]:
+                dropped_note.append(f"{b}/{lab}: " + ", ".join(v[6]))
         ns.append(f"  {b}: " + "; ".join(row))
+    drops = "; ".join(dropped_note) if dropped_note else "none"
     return (
         f"{proto}\n"
         "The context->answer MAP is identical under both protocols: fit once per behaviour on the "
@@ -308,17 +351,20 @@ def build_caption(vals: dict, protocol: str, methods) -> str:
         "projection arms shown here are NOT label-consuming -- they project onto r_B built from the "
         "judge-filtered synthetic extraction set -- so they are bit-identical across P-A and P-B "
         "except in the in-distribution regime, where P-A reads `train` out-of-fold and P-B reads "
-        "the 20% held-in slice (different eval subsets, not a LODO effect).\n"
-        "Bars are the mean over spread-PASSING rungs in the regime; error bars are the committed "
-        "bootstrap CI for single-rung regimes and the s.e.m. across rungs for multi-rung ones. "
-        "Hatched + muted = every rung in that cell FAILED the DV spread gate (sd >= 10 and "
-        "bottom/top bin <= 0.80 on a 0-100 DV; 0-1 binary DVs rescaled) -- kept for completeness, "
-        "not interpretable. Spread failures: evil hhrt / toxicchat / evil_pair / wildchat_rung.\n"
+        "the LODO 20% held-in slice (different eval subsets, not a LODO effect on the arm itself).\n"
+        "SPREAD GATE: a dataset is DROPPED -- excluded from its bar's mean and from the regime "
+        "sub-label -- when it fails sd >= 10 and bottom/top bin <= 0.80 on a 0-100 DV (0-1 binary "
+        "DVs rescaled). No floored data is plotted anywhere in this figure. "
+        f"Datasets dropped: {drops}. "
+        "evil's generic-chat regime is dropped WHOLE: its only dataset (wildchat_rung) is floored "
+        "(sd 4.4, 98.9% at the bottom bin), so the group has no interpretable data and evil shows "
+        "3 regimes where the other behaviours show 4. Sycophancy and hallucination lose nothing.\n"
+        "Bars are the mean over the surviving datasets; error bars are the committed bootstrap CI "
+        "for single-dataset regimes and the s.e.m. across datasets for multi-dataset ones. "
         "Only the CONTEXT-based variant is scored (variant=context_end); the prefix-end arm is a "
         "stated scope deviation inherited from the parent round. Mapping is LINEAR throughout; no "
-        "MLP or kernel arm. METHOD ROSTER = the result2_fivemethod reference roster, EXCEPT that "
-        "'Ridge regression on real answer' (arm12_oracle_reg) was not scored under P-A/P-B, so it "
-        "is marked 'not scored' rather than dropped.\n"
+        "MLP or kernel arm. METHOD ROSTER = the result2_fivemethod reference roster MINUS "
+        "'Ridge regression on real answer' (arm12_oracle_reg), which P-A/P-B never scored.\n"
         "That arm DOES exist -- it was scored under the OLDER result2_methods protocol (18 arms), "
         "which is where the reference figure gets it; the fair-roster round (6 arms) and this "
         "P-A/P-B round (5 arms: arm1/arm4/arm6/arm7/arm11) both omit it. result2_methods also\n"
