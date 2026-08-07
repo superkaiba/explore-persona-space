@@ -1807,6 +1807,7 @@ def run_block(
                     "value_a": pair.value_a,
                     "value_b": pair.value_b,
                     "context_a": pair.a,
+                    "context_id": pair.a,  # audit-walker compat (issue2094_judge.run_audits)
                     "context_b": pair.b,
                     "position": c["position"],
                     "donor_pair_id": c["donor_pair_id"],
