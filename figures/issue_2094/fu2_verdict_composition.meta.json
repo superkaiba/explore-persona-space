@@ -1,0 +1,199 @@
+{
+  "commit": "7d85517a+dirty",
+  "git_commit": "7d85517a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/analyzer/MEMORY.md"
+  ],
+  "created": "2026-08-07T08:00:24Z",
+  "figsize": [
+    8.4,
+    4.4
+  ],
+  "points": [
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.1,
+      "y": 0.2,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.292857,
+      "y": 0.18571428571428572,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.421429,
+      "y": 0.07142857142857145,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.7,
+      "y": 0.48571428571428565,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.971429,
+      "y": 0.05714285714285716,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.314286,
+      "y": 0.6285714285714286,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.657143,
+      "y": 0.05714285714285716,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": "0.8",
+      "y": 0.22857142857142854,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.957143,
+      "y": 0.08571428571428574,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.028571,
+      "y": 0.05714285714285714,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.1,
+      "y": 0.08571428571428572,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.142857,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.571429,
+      "y": 0.8571428571428572,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": "1.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.03,
+      "y": 0.06,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.35,
+      "y": 0.5799999999999998,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.82,
+      "y": 0.36,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.04,
+      "y": 0.08,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.12,
+      "y": 0.08,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "fraction of family reads (setting x layer variant x dose x metric)": 0.58,
+      "y": 0.84,
+      "_kind": "bar",
+      "_group": 24
+    }
+  ],
+  "n_series": 25,
+  "total_points": 25,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "verdict composition per intervention span: fu2 spans vs parent comparables",
+        "xlabel": "fraction of family reads (setting x layer variant x dose x metric)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "query text tokens only\n(this round)",
+          "query span with template tokens\n(parent grid)",
+          "context-end single position\n(parent grid)",
+          "prefix content tokens only\n(this round)",
+          "whole prefix with template tokens\n(this round)"
+        ]
+      }
+    ],
+    "series": [
+      "clean separation (steered above null, cap-clean)",
+      "separating, but cap-hit-compromised",
+      "separating, under 5 usable pairs",
+      "measured, not separated",
+      "not comparable (coherence / pair floor)"
+    ]
+  }
+}

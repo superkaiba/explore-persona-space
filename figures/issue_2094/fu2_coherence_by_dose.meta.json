@@ -1,0 +1,833 @@
+{
+  "commit": "7d85517a+dirty",
+  "git_commit": "7d85517a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/analyzer/MEMORY.md"
+  ],
+  "created": "2026-08-07T08:00:26Z",
+  "figsize": [
+    7.6,
+    4.4
+  ],
+  "points": [
+    {
+      "edit dose": 0.0,
+      "judge-incoherent fraction of rollouts": 0.058333333333333334,
+      "error": 0.09790921721071422,
+      "series": "query text tokens only - steered",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "edit dose": 1.0,
+      "judge-incoherent fraction of rollouts": 0.175,
+      "error": 0.06993515515051019,
+      "series": "query text tokens only - steered",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "edit dose": 2.0,
+      "judge-incoherent fraction of rollouts": 0.43333333333333335,
+      "error": 0.0,
+      "series": "query text tokens only - steered",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "edit dose": 3.0,
+      "judge-incoherent fraction of rollouts": 0.6333333333333333,
+      "error": 0.0,
+      "series": "query text tokens only - steered",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "edit dose": 4.0,
+      "judge-incoherent fraction of rollouts": 0.18333333333333332,
+      "error": 0.06993515515051019,
+      "series": "query text tokens only - steered",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "edit dose": 0.06,
+      "judge-incoherent fraction of rollouts": 0.058333333333333334,
+      "error": 0.063117996494514,
+      "series": "query text tokens only - null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "edit dose": 1.06,
+      "judge-incoherent fraction of rollouts": 0.24166666666666667,
+      "error": 0.05257384025968581,
+      "series": "query text tokens only - null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "edit dose": 2.06,
+      "judge-incoherent fraction of rollouts": 0.425,
+      "error": 0.0,
+      "series": "query text tokens only - null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "edit dose": 3.06,
+      "judge-incoherent fraction of rollouts": 0.6416666666666667,
+      "error": 0.0,
+      "series": "query text tokens only - null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "edit dose": 4.06,
+      "judge-incoherent fraction of rollouts": 0.24166666666666667,
+      "error": 0.05257384025968581,
+      "series": "query text tokens only - null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "edit dose": 0.0,
+      "judge-incoherent fraction of rollouts": 0.23333333333333334,
+      "error": 0.09790921721071422,
+      "series": "prefix content tokens only - steered",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "edit dose": 1.0,
+      "judge-incoherent fraction of rollouts": 0.4666666666666667,
+      "error": 0.06993515515051019,
+      "series": "prefix content tokens only - steered",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "edit dose": 2.0,
+      "judge-incoherent fraction of rollouts": 0.8666666666666667,
+      "error": 0.0,
+      "series": "prefix content tokens only - steered",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "edit dose": 3.0,
+      "judge-incoherent fraction of rollouts": 0.9666666666666667,
+      "error": 0.0,
+      "series": "prefix content tokens only - steered",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "edit dose": 4.0,
+      "judge-incoherent fraction of rollouts": 0.48333333333333334,
+      "error": 0.06993515515051019,
+      "series": "prefix content tokens only - steered",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "edit dose": 0.06,
+      "judge-incoherent fraction of rollouts": 0.11666666666666667,
+      "error": 0.063117996494514,
+      "series": "prefix content tokens only - null",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "edit dose": 1.06,
+      "judge-incoherent fraction of rollouts": 0.43333333333333335,
+      "error": 0.05257384025968581,
+      "series": "prefix content tokens only - null",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "edit dose": 2.06,
+      "judge-incoherent fraction of rollouts": 0.8333333333333334,
+      "error": 0.0,
+      "series": "prefix content tokens only - null",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "edit dose": 3.06,
+      "judge-incoherent fraction of rollouts": 0.9333333333333333,
+      "error": 0.0,
+      "series": "prefix content tokens only - null",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "edit dose": 4.06,
+      "judge-incoherent fraction of rollouts": 0.43333333333333335,
+      "error": 0.05257384025968581,
+      "series": "prefix content tokens only - null",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "edit dose": 0.0,
+      "judge-incoherent fraction of rollouts": 0.8166666666666667,
+      "error": 0.09790921721071422,
+      "series": "whole prefix with template tokens - steered",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "edit dose": 1.0,
+      "judge-incoherent fraction of rollouts": 0.9166666666666666,
+      "error": 0.06993515515051019,
+      "series": "whole prefix with template tokens - steered",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "edit dose": 2.0,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "error": 0.0,
+      "series": "whole prefix with template tokens - steered",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "edit dose": 3.0,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "error": 0.0,
+      "series": "whole prefix with template tokens - steered",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "edit dose": 4.0,
+      "judge-incoherent fraction of rollouts": 0.9166666666666666,
+      "error": 0.06993515515051019,
+      "series": "whole prefix with template tokens - steered",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "edit dose": 0.06,
+      "judge-incoherent fraction of rollouts": 0.9333333333333333,
+      "error": 0.063117996494514,
+      "series": "whole prefix with template tokens - null",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "edit dose": 1.06,
+      "judge-incoherent fraction of rollouts": 0.95,
+      "error": 0.05257384025968581,
+      "series": "whole prefix with template tokens - null",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "edit dose": 2.06,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "error": 0.0,
+      "series": "whole prefix with template tokens - null",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "edit dose": 3.06,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "error": 0.0,
+      "series": "whole prefix with template tokens - null",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "edit dose": 4.06,
+      "judge-incoherent fraction of rollouts": 0.95,
+      "error": 0.05257384025968581,
+      "series": "whole prefix with template tokens - null",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "edit dose": 0.0,
+      "judge-incoherent fraction of rollouts": 0.058333333333333334,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "edit dose": 1.0,
+      "judge-incoherent fraction of rollouts": 0.175,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "edit dose": 2.0,
+      "judge-incoherent fraction of rollouts": 0.43333333333333335,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "edit dose": 3.0,
+      "judge-incoherent fraction of rollouts": 0.6333333333333333,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "edit dose": 4.0,
+      "judge-incoherent fraction of rollouts": 0.18333333333333332,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "edit dose": 0.0,
+      "judge-incoherent fraction of rollouts": 0.016398739199310945,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "edit dose": 1.0,
+      "judge-incoherent fraction of rollouts": 0.10701525906499311,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "edit dose": 2.0,
+      "judge-incoherent fraction of rollouts": 0.34467076032841854,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "edit dose": 3.0,
+      "judge-incoherent fraction of rollouts": 0.5471114833914108,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "edit dose": 4.0,
+      "judge-incoherent fraction of rollouts": 0.11410106190297067,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "edit dose": 0.0,
+      "judge-incoherent fraction of rollouts": 0.10026792746735572,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "edit dose": 1.0,
+      "judge-incoherent fraction of rollouts": 0.24298474093500688,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "edit dose": 2.0,
+      "judge-incoherent fraction of rollouts": 0.5219959063382482,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "edit dose": 3.0,
+      "judge-incoherent fraction of rollouts": 0.7195551832752558,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "edit dose": 4.0,
+      "judge-incoherent fraction of rollouts": 0.25256560476369594,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "edit dose": 0.06,
+      "judge-incoherent fraction of rollouts": 0.058333333333333334,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "edit dose": 1.06,
+      "judge-incoherent fraction of rollouts": 0.24166666666666667,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "edit dose": 2.06,
+      "judge-incoherent fraction of rollouts": 0.425,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "edit dose": 3.06,
+      "judge-incoherent fraction of rollouts": 0.6416666666666667,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "edit dose": 4.06,
+      "judge-incoherent fraction of rollouts": 0.24166666666666667,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "edit dose": 0.06,
+      "judge-incoherent fraction of rollouts": 0.016398739199310945,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "edit dose": 1.06,
+      "judge-incoherent fraction of rollouts": 0.1650710534570124,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "edit dose": 2.06,
+      "judge-incoherent fraction of rollouts": 0.33655081496512623,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "edit dose": 3.06,
+      "judge-incoherent fraction of rollouts": 0.5558713082926934,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "edit dose": 4.06,
+      "judge-incoherent fraction of rollouts": 0.1650710534570124,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "edit dose": 0.06,
+      "judge-incoherent fraction of rollouts": 0.10026792746735572,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "edit dose": 1.06,
+      "judge-incoherent fraction of rollouts": 0.31826227987632094,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "edit dose": 2.06,
+      "judge-incoherent fraction of rollouts": 0.5134491850348737,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "edit dose": 3.06,
+      "judge-incoherent fraction of rollouts": 0.7274620250406401,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "edit dose": 4.06,
+      "judge-incoherent fraction of rollouts": 0.31826227987632094,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "edit dose": 0.0,
+      "judge-incoherent fraction of rollouts": 0.23333333333333334,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "edit dose": 1.0,
+      "judge-incoherent fraction of rollouts": 0.4666666666666667,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "edit dose": 2.0,
+      "judge-incoherent fraction of rollouts": 0.8666666666666667,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "edit dose": 3.0,
+      "judge-incoherent fraction of rollouts": 0.9666666666666667,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "edit dose": 4.0,
+      "judge-incoherent fraction of rollouts": 0.48333333333333334,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "edit dose": 0.0,
+      "judge-incoherent fraction of rollouts": 0.1263115633084489,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "edit dose": 1.0,
+      "judge-incoherent fraction of rollouts": 0.3404306736776387,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "edit dose": 2.0,
+      "judge-incoherent fraction of rollouts": 0.7806513364223606,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "edit dose": 3.0,
+      "judge-incoherent fraction of rollouts": 0.9212455099059513,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "edit dose": 4.0,
+      "judge-incoherent fraction of rollouts": 0.35688618436791986,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "edit dose": 0.0,
+      "judge-incoherent fraction of rollouts": 0.3403551033582178,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "edit dose": 1.0,
+      "judge-incoherent fraction of rollouts": 0.5929026596556947,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "edit dose": 2.0,
+      "judge-incoherent fraction of rollouts": 0.9526819969109728,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "edit dose": 3.0,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "edit dose": 4.0,
+      "judge-incoherent fraction of rollouts": 0.6097804822987468,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "edit dose": 0.06,
+      "judge-incoherent fraction of rollouts": 0.11666666666666667,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "edit dose": 1.06,
+      "judge-incoherent fraction of rollouts": 0.43333333333333335,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "edit dose": 2.06,
+      "judge-incoherent fraction of rollouts": 0.8333333333333334,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "edit dose": 3.06,
+      "judge-incoherent fraction of rollouts": 0.9333333333333333,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "edit dose": 4.06,
+      "judge-incoherent fraction of rollouts": 0.43333333333333335,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "edit dose": 0.06,
+      "judge-incoherent fraction of rollouts": 0.0354367232732129,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "edit dose": 1.06,
+      "judge-incoherent fraction of rollouts": 0.3079455201148881,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "edit dose": 2.06,
+      "judge-incoherent fraction of rollouts": 0.7390327893656945,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "edit dose": 3.06,
+      "judge-incoherent fraction of rollouts": 0.8702153368388194,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "edit dose": 4.06,
+      "judge-incoherent fraction of rollouts": 0.3079455201148881,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "edit dose": 0.06,
+      "judge-incoherent fraction of rollouts": 0.19789661006012044,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "edit dose": 1.06,
+      "judge-incoherent fraction of rollouts": 0.5587211465517785,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "edit dose": 2.06,
+      "judge-incoherent fraction of rollouts": 0.9276338773009722,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "edit dose": 3.06,
+      "judge-incoherent fraction of rollouts": 0.9964513298278473,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "edit dose": 4.06,
+      "judge-incoherent fraction of rollouts": 0.5587211465517785,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "edit dose": 0.0,
+      "judge-incoherent fraction of rollouts": 0.8166666666666667,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "edit dose": 1.0,
+      "judge-incoherent fraction of rollouts": 0.9166666666666666,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "edit dose": 2.0,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "edit dose": 3.0,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "edit dose": 4.0,
+      "judge-incoherent fraction of rollouts": 0.9166666666666666,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "edit dose": 0.0,
+      "judge-incoherent fraction of rollouts": 0.7187574494559524,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "edit dose": 1.0,
+      "judge-incoherent fraction of rollouts": 0.8467315115161564,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "edit dose": 2.0,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "edit dose": 3.0,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "edit dose": 4.0,
+      "judge-incoherent fraction of rollouts": 0.8467315115161564,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "edit dose": 0.0,
+      "judge-incoherent fraction of rollouts": 0.9145758838773809,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "edit dose": 1.0,
+      "judge-incoherent fraction of rollouts": 0.9866018218171768,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "edit dose": 2.0,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "edit dose": 3.0,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "edit dose": 4.0,
+      "judge-incoherent fraction of rollouts": 0.9866018218171768,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "edit dose": 0.06,
+      "judge-incoherent fraction of rollouts": 0.9333333333333333,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "edit dose": 1.06,
+      "judge-incoherent fraction of rollouts": 0.95,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "edit dose": 2.06,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "edit dose": 3.06,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "edit dose": 4.06,
+      "judge-incoherent fraction of rollouts": 0.95,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "edit dose": 0.06,
+      "judge-incoherent fraction of rollouts": 0.8702153368388194,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "edit dose": 1.06,
+      "judge-incoherent fraction of rollouts": 0.8948523194806284,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "edit dose": 2.06,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "edit dose": 3.06,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "edit dose": 4.06,
+      "judge-incoherent fraction of rollouts": 0.8948523194806284,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "edit dose": 0.06,
+      "judge-incoherent fraction of rollouts": 0.9964513298278473,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "edit dose": 1.06,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "edit dose": 2.06,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "edit dose": 3.06,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "edit dose": 4.06,
+      "judge-incoherent fraction of rollouts": 1.0,
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 120,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "generation coherence per span and dose, steered vs shuffled-donor null (dotted line: 2.0 percent unpatched anchor baseline)",
+        "xlabel": "edit dose",
+        "ylabel": "judge-incoherent fraction of rollouts",
+        "xticklabels": [
+          "0.5x",
+          "1x",
+          "2x",
+          "4x",
+          "full-state\npatch"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "query text tokens only - steered",
+      "query text tokens only - null",
+      "prefix content tokens only - steered",
+      "prefix content tokens only - null",
+      "whole prefix with template tokens - steered",
+      "whole prefix with template tokens - null"
+    ]
+  }
+}
