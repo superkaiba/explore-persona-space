@@ -253,6 +253,56 @@ def test_fig_margin_validation_percell_grain(tmp_path):
     _assert_saved(tmp_path, "margin_validation")
 
 
+def _two_rec(cell: str, causal: str, probe: str, auc: float | None, f: float | None = 0.4) -> dict:
+    return {
+        "cell": cell,
+        "slot": "ce",
+        "causal_verdict": causal,
+        "probe_verdict": probe,
+        "f_steered_mean": f,
+        "max_auc": auc,
+        "n_post_exclusion": 20,
+    }
+
+
+def test_fig_two_by_two_quadrant_labels(tmp_path):
+    """r3 MAJOR 1: quadrant membership comes from the PERSISTED
+    (probe_verdict, causal_verdict) pair — the four registered manifest
+    labels, untestable-causal as the explicit fifth — and the render
+    consumes probe_verdict (no causal-only styling, no chance axvline
+    standing in for the per-cell probe threshold)."""
+    # The four registered label strings (manifest read_write_2x2
+    # plotted_quantity), pinned verbatim.
+    assert set(F.QUADRANT_LABELS.values()) == {
+        "stored-and-used",
+        "stored-but-unusable",
+        "used-but-not-decoded",
+        "absent",
+    }
+    assert set(F.QUADRANT_STYLE) == set(F.QUADRANT_LABELS.values()) | {"untestable-causal"}
+    # Verdict-pair -> quadrant classification (probe = read, causal = write).
+    assert F._quadrant_of(_two_rec("c", "positive", "positive", 0.9)) == "stored-and-used"
+    assert F._quadrant_of(_two_rec("c", "null", "positive", 0.9)) == "stored-but-unusable"
+    assert F._quadrant_of(_two_rec("c", "positive", "null", 0.6)) == "used-but-not-decoded"
+    assert F._quadrant_of(_two_rec("c", "null", "null", 0.5)) == "absent"
+    assert F._quadrant_of(_two_rec("c", "untestable-causal", "positive", 0.9)) == (
+        "untestable-causal"
+    )
+    assert F._quadrant_of(_two_rec("c", "null", "missing", None)) is None
+    two = {
+        "cells": [
+            _two_rec("c1", "positive", "positive", 0.9),
+            _two_rec("c2", "null", "positive", 0.85),
+            _two_rec("c3", "positive", "null", 0.55),
+            _two_rec("c4", "null", "null", 0.5),
+            _two_rec("c5", "untestable-causal", "positive", 0.8, f=None),
+            _two_rec("c6", "null", "missing", None),  # no probe rows -> omitted + counted
+        ]
+    }
+    F.fig_two_by_two(two, tmp_path, [Path("x")])
+    _assert_saved(tmp_path, "two_by_two")
+
+
 def test_fig_anchor_separation(tmp_path):
     anchors = [
         {"cell": "instr_format", "pair_id": f"p{i}", "separation": s}
@@ -263,17 +313,64 @@ def test_fig_anchor_separation(tmp_path):
 
 
 def test_fig_act_beh_agreement(tmp_path):
-    rows = [
+    """r3 MINOR 1: the per-arm rho is restricted to units passing the
+    rule-19-mirrored dynamic-range screen (>=2 separation-kept rows with
+    spread in BOTH quantities); screened-out units stay plotted but carry
+    no rho weight, and the realized range is stated in-panel."""
+    rows = []
+    for i in range(6):
+        # Two rows per unit with spread in both quantities -> passes screen.
+        rows.append(
+            {
+                "cell": f"cell{i}",
+                "slot": "ce",
+                "arm": "steered",
+                "f_beh": 0.1 * i,
+                "f_act": 0.08 * i,
+                "separation": 0.7,
+            }
+        )
+        rows.append(
+            {
+                "cell": f"cell{i}",
+                "slot": "ce",
+                "arm": "steered",
+                "f_beh": 0.1 * i + 0.05,
+                "f_act": 0.08 * i + 0.03,
+                "separation": 0.7,
+            }
+        )
+    # Degenerate units: constant F_beh across rows (no dynamic range) and a
+    # single-row unit — both plotted, both screened OUT of the rho.
+    rows += [
         {
-            "cell": f"cell{i}",
+            "cell": "flat",
             "slot": "ce",
             "arm": "steered",
-            "f_beh": 0.1 * i,
-            "f_act": 0.08 * i,
+            "f_beh": 0.2,
+            "f_act": a,
             "separation": 0.7,
         }
-        for i in range(6)
+        for a in (0.1, 0.4)
     ]
+    rows.append(
+        {
+            "cell": "solo",
+            "slot": "ce",
+            "arm": "steered",
+            "f_beh": 0.3,
+            "f_act": 0.2,
+            "separation": 0.7,
+        }
+    )
+    units = F._act_beh_units(rows)
+    assert units["flat|ce"]["in_rho"] is False
+    assert units["solo|ce"]["in_rho"] is False
+    assert all(units[f"cell{i}|ce"]["in_rho"] for i in range(6))
+    # Separation-excluded rows never form units at all.
+    assert "gone|ce" not in F._act_beh_units(
+        [{"cell": "gone", "slot": "ce", "f_beh": 0.1, "f_act": 0.1, "separation": 0.1}]
+    )
     arm_rows = {"steered": rows, "shuffled": [], "crosstype": []}
     F.fig_act_beh_agreement(arm_rows, tmp_path, [Path("x")])
     _assert_saved(tmp_path, "act_beh_agreement")
