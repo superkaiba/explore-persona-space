@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2169,
+  "highest_id": 2170,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9040,6 +9040,13 @@
       "path": "tasks/planning/2169",
       "status": "planning",
       "title": "verify_task_body check 31: WARN on any committed-but-unmentioned figures/issue_<N> PNG (not only per-unit patterns)"
+    },
+    "2170": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2170",
+      "status": "proposed",
+      "title": "code-style resume-key clause: forbid hashing raw bytes of a RECOMPUTED float array (platform-dependent key discards valid checkpoints)"
     },
     "218": {
       "has_clean_result": false,
