@@ -21,6 +21,8 @@ goal: Characterize, at full 131,072-feature dictionary width, which SAE features
   (used by the fitted map) from CARRIED (present at v_C but unused) and from FREQUENT
   (mechanically weighted by firing rate); and determine which mechanical feature properties
   predict being read, as activity-matched partials against a selection-symmetric null.
+relates_to:
+- spec-context-as-vector
 ---
 # Which SAE features are READ at the context vector by the context→answer map
 
