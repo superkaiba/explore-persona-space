@@ -374,6 +374,25 @@ at `mkdir`, #608), so a sentinel-dependent workload pins a drained lane
 (runpod/fellows) at plan time or accepts the fall-through risk
 (verify_plan c43 WARNs).
 
+**The fellows QoS ladder is RESUMABLE across launcher deaths (#2161).**
+The AUTO-path ladder park persists its position (rung index, rung-park
+elapsed, SLURM job id) to the durable per-issue lease
+(`Lease.free_lane_park_state`) on every rung transition, and the CLI
+path (`dispatch_issue.py launch`) bounds each PROCESS's park at
+`RouterConfig.park_process_budget_seconds`
+(`EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS`, default 420 s — sized under
+the 600 s Bash-tool cap): at budget with the job still queued, the
+launch exits 75 (`reason: free_lane_park_budget_reached`, the third
+exit-75 producer) instead of parking past the caller's wall. A re-run
+of the SAME launch command reconnects to the queued job by its
+`eps-issue-<N>` name (`squeue --name`), resumes the park mid-rung from
+lease state, and never double-submits — the scancel + re-submit rung
+walk is process-lifetime-independent. Never hand the still-queued job
+to `backend_poll.py` (SLURM PENDING polls as `running` there; the
+ladder would stall at high-eur). Orchestrator-side contract + the
+killed-launcher recovery probes: `.claude/skills/issue/SKILL.md`
+Step 6b.
+
 The GCP ladder (`backends/router._gcp_ladder_specs`) is keyed on job
 LENGTH (`_is_short_job`: known GPU-hours ≤ `EPS_GCP_SPOT_MAX_GPU_HOURS`,
 default 2, OR `spec.extra["spot_tolerant"]`): **SHORT jobs — spot leads:**

@@ -4353,6 +4353,23 @@ RE-RUN the same `dispatch_issue.py launch` command to continue waiting
 liveness); NEVER post `epm:failure v1` / `set-status blocked` on this
 exit (#603).
 
+The SAME contract has a THIRD producer (#2161): a free-SLURM-lane
+QoS-ladder park hitting its per-process budget
+(`EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS`, 420 s) with the job still
+queued → `reason: free_lane_park_budget_reached`; the ladder position
+persists to `Lease.free_lane_park_state` first. RE-RUN the SAME command
+(heartbeat per re-run) — it reconnects by job name and RESUMES the
+ladder park; no double-submit. NEVER hand off to `backend_poll.py`
+while `still_waiting` (PENDING polls as `running`; the ladder stalls).
+
+**Launch-recovery invariant (#1336).** A killed launch call may have
+SUCCEEDED — submit precedes the park. BEFORE any relaunch probe BOTH
+`.claude/cache/issue-<N>-handle.json` AND `squeue --name
+eps-issue-<N>...` on the cluster: live job → re-run the SAME command;
+BOTH empty → died PRE-submit, plain re-run safe. `scancel` +
+confirm-gone + re-run ONLY when abandoning the job or changing the
+command shape.
+
 **Follow-up parent reuse.** When the task has a `parent_id` AND the
 parent's RunPod pod is alive, the operational path stays on the
 existing `pod.py` flow for that one specific case (the slice-6 router
