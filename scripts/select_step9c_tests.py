@@ -413,6 +413,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # here). SKILL.md Step 6d.1 check-4 is pinned in the same file.
     "tests/test_experimenter_md.py",
     "tests/test_issue_skill_exit_breadcrumb.py",  # NEW (#1242) — SKILL.md exit-breadcrumb pin
+    # NEW (#2161) — SKILL.md Step 6b fellows still-waiting launch contract pins
+    # (free_lane_park_budget_reached third exit-75 producer + the
+    # probe-before-relaunch launch-recovery invariant + the never-hand-off-to-
+    # backend_poll-while-still_waiting clause)
+    "tests/test_issue_skill_fellows_launch_contract_pin.py",
     # NEW (#1575) — SKILL.md cap-park surfacing pins (#1548/#1558/#1575)
     "tests/test_issue_skill_followup_cap_park_note_pin.py",
     # NEW (#1546) — SKILL.md forensics-ingest pointer pin
