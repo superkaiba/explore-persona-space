@@ -10,6 +10,7 @@ requires-python = ">=3.11"
 dependencies = [
     "torch>=2.4,<3.0",
     "transformers>=4.46,<5.0",  # DO NOT bump to >=5 until vLLM ships a transformers-5-compatible release. vLLM 0.11.0 calls tokenizer.all_special_tokens_extended (removed in transformers 5.x) and every fresh pod crashes at first LLM(...) init. Recurring failure across #238/#261/#263/#269/#331/#354/#368. See .claude/agent-memory/experimenter/feedback_vllm0110_transformers5_breakage.md.
+    "sentence-transformers>=3.0,<6.0",  # MPNet prompt embeddings for the #1336 pooled group-aware k-means split (scripts/issue1336_pooled_split.py). Loosely bounded on purpose: uv must resolve it UNDER the transformers<5.0 pin above — after any change here, confirm uv.lock still holds transformers at 4.x.
     "accelerate>=1.0,<2.0",
     "datasets>=4.0,<5.0",
     "deepspeed>=0.14,<1.0",
