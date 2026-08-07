@@ -510,14 +510,30 @@ def _matched_digest(ckpt_path: Path) -> dict:
 # Figure
 
 
+_VARIANT_LABELS = {
+    "char_dana": "Dana",
+    "char_helios": "HELIOS",
+    "char_vex": "Vex",
+    "char_wren": "Wren",
+    "conversation_paired_stories_assistant": "Assistant",
+}
+_FORM_LABELS = {
+    "attrib_quoted": "attributed quote",
+    "bare_label": "bare label",
+    "bare_text": "bare text",
+    "chat": "chat",
+}
+_MODEL_LABELS = {"qwen2.5-7b": "base", "qwen2.5-7b-instruct": "instruct"}
+
+
 def _short_pair_label(pair_key: str) -> str:
+    """Reader-facing pair label ("Vex · bare label · base") — no config slugs
+    in rendered figure text (paper-plots §3.5 / verify_task_body checks 24/28)."""
     variant, form, model = pair_key.split(forms.CELL_KEY_SEP)
-    v = variant.replace("char_", "").replace("conversation_paired_stories_assistant", "asst")
-    f = {"attrib_quoted": "attr", "bare_label": "blab", "bare_text": "btxt", "chat": "chat"}.get(
-        form, form
-    )
-    m = {"qwen2.5-7b": "base", "qwen2.5-7b-instruct": "instr"}[model]
-    return f"{v}/{f}/{m}"
+    v = _VARIANT_LABELS.get(variant, variant)
+    f = _FORM_LABELS.get(form, form)
+    m = _MODEL_LABELS[model]
+    return f"{v} · {f} · {m}"
 
 
 def render_figure(pair_rows: list[dict], fig_path: Path) -> None:
@@ -622,7 +638,11 @@ def render_figure(pair_rows: list[dict], fig_path: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=None)
-    ap.add_argument("--activations-dir", required=True)
+    ap.add_argument(
+        "--activations-dir",
+        default=None,
+        help="required unless --figure-only (which reads only --out-json)",
+    )
     ap.add_argument(
         "--out-json",
         default=str(
@@ -655,8 +675,34 @@ def main() -> int:
         "regime-keyed so production never resumes smoke checkpoints)",
     )
     ap.add_argument("--stage-only", action="store_true", help="stage activations then exit")
+    ap.add_argument(
+        "--figure-only",
+        action="store_true",
+        help="re-render the figure from an existing --out-json (no staging, no fits)",
+    )
     args = ap.parse_args()
 
+    if args.figure_only:
+        out_json = Path(args.out_json).resolve()
+        fig_path = Path(args.fig).resolve()
+        if not out_json.is_file():
+            print(f"ERROR: --figure-only needs an existing --out-json: {out_json}", file=sys.stderr)
+            return 2
+        with out_json.open(encoding="utf-8") as fh:
+            payload = json.load(fh)
+        valid_rows = [r for r in payload["pairs"].values() if r["comparison_valid"]]
+        if not valid_rows:
+            print("ERROR: --figure-only found no comparison-valid pairs", file=sys.stderr)
+            return 2
+        render_figure(valid_rows, fig_path)
+        _log(f"figure-only: wrote {fig_path} from {out_json} ({len(valid_rows)} valid pairs)")
+        print("[lenstrat] DONE rc=0 cells=0/0 figure_only=1", flush=True)
+        sys.stdout.flush()
+        sys.exit(0)
+
+    if args.activations_dir is None:
+        print("ERROR: --activations-dir is required unless --figure-only", file=sys.stderr)
+        return 2
     activations_dir = Path(args.activations_dir).resolve()
     activations_dir.mkdir(parents=True, exist_ok=True)
     ckpt_dir = Path(args.checkpoint_dir).resolve()
