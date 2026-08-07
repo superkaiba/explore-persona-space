@@ -11258,6 +11258,447 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
     return errors
 
 
+def check_smoke_blind_spot_review_lens(  # noqa: C901 -- flat per-surface token ladder (seven pinned surfaces, #2165); extracting a branch would just relocate it
+    *, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL if the smoke blind-spot enumeration lens (#2165) is absent from
+    ANY of its seven surfaces.
+
+    Task #1336 (plan v15 round 4) lost two consecutive production SLURM
+    launches to failures the pre-launch smoke was STRUCTURALLY INCAPABLE of
+    catching: a ``smoke=False``-only ``SentenceTransformer`` hid a missing
+    ``sentence_transformers`` dependency (SLURM 4684), and
+    ``assert_split(..., smoke=ctx.smoke)`` downgraded its split gates under
+    smoke (SLURM 5005). The fix (#2165) requires every plan declaring a
+    pre-launch smoke run to carry a SMOKE BLIND-SPOT ENUMERATION
+    (`.claude/rules/smoke-blind-spots.md`) and gates diffs at code-review
+    Step 0.71. This check pins the lens across its surfaces, region-anchored,
+    so a future refactor cannot silently strip one (the #606
+    copy-list-omission class):
+
+    (1) `.claude/rules/smoke-blind-spots.md` exists;
+    (2) code-reviewer.md — a ``### Step 0.71`` section whose body (up to the
+        next ``### `` heading) names the ``smoke-blind-spot-unenumerated``
+        tag AND the empty-form escape literal, PLUS the tag on the
+        ``**Blocker tags:**`` line;
+    (3) codex-code-reviewer.md — the Step 0.71 copy-list bullet (heading
+        token + tag inside the bullet), ``0.71`` on the ``{{INLINED RUBRIC``
+        placeholder line, AND the tag on the ``**Blocker tags:**`` line;
+    (4) planner-section-reference.md — the ``## 4. Design`` region names the
+        enumeration + the escape literal;
+    (5) critic-lens-reference.md — the ``### Methodology lens`` region names
+        the enumeration (item 19);
+    (6) planner.md — the §4 hard-requirement capsule token
+        ``smoke blind-spot enumeration``;
+    (7) critic.md — the Methodology-capsule item token
+        ``19 smoke blind-spot enumeration``.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    tag = "smoke-blind-spot-unenumerated"
+    escape = "none — smoke executes every production gate"
+    errors: list[str] = []
+
+    # (1) the rule file exists.
+    rule = root / ".claude" / "rules" / "smoke-blind-spots.md"
+    if not rule.is_file():
+        errors.append(
+            f"{rule}: missing — the #2165 smoke blind-spot enumeration rule "
+            f"file must exist (#1336: two consecutive production launches "
+            f"died on checks the pre-launch smoke structurally bypassed)."
+        )
+
+    # (2) code-reviewer.md: Step 0.71 section body + Blocker-tags line.
+    reviewer = root / ".claude" / "agents" / "code-reviewer.md"
+    if not reviewer.is_file():
+        errors.append(
+            f"{reviewer}: missing — the #2165 smoke blind-spot enumeration "
+            f"gate (Step 0.71) must live in code-reviewer.md."
+        )
+    else:
+        text = reviewer.read_text(encoding="utf-8")
+        idx = text.find("### Step 0.71")
+        if idx == -1:
+            errors.append(
+                f"{reviewer}: missing the '### Step 0.71' section (#2165) — "
+                f"the smoke blind-spot enumeration gate must stay in the "
+                f"Claude reviewer so an unenumerated smoke-conditional "
+                f"substitution/downgrade FAILs at code-review (incident "
+                f"#1336)."
+            )
+        else:
+            nxt = text.find("\n### ", idx + 1)
+            body = text[idx:nxt] if nxt != -1 else text[idx:]
+            for token in (tag, escape):
+                if token not in body:
+                    errors.append(
+                        f"{reviewer}: the '### Step 0.71' section body no "
+                        f"longer names {token!r} (#2165) — the gate must key "
+                        f"on that exact token."
+                    )
+        if not any(ln.startswith("**Blocker tags:**") and tag in ln for ln in text.splitlines()):
+            errors.append(
+                f"{reviewer}: {tag!r} is absent from the '**Blocker tags:**' "
+                f"line (#2165) — the orchestrator's Step 5c-bis strip parse "
+                f"would not recognize the Step 0.71 blocker as substantive."
+            )
+
+    # (3) codex-code-reviewer.md: copy-list bullet + rubric slot + tags line.
+    codex = root / ".claude" / "agents" / "codex-code-reviewer.md"
+    if not codex.is_file():
+        errors.append(
+            f"{codex}: missing — the #2165 smoke blind-spot enumeration "
+            f"copy-list bullet must live in codex-code-reviewer.md."
+        )
+    else:
+        text = codex.read_text(encoding="utf-8")
+        heading = '"Step 0.71: Smoke blind-spot enumeration gate"'
+        if heading not in text:
+            errors.append(
+                f"{codex}: missing the Step 0.71 copy-list token {heading!r} "
+                f"(#2165) — the Codex twin must copy the same lens or the "
+                f"two reviewers drift (the #606 copy-list-omission class)."
+            )
+        else:
+            idx = text.find(heading)
+            nxt = text.find('\n- "', idx + 1)
+            bullet = text[idx:nxt] if nxt != -1 else text[idx:]
+            if tag not in bullet:
+                errors.append(
+                    f"{codex}: the Step 0.71 copy-list bullet (heading token "
+                    f"to the next line-start '- \"' bullet) no longer names "
+                    f"{tag!r} (#2165) — a tag mention elsewhere in the file "
+                    f"does not keep the copied lens itself keyed on it."
+                )
+        rubric_lines = [ln for ln in text.splitlines() if "{{INLINED RUBRIC" in ln]
+        if not any("0.71" in ln for ln in rubric_lines):
+            errors.append(
+                f"{codex}: '0.71' is absent from the '{{{{INLINED RUBRIC' "
+                f"placeholder line (#2165) — the composed Codex prompt would "
+                f"omit the Step 0.71 lens."
+            )
+        if not any(ln.startswith("**Blocker tags:**") and tag in ln for ln in text.splitlines()):
+            errors.append(
+                f"{codex}: {tag!r} is absent from the '**Blocker tags:**' "
+                f"line (#2165) — the Codex verdict's tag vocabulary would "
+                f"not carry the Step 0.71 blocker."
+            )
+
+    # (4) planner-section-reference.md: the ## 4. Design region.
+    psr = root / ".claude" / "rules" / "planner-section-reference.md"
+    if not psr.is_file():
+        errors.append(
+            f"{psr}: missing — the #2165 smoke blind-spot enumeration "
+            f"planner bullet must live in planner-section-reference.md § 4."
+        )
+    else:
+        text = psr.read_text(encoding="utf-8")
+        idx = text.find("## 4. Design")
+        region = ""
+        if idx != -1:
+            nxt = text.find("\n## ", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+        for token in ("Smoke blind-spot enumeration", escape):
+            if token not in region:
+                errors.append(
+                    f"{psr}: the '## 4. Design' region no longer names "
+                    f"{token!r} (#2165) — the plan-side enumeration duty "
+                    f"would be silently stripped."
+                )
+
+    # (5) critic-lens-reference.md: the Methodology lens region (item 19).
+    clr = root / ".claude" / "rules" / "critic-lens-reference.md"
+    if not clr.is_file():
+        errors.append(
+            f"{clr}: missing — the #2165 smoke blind-spot enumeration critic "
+            f"item (Methodology lens 19) must live in critic-lens-reference.md."
+        )
+    else:
+        text = clr.read_text(encoding="utf-8")
+        idx = text.find("### Methodology lens")
+        region = ""
+        if idx != -1:
+            nxt = text.find("\n### ", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+        if "Smoke blind-spot enumeration" not in region:
+            errors.append(
+                f"{clr}: the '### Methodology lens' region no longer names "
+                f"'Smoke blind-spot enumeration' (#2165) — the critic's "
+                f"REVISE bar for an unenumerated smoke plan would be "
+                f"silently stripped."
+            )
+
+    # (6) planner.md: the always-loaded §4 hard-requirement capsule token.
+    planner = root / ".claude" / "agents" / "planner.md"
+    if not planner.is_file():
+        errors.append(
+            f"{planner}: missing — the #2165 smoke blind-spot enumeration "
+            f"capsule token must live in planner.md §4."
+        )
+    else:
+        text = planner.read_text(encoding="utf-8")
+        if "smoke blind-spot enumeration" not in text:
+            errors.append(
+                f"{planner}: the §4 hard-requirement capsule no longer names "
+                f"'smoke blind-spot enumeration' (#2165) — the always-loaded "
+                f"planner surface would drop the plan-side duty (the #606 "
+                f"silent-strip class)."
+            )
+
+    # (7) critic.md: the Methodology-capsule item token.
+    critic = root / ".claude" / "agents" / "critic.md"
+    if not critic.is_file():
+        errors.append(
+            f"{critic}: missing — the #2165 smoke blind-spot enumeration "
+            f"capsule item must live in critic.md."
+        )
+    else:
+        text = critic.read_text(encoding="utf-8")
+        if "19 smoke blind-spot enumeration" not in text:
+            errors.append(
+                f"{critic}: the Methodology-lens capsule no longer names "
+                f"'19 smoke blind-spot enumeration' (#2165) — the critic's "
+                f"always-loaded item roster would drop item 19 (the #606 "
+                f"silent-strip class)."
+            )
+    return errors
+
+
+def check_smoke_blind_spot_enumeration(  # noqa: C901 -- best-effort AST scan: per-script parse ladder + two hit rules + plan cross-check (#2165); extracting a branch would just relocate it
+    script_paths: list[Path],
+    plan_path: Path | None = None,
+    *,
+    warn_sink: list[str] | None = None,
+) -> list[str]:
+    """WARN-only (#2165): flag smoke-conditional substitution/downgrade
+    branches in ``script_paths`` when ``plan_path`` carries no SMOKE
+    BLIND-SPOT ENUMERATION (`.claude/rules/smoke-blind-spots.md`).
+
+    ALWAYS returns ``[]`` — emissions go to ``warn_sink`` (unit-test hook)
+    or stderr with a ``WARN: `` prefix; a WARN never fails the run. The scan
+    is a best-effort AST heuristic seeding the code-reviewer Step 0.71 lens
+    (the binding gate); its DISCLOSED false negatives: module-local helper
+    resolution is ONE level deep (a production import nested two-plus calls
+    down, or wrapped in a helper imported from ANOTHER module, escapes),
+    ``ast.Match`` case bodies are not recursed by the statement-form rules
+    (an ``ast.If`` inside a match arm escapes), dynamic dispatch escapes,
+    and smoke flags not literally named ``smoke`` escape. NOT bundled into
+    the no-flags run (requires explicit script arguments via
+    ``--smoke-blind-spot-scripts``).
+
+    Two hit rules, walked per enclosing statement body (module body, every
+    function body, and every nested compound-statement body), on any
+    ``ast.If`` whose test mentions ``smoke`` (a ``Name`` or ``Attribute``
+    terminal — covers ``smoke``, ``not smoke``, ``ctx.smoke``,
+    ``args.smoke``, ``self.smoke``, ``cfg.smoke``):
+
+    - BRANCH form: implementation work (an import, or a capitalized-callee
+      constructor call — with one-level module-local lowercase-callee
+      resolution into ``has_impl``, so the REAL #1336 helper-wrapped SLURM
+      4684 shape fires) or a gate (``assert``/``raise``) holds on exactly
+      one of body/orelse → ``substituted-implementation`` /
+      ``downgraded-gate`` (the per-check ``if smoke: logger.info else:
+      raise`` form — the REAL #1336 SLURM 5005 shape).
+    - EARLY-EXIT form: the smoke body contains a top-level ``return`` and
+      the enclosing body AFTER the ``If`` carries implementation work /
+      a gate.
+
+    The BRANCH form's ``substituted-implementation`` half ALSO runs over
+    every smoke-conditional ``ast.IfExp`` (whole-tree walk; plan §4.10(B)
+    names ``ast.If`` AND ``ast.IfExp``): implementation work on exactly one
+    arm of the ternary fires, with the SAME ``has_impl`` classifier (incl.
+    the one-level resolution). The ``downgraded-gate`` half does NOT run on
+    ternaries — ``assert``/``raise`` are statements and cannot occur inside
+    an expression, so a downgraded-gate ternary is structurally impossible.
+
+    Plan cross-check (when ``plan_path`` is given; escape literal checked
+    FIRST): hits + the empty-form escape literal present → the escape is
+    FALSIFIED (WARN + per-hit WARNs); hits + neither the enumeration heading
+    nor the escape → one summary WARN (+ per-hit WARNs); hits + the
+    enumeration heading present → SILENT (the branches are enumerated;
+    naming-completeness is reviewer-owned, Step 0.71). No hits → silent.
+    """
+    escape = "none — smoke executes every production gate"
+    heading_re = re.compile(r"(?i)smoke blind[- ]spot enumeration")
+
+    def _emit(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            print(f"WARN: {msg}", file=sys.stderr)
+
+    def _mentions_smoke(node: ast.AST) -> bool:
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Name) and sub.id == "smoke":
+                return True
+            if isinstance(sub, ast.Attribute) and sub.attr == "smoke":
+                return True
+        return False
+
+    def _callee_terminal_name(call: ast.Call) -> str | None:
+        fn = call.func
+        if isinstance(fn, ast.Name):
+            return fn.id
+        if isinstance(fn, ast.Attribute):
+            return fn.attr
+        return None
+
+    def _walk_skip_raise(node: ast.AST) -> Iterator[ast.AST]:
+        """ast.walk, but never descend INTO a ``raise`` statement — the
+        exception constructor of ``raise AssertionError(...)`` is gate
+        machinery (counted by ``_has_gate``), not implementation work; the
+        #1336 A10 trace classifies the per-check downgrade sites as
+        gate-only fires."""
+        if isinstance(node, ast.Raise):
+            return
+        yield node
+        for child in ast.iter_child_nodes(node):
+            yield from _walk_skip_raise(child)
+
+    def _base_has_impl(stmts: list[ast.stmt]) -> bool:
+        for stmt in stmts:
+            for sub in _walk_skip_raise(stmt):
+                if isinstance(sub, (ast.Import, ast.ImportFrom)):
+                    return True
+                if isinstance(sub, ast.Call):
+                    name = _callee_terminal_name(sub)
+                    if name and name[:1].isupper():
+                        return True
+        return False
+
+    def _has_impl(stmts: list[ast.stmt], local_fns: dict[str, ast.stmt]) -> bool:
+        """BASE classifier + ONE-level module-local lowercase-callee
+        resolution (NON-recursive: the inner application uses the BASE
+        classifier only, so a helper whose import sits a second call down
+        does NOT fire — the disclosed one-level boundary)."""
+        for stmt in stmts:
+            for sub in _walk_skip_raise(stmt):
+                if isinstance(sub, (ast.Import, ast.ImportFrom)):
+                    return True
+                if isinstance(sub, ast.Call):
+                    name = _callee_terminal_name(sub)
+                    if not name:
+                        continue
+                    if name[:1].isupper():
+                        return True
+                    helper = local_fns.get(name)
+                    if helper is not None and _base_has_impl(helper.body):  # type: ignore[attr-defined]
+                        return True
+        return False
+
+    def _has_gate(stmts: list[ast.stmt]) -> bool:
+        for stmt in stmts:
+            for sub in ast.walk(stmt):
+                if isinstance(sub, (ast.Assert, ast.Raise)):
+                    return True
+        return False
+
+    def _child_bodies(stmt: ast.stmt) -> list[list[ast.stmt]]:
+        bodies: list[list[ast.stmt]] = []
+        for field in ("body", "orelse", "finalbody"):
+            child = getattr(stmt, field, None)
+            if isinstance(child, list) and child and isinstance(child[0], ast.stmt):
+                bodies.append(child)
+        for handler in getattr(stmt, "handlers", []) or []:
+            bodies.append(handler.body)
+        return bodies
+
+    hits: list[tuple[Path, int, str]] = []
+    seen: set[tuple[str, int, str]] = set()
+
+    def _add_hit(path: Path, lineno: int, cls: str) -> None:
+        key = (str(path), lineno, cls)
+        if key not in seen:
+            seen.add(key)
+            hits.append((path, lineno, cls))
+
+    def _scan_body(path: Path, body: list[ast.stmt], local_fns: dict[str, ast.stmt]) -> None:
+        for i, stmt in enumerate(body):
+            if isinstance(stmt, ast.If) and _mentions_smoke(stmt.test):
+                # BRANCH form: impl/gate on exactly one of body/orelse.
+                if _has_impl(stmt.body, local_fns) != _has_impl(stmt.orelse, local_fns):
+                    _add_hit(path, stmt.lineno, "substituted-implementation")
+                if _has_gate(stmt.body) != _has_gate(stmt.orelse):
+                    _add_hit(path, stmt.lineno, "downgraded-gate")
+                # EARLY-EXIT form: smoke body returns; scan the enclosing
+                # body's statements AFTER the If.
+                if any(isinstance(s, ast.Return) for s in stmt.body):
+                    rest = body[i + 1 :]
+                    if _has_impl(rest, local_fns):
+                        _add_hit(path, stmt.lineno, "substituted-implementation")
+                    if _has_gate(rest):
+                        _add_hit(path, stmt.lineno, "downgraded-gate")
+            for child in _child_bodies(stmt):
+                _scan_body(path, child, local_fns)
+
+    def _scan_ifexps(path: Path, tree: ast.AST, local_fns: dict[str, ast.stmt]) -> None:
+        """BRANCH form over ternaries (plan section 4.10(B) names ``ast.If``
+        AND ``ast.IfExp``): implementation work on exactly one arm of a
+        smoke-conditional ``ast.IfExp`` fires ``substituted-implementation``.
+        Each arm is wrapped in ``ast.Expr`` so the SAME ``_has_impl``
+        classifier (incl. the one-level module-local lowercase-callee
+        resolution) runs unchanged. Deliberately NO ``_has_gate`` arm:
+        ``assert``/``raise`` are statements, so a downgraded-gate ternary is
+        structurally impossible -- do not "fix" that by adding one."""
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.IfExp) and _mentions_smoke(node.test)):
+                continue
+            impl_body = _has_impl([ast.Expr(value=node.body)], local_fns)
+            impl_orelse = _has_impl([ast.Expr(value=node.orelse)], local_fns)
+            if impl_body != impl_orelse:
+                _add_hit(path, node.lineno, "substituted-implementation")
+
+    for path in script_paths:
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, OSError, UnicodeDecodeError) as err:
+            _emit(f"smoke-blind-spots: {path}: unparseable ({err}) — scan skipped")
+            continue
+        local_fns: dict[str, ast.stmt] = {
+            node.name: node
+            for node in tree.body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        }
+        _scan_body(path, tree.body, local_fns)
+        _scan_ifexps(path, tree, local_fns)
+
+    if not hits:
+        return []
+
+    suppress_per_hit = False
+    if plan_path is not None:
+        try:
+            plan_text = plan_path.read_text(encoding="utf-8")
+        except OSError as err:
+            _emit(f"smoke-blind-spots: {plan_path}: plan unreadable ({err})")
+            plan_text = ""
+        if escape in plan_text:
+            _emit(
+                f"smoke-blind-spots: {plan_path}: the plan's "
+                f"'none — smoke executes every production gate' escape is "
+                f"falsified by {len(hits)} detected branch(es)"
+            )
+        elif heading_re.search(plan_text):
+            suppress_per_hit = True
+        else:
+            _emit(
+                f"smoke-blind-spots: {plan_path}: plan carries no smoke "
+                f"blind-spot enumeration (.claude/rules/smoke-blind-spots.md)"
+            )
+    if not suppress_per_hit:
+        for path, lineno, cls in hits:
+            _emit(f"smoke-blind-spots: {path}:{lineno}: smoke-conditional {cls} branch")
+    return []
+
+
 # The #963 stale-label disposition-clause tokens. The paragraph span runs from
 # the bold anchor (which must be UNIQUE — the check carries a NEGATIVE
 # assertion, so span identity is load-bearing) to the first blank line, and is
@@ -12653,7 +13094,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # .claude/rules/code-reviewer-section-reference.md (#1159 mechanism);
     # the spec keeps per-gate trigger + blocker-tag + lint-pinned tokens
     # + § pointer lines. Cap = measured + ~1 KB.
-    "code-reviewer.md": 99_500,
+    # measured 100,461 B post-#2165 (Step 0.71 smoke blind-spot enumeration
+    # gate + Blocker-tags entry; cap sized to the #2012-first merge-order
+    # base too — 99,822 + 1,935 = 101,757 measured under that order, so
+    # cap = worse-order measured + ~1.0 KB, inside the both-orders
+    # admissible window 101,757-103,461. Prior: 99_500.)
+    "code-reviewer.md": 102_800,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -12687,7 +13133,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # lint/test-pinned tokens, and the Codex-specific adaptations only).
     # Cap = measured + ~1 KB. (47_900 post the composer-common hard-rule
     # dedupe, measured 46,904 B.)
-    "codex-code-reviewer.md": 47_900,
+    # measured 48,212 B post-#2165 (Step 0.71 copy-list bullet +
+    # inlined-rubric 0.71 slot + Blocker-tags smoke-blind-spot-unenumerated
+    # entry; cap = measured + ~1.0 KB. Prior: 47_900.)
+    "codex-code-reviewer.md": 49_200,
     # measured 84,278 B post-#2002 (Resume-matrix + real production
     # out-root unit smoke-contract requirements + matching marker
     # `notes:` sub-blocks; incident driver: #1947 P0/P4/P5 + #1315 r6 +
@@ -14516,6 +14965,44 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Step 6d.0 post-provision). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-smoke-blind-spot-review-lens",
+        action="store_true",
+        help="FAIL if the #2165 smoke blind-spot enumeration lens is absent "
+        "from any of its seven surfaces: the smoke-blind-spots.md rule file, "
+        "the Step 0.71 section + Blocker-tags entry in code-reviewer.md, the "
+        "Step 0.71 copy-list bullet + rubric-placeholder entry + "
+        "Blocker-tags entry in codex-code-reviewer.md, the "
+        "planner-section-reference.md § 4 enumeration bullet, the "
+        "critic-lens-reference.md Methodology item 19, and the planner.md / "
+        "critic.md capsule tokens (incident #1336: two consecutive "
+        "production SLURM launches died on checks the pre-launch smoke "
+        "structurally bypassed). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-smoke-blind-spots",
+        action="store_true",
+        help="WARN-only best-effort AST scan (#2165): flag smoke-conditional "
+        "substitution/downgrade branches in the scripts named by "
+        "--smoke-blind-spot-scripts when the plan named by "
+        "--smoke-blind-spot-plan carries no SMOKE BLIND-SPOT ENUMERATION "
+        "(or its empty-form escape is falsified). Never FAILs; requires "
+        "--smoke-blind-spot-scripts; NOT bundled into the no-flags run.",
+    )
+    parser.add_argument(
+        "--smoke-blind-spot-scripts",
+        nargs="+",
+        default=None,
+        metavar="SCRIPT",
+        help="Script paths scanned by --check-smoke-blind-spots.",
+    )
+    parser.add_argument(
+        "--smoke-blind-spot-plan",
+        default=None,
+        metavar="PLAN_MD",
+        help="Plan markdown cross-checked by --check-smoke-blind-spots for "
+        "the SMOKE BLIND-SPOT ENUMERATION heading / empty-form escape.",
+    )
+    parser.add_argument(
         "--check-stale-label-disposition",
         action="store_true",
         help="FAIL if the /issue SKILL.md Step 0 stale-label disposition "
@@ -15009,6 +15496,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_long_loop_restartability_review_lens
         or args.check_hollow_verification_gate_review_lens
         or args.check_smoke_architecture_review_lens
+        or args.check_smoke_blind_spot_review_lens
+        or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
         or args.check_crash_fix_relaunch_contract
@@ -15155,6 +15644,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_hollow_verification_gate_review_lens())
     if args.check_smoke_architecture_review_lens or no_flags:
         errors.extend(check_smoke_architecture_review_lens())
+    if args.check_smoke_blind_spot_review_lens or no_flags:
+        errors.extend(check_smoke_blind_spot_review_lens())
+    if args.check_smoke_blind_spots:
+        if not args.smoke_blind_spot_scripts:
+            parser.error("--check-smoke-blind-spots requires --smoke-blind-spot-scripts")
+        errors.extend(
+            check_smoke_blind_spot_enumeration(
+                [Path(p) for p in args.smoke_blind_spot_scripts],
+                Path(args.smoke_blind_spot_plan) if args.smoke_blind_spot_plan else None,
+            )
+        )
     if args.check_stale_label_disposition or no_flags:
         errors.extend(check_stale_label_disposition_clause())
     if args.check_smoke_output_hygiene or no_flags:

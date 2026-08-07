@@ -43,14 +43,14 @@
     {
       "id": "read_write_2x2",
       "title": "Read x write 2x2 (probe AUC vs causal F)",
-      "source": "eval_results/issue_2162/probe/probe_auc.json + eval_results/issue_2162/f_metrics/f_cells.jsonl",
+      "source": "eval_results/issue_2162/f_metrics/probe.json + eval_results/issue_2162/f_metrics/f_cells.jsonl",
       "transform": "x = max-over-28-layers macro AUC (leave-one-carrier-out folds) per (type x slot); y = steered mean F_beh (separation-excluded, as per_type_f_beh); quadrant thresholds = the registered verdicts (causal-positive: clears BOTH nulls disjoint-CI + Holm IUT; probe-positive: max-AUC clears the max-selected permutation 97.5th band); cells with post-exclusion n < 12 (the survival floor) are labeled untestable-causal - an explicit fifth label, never rendered as a causal verdict",
       "plotted_quantity": "one point per (type x slot) in the AUC-vs-F plane, quadrants labeled stored-and-used / stored-but-unusable / used-but-not-decoded / absent, with sub-floor cells labeled untestable-causal"
     },
     {
       "id": "probe_layer_curves",
       "title": "Probe AUC per layer - per-unit companion of the 2x2",
-      "source": "eval_results/issue_2162/probe/probe_auc.json + issue2162_ctxinfo/analysis_tensors/probe_perm_matrix/",
+      "source": "eval_results/issue_2162/f_metrics/probe.json + issue2162_ctxinfo/analysis_tensors/probe_perm_matrix/",
       "transform": "per (type x slot x layer): macro AUC over the 3 value-pairs (carrier folds) plus the label-permutation band (B=1,000, within-carrier shuffles); no max taken in this view",
       "plotted_quantity": "AUC vs layer curves per type/slot with permutation bands and per-value-pair points"
     },

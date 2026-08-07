@@ -1096,3 +1096,60 @@ python dispatcher whose smoke gating lives in `args.smoke` records `Step
 0.70: N/A — python dispatcher; smoke gating is arg-level`. Widening path
 (python `args.smoke`, YAML/JSON `conditions_smoke:`) named in the plan
 follow-ups.
+
+## Step 0.71 detail — smoke blind-spot enumeration
+
+**Grep triggers** (run over the diff's touched `.py`/`.sh` files):
+`grep -nE 'if (not )?(ctx\.|args\.|self\.|cfg\.)?smoke\b' <file>` for branch
+forms; `grep -nE 'smoke\s*=' <file>` for kwarg-gated gates
+(`assert_split(..., smoke=ctx.smoke)`); ternaries
+(`X if smoke else Y`). For each hit, classify:
+**(a) substituted implementation** — the production import / model
+constructor / API call sits only on the non-smoke side. Three sub-forms,
+all (a): the plain if/else; the early-return form (`if smoke: return <toy>`
+with the real import + constructor inline after the branch); and the
+HELPER-WRAPPED form — `if smoke: return <toy>` followed by
+`model = _load_model(...)` where a module-local lowercase helper holds the
+production import. The helper-wrapped form is the REAL #1336 SLURM 4684
+shape (`_load_sentence_transformer()` wraps
+`from sentence_transformers import SentenceTransformer`, so the import is
+invisible at the branch site) — follow lowercase callees one level into
+module-local helpers when classifying;
+**(b) downgraded gate** — an `assert` /
+`raise` sits only on the non-smoke side — including the per-check
+`if smoke: logger.info(...) else: raise AssertionError(...)` form with NO
+early exit, the REAL #1336 SLURM 5005 shape — or the smoke side
+early-returns before the gates
+(`def assert_split(..., smoke=False): if smoke: return`).
+Shrink-only smoke parameters (fewer cells / seeds / rows,
+same code path) are NOT triggers — that class is owned by Step 0.6 coverage
+and the #1611/#1727 gates.
+
+**The check.** Fetch the plan's smoke section (worktree `plans/v*.md` /
+`.claude/plans/issue-<N>.md`) and the implementation marker's `## Smoke run`
+block. Every (a)/(b) branch must be NAMED in the `Smoke blind-spot
+enumeration:` block of either surface — an entry stating what the smoke PASS
+does not certify for that branch. The empty form is the literal
+`none — smoke executes every production gate`; any (a)/(b) hit falsifies it
+(FAIL, same tag — the enumeration is WRONG, which is worse than absent).
+
+**FAIL template.** One Critical tagged `smoke-blind-spot-unenumerated`
+(SUBSTANTIVE — never in the Step 5c-bis strip set):
+`<file>:<L> — smoke-conditional <substituted-implementation|downgraded-gate>
+branch not named by the blind-spot enumeration (<plan/marker ref>); the smoke
+PASS certifies less than the plan presents. Remedy: add the enumeration line
+(what production-only gate/import/implementation this branch hides) — or
+exercise the import under smoke (an import-only probe on the smoke path: the
+cheap move that would have prevented SLURM 4684) — or unify the branch away
+(architectural parity).` A plan/marker with NO
+enumeration block at all and ≥1 (a)/(b) branch in the diff FAILs the same
+way, citing `.claude/rules/smoke-blind-spots.md`.
+
+**Mechanical companion (advisory).** `uv run python
+scripts/workflow_lint.py --check-smoke-blind-spots --smoke-blind-spot-scripts
+<touched .py files> --smoke-blind-spot-plan <plan path>` — WARN-only AST
+scan; it resolves module-local lowercase callees ONE level deep, so the
+helper-wrapped #1336 shape fires, but deeper nesting, cross-module helpers,
+dynamic dispatch, and non-`smoke`-named flags are its disclosed false
+negatives — THIS lens is the binding gate for exactly those. Use it to seed
+the grep, never as the verdict (naming-completeness is reviewer-owned).

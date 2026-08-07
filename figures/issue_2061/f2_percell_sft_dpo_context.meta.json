@@ -1,0 +1,9 @@
+{
+  "caption": "Per-feature \u0394R\u00b2_j (dpo minus sft, context arm) per (render, corpus) cell; both distribution tails (50/side) exact, bulk stride-subsampled to ~3000 points/cell; top-3 features labeled with feature id. Black dashed: GLOBAL null p97.5; grey dotted ticks: per-cell null p97.5 (secondary).",
+  "commit_sha": "99c0867b9f4c06edd99470ba13b0ea6ba79f9c11",
+  "inputs": [
+    "data/issue_2061/hf_dl/issue2061_sae_predictability/analysis_tensors/per_feature_r2",
+    "data/issue_2061/hf_dl/issue2061_sae_predictability/analysis_tensors/null"
+  ],
+  "generator": "scripts/issue2061_figures.py"
+}
