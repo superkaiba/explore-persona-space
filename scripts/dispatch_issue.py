@@ -1078,6 +1078,18 @@ def _max_run_duration_slurm_conflict(args: argparse.Namespace) -> dict[str, Any]
     }
 
 
+def _cli_drift_refusal(args: argparse.Namespace, extra: dict[str, Any]) -> dict[str, Any] | None:
+    """First #2161 pre-route CLI-drift refusal body, or ``None``.
+
+    Runs the two drift guards in order — implicit-main vs live issue
+    branch (:func:`_repo_branch_default_main_conflict`), then the
+    SLURM-inert ``--max-run-duration`` fence
+    (:func:`_max_run_duration_slurm_conflict`) — and returns the first
+    exit-2 refusal body; the branch guard wins when both fire.
+    """
+    return _repo_branch_default_main_conflict(args, extra) or _max_run_duration_slurm_conflict(args)
+
+
 #: Human-readable renderer pointer per lane, used in the #1329 lane-env lint
 #: warning/refusal text so the reader can find the export site.
 _LANE_RENDERER_POINTERS: dict[str, str] = {
@@ -1993,13 +2005,9 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     # lane reachable; (iii) --max-run-duration without --time-budget-hours
     # while a SLURM lane is reachable. Same exit-2 JSON shape as the guards
     # above; explicit flags bypass both by construction.
-    branch_conflict = _repo_branch_default_main_conflict(args, extra)
-    if branch_conflict is not None:
-        print(json.dumps(branch_conflict, sort_keys=True))
-        return 2
-    fence_conflict = _max_run_duration_slurm_conflict(args)
-    if fence_conflict is not None:
-        print(json.dumps(fence_conflict, sort_keys=True))
+    drift_conflict = _cli_drift_refusal(args, extra)
+    if drift_conflict is not None:
+        print(json.dumps(drift_conflict, sort_keys=True))
         return 2
 
     # Pre-route workload-cmd lane-env lint (#1329, incident #825): a bare
@@ -3257,6 +3265,17 @@ def _build_argparser() -> argparse.ArgumentParser:
     return parser
 
 
+def build_argparser() -> argparse.ArgumentParser:
+    """Public alias of the CLI argparser builder (#2161).
+
+    Consumed by ``scripts/verify_plan.py`` check c46 to dry-parse
+    plan-embedded ``dispatch_issue.py`` commands against the REAL CLI
+    surface (subcommands, flags, types) instead of a hand-maintained
+    mirror that would drift.
+    """
+    return _build_argparser()
+
+
 def main(
     argv: list[str] | None = None,
     *,
@@ -3402,5 +3421,6 @@ __all__ = [
     "_upload_verification_currency_blocker",
     "_width_required_gpus_conflict",
     "_wrap_marker_poster_with_override_flag",
+    "build_argparser",
     "main",
 ]

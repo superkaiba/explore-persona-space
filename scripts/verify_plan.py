@@ -7,7 +7,7 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Six disclosed read-only
+``epm:plan-verify`` marker — never this script). Seven disclosed read-only
 exceptions: check 31, when its trigger fires and a pin-form satisfier names
 a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
 the repo root — read-only, no import, no network (#1557); check 34, when
@@ -28,7 +28,12 @@ unavailability); and check 44, when its trigger fires, pipes the plan's
 declared-committed paths through one batched
 ``git check-ignore -v --stdin`` — read-only, no network (index-aware
 git-local ignore-rule + index read; #1900/#958/#734; same retry/SKIP
-fail-open contract as check 42); measured ~0.7-0.9 s on the live tree.
+fail-open contract as check 42); and check 46, when its trigger fires,
+path-loads ``scripts/dispatch_issue.py`` (stdlib-only module-level
+imports, ~40 ms measured) and dry-parses plan-embedded dispatch commands
+against its public ``build_argparser()`` — read-only, no network, load
+failure degrades to a loud SKIP (#2161); measured ~0.7-0.9 s on the live
+tree.
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -120,13 +125,15 @@ Check catalog (id — classification — kind scope)
       not gitignored
   c45 change DV vs base-side    WARN-only, conditional    experiment only
       predictor companion
+  c46 plan-embedded dispatch    WARN-only, conditional    all kinds
+      command CLI-parses
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44, 45) also SKIP when their content trigger does
-not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46) also SKIP when their content trigger
+does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -257,6 +264,7 @@ import importlib.util
 import json
 import math
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -8214,6 +8222,256 @@ def check_change_dv_base_predictor_companion(plan: str, kind: str) -> CheckResul
     )
 
 
+# ─── Check 46 — plan-embedded dispatch command CLI-parses (#2161) ──────────
+
+#: Substring marking a candidate dispatch-command line/span (c46).
+_C46_DISPATCH_TOKEN = "dispatch_issue.py"
+
+#: Inline-code spans on prose lines (c46 candidate source #2).
+_C46_INLINE_CODE_RE = re.compile(r"`([^`]+)`")
+
+#: Placeholder tokens plans legitimately embed in illustrative commands:
+#: ``<N>``-style angle placeholders and ``$VAR`` / ``${VAR}`` shell vars.
+#: Substituted with ``"1"`` pre-parse so int-typed argparse args accept
+#: them — an illustrative placeholder is never a drift WARN.
+_C46_PLACEHOLDER_RE = re.compile(
+    r"<[^<>\s]+>|\$\{[A-Za-z_][A-Za-z0-9_]*\}|\$[A-Za-z_][A-Za-z0-9_]*"
+)
+
+#: Shell conditional expansions (``${VAR:+...}``) are optional by
+#: construction — stripped WHOLE (modeling the VAR-unset case) BEFORE
+#: shlex, because they otherwise split into unparseable fragments
+#: (the SKILL.md Step 6b snippet's ``${BACKEND:+--backend "$BACKEND"}``).
+_C46_COND_EXPANSION_RE = re.compile(r"\$\{[A-Za-z_][A-Za-z0-9_]*:\+[^}]*\}")
+
+#: Shell operators that end the argv of interest within one span/line.
+_C46_SHELL_OPS = frozenset({"&&", "||", ";", "|", "&", ">", ">>", "<", "2>", "2>&1"})
+
+_C46_DISPATCH_CLI_PATH = Path(__file__).resolve().parent / "dispatch_issue.py"  # tests monkeypatch
+_c46_argparser_cache: list = []  # [(parser | None, detail)] once resolved
+
+
+def _c46_argparser():
+    """Lazily path-load ``scripts/dispatch_issue.py`` (stdlib-only
+    module-level imports; NOT registered in ``sys.modules`` — the c41
+    convention) and build its PUBLIC ``build_argparser()`` (#2161).
+
+    Returns ``(parser, "")`` on success or ``(None, <detail>)`` on ANY
+    load/build failure (file absent on off-repo ``--plan-file`` runs, a
+    pre-#2161 checkout without the public alias, a broken CLI module) —
+    the caller SKIPs loudly on ``None``: c46 is a plan-drift detector,
+    never a gate on the CLI module itself. Cached one-shot so repeated
+    checks (tests, corpus sweeps) load the module once.
+    """
+    if not _c46_argparser_cache:
+        parser, detail = None, ""
+        try:
+            if not _C46_DISPATCH_CLI_PATH.is_file():
+                raise FileNotFoundError(_C46_DISPATCH_CLI_PATH)
+            spec = importlib.util.spec_from_file_location(
+                "_c46_dispatch_issue", _C46_DISPATCH_CLI_PATH
+            )
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            parser = mod.build_argparser()
+        except Exception as exc:  # any load failure -> loud SKIP at the caller
+            parser, detail = None, f"{type(exc).__name__}: {exc}"
+        _c46_argparser_cache.append((parser, detail))
+    return _c46_argparser_cache[0]
+
+
+def _c46_command_candidates(plan: str) -> list[str]:
+    """Candidate command strings mentioning ``dispatch_issue.py``.
+
+    Two sources: fenced-code-block lines (backslash continuations joined
+    into one logical command; bash ``#`` comment lines skipped) and
+    inline-code spans on prose lines. Returns raw candidate strings; the
+    caller tokenizes + filters.
+    """
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    out: list[str] = []
+    cont: list[str] = []
+
+    def _flush() -> None:
+        if cont:
+            out.append(" ".join(tok for tok in cont if tok))
+            cont.clear()
+
+    for line, fenced in zip(lines, mask, strict=True):
+        stripped = line.strip()
+        if fenced:
+            if stripped.startswith(("```", "~~~")) or stripped.startswith("#"):
+                _flush()
+                continue
+            if stripped.endswith("\\"):
+                cont.append(stripped[:-1].strip())
+                continue
+            cont.append(stripped)
+            _flush()
+        else:
+            _flush()
+            out.extend(_C46_INLINE_CODE_RE.findall(line))
+    _flush()
+    return [c for c in out if _C46_DISPATCH_TOKEN in c]
+
+
+def _c46_dry_parse(parser, argv: list[str]):
+    """Parse ``argv`` capturing argparse's ``SystemExit`` + usage output.
+
+    Returns ``(namespace, None)`` on success, ``(None, <error detail>)``
+    on rejection — never prints to the real stdout/stderr.
+    """
+    import contextlib
+    import io
+
+    stream = io.StringIO()
+    try:
+        with contextlib.redirect_stderr(stream), contextlib.redirect_stdout(stream):
+            return parser.parse_args(argv), None
+    except SystemExit:
+        text = stream.getvalue().strip()
+        detail = next(
+            (
+                ln.split("error:", 1)[1].strip()
+                for ln in reversed(text.splitlines())
+                if "error:" in ln
+            ),
+            text[-160:] or "argparse rejected the argv",
+        )
+        return None, detail
+
+
+def _c46_has_flag(argv: list[str], flag: str) -> bool:
+    """True when ``argv`` carries ``flag`` (bare or ``flag=value`` form)."""
+    return any(tok == flag or tok.startswith(flag + "=") for tok in argv)
+
+
+def _c46_argv_from_tokens(tokens: list[str]) -> list[str] | None:
+    """Command argv after the dispatch token, or ``None`` for a non-command.
+
+    Neutralizes placeholder tokens (substituted ``"1"``), truncates at the
+    first shell operator, and returns ``None`` when the mention is a bare
+    file reference or a prose mention (no ``--`` flag anywhere) — those
+    are never drift WARNs.
+    """
+    idx = next((i for i, tok in enumerate(tokens) if tok.endswith(_C46_DISPATCH_TOKEN)), None)
+    if idx is None or idx + 1 >= len(tokens):
+        return None  # a bare file reference, not a command invocation
+    argv = [_C46_PLACEHOLDER_RE.sub("1", tok) for tok in tokens[idx + 1 :]]
+    stop = next((i for i, tok in enumerate(argv) if tok in _C46_SHELL_OPS), len(argv))
+    argv = argv[:stop]
+    if not argv or not any(tok.startswith("--") for tok in argv):
+        return None  # prose mention ("the dispatch_issue.py launch command")
+    return argv
+
+
+def _c46_drift_arms(parser, argv: list[str]) -> list[str]:
+    """Drift arms for ONE command argv against the live CLI (empty = clean).
+
+    Arm 1: the argv does not parse (``launch`` subcommand missing, unknown
+    flag, wrong type). Arms 2-3 fire only on a LAUNCH-shaped argv — an
+    explicit ``launch`` subcommand, or the #1336 missing-subcommand shape
+    (argv leads with a flag); a ``finalize`` command gets neither.
+    """
+    arms: list[str] = []
+    ns, err = _c46_dry_parse(parser, argv)
+    if ns is None:
+        arms.append(f"does not parse ({err})")
+    launch_shaped = argv[0] == "launch" or argv[0].startswith("-")
+    if launch_shaped:
+        if _c46_has_flag(argv, "--max-run-duration") and not _c46_has_flag(
+            argv, "--time-budget-hours"
+        ):
+            arms.append(
+                "--max-run-duration without --time-budget-hours (the fence threads only "
+                "to the GCP instance auto-delete and is inert on SLURM lanes, where the "
+                "wall fence is --time-budget-hours; runtime refusal: "
+                "max_run_duration_slurm_inert_without_time_budget)"
+            )
+        if not _c46_has_flag(argv, "--repo-branch"):
+            arms.append(
+                "no --repo-branch (the runtime refuses when a live issue-<N> branch "
+                "exists — reason: repo_branch_required_issue_branch_exists; "
+                "--repo-branch main is the explicit escape)"
+            )
+    return arms
+
+
+def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: every plan-embedded
+    ``dispatch_issue.py`` command (fenced code blocks + inline-code spans;
+    backslash continuations joined) must dry-parse against the CLI's REAL
+    argparser (``dispatch_issue.build_argparser()``, lazily path-loaded),
+    and a launch-shaped command must not carry the two demonstrated drift
+    shapes: ``--max-run-duration`` without ``--time-budget-hours`` (the
+    fence threads ONLY to the GCP instance auto-delete and is inert on
+    SLURM lanes, where the wall fence is ``--time-budget-hours`` — runtime
+    refusal ``max_run_duration_slurm_inert_without_time_budget``), and a
+    missing ``--repo-branch`` (the runtime refuses when a live
+    ``issue-<N>`` branch exists — ``repo_branch_required_issue_branch_
+    exists``; ``--repo-branch main`` is the explicit escape). Mechanizes
+    the #1336 v15 §9 drift: the plan-embedded launch command omitted the
+    ``launch`` subcommand, carried ``--max-run-duration`` with no
+    ``--time-budget-hours``, and omitted ``--repo-branch``. Placeholder
+    tokens (``<N>``, ``$VAR``) parse as ordinary values (substituted
+    ``"1"``); ``${VAR:+...}`` conditional expansions are stripped whole;
+    prose mentions with no ``--`` flag are not commands; unsplittable
+    lines get a per-line note, never a crash; no dispatch command found →
+    SKIP; ``build_argparser`` unavailable (off-repo ``--plan-file``) →
+    SKIP. NEVER FAILs — the runtime exit-2 refusals are the hard gate;
+    this check is the plan-time drift detector (#2161).
+    """
+    del kind  # all kinds: a plan-embedded dispatch command drifts identically everywhere
+    cid, name = "c46_dispatch_cmd_cli_parse", "plan-embedded dispatch command CLI-parses"
+    candidates = _c46_command_candidates(plan)
+    if not candidates:
+        return _skip(cid, name, "no dispatch_issue.py command in fenced blocks or inline code")
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(cid, name, f"dispatch_issue.build_argparser unavailable ({load_detail})")
+    offenders: list[str] = []
+    notes: list[str] = []
+    n_parsed = 0
+    for cmd in candidates:
+        cleaned = _C46_COND_EXPANSION_RE.sub("", cmd)
+        try:
+            tokens = shlex.split(cleaned)
+        except ValueError as exc:
+            notes.append(f"unsplittable line skipped ({exc}): {cmd[:60]!r}")
+            continue
+        argv = _c46_argv_from_tokens(tokens)
+        if argv is None:
+            continue  # bare file reference / prose mention, not a command
+        n_parsed += 1
+        arms = _c46_drift_arms(parser, argv)
+        if arms:
+            offenders.append(f"{cmd[:70]!r}: " + "; ".join(arms))
+    if offenders:
+        shown = " | ".join(offenders[:3])
+        more = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+        tail = ("; " + "; ".join(notes)) if notes else ""
+        return _warn(
+            cid,
+            name,
+            f"plan-embedded dispatch_issue.py command(s) drift from the live CLI: {shown}{more} "
+            "— the #1336 v15 shape (a plan-embedded launch command missing the `launch` "
+            "subcommand, fencing via --max-run-duration alone, or omitting --repo-branch) "
+            "dies or silently mis-fences at dispatch time; copy the SKILL.md Step 6b launch "
+            "snippet (launch subcommand + explicit --repo-branch + --time-budget-hours on "
+            f"SLURM-reachable lanes){tail}",
+        )
+    if n_parsed == 0:
+        detail = "dispatch_issue.py mentions are bare references, not command invocations"
+        if notes:
+            detail += "; " + "; ".join(notes)
+        return _skip(cid, name, detail)
+    detail = f"{n_parsed} dispatch command(s) dry-parse against the live CLI"
+    if notes:
+        detail += "; " + "; ".join(notes)
+    return _pass(cid, name, detail)
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -8260,6 +8518,7 @@ CHECKS = [
     check_sentinel_lane,
     check_committed_paths_not_gitignored,
     check_change_dv_base_predictor_companion,
+    check_dispatch_cmd_cli_parse,
 ]
 
 
