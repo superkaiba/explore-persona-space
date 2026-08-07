@@ -212,10 +212,26 @@ evidence windows, #1773 meta caveat); label them distinctly wherever surfaced.
 
 ## Compute
 
-**0 GPU-h expected.** RunPod `cpu-bigmem`; the 9.2 GB store stage runs pod-side, not
-on the shared VM (`/` at 98% used). One GPU cell for Phase 5 only if the sparse
-solve at full width is the wall — pilot-measure before provisioning, never a guessed
-per-cell basis.
+**Estimated GPU-hours (total): 4**
+
+A single number, deliberately, not a range and not a conditional — see the
+no-park directive below. The work is CPU-dominated: RunPod `cpu-bigmem`, with the
+9.2 GB store staged pod-side, never on the shared VM (`/` at 98% used). The 4 GPU-h
+is a pre-authorized allowance for Phase 5 (one GPU cell for the sparse LSQR/CG
+solve at full width) plus slack; the expected realized spend is near zero and
+unspent allowance is not a licence to find uses for it. If Phase 5's measured
+1-cell pilot shows the sparse solve runs comfortably on CPU, run it on CPU and
+record the realized 0 GPU-h — do NOT re-plan and do NOT re-gate on the difference.
+
+**NO-PARK DIRECTIVE (user, at spawn): this task must not stop at `plan_pending`.**
+The Step 2c auto-approve gate fails safe on a missing, ranged, or otherwise
+unparseable estimate, so every plan revision MUST carry the literal line
+`Estimated GPU-hours (total): <single number>` in its compute section, and every
+`epm:plan` marker MUST carry the matching `gpu_hours_total=<single number>` token
+in its note. The number is far under `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` (100), so
+the only way this task parks is a malformed estimate. If a critic round changes
+the compute figure, restate it in the same single-number form; never emit a range,
+a conditional, an "up to", or a blank.
 
 **Binding user directive: run as much in parallel as possible.** Phases 1–4 are
 independent given Phase 0 and shard across features and across the two map targets;
