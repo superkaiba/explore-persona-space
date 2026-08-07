@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2165,
+  "highest_id": 2170,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2622,8 +2622,8 @@
       "goal": "Determine whether RLVR-style RL post-training changes the linear context\u2192answer-profile map more than SFT/DPO post-training, using a released separated-stage ladder (primary candidate: Llama-3.1-8B base \u2192 Tulu-3-8B-SFT \u2192 Tulu-3-8B-DPO \u2192 Tulu-3-8B post-RLVR) \u2014 per stage, measure (a) within-stage held-out R\u00b2 of the per-example ridge map c_x \u2192 v(x) (#779/#825 recipe, prefix AND context arms) and (b) the #825 Result-2 reparameterization gap (within-stage R\u00b2 minus reparameterized-base-map R\u00b2 on identical text), testing whether the gap grows specifically at the RLVR stage (teaching) vs stays \u22480 at all stages (elicitation) vs grows uniformly with post-training depth.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1336",
-      "status": "followups_running",
+      "path": "tasks/blocked/1336",
+      "status": "blocked",
       "title": "The Llama T\u00fclu ladder's DPO\u2192RLVR step needs at most a rotation of the linear context\u2192answer map on seven of eight corpora, and no coordinate change on four of eight (raw) / six of eight (recal companion) (MODERATE confidence)"
     },
     "1337": {
@@ -7834,8 +7834,8 @@
     "2010": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2010",
-      "status": "running",
+      "path": "tasks/completed/2010",
+      "status": "completed",
       "title": "daily-fix: corpus-replay gate test reds stale branches on fl"
     },
     "2011": {
@@ -8212,11 +8212,11 @@
     },
     "2061": {
       "goal": "Fit a map from the pooled context activation to the SAE feature vector of the answer state, holding ONE fixed SAE dictionary across every post-training stage of an open ladder, and determine whether any individual SAE feature's per-feature held-out predictability improves across adjacent stage transitions beyond a selection-symmetric null over the whole dictionary.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2061",
-      "status": "running",
-      "title": "Does post-training make particular SAE features more predictable from context? (per-stage context -> answer-SAE-feature map)"
+      "path": "tasks/reviewing/2061",
+      "status": "reviewing",
+      "title": "Per-feature SAE predictability gains across the T\u00fclu post-training ladder stay within a selection-symmetric null whose bar only rarely-active features can reach (MODERATE confidence)"
     },
     "2062": {
       "has_clean_result": false,
@@ -8995,8 +8995,8 @@
       "goal": "Characterize, at full 131,072-feature dictionary width, which SAE features the context->answer map READS at the context vector v_C (the last prompt token, the newline of the assistant header) on Qwen-2.5-7B-Instruct layer 19; separate READ (used by the fitted map) from CARRIED (present at v_C but unused) and from FREQUENT (mechanically weighted by firing rate); and determine which mechanical feature properties predict being read, as activity-matched partials against a selection-symmetric null.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/2163",
-      "status": "planning",
+      "path": "tasks/running/2163",
+      "status": "running",
       "title": "Which SAE features are read at the context vector by the context->answer map"
     },
     "2164": {
@@ -9012,6 +9012,41 @@
       "path": "tasks/running/2165",
       "status": "running",
       "title": "workflow-fix: enumerate smoke blind spots \u2014 gates/paths a smoke run structurally cannot reach"
+    },
+    "2166": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2166",
+      "status": "completed",
+      "title": "#2166 workflow-fix: 5 stale CLAUDE.md prose pins repointed at their rule-file homes \u2014 main green (347 passed)"
+    },
+    "2167": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2167",
+      "status": "completed",
+      "title": "workflow-fix: pin MALLOC_MMAP_THRESHOLD_ in launch-prefix rules"
+    },
+    "2168": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2168",
+      "status": "proposed",
+      "title": "workflow-fix: UnicodeDecodeError escapes 112 json-guard except tuples (53 in the watcher, all on read_text paths)"
+    },
+    "2169": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2169",
+      "status": "running",
+      "title": "verify_task_body check 31: WARN on any committed-but-unmentioned figures/issue_<N> PNG (not only per-unit patterns)"
+    },
+    "2170": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2170",
+      "status": "proposed",
+      "title": "code-style resume-key clause: forbid hashing raw bytes of a RECOMPUTED float array (platform-dependent key discards valid checkpoints)"
     },
     "218": {
       "has_clean_result": false,
