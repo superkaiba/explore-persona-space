@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2182,
+  "highest_id": 2183,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9138,6 +9138,13 @@
       "path": "tasks/reviewing/2182",
       "status": "reviewing",
       "title": "sync_repo_root: fail loud when a pull --autostash is left unrestored (silently reverts concurrent sessions' uncommitted work)"
+    },
+    "2183": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2183",
+      "status": "proposed",
+      "title": "Remediate 19 scripts/ drivers with repo_root()-derived sys.path inserts, then widen the #2181 check to scripts/"
     },
     "22": {
       "has_clean_result": false,
