@@ -21,7 +21,7 @@ goal: Fit a map from the pooled context activation to the SAE feature vector of 
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_2061.md @ d8b1739a0d](https://github.com/superkaiba/explore-persona-space/blob/d8b1739a0d71a24024b708faf50a80793229910f/docs/methodology/issue_2061.md) · [gist mirror](https://gist.github.com/superkaiba/a21b1e234a2bc730d33189756dc3e530)
+**Methodology:** [docs/methodology/issue_2061.md @ d8b1739a0d](https://github.com/superkaiba/explore-persona-space/blob/d8b1739a0d719a4fc9e3815374ff461c570217be/docs/methodology/issue_2061.md) · [gist mirror](https://gist.github.com/superkaiba/a21b1e234a2bc730d33189756dc3e530)
 
 ## Takeaways
 
