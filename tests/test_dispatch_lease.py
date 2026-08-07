@@ -425,3 +425,46 @@ def test_spawn_output_suppressed_matches_both_sentinels():
     assert spawn_session.spawn_output_suppressed("Issue #7 session spawned: sid") is None
     assert spawn_session.spawn_output_suppressed("") is None
     assert spawn_session.spawn_output_suppressed(None) is None
+
+
+# ─── router Lease.free_lane_park_state persistence (#2161) ────────────────────
+# NOTE: this pins the ROUTER's durable per-issue routing lease
+# (``~/.eps-routing/issue-<N>.json``; ``explore_persona_space.backends.router
+# .Lease``) — a DIFFERENT lease family from the spawn-session dispatch lease
+# the rest of this file covers. Colocated here per the #2161 plan's test map.
+
+
+def test_lease_free_lane_park_state_round_trip_and_tolerant_parse():
+    """#2161: the resumable park state round-trips through to_json/from_json;
+    a malformed (non-dict) payload parses tolerantly to None; a legacy
+    payload without the key defaults to None."""
+    from explore_persona_space.backends.router import Lease
+
+    state = {
+        "lane": "fellows",
+        "job_id": "31337",
+        "rung_idx": 1,
+        "rung_park_elapsed_s": 123.5,
+        "spec_hash": "abc123",
+        "updated_ts": 1_700_000_000.0,
+    }
+    lease = Lease(issue=137, spec_hash="abc123", attempt_id="a1", free_lane_park_state=state)
+    payload = lease.to_json()
+    assert payload["free_lane_park_state"] == state
+    round_tripped = Lease.from_json(json.loads(json.dumps(payload)))
+    assert round_tripped.free_lane_park_state == state
+
+    # job_id None (budget cut between rungs) round-trips too.
+    pending = {**state, "job_id": None}
+    lease_p = Lease(issue=137, spec_hash="abc123", attempt_id="a1", free_lane_park_state=pending)
+    assert Lease.from_json(lease_p.to_json()).free_lane_park_state == pending
+
+    # Tolerant parse: a malformed (non-dict) value reads as None, never raises.
+    garbled = lease.to_json()
+    garbled["free_lane_park_state"] = "not-a-dict"
+    assert Lease.from_json(garbled).free_lane_park_state is None
+
+    # Legacy payload (pre-#2161, key absent) defaults to None.
+    legacy = lease.to_json()
+    del legacy["free_lane_park_state"]
+    assert Lease.from_json(legacy).free_lane_park_state is None
