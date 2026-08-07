@@ -58,6 +58,7 @@ from workflow_lint import (  # noqa: E402
     check_agent_model_pins,
     check_agents_note_argv_verdict,
     check_asks,
+    check_authorized_stub_wiring,
     check_autonomous_asks,
     check_awk_elision_parity,
     check_bare_commit_pathspec,
@@ -6598,6 +6599,172 @@ def test_smoke_architecture_review_lens_flags_skill_region(tmp_path) -> None:
     assert errors, "expected a FAIL for the sub-recipe-less 5c-bis region"
     subjects = [e.split(": ", 1)[0] for e in errors]
     assert all(s.endswith("/SKILL.md") for s in subjects), subjects
+
+
+# ---------------------------------------------------------------------------
+# ``check_authorized_stub_wiring`` (#2171): the Step 6d.0 PASS_AUTHORIZED_STUB
+# grant escape must stay wired across its seven surfaces (incident #2163: the
+# gate's own documented escape had no landing token and every surface said
+# "not yet wired" / "v1.1").
+# ---------------------------------------------------------------------------
+
+
+def _write_authorized_stub_conforming_tree(tmp_path) -> None:
+    """Write all seven #2171 surfaces in conforming shape under tmp_path.
+
+    Tests then break exactly ONE surface each, so failures stay attributable
+    (the ``_write_smoke_arch_conforming_tree`` pattern).
+    """
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    skill.mkdir(parents=True, exist_ok=True)
+    (skill / "SKILL.md").write_text(
+        "# issue skill\n"
+        "##### Step 6d.0: Smoke/sweep architecture parity gate\n"
+        "| `PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>` | run "
+        "`task.py check-authorized-stub <N>`; rc=0 = GRANT |\n"
+        "##### Step 6d.0-bis: End-to-end smoke gate\n"
+    )
+    (skill / "markers.md").write_text(
+        "# markers\n`verdict: PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>`\n"
+    )
+    (tmp_path / ".claude" / "workflow.yaml").write_text(
+        "markers:\n  - kind: epm:smoke-architecture-check\n"
+        "    fields: |\n      verdict: PASS_AUTHORIZED_STUB\n"
+    )
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True, exist_ok=True)
+    (agents / "experiment-implementer.md").write_text(
+        "# impl\nVerdict vocabulary: PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>\n"
+    )
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True, exist_ok=True)
+    (rules / "experiment-implementer-section-reference.md").write_text(
+        "# item-5 detail\nLegal tokens incl. PASS_AUTHORIZED_STUB.\n"
+    )
+    (rules / "code-reviewer-section-reference.md").write_text(
+        "# ref\n## Step 0.55 detail — smoke-architecture marker presence and shape\n"
+        "verdict enumeration incl. PASS_AUTHORIZED_STUB.\n"
+        "## Step 0.8 detail — next section\n"
+    )
+    src = tmp_path / "src" / "explore_persona_space"
+    src.mkdir(parents=True, exist_ok=True)
+    (src / "task_workflow.py").write_text(
+        "def authorized_stub_grant(marker_note, plan_text):\n    ...\n"
+    )
+
+
+def test_authorized_stub_wiring_live_tree_passes() -> None:
+    """The real tree carries the #2171 wiring on all seven surfaces."""
+    assert check_authorized_stub_wiring() == []
+
+
+def test_authorized_stub_wiring_conforming_fixture_passes(tmp_path) -> None:
+    """The synthetic conforming tree passes — validates the fixture itself."""
+    _write_authorized_stub_conforming_tree(tmp_path)
+    assert check_authorized_stub_wiring(repo_root=tmp_path) == []
+
+
+def test_authorized_stub_wiring_flags_missing_token(tmp_path) -> None:
+    """Each surface stripped of the token FAILs with a subject naming THAT
+    surface (per-surface subject assertions — the #822 test pattern)."""
+    # (a) SKILL.md region loses the token + the checker command.
+    _write_authorized_stub_conforming_tree(tmp_path)
+    skill = tmp_path / ".claude" / "skills" / "issue" / "SKILL.md"
+    skill.write_text(
+        "# issue skill\n##### Step 6d.0: gate\n| `PASS_PARTIAL` | REFUSE |\n"
+        "##### Step 6d.0-bis: next\nPASS_AUTHORIZED_STUB mentioned OUTSIDE the region\n"
+        "and `check-authorized-stub` too\n"
+    )
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    assert len(errors) == 2, errors  # token miss + command miss, region-scoped
+    subjects = {e.split(": ", 1)[0] for e in errors}
+    assert subjects and all(s.endswith("/SKILL.md") for s in subjects), subjects
+
+    # (b) workflow.yaml loses the token.
+    _write_authorized_stub_conforming_tree(tmp_path)
+    (tmp_path / ".claude" / "workflow.yaml").write_text("markers: []\n")
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert len(errors) == 1 and subjects[0].endswith("/workflow.yaml"), errors
+
+    # (c) markers.md stale (regen-freshness pin).
+    _write_authorized_stub_conforming_tree(tmp_path)
+    (tmp_path / ".claude" / "skills" / "issue" / "markers.md").write_text("# markers\nstale\n")
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert len(errors) == 1 and subjects[0].endswith("/markers.md"), errors
+    assert "--emit-tables" in errors[0]
+
+    # (f) the Step 0.55 detail section loses the token (mention elsewhere in
+    # the file must NOT satisfy the region-anchored check).
+    _write_authorized_stub_conforming_tree(tmp_path)
+    (tmp_path / ".claude" / "rules" / "code-reviewer-section-reference.md").write_text(
+        "# ref\n## Step 0.55 detail — smoke-architecture marker presence and shape\n"
+        "no fifth token here.\n"
+        "## Step 0.8 detail\nPASS_AUTHORIZED_STUB outside the region\n"
+    )
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert len(errors) == 1 and subjects[0].endswith("/code-reviewer-section-reference.md"), errors
+
+    # (g) the grant predicate vanishes from task_workflow.py (#811 class).
+    _write_authorized_stub_conforming_tree(tmp_path)
+    (tmp_path / "src" / "explore_persona_space" / "task_workflow.py").write_text(
+        "def something_else():\n    ...\n"
+    )
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert len(errors) == 1 and subjects[0].endswith("/task_workflow.py"), errors
+
+
+def test_authorized_stub_wiring_flags_stale_not_yet_wired(tmp_path) -> None:
+    """Stale 'not yet wired' / 'v1.1' / 'does NOT yet wire' annotations FAIL
+    on their respective surfaces even with the token present."""
+    _write_authorized_stub_conforming_tree(tmp_path)
+    skill = tmp_path / ".claude" / "skills" / "issue" / "SKILL.md"
+    skill.write_text(
+        skill.read_text().replace(
+            "##### Step 6d.0-bis",
+            "re-authorize the stubs (canary-like exception, not yet wired)\n##### Step 6d.0-bis",
+        )
+    )
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    assert len(errors) == 1 and "not yet wired" in errors[0], errors
+
+    _write_authorized_stub_conforming_tree(tmp_path)
+    wf = tmp_path / ".claude" / "workflow.yaml"
+    wf.write_text(wf.read_text() + "      # canary-like exception, v1.1\n")
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    assert len(errors) == 1 and "v1.1" in errors[0], errors
+
+    _write_authorized_stub_conforming_tree(tmp_path)
+    ref = tmp_path / ".claude" / "rules" / "experiment-implementer-section-reference.md"
+    ref.write_text(ref.read_text() + "a plan-level opt-in this v1 does NOT yet wire\n")
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    assert len(errors) == 1 and "does NOT yet wire" in errors[0], errors
+
+
+def test_authorized_stub_wiring_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the check — deleting the
+    ``or no_flags`` ladder branch must fail this test (mutation-visible; the
+    ``test_hollow_gate_review_lens_bundled_in_no_flags`` pattern: in-process
+    ``main([])``, ``_REPO_ROOT`` monkeypatched; other bundled checks
+    contribute unrelated errors on the minimal tree, so the assertion keys on
+    the authorized-stub diagnostic + the offending file path)."""
+    import workflow_lint as wl
+
+    _write_authorized_stub_conforming_tree(tmp_path)
+    wf = tmp_path / ".claude" / "workflow.yaml"
+    wf.write_text(wf.read_text() + "      # canary-like exception, v1.1\n")
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a violating tree:\n{err}"
+    assert "canary-like exception, v1.1" in err and "workflow.yaml" in err, (
+        f"the authorized-stub-wiring diagnostic (naming workflow.yaml) is missing "
+        f"from the no-flags run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
+    )
 
 
 # ---------------------------------------------------------------------------

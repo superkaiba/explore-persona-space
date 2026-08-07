@@ -7530,6 +7530,190 @@ def _scripts_import_guard_msg(py: Path, stmt: ast.AST, *, deferred: bool) -> str
     )
 
 
+# --- tests/ repo_root()-derived sys.path ban (#2181) -------------------------
+# OPPOSITE polarity to the check_scripts_import_guard family above (which
+# REQUIRES a repo-root guard in scripts/ drivers): this check FORBIDS deriving
+# a tests/ sys.path entry from the branch-guarded task_workflow resolvers.
+
+_BANNED_SYSPATH_RESOLVERS = frozenset({"repo_root", "tasks_dir", "registry_path"})
+_TASK_WORKFLOW_MODULE = "explore_persona_space.task_workflow"
+
+
+def _banned_resolver_aliases(tree: ast.Module) -> frozenset[str]:
+    """Module-scope import aliases of the banned resolvers: names bound by
+    ``from explore_persona_space.task_workflow import repo_root [as rr]`` at
+    tree.body level. Attribute access (``tw.repo_root()``) needs no alias
+    pass — the callee-name match below already catches ``Attribute.attr``."""
+    names = set(_BANNED_SYSPATH_RESOLVERS)
+    for stmt in tree.body:
+        if isinstance(stmt, ast.ImportFrom) and stmt.module == _TASK_WORKFLOW_MODULE:
+            for a in stmt.names:
+                if a.name in _BANNED_SYSPATH_RESOLVERS:
+                    names.add(a.asname or a.name)
+    return frozenset(names)
+
+
+def _mentions_banned_resolver_call(node: ast.AST, names: frozenset[str]) -> str | None:
+    """The matched resolver name iff any Call in ``node``'s subtree has a
+    callee (``Name.id`` or ``Attribute.attr``) in ``names``; else None.
+    VALUE-based: a plain Name reference (no call) never matches."""
+    for n in ast.walk(node):
+        if isinstance(n, ast.Call):
+            f = n.func
+            cn = (
+                f.id
+                if isinstance(f, ast.Name)
+                else (f.attr if isinstance(f, ast.Attribute) else None)
+            )
+            if cn in names:
+                return cn
+    return None
+
+
+def _tainted_module_names(tree: ast.Module, names: frozenset[str]) -> dict[str, str]:
+    """``{constant name: resolver name}`` for tree.body-level Assign (single
+    Name target) / AnnAssign (Name target, non-None value) whose VALUE subtree
+    contains a banned-resolver call. One hop, no compound-statement descent,
+    no dataflow, order-insensitive (documented over-match). Taint keys on the
+    binding's VALUE, never its name — ``REPO_ROOT`` bound to a
+    ``__file__``-derived expression is the sanctioned form and never taints."""
+    tainted: dict[str, str] = {}
+    for stmt in tree.body:
+        target = value = None
+        if (
+            isinstance(stmt, ast.Assign)
+            and len(stmt.targets) == 1
+            and isinstance(stmt.targets[0], ast.Name)
+        ):
+            target, value = stmt.targets[0].id, stmt.value
+        elif isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+            target, value = stmt.target.id, stmt.value
+        if target is None or value is None:
+            continue
+        hit = _mentions_banned_resolver_call(value, names)
+        if hit is not None:
+            tainted[target] = hit
+    return tainted
+
+
+def _is_syspath_mutation_sink(node: ast.Call) -> bool:
+    """``sys.path.insert`` / ``sys.path.append`` (structural, same shape as
+    the literal branch of ``_is_syspath_guard_call``) or
+    ``<obj>.syspath_prepend``."""
+    f = node.func
+    if not isinstance(f, ast.Attribute):
+        return False
+    if f.attr == "syspath_prepend":
+        return True
+    return (
+        f.attr in ("insert", "append")
+        and isinstance(f.value, ast.Attribute)
+        and f.value.attr == "path"
+        and isinstance(f.value.value, ast.Name)
+        and f.value.value.id == "sys"
+    )
+
+
+def check_no_repo_root_syspath_in_tests(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL any ``tests/**/*.py`` ``sys.path.insert``/``sys.path.append`` (or
+    ``monkeypatch.syspath_prepend``) whose argument derives from the
+    branch-guarded ``task_workflow`` resolvers (``repo_root``/``tasks_dir``/
+    ``registry_path``), directly, via a module-scope one-hop constant, or via
+    a module-scope import alias.
+
+    Incident #2164: ``tests/test_issue1482_densesae_fullwidth.py`` inserted
+    ``repo_root() / "scripts"`` onto ``sys.path``. ``task_workflow.repo_root()``
+    branch-guards to the MAIN checkout, so from a worktree pytest run the
+    insert has TWO silent consequences: (a) the test imports MAIN's copy of
+    the module under test — a branch regression can pass its own test on the
+    branch; and (b) a FOREIGN checkout's ``scripts/`` dir leaks onto
+    ``sys.path`` for the whole pytest session, which silently defeats the
+    #1296 ``sys.path`` negative control in ``tests/test_backend_poll.py``
+    (that turned the Step 10d pre-push gate red on an innocent payload —
+    ~10 probe commands + a ~20-min gate re-run to diagnose). Sanctioned
+    replacements: the tree-local form
+    ``sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))``,
+    or preferably
+    ``monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "scripts"))``
+    so the entry is restored at teardown. A resolver-derived
+    ``syspath_prepend`` restores the entry at teardown but still imports
+    main's module DURING the session, so it is flagged too.
+
+    Enumerated OVER-matches (accepted, zero live hits at introduction): (a) a
+    test-local ``def repo_root()`` shadow (shadowing the branch-guarded
+    resolver's name is itself a defect — rename it); (b) an attribute callee
+    named ``repo_root`` on an unrelated object; (c) the order-insensitive
+    one-hop taint — a module constant bound to ``repo_root()`` anywhere at
+    module scope taints the name for the WHOLE file, even if later rebound to
+    a ``__file__``-derived value before the insert.
+
+    Enumerated UNDER-matches (accepted false negatives, family precedent —
+    zero live instances of each): slice-assign ``sys.path[:0] = [...]``;
+    augmented ``sys.path += [...]``; ``sys.path.extend([...])`` (a real
+    mutation sink deliberately outside the ``("insert", "append")`` tuple, a
+    gap shared with the existing ``_is_syspath_guard_call`` family);
+    ``import sys as _sys`` (escapes the structural ``Name.id == "sys"``
+    match); two-hop indirection; dynamic/``exec``; string-built paths.
+
+    Scope: ``<repo_root>/tests`` ONLY — ``scripts/`` carries 19 live one-hop
+    ``PROJECT_ROOT = repo_root()`` offenders (17 ``issue1482_*.py`` +
+    2 ``issue1738_*.py``) that must be fixed BEFORE any widening, or the
+    no-flags bundle lands red fleet-wide (see #2181 plan §8). No waiver
+    sentinel by design: zero offenders at introduction and no legitimate
+    reason for a test to point at the main checkout's code dirs — that IS the
+    banned failure mode (add the family's sentinel pattern if a genuine need
+    ever appears). ``repo_root`` kwarg is the unit-test override hook;
+    production callers pass None. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    tests_dir = root / "tests"
+    errors: list[str] = []
+    if not tests_dir.is_dir():
+        return errors
+    for py in sorted(tests_dir.rglob("*.py")):
+        try:
+            tree = ast.parse(py.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+            sys.stderr.write(
+                f"workflow_lint: check-no-repo-root-syspath-in-tests skipped "
+                f"unparseable {py}: {type(exc).__name__}\n"
+            )
+            continue
+        names = _banned_resolver_aliases(tree)
+        tainted = _tainted_module_names(tree, names)
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.Call) and _is_syspath_mutation_sink(node)):
+                continue
+            resolver = None
+            for arg in [*node.args, *(kw.value for kw in node.keywords)]:
+                resolver = _mentions_banned_resolver_call(arg, names)
+                if resolver is None:
+                    for n in ast.walk(arg):
+                        if isinstance(n, ast.Name) and n.id in tainted:
+                            resolver = tainted[n.id]
+                            break
+                if resolver is not None:
+                    break
+            if resolver is not None:
+                errors.append(
+                    f"{py}:{node.lineno}: `sys.path` entry derived from "
+                    f"`{resolver}()` under tests/ is forbidden — "
+                    f"`task_workflow.{resolver}()` branch-guards to the MAIN "
+                    f"checkout, so a worktree pytest run imports main's copy "
+                    f"of the module under test (a branch regression can pass "
+                    f"its own test on the branch) and leaks a foreign "
+                    f"checkout's dir onto sys.path for the whole session "
+                    f"(silently defeats the #1296 sys.path negative control "
+                    f"in tests/test_backend_poll.py; incident #2164). Use the "
+                    f"tree-local form `sys.path.insert(0, "
+                    f'str(Path(__file__).resolve().parents[1] / "scripts"))`, '
+                    f"or preferably `monkeypatch.syspath_prepend(str("
+                    f'Path(__file__).resolve().parents[1] / "scripts"))` so '
+                    f"the entry is restored at teardown."
+                )
+    return errors
+
+
 def _dotenv_lint_waiver_present(lines: list[str], import_lineno: int) -> bool:
     """Return True iff a ``# DOTENV_LINT_EXEMPT: <reason>`` waiver (reason ≥
     :data:`DOTENV_LINT_WAIVER_MIN_REASON_CHARS` chars) is on the bare-dotenv
@@ -11258,6 +11442,202 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
     return errors
 
 
+def check_authorized_stub_wiring(  # noqa: C901 -- flat per-surface token ladder (seven pinned surfaces, #2171), mirroring check_smoke_blind_spot_review_lens
+    *, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL if the #2171 ``PASS_AUTHORIZED_STUB`` wiring is absent or stale
+    on ANY of its seven surfaces.
+
+    Task #2163 (2026-08-07) hit the Step 6d.0 gate's own documented escape
+    ("re-authorize the stubs in §4 Design") with NO token to land on — every
+    surface annotated it "not yet wired" / "v1.1" — and the orchestrator had
+    to improvise a shape-violating ``PASS_UNIFIED`` grant. #2171 wired the
+    escape: the fifth verdict token ``PASS_AUTHORIZED_STUB``, granted ONLY by
+    ``task.py check-authorized-stub`` (rc=0). This check pins the wiring
+    across its surfaces, region-anchored, so a future refactor cannot
+    silently strip one and re-open the unwired state (the #811 prose-only
+    class):
+
+    (a) `.claude/skills/issue/SKILL.md` — the Step 6d.0 region (from
+        ``##### Step 6d.0:`` to ``##### Step 6d.0-bis``) names
+        ``PASS_AUTHORIZED_STUB`` AND ``check-authorized-stub``, and does NOT
+        contain ``not yet wired``;
+    (b) `.claude/workflow.yaml` — names ``PASS_AUTHORIZED_STUB``; does NOT
+        contain ``canary-like exception, v1.1``;
+    (c) `.claude/skills/issue/markers.md` — names ``PASS_AUTHORIZED_STUB``
+        (regen-freshness pin — markers.md is generated from workflow.yaml
+        via ``--emit-tables``);
+    (d) `.claude/agents/experiment-implementer.md` — names
+        ``PASS_AUTHORIZED_STUB``;
+    (e) `.claude/rules/experiment-implementer-section-reference.md` — names
+        ``PASS_AUTHORIZED_STUB``; does NOT contain ``does NOT yet wire``;
+    (f) `.claude/rules/code-reviewer-section-reference.md` — the
+        ``## Step 0.55 detail`` section (up to the next ``## `` heading)
+        names ``PASS_AUTHORIZED_STUB``;
+    (g) `src/explore_persona_space/task_workflow.py` — contains
+        ``def authorized_stub_grant(`` — the routing row's command target
+        exists, so the row can never regress to prose-only (#811 class).
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    token = "PASS_AUTHORIZED_STUB"
+    errors: list[str] = []
+
+    # (a) issue/SKILL.md: the Step 6d.0 routing-table region.
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if not skill.is_file():
+        errors.append(
+            f"{skill}: missing — the Step 6d.0 routing table (the "
+            f"PASS_AUTHORIZED_STUB grant row, #2171) must live in the /issue skill."
+        )
+    else:
+        text = skill.read_text(encoding="utf-8")
+        idx = text.find("##### Step 6d.0:")
+        if idx == -1:
+            errors.append(
+                f"{skill}: missing the '##### Step 6d.0:' heading (#2171) — the "
+                f"smoke-architecture routing table (which carries the "
+                f"PASS_AUTHORIZED_STUB grant row) is unlocatable."
+            )
+        else:
+            nxt = text.find("##### Step 6d.0-bis", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+            if token not in region:
+                errors.append(
+                    f"{skill}: the Step 6d.0 region carries no {token} routing row "
+                    f"(#2171) — the gate's sanctioned stub-authorization escape has "
+                    f"no landing token (the #2163 unwired-escape incident)."
+                )
+            if "check-authorized-stub" not in region:
+                errors.append(
+                    f"{skill}: the Step 6d.0 region does not name "
+                    f"'check-authorized-stub' (#2171) — the grant must be the "
+                    f"checker's exit code (task.py check-authorized-stub), never "
+                    f"orchestrator prose judgment (#397)."
+                )
+            if "not yet wired" in region:
+                errors.append(
+                    f"{skill}: the Step 6d.0 region still says 'not yet wired' "
+                    f"(#2171 wired the authorized-stub escape) — the stale "
+                    f"annotation re-opens the unwired state."
+                )
+
+    # (b) workflow.yaml: the marker schema + gates.inline id=10 reason.
+    wf = root / ".claude" / "workflow.yaml"
+    if not wf.is_file():
+        errors.append(
+            f"{wf}: missing — the epm:smoke-architecture-check marker schema "
+            f"(which names {token}, #2171) must live in workflow.yaml."
+        )
+    else:
+        text = wf.read_text(encoding="utf-8")
+        if token not in text:
+            errors.append(
+                f"{wf}: does not name {token} (#2171) — the marker schema must "
+                f"document the fifth verdict token beside PASS_PARTIAL."
+            )
+        if "canary-like exception, v1.1" in text:
+            errors.append(
+                f"{wf}: still says 'canary-like exception, v1.1' (#2171 wired the "
+                f"authorized-stub escape) — the stale annotation re-opens the "
+                f"unwired state."
+            )
+
+    # (c) issue/markers.md: generated from workflow.yaml — regen-freshness pin.
+    markers = root / ".claude" / "skills" / "issue" / "markers.md"
+    if not markers.is_file():
+        errors.append(
+            f"{markers}: missing — the generated marker table (which names "
+            f"{token}, #2171) must exist; regenerate via "
+            f"`uv run python scripts/workflow_lint.py --emit-tables`."
+        )
+    elif token not in markers.read_text(encoding="utf-8"):
+        errors.append(
+            f"{markers}: does not name {token} (#2171) — markers.md is generated "
+            f"from workflow.yaml; regenerate via "
+            f"`uv run python scripts/workflow_lint.py --emit-tables` and commit it "
+            f"in the same change (the Step 5a family-atomic sync)."
+        )
+
+    # (d) experiment-implementer.md: the item-5 verdict vocabulary.
+    impl = root / ".claude" / "agents" / "experiment-implementer.md"
+    if not impl.is_file():
+        errors.append(
+            f"{impl}: missing — the implementer's verdict vocabulary (which names "
+            f"{token}, #2171) must live in experiment-implementer.md."
+        )
+    elif token not in impl.read_text(encoding="utf-8"):
+        errors.append(
+            f"{impl}: does not name {token} (#2171) — the implementer's item-5 "
+            f"verdict vocabulary must carry the fifth token + its self-tag rule."
+        )
+
+    # (e) experiment-implementer-section-reference.md: the item-5 detail.
+    impl_ref = root / ".claude" / "rules" / "experiment-implementer-section-reference.md"
+    if not impl_ref.is_file():
+        errors.append(
+            f"{impl_ref}: missing — the item-5 detail (which names {token}, "
+            f"#2171) must live in experiment-implementer-section-reference.md."
+        )
+    else:
+        text = impl_ref.read_text(encoding="utf-8")
+        if token not in text:
+            errors.append(
+                f"{impl_ref}: does not name {token} (#2171) — the item-5 detail's "
+                f"legal-tokens list must carry the fifth token."
+            )
+        if "does NOT yet wire" in text:
+            errors.append(
+                f"{impl_ref}: still says 'does NOT yet wire' (#2171 wired the "
+                f"authorized-stub escape) — the stale annotation re-opens the "
+                f"unwired state."
+            )
+
+    # (f) code-reviewer-section-reference.md: the Step 0.55 detail section.
+    rev_ref = root / ".claude" / "rules" / "code-reviewer-section-reference.md"
+    if not rev_ref.is_file():
+        errors.append(
+            f"{rev_ref}: missing — the Step 0.55 detail (which names {token}, "
+            f"#2171) must live in code-reviewer-section-reference.md."
+        )
+    else:
+        text = rev_ref.read_text(encoding="utf-8")
+        idx = text.find("## Step 0.55 detail")
+        if idx == -1:
+            errors.append(
+                f"{rev_ref}: missing the '## Step 0.55 detail' section (#2171) — "
+                f"the reviewer-side verdict enumeration (which names {token}) is "
+                f"unlocatable."
+            )
+        else:
+            nxt = text.find("\n## ", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+            if token not in region:
+                errors.append(
+                    f"{rev_ref}: the '## Step 0.55 detail' section does not name "
+                    f"{token} (#2171) — the reviewer's verdict enumeration + "
+                    f"per-verdict binding must cover the fifth token."
+                )
+
+    # (g) task_workflow.py: the grant predicate exists (never prose-only, #811).
+    twf = root / "src" / "explore_persona_space" / "task_workflow.py"
+    if not twf.is_file():
+        errors.append(
+            f"{twf}: missing — the authorized-stub grant predicate "
+            f"(`def authorized_stub_grant(`, #2171) must live in task_workflow.py."
+        )
+    elif "def authorized_stub_grant(" not in twf.read_text(encoding="utf-8"):
+        errors.append(
+            f"{twf}: no `def authorized_stub_grant(` (#2171) — the Step 6d.0 "
+            f"routing row's command target (task.py check-authorized-stub) would "
+            f"point at a ghost; the grant must stay code, never prose-only (#811)."
+        )
+
+    return errors
+
+
 def check_smoke_blind_spot_review_lens(  # noqa: C901 -- flat per-surface token ladder (seven pinned surfaces, #2165); extracting a branch would just relocate it
     *, repo_root: Path | None = None
 ) -> list[str]:
@@ -13517,10 +13897,13 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 897,435 B post-t3b story->citation trim; the remaining mass is
-    # the judgment tranche (bash-block extraction to step10d_guards.sh-style
+    # measured 901,772 B after #2171 wired the Step 6d.0 PASS_AUTHORIZED_STUB
+    # routing row + PASS_PARTIAL rewrite + 5c-bis extensions (~+1.8 KB on the
+    # 2026-08-05 897,435 B post-t3b trim base, re-measured post-rebase onto
+    # the #2164 cap single-sourcing edits); the remaining mass is the
+    # judgment tranche (bash-block extraction to step10d_guards.sh-style
     # scripts, 9a-quater legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 900_000,
+    "issue/SKILL.md": 903_000,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
@@ -14878,6 +15261,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "check). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-no-repo-root-syspath-in-tests",
+        action="store_true",
+        help="FAIL any tests/**/*.py sys.path.insert/append (or "
+        "monkeypatch.syspath_prepend) whose argument derives from the "
+        "branch-guarded task_workflow resolvers (repo_root/tasks_dir/"
+        "registry_path) — directly, via a one-hop module constant, or via an "
+        "import alias. repo_root() resolves to the MAIN checkout, so a "
+        "worktree pytest run imports main's copy of the module under test and "
+        "leaks a foreign checkout's dir onto sys.path (incident #2164; "
+        "defeats the #1296 negative control). Use the tree-local "
+        "Path(__file__).resolve().parents[1] form or "
+        "monkeypatch.syspath_prepend. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-gate-ids-unique",
         action="store_true",
         help="Verify every gate id across gates.{inline, park_and_wait, "
@@ -14966,6 +15363,24 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "epm:smoke-architecture-check events row (incident #811: the verdict "
         "lived in prose across 5 PASSed rounds and the gap surfaced only at "
         "Step 6d.0 post-provision). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-authorized-stub-wiring",
+        action="store_true",
+        help="FAIL if the #2171 PASS_AUTHORIZED_STUB wiring is absent or stale "
+        "on any of its seven surfaces: the Step 6d.0 routing row + "
+        "check-authorized-stub command in issue/SKILL.md (region free of "
+        "'not yet wired'), the workflow.yaml marker schema (free of "
+        "'canary-like exception, v1.1'), the generated issue/markers.md, the "
+        "experiment-implementer.md item-5 vocabulary, the "
+        "experiment-implementer-section-reference.md detail (free of 'does "
+        "NOT yet wire'), the code-reviewer-section-reference.md Step 0.55 "
+        "section, and the `def authorized_stub_grant(` predicate in "
+        "task_workflow.py. Pins the Step 6d.0 authorized-stub grant escape "
+        "wired by #2171 (incident #2163: the gate's own documented escape "
+        "had no landing token and the orchestrator improvised a "
+        "shape-violating PASS_UNIFIED grant). Bundled into the no-flags "
+        "default run.",
     )
     parser.add_argument(
         "--check-smoke-blind-spot-review-lens",
@@ -15491,6 +15906,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_workflow_improver_spawn
         or args.check_no_repo_root_git_reset_hard
         or args.check_no_repo_root_worktree_revert
+        or args.check_no_repo_root_syspath_in_tests
         or args.check_gate_ids_unique
         or args.check_lessons_index
         or args.check_inline_round_duty_mirror
@@ -15499,6 +15915,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_long_loop_restartability_review_lens
         or args.check_hollow_verification_gate_review_lens
         or args.check_smoke_architecture_review_lens
+        or args.check_authorized_stub_wiring
         or args.check_smoke_blind_spot_review_lens
         or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
@@ -15623,6 +16040,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_no_repo_root_git_reset_hard())
     if args.check_no_repo_root_worktree_revert or no_flags:
         errors.extend(check_no_repo_root_worktree_revert())
+    if args.check_no_repo_root_syspath_in_tests or no_flags:
+        errors.extend(check_no_repo_root_syspath_in_tests())
     if args.check_gate_ids_unique or no_flags:
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
@@ -15647,6 +16066,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_hollow_verification_gate_review_lens())
     if args.check_smoke_architecture_review_lens or no_flags:
         errors.extend(check_smoke_architecture_review_lens())
+    if args.check_authorized_stub_wiring or no_flags:
+        errors.extend(check_authorized_stub_wiring())
     if args.check_smoke_blind_spot_review_lens or no_flags:
         errors.extend(check_smoke_blind_spot_review_lens())
     if args.check_smoke_blind_spots:

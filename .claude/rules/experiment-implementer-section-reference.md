@@ -123,8 +123,16 @@ recipes, verbatim templates, and incident grounding.
    Step 6d.0 refuses to dispatch on `PASS_PARTIAL` for planned
    experiment arms — the round bounces to `status:planning` (mirroring
    `FAIL_NO_CANARY`) for the planner to either resolve the stubbed
-   arms in the diff or re-authorize the stubs by naming them in §4
-   Design (a plan-level canary-like opt-in this v1 does NOT yet wire).
+   arms in the diff or re-authorize the stubs in a plan §4
+   `### Authorized smoke stubs` block (one table row per arm:
+   backticked arm name, why it cannot run at smoke, compensating
+   control), landed through the plan-approval gate; after that
+   authorization lands, re-post the marker as `PASS_AUTHORIZED_STUB
+   arms_stubbed=<same list>` — Step 6d.0 grants it mechanically via
+   `task.py check-authorized-stub` (rc=0 = GRANT; #2171). Self-tag
+   `PASS_AUTHORIZED_STUB` directly (INSTEAD of `PASS_PARTIAL`) only
+   when the CURRENT `plans/plan.md` already carries the block covering
+   every FALLBACK-rowed arm.
    If the plan diverged
    (e.g., smoke uses in-process `train_one_cell`, sweep uses a subprocess
    wrapper) AND the plan §4 Design section justified the divergence in two
@@ -158,13 +166,15 @@ recipes, verbatim templates, and incident grounding.
    ```
    Legal `verdict:` tokens: `PASS_UNIFIED` | `PASS_CANARY
    canary_cell=<id>` | `PASS_PARTIAL arms_stubbed=<comma-list>` |
+   `PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>` |
    `FAIL_NO_CANARY`. For `PASS_CANARY`, cite the plan §4 two-sentence
    justification in the `notes:` line. For `PASS_PARTIAL`, list the
    fallback-rowed arm names verbatim (as a set they must equal the
    arms whose `per-arm-resolution:` row reads `FALLBACK` — the
    `arms_stubbed=<comma-list>` set-equality scopes to
    `per-arm-resolution:` rows ONLY, NOT the `resume-matrix:` or
-   `production-outroot-unit:` sub-blocks' own `FALLBACK` rows).
+   `production-outroot-unit:` sub-blocks' own `FALLBACK` rows; the
+   same set-equality scoping binds `PASS_AUTHORIZED_STUB`).
    For `FAIL_NO_CANARY`,
    post the marker AND additionally emit a one-line
    `<!-- workflow-fix-candidate v1 -->` block in your implementer report
@@ -182,7 +192,9 @@ recipes, verbatim templates, and incident grounding.
    crashed sweep because smoke didn't exercise the subprocess
    dispatcher; #1689 rounds 2/3/4 PASSed smoke behind `--mock-response`
    branches and stub fallbacks. Step 6d.0 refuses to dispatch on
-   anything other than `PASS_UNIFIED` or `PASS_CANARY`.
+   anything other than `PASS_UNIFIED`, `PASS_CANARY`, or a
+   `PASS_AUTHORIZED_STUB` that `task.py check-authorized-stub`
+   mechanically grants (rc=0; #2171).
 
    Additional smoke-contract requirements (Step 6d.0 gate refuses on
    missing evidence; every requirement below extends the

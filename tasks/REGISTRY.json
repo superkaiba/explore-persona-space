@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2180,
+  "highest_id": 2182,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8995,15 +8995,15 @@
       "goal": "Characterize, at full 131,072-feature dictionary width, which SAE features the context->answer map READS at the context vector v_C (the last prompt token, the newline of the assistant header) on Qwen-2.5-7B-Instruct layer 19; separate READ (used by the fitted map) from CARRIED (present at v_C but unused) and from FREQUENT (mechanically weighted by firing rate); and determine which mechanical feature properties predict being read, as activity-matched partials against a selection-symmetric null.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2163",
-      "status": "interpreting",
-      "title": "The context\u2192answer map reads SAE features selectively: per-unit gain is lowest on high-variance directions and template-heavy features (HIGH confidence)"
+      "path": "tasks/awaiting_promotion/2163",
+      "status": "awaiting_promotion",
+      "title": "The context\u2192answer map's per-unit-gain discounts on high-variance and template-heavy features are carried entirely by features that never fire at the context vector (HIGH confidence)"
     },
     "2164": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2164",
-      "status": "running",
+      "path": "tasks/completed/2164",
+      "status": "completed",
       "title": "Autonomous plan-gate cap default is 24 in task.py but 100 in every doc and park message"
     },
     "2165": {
@@ -9058,8 +9058,8 @@
     "2172": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2172",
-      "status": "running",
+      "path": "tasks/completed/2172",
+      "status": "completed",
       "title": "Parenthesized \u00a79 planned_wall_h cell silently disables the poller phase-ETA tripwire"
     },
     "2173": {
@@ -9093,8 +9093,8 @@
     "2177": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2177",
-      "status": "running",
+      "path": "tasks/completed/2177",
+      "status": "completed",
       "title": "verify_plan.py: WARN when a \u00a79 compute row's own basis arithmetic contradicts its booked GPU-h or its pilot-abort threshold"
     },
     "2178": {
@@ -9124,6 +9124,20 @@
       "path": "tasks/proposed/2180",
       "status": "proposed",
       "title": "Headline matched-partial needs a support-restricted companion when the matching covariate is degenerate on most of the sample"
+    },
+    "2181": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2181",
+      "status": "running",
+      "title": "Ban repo_root()-derived sys.path inserts in tests (worktree runs silently exercise main's code)"
+    },
+    "2182": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2182",
+      "status": "running",
+      "title": "sync_repo_root: fail loud when a pull --autostash is left unrestored (silently reverts concurrent sessions' uncommitted work)"
     },
     "22": {
       "has_clean_result": false,

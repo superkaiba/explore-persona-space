@@ -313,3 +313,64 @@ def test_skill_md_documents_api_error_after_marker():
         "tick_triage.api_error_after_marker_reason embeds in the verdict "
         "string — the docs and the runtime must not drift."
     )
+
+
+# --- #2171: the Step 6d.0 PASS_AUTHORIZED_STUB grant escape --------------
+#
+# Incident #2163 (2026-08-07): the gate's own documented resolution
+# ("re-authorize the stubs in §4 Design") had no landing token — every
+# surface annotated it "not yet wired" / "v1.1" — and the orchestrator
+# improvised a shape-violating PASS_UNIFIED grant. #2171 wired the fifth
+# token, granted ONLY by `task.py check-authorized-stub` (rc=0).
+
+
+def test_step6d0_routing_table_has_authorized_stub_row():
+    """#2171 durability pin: the Step 6d.0 region carries the grant row —
+    the token, the mechanical checker command, and NO stale 'not yet wired'
+    annotation (the row's grant path is the checker's exit code, never
+    orchestrator prose judgment)."""
+    body = ISSUE_SKILL.read_text(encoding="utf-8")
+    start = body.find("##### Step 6d.0:")
+    assert start != -1, "the Step 6d.0 heading vanished from issue/SKILL.md"
+    end = body.find("##### Step 6d.0-bis", start + 1)
+    region = body[start:end] if end != -1 else body[start:]
+    assert "`PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>`" in region, (
+        "the Step 6d.0 routing table lost its PASS_AUTHORIZED_STUB row "
+        "(#2171) — the gate's sanctioned stub-authorization escape has no "
+        "landing token again (the #2163 incident shape)."
+    )
+    assert "check-authorized-stub" in region, (
+        "the Step 6d.0 region no longer names task.py check-authorized-stub "
+        "(#2171) — the grant must be the checker's exit code (#397)."
+    )
+    assert "not yet wired" not in region, (
+        "the Step 6d.0 region regained a stale 'not yet wired' annotation (#2171 wired the escape)."
+    )
+
+
+def test_smoke_arch_marker_schema_names_authorized_stub_token():
+    """#2171, the #1349 two-surface pattern: the workflow.yaml marker schema
+    mirror documents the fifth token + its grant mechanics (markers.md regen
+    is lint-synced via --emit-tables + the authorized-stub wiring check)."""
+    yaml_text = (ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
+    assert "PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>" in yaml_text
+    assert "check-authorized-stub" in yaml_text
+    assert "canary-like exception, v1.1" not in yaml_text, (
+        "workflow.yaml regained the stale 'canary-like exception, v1.1' "
+        "annotation (#2171 wired the escape)."
+    )
+
+
+def test_implementer_item5_self_tag_clause_present():
+    """#2171 (criterion 4), the #1349 clause-presence pattern: the
+    experiment-implementer item-5 verdict vocabulary carries the self-tag
+    RULE (when to post the new token instead of PASS_PARTIAL), not just the
+    token string."""
+    text = EXPERIMENT_IMPLEMENTER.read_text(encoding="utf-8")
+    idx = text.find("PASS_AUTHORIZED_STUB")
+    assert idx != -1, "experiment-implementer.md lost the PASS_AUTHORIZED_STUB token (#2171)"
+    assert "INSTEAD of `PASS_PARTIAL`" in text
+    assert "Authorized smoke stubs" in text
+    # The mis-tag consequence: tagging without plan coverage only buys a
+    # bounce — the checker refuses (never a silent grant).
+    assert "check-authorized-stub" in text

@@ -115,7 +115,14 @@ section wins on invocation form.
    Verdict vocabulary: `PASS_UNIFIED` (unified paths AND the Axis 1 leg
    passed AND every per-arm row reads `REAL`/`N/A`) | `PASS_PARTIAL
    arms_stubbed=<comma-list of the FALLBACK-rowed arms — set-equality scopes
-   to `per-arm-resolution:` rows ONLY>` | `PASS_CANARY canary_cell=<id>`
+   to `per-arm-resolution:` rows ONLY>` | `PASS_AUTHORIZED_STUB
+   arms_stubbed=<comma-list>` (*self-tag this INSTEAD of `PASS_PARTIAL` when
+   every FALLBACK-rowed arm is named verbatim (backticked, column 1) in the
+   CURRENT plan's `### Authorized smoke stubs` block — read `plans/plan.md`;
+   when the block is absent or covers only some FALLBACK arms, post
+   `PASS_PARTIAL` (Step 6d.0's `task.py check-authorized-stub` refuses a
+   mis-tagged grant, so tagging without coverage only buys a bounce)*) |
+   `PASS_CANARY canary_cell=<id>`
    (the plan §4 justified the divergence in two sentences AND named the
    canary cell; same REAL/N/A per-arm invariant) | `FAIL_NO_CANARY`
    (unjustified divergence, a failed import-resolution leg, a missing
@@ -147,7 +154,8 @@ section wins on invocation form.
    `per-arm-resolution:` / `resume-matrix:` / `production-outroot-unit:`
    sub-blocks — never an inline HTML comment in your report text (Step 6d.0
    scans `events.jsonl` and refuses dispatch on anything other than
-   `PASS_UNIFIED` / `PASS_CANARY`). On `FAIL_NO_CANARY`, post the marker AND
+   `PASS_UNIFIED` / `PASS_CANARY` / a mechanically-granted
+   `PASS_AUTHORIZED_STUB`). On `FAIL_NO_CANARY`, post the marker AND
    emit a one-line `<!-- workflow-fix-candidate v1 -->` block suggesting the
    planner re-architect toward unification, then EXIT. Additional
    smoke-contract requirements (each extends the marker's per-leg

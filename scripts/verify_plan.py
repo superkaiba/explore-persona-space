@@ -32,8 +32,12 @@ fail-open contract as check 42); and check 46, when its trigger fires,
 path-loads ``scripts/dispatch_issue.py`` (stdlib-only module-level
 imports, ~40 ms measured) and dry-parses plan-embedded dispatch commands
 against its public ``build_argparser()`` — read-only, no network, load
-failure degrades to a loud SKIP (#2161); measured ~0.7-0.9 s on the live
-tree.
+failure degrades to a loud SKIP (#2161). Check 47 adds NO read exception:
+its shared wall-budget parser (``explore_persona_space.plan_wall_budget``,
+stdlib-only, the same parser the poll_pipeline.py phase-ETA tripwire
+consumes) is a module-level import through the src/ shim below (#2172).
+Measured ~0.7-0.9 s on the live tree (re-measured 2026-08-07 with the c47
+import: 0.79-0.87 s warm — unchanged).
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -127,13 +131,19 @@ Check catalog (id — classification — kind scope)
       predictor companion
   c46 plan-embedded dispatch    WARN-only, conditional    all kinds
       command CLI-parses
+  c47 planned_wall_h cells      WARN-only, conditional    all kinds
+      parse (poller tripwire)
+  c48 §9 basis-vs-booked        WARN-only, conditional    experiment +
+      arithmetic                                          analysis
+  c49 authorized-smoke-stubs    FAIL, conditional         all kinds
+      block well-formed
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44, 45, 46) also SKIP when their content trigger
-does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49) also SKIP when their
+content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -223,6 +233,12 @@ labeled-line forms):
     racing a base-side predictor against a trained-base change DV instead
     registers a level/change companion column AND states the winner sign
     convention — signed Spearman rho vs |rho|)
+  - ``N/A — basis arithmetic reconciled`` (check 47 — every
+    derived-vs-booked discrepancy in the §9 compute rows is deliberate and
+    reconciled in prose; a genuinely contradictory row instead carries a
+    row-scoped reconciliation marker — superseded/reconciled/upper-bound/
+    worst-case/ceiling or an includes/excludes scope note — or re-books
+    the row / raises its abort threshold)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -272,8 +288,21 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from fractions import Fraction
 from pathlib import Path
+from typing import NamedTuple
 
 import yaml
+
+# Make src/ importable so the SHARED §9 wall-budget parser (check c47)
+# resolves against THIS checkout's src/ — the poll_pipeline.py shim shape
+# (#2172 AC #4). The module is stdlib-only (re + dataclasses) and the
+# package __init__ is empty, so the import adds no measurable startup cost
+# (the module-level local-import discipline noted below is about heavy
+# dependencies like task_workflow, which stays a local import).
+_SRC_DIR = Path(__file__).resolve().parent.parent / "src"
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
+
+from explore_persona_space.plan_wall_budget import parse_plan_wall_budget  # noqa: E402
 
 # ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -4667,14 +4696,43 @@ def _c26_intents(plan: str) -> set[str]:
     return out
 
 
-def _c26_compute_table_rows(plan: str) -> list[tuple[str, str, str, str]]:
-    """``(component_cell, basis_cell, wall_cell, full_row_text)`` for every
-    body row of every non-fenced markdown table whose header carries a
-    ``basis`` column (a cell that IS or BEGINS WITH the word ``basis``,
-    casefolded, bold/backticks stripped — the corpus carries an annotated
-    ``basis (measured)`` variant, #952 v12) AND a wall column (fuzzy: any
-    header cell CONTAINING ``wall`` — matches ``planned_wall_h`` /
-    ``planned wall h`` / ``wall_h`` drift). Header
+# §9 gpu-hours HEADER binder (shared parser below; calibration + the c47
+# consumer live in the Check 47 section). TOKEN-SHAPED, not a substring:
+# the corpus carries `GPU spec` (28 occurrences, holding `1× H100`),  # noqa: RUF003
+# `GPU width` (17) and bare `GPU` (75) — none hour-bearing; a substring
+# bind parses booked=1 from `1× H100` and manufactures a ~90× ratio.  # noqa: RUF003
+# The leading guard MUST be `(?<![a-z0-9])`, NOT `\b`: `_` is a word
+# character, so `\bgpu` has no boundary inside `planned_gpu_h` (989 of
+# 1,056 gpu-h-bearing corpus files) and the column silently never
+# resolves — measured 0 Arm-A hits over 5,166 files under the `\b` form
+# (plan #2177 §12 Must-Fix 1/3).
+_C48_GPU_H_HEADER_RE = re.compile(r"(?i)(?<![a-z0-9])gpu[-_ ]*h(?:ours?|rs?)?\b")
+
+
+class _ComputeRow(NamedTuple):
+    """One admitted body row of a §9 compute-projection table (the shared
+    c26/c32/c47 parser ``_compute_table_rows``). ``gpu_h`` / ``parallelism``
+    are OPTIONAL columns — ``""`` when the header has no such column;
+    ``gpu_is_wall_col`` is True when the gpu-h header match landed on the
+    SAME cell as the wall column (the combined ``Wall / GPU-h`` corpus
+    shape, ~109 headers — c47 skips those rows for Arm A, #2177)."""
+
+    component: str
+    wall: str
+    gpu_h: str
+    gpu_is_wall_col: bool
+    parallelism: str
+    basis: str
+    row_text: str
+
+
+def _compute_table_rows(plan: str) -> list[_ComputeRow]:
+    """``_ComputeRow`` for every body row of every non-fenced markdown table
+    whose header carries a ``basis`` column (a cell that IS or BEGINS WITH
+    the word ``basis``, casefolded, bold/backticks stripped — the corpus
+    carries an annotated ``basis (measured)`` variant, #952 v12) AND a wall
+    column (fuzzy: any header cell CONTAINING ``wall`` — matches
+    ``planned_wall_h`` / ``planned wall h`` / ``wall_h`` drift). Header
     detection is fence-masked (a fenced example table is not the plan's
     table — the ``_trigger_windows`` precedent; this deliberately diverges
     from ``_source_column_cells``, which is section-scoped instead: c26
@@ -4682,10 +4740,18 @@ def _c26_compute_table_rows(plan: str) -> list[tuple[str, str, str, str]]:
     cells than the basis column needs is skipped defensively (the bold
     ``**Base total**`` short-row shape — no IndexError); a short row that
     still reaches the basis column is treated normally with an empty wall
-    cell."""
+    cell.
+
+    Row ADMISSION is UNCHANGED from the pre-#2177 ``_c26_compute_table_rows``
+    (a table is admitted iff its header carries basis + wall columns; a body
+    row iff it reaches the basis column). The ONLY additions are two
+    OPTIONAL columns: ``gpu_h`` (header matches ``_C48_GPU_H_HEADER_RE``)
+    and ``parallelism`` (fuzzy: a header cell containing ``parallel``),
+    both defaulting to ``""`` — regression evidence is the untouched c26 +
+    c32 test suites plus ``test_c26_c32_unchanged_by_parser_extraction``."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
-    rows: list[tuple[str, str, str, str]] = []
+    rows: list[_ComputeRow] = []
     i = 0
     while i < len(lines) - 1:
         header = lines[i].strip()
@@ -4698,17 +4764,42 @@ def _c26_compute_table_rows(plan: str) -> list[tuple[str, str, str, str]]:
         header_cells = [c.strip().strip("*`").strip().casefold() for c in _split_table_row(header)]
         basis_col = next((j for j, c in enumerate(header_cells) if re.match(r"basis\b", c)), None)
         wall_col = next((j for j, c in enumerate(header_cells) if "wall" in c), None)
+        gpu_col = next(
+            (j for j, c in enumerate(header_cells) if _C48_GPU_H_HEADER_RE.search(c)), None
+        )
+        par_col = next((j for j, c in enumerate(header_cells) if "parallel" in c), None)
         k = i + 2
         while k < len(lines) and lines[k].strip().startswith("|"):
             if basis_col is not None and wall_col is not None:
                 row = _split_table_row(lines[k])
                 if basis_col < len(row):
-                    component = row[0] if row else ""
-                    wall = row[wall_col] if wall_col < len(row) else ""
-                    rows.append((component, row[basis_col], wall, lines[k]))
+                    rows.append(
+                        _ComputeRow(
+                            component=row[0] if row else "",
+                            wall=row[wall_col] if wall_col < len(row) else "",
+                            gpu_h=(
+                                row[gpu_col] if gpu_col is not None and gpu_col < len(row) else ""
+                            ),
+                            gpu_is_wall_col=gpu_col is not None and gpu_col == wall_col,
+                            parallelism=(
+                                row[par_col] if par_col is not None and par_col < len(row) else ""
+                            ),
+                            basis=row[basis_col],
+                            row_text=lines[k],
+                        )
+                    )
             k += 1
         i = k
     return rows
+
+
+def _c26_compute_table_rows(plan: str) -> list[tuple[str, str, str, str]]:
+    """Back-compat projection of ``_compute_table_rows`` — the c26 + c32
+    call sites (and ``scripts/issue1395_corpus_audit.py``) consume the
+    original ``(component, basis, wall, row_text)`` 4-tuple unchanged
+    (#2177 extraction; byte-identical admission predicate, fence mask,
+    short-row defence and cell-stripping)."""
+    return [(r.component, r.basis, r.wall, r.row_text) for r in _compute_table_rows(plan)]
 
 
 def _c26_offender_detail(offenders: list[tuple[str, str]], routed: set[str]) -> str:
@@ -8472,6 +8563,459 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
     return _pass(cid, name, detail)
 
 
+# ─── Check 47 — planned_wall_h cells parse for the poller tripwire ─────────
+
+
+def check_wall_cell_parseable(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds (trigger-conditional, not
+    kind-gated — the ``poll_pipeline.py`` phase-ETA tripwire reads ANY
+    task's plan regardless of ``kind``): every §9 ``planned_wall_h`` data
+    cell must parse under the SHARED cosmetic-prefix float rule
+    (``explore_persona_space.plan_wall_budget`` — the SAME parser the
+    poller's budget uses, so this plan-time WARN and the runtime disable
+    cannot drift, #2172 AC #3/#4). ONE unparseable cell fail-safes the
+    poller's WHOLE-run tripwire off; pre-#2172 that was silent — #2163's
+    parenthesized ``(1.5)`` conditional cell cost a ~6h run its backstop
+    with one poll-tick INFO line to show for it. No ``planned_wall_h``
+    table located (or a zero-sum one) => SKIP: such a plan arms no
+    tripwire, so there is nothing to lose. NEVER FAILs in v1 (the
+    c26/c29/c33 precedent — heuristic compute-table checks stay WARN-only
+    until a clean corpus baseline licenses escalation).
+    """
+    del kind  # all kinds: the poller parses every task's plan identically
+    cid, name = "c47_wall_cell_parseable", "planned_wall_h cells parse for the poller tripwire"
+    budget = parse_plan_wall_budget(plan)
+    if budget.reason == "no_table":
+        return _skip(cid, name, "no `planned_wall_h` table — this plan arms no poller tripwire")
+    if budget.unparseable:
+        shown = "; ".join(
+            f"{c.fmt} row {c.row_text!r} ({c.reason})" for c in budget.unparseable[:3]
+        )
+        if len(budget.unparseable) > 3:
+            shown += f"; +{len(budget.unparseable) - 3} more"
+        return _warn(
+            cid,
+            name,
+            f"{shown} — ONE unparseable planned_wall_h cell disables the poller's phase-ETA "
+            f"tripwire for the WHOLE run (fail-safe; {len(budget.rows)} parseable row(s) "
+            "discarded with it; #2163/#2172): write a bare float in the `planned_wall_h` "
+            "cell and put the conditionality in the `basis` cell",
+        )
+    return _pass(cid, name, f"{len(budget.rows)} row(s), total {budget.total_h:.2f} h")
+
+
+# ─── Check 48 — §9 basis-vs-booked arithmetic ───────────────────────────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "Per-cell fit phases"
+# (the booked-figure coherence half): a §9 compute row whose OWN basis text
+# contradicts the row's OWN booked columns. Two arms:
+#   Arm A (GPU-h axis ONLY): the basis DERIVES a GPU-h figure (a
+#     unit-word-tolerant product expression followed by a derivation arrow,
+#     outside a bidirectional citation/cap window) > 2.0x the booked
+#     planned_gpu_h, with no row-scoped reconciliation marker.
+#   Arm B (abort-vs-booked): the row states a per-cell abort threshold
+#     BELOW the per-cell wall its own booking implies
+#     (planned_wall_h x width / n_cells) — the gate would fire at cell 1 on
+#     a run performing exactly as booked.
+# Category error underneath both (#1336 v16 `EXT_off`, which survived TWO
+# approved plan versions at 0 FAIL): parallelism divides WALL time, never
+# GPU-hours (GPU-h = wall x n_gpus) — dividing a GPU-h figure by an N-way
+# width and booking the quotient as GPU-h under-books by exactly N.
+# Recurrence: #823 / #811 / #1092.
+#
+# Calibration (task #2177; DEVELOPMENT-SET numbers — the regexes below were
+# calibrated against the same persisted-plan corpus they were measured on;
+# ANY future change to ANY regex below re-runs the corpus sweep and records
+# the realized numbers here — the c32/c33 gate precedent). Sweep 2026-08-07
+# (implementation-time, AS-SHIPPED code through verify_plan_text,
+# kind="experiment" uniform — an upper bound: kind-exempt plans SKIP in
+# production) over 5,169 plan files (tasks/*/*/plans/*.md): 3 WARN files /
+# 3 offending rows ~= 0.28% of the ~1,056 planned_gpu_h-bearing
+# denominator — #1336 v15 (arm A 82 vs 30; its abort is stated without the
+# `> N min/cell` idiom, so arm B correctly stays silent), #1336 v16 (arm A
+# 90 vs 30 AND arm B ~91 min vs abort > 30 min/cell; the driving incident),
+# #634 v1 (arm A 2.2 vs 0.7 — the accepted citation-FP residual: the
+# parent's `#594` token sits ~55 chars before its realized figure, outside
+# the 30-char backward window). genuine = 2/3.
+# Known-answer harness check: v2 semantics (largest token, backward-only
+# window, substring gpu header) reproduce ~130 rows / ~118 files.
+# Design history is MEASURED, not read (plan #2177 §11-§13):
+#   - v2's "largest GPU-h token" extraction measured 11.3% corpus WARN
+#     (131 rows / 119 files): citation figures dominate, and FP ratios run
+#     3.1x-23x while the driving incident sits at exactly 3.0x, so no
+#     ratio threshold separates them — the derived-figure-only extraction
+#     (product + arrow + citation window) is load-bearing.
+#   - v3's `\bgpu` header guard measured 0 hits corpus-wide (`_` is a word
+#     character; see _C48_GPU_H_HEADER_RE above _ComputeRow).
+#   - v3's product regex required the multiplication sign to abut the
+#     number; the driving derivation is `20 cells x 48.1k rows`, so BOTH
+#     corpus incident rows were suppressed by condition (a) alone — the
+#     `(?:\s+[A-Za-z-]+){0,2}` unit-word tolerance is load-bearing.
+#   - The citation window is BIDIRECTIONAL because cap vocabulary TRAILS
+#     its figure (`<=100 GPU-h cap check below`, #1489 v3; #841's
+#     `< 20 GPU-h cheap band` is the same trailing shape).
+#   - Two disclosed divergences from the round-2 critic candidate, both
+#     re-measured hit-set-neutral (plan #2177 §13): the backward set
+#     RETAINS `cap\b` (strictly more suppressive); the forward set OMITS
+#     bare `gate` (deliberate — including it would re-admit `pilot-gated`
+#     as a back-door escape; see the non-escapes in the check docstring).
+#   - A THIRD divergence, from plan §3.4's literal rather than the critic
+#     candidate: `_C48_ABORT_RE` carries `(?i)` (admits `Abort`/`ABORT`),
+#     which the plan's written pattern does not. Strictly widening,
+#     verified hit-set-neutral by the same corpus sweep. Recorded because
+#     this task's whole history is regex-fidelity drift — a future editor
+#     diffing the shipped regexes against plan #2177 must be able to tell
+#     a deliberate divergence from drift.
+# Condition (a) is the ONLY shield holding ~50 citation-FPs out: 56 corpus
+# rows sit >2x booked and window-clean and are suppressed by (a) alone
+# (`#411 trained 11 sources ... in 12 GPU-h`-class citations whose citation
+# token sits beyond the backward window). Do NOT weaken (a) in a
+# simplification pass.
+# Arm B was pre-calibrated by the critic's replay (2 hits corpus-wide,
+# both copies of the #1336 EXT_off row — v16.md + the then-v16-pointing
+# plan.md symlink; plan.md now points at the re-booked v17, so the
+# as-shipped sweep realizes 1 arm-B file) and the `abort > N min|h /cell`
+# idiom occurs in only 11 rows corpus-wide.
+
+_C48_BASIS_BOOKED_RATIO = 2.0
+
+# First bare number in a booked column cell (wall or gpu-h).
+_C48_NUM_RE = re.compile(r"(\d+(?:\.\d+)?)")
+
+# GPU-hour TOKEN in a basis cell ("90 GPU-h", "7.6 GPU-hours", "12 gpu h");
+# the lookbehind blocks mid-number starts ("48.1" inside "48.103").
+_C48_GPU_H_RE = re.compile(r"(?i)(?<![\d.])(\d+(?:\.\d+)?)\s*GPU-?\s?h(?:ours?|rs?)?\b")
+
+# Condition (a) derivation context: a product expression ... then an arrow,
+# both before the token. The `(?:\s+[A-Za-z-]+){0,2}` unit-word tolerance is
+# what admits `20 cells × 48.1k rows` (see the calibration block).  # noqa: RUF003
+_C48_PRODUCT_RE = re.compile(r"\d[\d.,kKmM]*(?:\s+[A-Za-z-]+){0,2}\s*[×x*]\s*\d")  # noqa: RUF001
+_C48_ARROW_RE = re.compile(r"[⇒→≈~=]|=>")
+
+# Condition (b) citation/cap exclusion — BIDIRECTIONAL window around the
+# token (backward ~30 chars, forward ~25). The forward vocabulary
+# deliberately EXCLUDES bare `gate` (it would re-admit `pilot-gated`).
+_C48_CITE_BACK_CHARS = 30
+_C48_CITE_FWD_CHARS = 25
+_C48_CITE_BACK_RE = re.compile(
+    r"(?i)#\d+|parent|realized|prior|previous|cap\b|within|inside|budget"
+)
+_C48_CITE_FWD_RE = re.compile(r"(?i)cap\b|band\b|rail\b|auto-approve")
+
+# Row-scoped reconciliation allowlist (arm A) — every entry expresses an
+# INTENT to reconcile. Deliberately NOT escapes (reasons in the check
+# docstring): bare `naive-serial`, bare `N-way` / `÷ N` / `across N GPUs`,
+# and `pilot-gated`.
+_C48_RECONCILE_RE = re.compile(
+    r"(?i)supersed\w*|reconcil\w*|upper[- ]bound|worst[- ]case|ceiling|(?:in|ex)cludes\s+\w+"
+)
+# Arm B's narrower allowlist (§3.4 step 5): supersession/reconciliation
+# markers only — a "worst-case"-labelled derived figure says nothing about
+# an abort threshold's coherence with the booking.
+_C48_ARMB_RECONCILE_RE = re.compile(r"(?i)supersed\w*|reconcil\w*")
+
+# Arm B parsers. The abort idiom: `abort > 30 min/cell` (`[^.;|]` keeps the
+# scan inside one sentence/cell). n_cells tolerates one interposed word
+# (`20 off-diagonal cells`); width reads the parallelism cell (`8 GPUs`).
+_C48_ABORT_RE = re.compile(
+    r"(?i)abort[^.;|]{0,40}?>\s*(\d+(?:\.\d+)?)\s*(min|minutes?|h|hours?)\s*/\s*cell"
+)
+_C48_CELLS_RE = re.compile(r"(\d+)\s*(?:\S+\s+)?cells\b")
+_C48_WIDTH_RE = re.compile(r"(\d+)\s*(?:×\s*)?GPUs?\b")  # noqa: RUF001
+
+
+def _c48_first_number(cell: str) -> float | None:
+    """First bare number in a booked-column cell, else None (never guessed)."""
+    m = _C48_NUM_RE.search(cell)
+    return float(m.group(1)) if m else None
+
+
+def _c48_derived_gpu_h(basis: str) -> float | None:
+    """Max DERIVED GPU-hour figure in a basis cell, else None.
+
+    A token qualifies only when (a) it is reached through the cell's own
+    arithmetic — a product expression followed, before the token, by a
+    derivation arrow — and (b) its bidirectional citation/cap window is
+    clean. This is what distinguishes *the basis computing a figure* from
+    *the basis citing one* (the v2 largest-token extraction measured 11.3%
+    corpus WARN; see the calibration block)."""
+    best: float | None = None
+    for m in _C48_GPU_H_RE.finditer(basis):
+        pre = basis[: m.start()]
+        prod = _C48_PRODUCT_RE.search(pre)
+        if prod is None:
+            continue
+        if not _C48_ARROW_RE.search(pre[prod.end() :]):
+            continue
+        if _C48_CITE_BACK_RE.search(basis[max(0, m.start() - _C48_CITE_BACK_CHARS) : m.start()]):
+            continue
+        if _C48_CITE_FWD_RE.search(basis[m.end() : m.end() + _C48_CITE_FWD_CHARS]):
+            continue
+        val = float(m.group(1))
+        best = val if best is None else max(best, val)
+    return best
+
+
+def _c48_abort_threshold_h(row_text: str) -> float | None:
+    """Stated per-cell abort threshold in HOURS, else None (never guessed)."""
+    m = _C48_ABORT_RE.search(row_text)
+    if not m:
+        return None
+    val = float(m.group(1))
+    return val / 60.0 if m.group(2).lower().startswith("m") else val
+
+
+def _c48_n_cells(row_text: str) -> int | None:
+    """Max `N ... cells` count in the row (>= 2 required), else None."""
+    counts = [int(m.group(1)) for m in _C48_CELLS_RE.finditer(row_text)]
+    n = max(counts, default=0)
+    return n if n >= 2 else None
+
+
+def _c48_booked_per_cell_wall_h(row: _ComputeRow, n_cells: int) -> float | None:
+    """Booked per-cell wall (hours) = planned_wall_h x width / n_cells;
+    falls back to planned_gpu_h / n_cells when the wall column is
+    unparseable (GPU-h = wall x width, so the two are the same quantity);
+    None when neither column parses (the row is skipped, never guessed)."""
+    width_m = _C48_WIDTH_RE.search(row.parallelism)
+    width = int(width_m.group(1)) if width_m else 1
+    wall = _c48_first_number(row.wall)
+    if wall is not None:
+        return wall * width / n_cells
+    gpu_h = _c48_first_number(row.gpu_h) if row.gpu_h else None
+    if gpu_h is not None:
+        return gpu_h / n_cells
+    return None
+
+
+def _c48_offender_detail(offenders: list[str]) -> str:
+    """Bounded WARN detail (the c26/c32 convention): at most 3 (row, arm)
+    findings, the rule anchor, the incident anchors, and both remedies."""
+    shown = "; ".join(offenders[:3])
+    if len(offenders) > 3:
+        shown += "; ..."
+    return (
+        f"{shown} — a §9 row's own basis arithmetic contradicts its booked columns: "
+        "parallelism divides WALL time, never GPU-hours (GPU-h = wall x n_gpus), so a "
+        "basis-derived GPU-h figure > 2x the booked planned_gpu_h with no reconciliation "
+        "marker under-books by the parallelism width, and a stated per-cell abort threshold "
+        "below the booked per-cell wall fires on a run performing exactly as booked "
+        "(plan-compute-sizing.md § Per-cell fit phases; driving incident #1336 EXT_off: "
+        "basis 90 GPU-h vs booked 30 + abort > 30 min/cell vs a booked ~91 min/cell, "
+        "survived TWO approved plan versions; recurrence #823 / #811 / #1092). Remedies: "
+        "state the reconciliation in the row (supersed*/reconcil*/upper-bound/worst-case/"
+        "ceiling, or an includes/excludes scope note; for arm B raise the abort threshold "
+        "or re-book the row), or declare `N/A — basis arithmetic reconciled` on its own "
+        "line, unwrapped (no backticks/quotes)"
+    )
+
+
+def check_basis_booked_arithmetic(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a §9 compute-table row whose OWN basis text
+    contradicts the row's OWN booked columns, in the c26/c32 family (same
+    parser, same kind gate, same bounded-detail + standalone-N/A
+    conventions). Arm A (GPU-h axis ONLY): a basis-DERIVED GPU-h figure —
+    a unit-word-tolerant product expression followed by a derivation
+    arrow, outside a bidirectional citation/cap window — exceeding
+    ``_C48_BASIS_BOOKED_RATIO`` (2.0) x the booked gpu-h column, with no
+    row-scoped reconciliation marker. Arm B (abort-vs-booked): a stated
+    ``abort > N min|h /cell`` threshold strictly BELOW the per-cell wall
+    the row's own booking implies (wall x width / n_cells; gpu_h / n_cells
+    fallback). Mechanizes plan-compute-sizing.md § "Per-cell fit phases"
+    coherence (#1336 `EXT_off` — basis 90 GPU-h vs booked 30 AND abort >
+    30 min/cell vs a booked ~91 min/cell — survived two approved plan
+    versions; recurrence #823/#811/#1092). NEVER FAILs in v1: both sides
+    are heuristic regex reads of free prose, a legitimately-superseded
+    naive-serial figure is a normal thing to show in a basis, and the
+    reviewer lens stays binding (the c26/c32 disposition).
+
+    Deliberate NON-escapes (each measured; plan #2177 §3.3):
+      - bare ``naive-serial`` — a label, not a reconciliation; the driving
+        row's own text. The escapable form is ``naive-serial (superseded
+        by <x>)``, which ``supersed\\w*`` already covers.
+      - bare ``N-way`` / ``÷ N`` / ``across N GPUs`` — parallelism divides
+        wall, never GPU-h, so it can never reconcile a GPU-h-vs-GPU-h
+        discrepancy (the axis restriction is what makes this principled:
+        a substring allowlist on the task body's draft tokens would have
+        suppressed the driving incident itself).
+      - ``pilot-gated`` — a pilot DEFERS a contradiction, it does not
+        reconcile one: the 100 GPU-h auto-approve rail binds at APPROVAL
+        time, before any pilot runs, and the driving incident was itself
+        pilot-gated. The forward citation window likewise excludes bare
+        ``gate`` so ``pilot-gated`` cannot ride back in.
+
+    Accepted gaps (documented, not fixed): the WALL axis is out of scope
+    (a serial-equivalent figure legitimately precedes the parallelism
+    division there; the driving row's 11.2-vs-3.8 wall contradiction is
+    invisible by design — possible v2 work); a citation whose citing token
+    sits > ~30 chars before its figure survives as a citation-FP (#634 v1,
+    the single non-genuine sweep hit); combined ``Wall / GPU-h`` columns
+    are skipped for Arm A (attribution unrecoverable — the under-WARN
+    direction); a per-cell abort stated in prose OUTSIDE the table is
+    invisible to Arm B; a cell that itself consumes k GPUs makes Arm B's
+    per-cell wall an over-estimate by k — MORE warns, the OVER-WARN
+    direction (corrected from v2's inverted claim; empirically nil today);
+    a booking exactly AT its abort threshold does not fire (strict ``>``);
+    and FABRICATED reconciliation vocabulary passes — a mechanical check
+    cannot verify intent (a PASS here is never "arithmetic verified").
+
+    Three disclosed divergences, all re-measured hit-set-neutral (plan
+    #2177 §13). From the round-2 measured candidate: the backward window
+    RETAINS ``cap\\b``; the forward window OMITS bare ``gate``. From plan
+    §3.4's written literal: ``_C48_ABORT_RE`` carries ``(?i)``."""
+    cid, name = "c48_basis_booked_arithmetic", "§9 basis-vs-booked arithmetic"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: compute-projection tables are an experiment|analysis plan shape",
+        )
+    rows = _compute_table_rows(plan)
+    if not rows:
+        return _skip(cid, name, "no compute-projection table with a `basis` column detected")
+    if _standalone_na_declared(plan, r"basis arithmetic reconciled"):
+        return _pass(cid, name, "explicit N/A declared (basis arithmetic reconciled)")
+    offenders: list[str] = []
+    n_considered = 0
+    for row in rows:
+        compared = False
+        # Arm A — basis-derived GPU-h vs the booked gpu-h column. Skipped
+        # when the gpu-h column is absent, combined with the wall column,
+        # or unparseable/zero (never guessed).
+        if row.gpu_h and not row.gpu_is_wall_col:
+            booked = _c48_first_number(row.gpu_h)
+            derived = _c48_derived_gpu_h(row.basis)
+            if booked is not None and booked > 0 and derived is not None:
+                compared = True
+                if derived > _C48_BASIS_BOOKED_RATIO * booked and not _C48_RECONCILE_RE.search(
+                    row.row_text
+                ):
+                    offenders.append(
+                        f"row {row.component[:60]!r} [arm A] basis derives {derived:g} GPU-h "
+                        f"vs booked {booked:g} ({derived / booked:.1f}x)"
+                    )
+        # Arm B — stated per-cell abort threshold vs the booked per-cell
+        # wall. Skipped when the abort idiom, the cell count (>= 2) or
+        # both booked columns fail to parse (never guessed).
+        abort_h = _c48_abort_threshold_h(row.row_text)
+        n_cells = _c48_n_cells(row.row_text)
+        if abort_h is not None and n_cells is not None:
+            per_cell = _c48_booked_per_cell_wall_h(row, n_cells)
+            if per_cell is not None:
+                compared = True
+                if per_cell > abort_h and not _C48_ARMB_RECONCILE_RE.search(row.row_text):
+                    offenders.append(
+                        f"row {row.component[:60]!r} [arm B] booked per-cell wall "
+                        f"~{per_cell * 60:.0f} min vs stated abort > {abort_h * 60:g} min/cell"
+                    )
+        if compared:
+            n_considered += 1
+    if offenders:
+        return _warn(cid, name, _c48_offender_detail(offenders))
+    if n_considered == 0:
+        return _skip(
+            cid,
+            name,
+            "basis table present but no row evaluable — no derivation-bearing GPU-h "
+            "comparison (arm A) and no parseable per-cell abort threshold (arm B)",
+        )
+    return _pass(
+        cid,
+        name,
+        f"{n_considered} row(s) evaluated; every basis-derived GPU-h figure is within "
+        f"{_C48_BASIS_BOOKED_RATIO:g}x its booked planned_gpu_h and every stated per-cell "
+        "abort threshold clears the booked per-cell wall",
+    )
+
+
+#: Trigger for c49 — keep in sync with
+#: ``task_workflow._AUTH_STUB_HEADING_RE`` (trigger-only mirror; the PARSER
+#: is shared via the lazy import below, so trigger drift is the only
+#: possible divergence and c49 FAILs loud on it).
+_C49_HEADING_RE = re.compile(r"^###\s+Authorized smoke stubs\b", re.IGNORECASE | re.MULTILINE)
+
+
+def _c49_parser():
+    """Lazy import of the SHARED authorized-stub block parser (#2171).
+
+    The parser lives in ``explore_persona_space.task_workflow`` and is the
+    SAME code the Step 6d.0 runtime grant (``task.py check-authorized-stub``)
+    executes — zero plan-time/runtime drift by construction. Paid ONLY when
+    the c49 heading trigger fires. ImportError → the caller SKIPs loud naming
+    the cause (the c41 off-repo doctrine: ``--plan-file`` off-repo must never
+    crash).
+    """
+    try:
+        from explore_persona_space.task_workflow import (
+            AuthorizedStubBlockError,
+            parse_authorized_stub_block,
+        )
+    except ImportError as exc:  # off-repo --plan-file run
+        return None, None, str(exc)
+    return parse_authorized_stub_block, AuthorizedStubBlockError, ""
+
+
+def check_authorized_stub_block(plan: str, kind: str) -> CheckResult:
+    """FAIL, conditional, all kinds: a PRESENT '### Authorized smoke stubs'
+    block must parse — one markdown-table data row per arm with a backticked
+    arm token in column 1 and non-empty impossibility-reason + compensating-
+    control cells, exactly one heading occurrence (#2171; the #2163 unwired-
+    escape incident).
+
+    Trigger: any line matching ``_C49_HEADING_RE``. Absent → SKIP. Present →
+    lazy-import ``parse_authorized_stub_block`` from
+    ``explore_persona_space.task_workflow`` (the c34 lazy-import idiom;
+    ImportError → loud SKIP naming the cause). Well-formed → PASS naming the
+    arms; ``AuthorizedStubBlockError`` → FAIL with the parser's message +
+    remedy. FAIL (not the WARN doctrine) is deliberate: the trigger is an
+    exact heading, the parser is the SAME code the runtime grant uses (zero
+    heuristic gap), and a malformed block otherwise refuses mechanically at
+    Step 6d.0 AFTER pod provisioning — plan-time is strictly cheaper.
+
+    Disclosed under-trigger: a plan naming ``PASS_AUTHORIZED_STUB`` with NO
+    block heading does not trigger c49 (quoting-a-sibling residual class, per
+    the c41 incident-citation precedent); the runtime checker refuses that
+    shape at Step 6d.0.
+    """
+    del kind  # all kinds: an authorized-stub block parses identically everywhere
+    cid, name = "c49_authorized_stub_block", "authorized-smoke-stubs block well-formed"
+    if not _C49_HEADING_RE.search(plan):
+        return _skip(cid, name, "no authorized-smoke-stubs block declared")
+    parse_fn, err_cls, load_detail = _c49_parser()
+    if parse_fn is None:
+        return _skip(
+            cid,
+            name,
+            f"task_workflow parser unavailable ({load_detail}) — off-repo --plan-file run",
+        )
+    try:
+        block = parse_fn(plan)
+    except err_cls as exc:
+        return _fail(
+            cid,
+            name,
+            f"malformed '### Authorized smoke stubs' block: {exc} — fix the block "
+            "(one table row per arm: backticked arm | non-empty impossibility reason | "
+            "non-empty compensating control) BEFORE approval; a malformed block "
+            "otherwise refuses mechanically at Step 6d.0 AFTER pod provisioning "
+            "(task.py check-authorized-stub, #2171)",
+        )
+    if block is None:
+        return _fail(
+            cid,
+            name,
+            "trigger/parser drift: _C49_HEADING_RE matched but the shared parser "
+            "found no block heading — re-align _C49_HEADING_RE with "
+            "task_workflow._AUTH_STUB_HEADING_RE",
+        )
+    arms = ", ".join(f"`{a}`" for a in sorted(block))
+    return _pass(
+        cid,
+        name,
+        f"block parses: {len(block)} authorized arm(s) ({arms}), impossibility "
+        "reason + compensating control non-empty per row",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -8519,6 +9063,9 @@ CHECKS = [
     check_committed_paths_not_gitignored,
     check_change_dv_base_predictor_companion,
     check_dispatch_cmd_cli_parse,
+    check_wall_cell_parseable,
+    check_basis_booked_arithmetic,
+    check_authorized_stub_block,
 ]
 
 

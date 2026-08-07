@@ -96,6 +96,7 @@ DVS = ("level", "direction", "magnitude")
 
 N_ROTATIONS = 20
 ROTATION_SEED = 20943  # sibling of the plan's 20941/20942 seeds
+COS_POINT_SEED = 20944  # figure point-cloud subsample only; never a bar value
 # Only shards whose LAYER_VARIANT is a banked-map layer are eligible (the
 # `phase_transport` eligibility rule); the filename carries the variant.
 _ELIGIBLE_SHARD_RE = re.compile(r"shard_(?:ce|pe)__L(?:14|19|26)__")
@@ -252,6 +253,7 @@ def _shift_companions(y_shift: torch.Tensor, p_shift: torch.Tensor) -> dict[str,
     return {
         "mean_cosine": float(cos[ok].mean()) if bool(ok.any()) else float("nan"),
         "median_norm_ratio": float((pn[ok] / yn[ok]).median()) if bool(ok.any()) else float("nan"),
+        "_cos_rows": cos[ok].tolist(),
     }
 
 
@@ -399,6 +401,7 @@ def phase_analyze(args: argparse.Namespace) -> int:
 
     rots = _rotations(A.HIDDEN, N_ROTATIONS, ROTATION_SEED)
     records: list[dict] = []
+    cos_rows: dict[str, list[float]] = {}
 
     for ci, (slot, layer) in enumerate(CELLS):
         spec = next(s for s in A.BANKED_MAPS if s["arm"] == slot and s["layer"] == layer)
@@ -422,6 +425,7 @@ def phase_analyze(args: argparse.Namespace) -> int:
                     **_shift_companions(y_un_shift, p_shift),
                 }
 
+            _real_unpatched_m = _unpatched(bundle)
             records.append(
                 {
                     "slot": slot,
@@ -430,10 +434,16 @@ def phase_analyze(args: argparse.Namespace) -> int:
                     "setting": setting,
                     "arm": "real_unpatched",
                     "n": len(ctxs),
-                    **_metric_fields(_unpatched(bundle)),
+                    **_metric_fields(_real_unpatched_m),
                 }
             )
+            cos_rows[_cos_key(slot, layer, setting, "real_unpatched")] = _real_unpatched_m[
+                "_cos_rows"
+            ]
             draws = [_unpatched(b) for b in rot_bundles]
+            cos_rows[_cos_key(slot, layer, setting, "rand_unpatched")] = _subsample(
+                [c for d in draws for c in d["_cos_rows"]], 600, COS_POINT_SEED
+            )
             records.append(
                 _null_record(slot, layer, spec, setting, "rand_unpatched", len(ctxs), draws)
             )
@@ -451,6 +461,7 @@ def phase_analyze(args: argparse.Namespace) -> int:
                 p_sh = p.double() - base.double()
                 return {**_three_dvs(y_lv, p, y_sh, p_sh), **_shift_companions(y_sh, p_sh)}
 
+            _real_patched_m = _patched(bundle)
             records.append(
                 {
                     "slot": slot,
@@ -459,10 +470,14 @@ def phase_analyze(args: argparse.Namespace) -> int:
                     "setting": setting,
                     "arm": "real_patched",
                     "n": int(y_lv.shape[0]),
-                    **_metric_fields(_patched(bundle)),
+                    **_metric_fields(_real_patched_m),
                 }
             )
+            cos_rows[_cos_key(slot, layer, setting, "real_patched")] = _real_patched_m["_cos_rows"]
             draws = [_patched(b) for b in rot_bundles]
+            cos_rows[_cos_key(slot, layer, setting, "rand_patched")] = _subsample(
+                [c for d in draws for c in d["_cos_rows"]], 600, COS_POINT_SEED
+            )
             records.append(
                 _null_record(slot, layer, spec, setting, "rand_patched", int(y_lv.shape[0]), draws)
             )
@@ -518,14 +533,28 @@ def phase_analyze(args: argparse.Namespace) -> int:
         "provenance": _provenance(),
     }
     (OUT_DIR / "r2_decomposition.json").write_text(json.dumps(payload, indent=1))
+    (OUT_DIR / "cosine_rows.json").write_text(
+        json.dumps(
+            {
+                "rows": cos_rows,
+                "note": "per-row cos(realized shift, map-predicted shift). Real arms carry "
+                "EVERY row; random arms pool all rotation draws and subsample to 600 points "
+                f"(seed {COS_POINT_SEED}) for the figure -- the BAR always uses every value.",
+            }
+        )
+    )
     print(f"[analyze] wrote {OUT_DIR / 'r2_decomposition.json'} rows={len(records)}", flush=True)
     return 0
 
 
 def _metric_fields(m: dict[str, float]) -> dict[str, float]:
-    """Prefix the three DVs with ``r2_``; carry the companions under their own names."""
+    """Prefix the three DVs with ``r2_``; carry the companions under their own names.
+
+    Keys starting ``_`` are per-row payloads (the cosine vectors), collected into
+    their own sidecar rather than inlined into every record.
+    """
     out = {f"r2_{dv}": m[dv] for dv in DVS}
-    out.update({k: v for k, v in m.items() if k not in DVS})
+    out.update({k: v for k, v in m.items() if k not in DVS and not k.startswith("_")})
     return out
 
 
@@ -548,6 +577,18 @@ def _null_record(slot, layer, spec, setting, arm, n, draws) -> dict:
         vals = np.array([d[comp] for d in draws], dtype=float)
         rec[comp] = float(np.nanmean(vals))
     return rec
+
+
+def _cos_key(slot: str, layer: int, setting: str, arm: str) -> str:
+    return f"{slot}|L{layer}|{setting}|{arm}"
+
+
+def _subsample(vals: list[float], cap: int, seed: int) -> list[float]:
+    """Cap a point cloud for the figure sidecar; the BAR always uses every value."""
+    if len(vals) <= cap:
+        return vals
+    rng = np.random.default_rng(seed)
+    return [float(v) for v in rng.choice(np.asarray(vals, dtype=float), cap, replace=False)]
 
 
 def _provenance() -> dict:
@@ -726,14 +767,135 @@ def phase_figure(args: argparse.Namespace) -> int:
     return 0
 
 
+def phase_cosine_figure(args: argparse.Namespace) -> int:
+    """Cosine-similarity view of the same 4-arm x 3-setting decomposition.
+
+    The natively interpretable companion to the direction-R^2 row: on unit
+    vectors R^2 and cosine are monotonically related (R^2 = -1 IS cos = 0), and
+    cosine is the metric #2094's own result1b_transport_cosines figure reports,
+    so this is the panel that connects the two. Both slots share one figure;
+    points are the per-row values, bars their mean.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis import paper_plots
+
+    paper_plots.set_paper_style("neurips")
+    recs = json.loads((OUT_DIR / "r2_decomposition.json").read_text())["records"]
+    cos_rows = json.loads((OUT_DIR / "cosine_rows.json").read_text())["rows"]
+    FIG_DIR.mkdir(parents=True, exist_ok=True)
+
+    colors = {
+        "real_unpatched": "#0173B2",
+        "real_patched": "#029E73",
+        "rand_patched": "#DE8F05",
+        "rand_unpatched": "#CC78BC",
+    }
+    rng = np.random.default_rng(COS_POINT_SEED)
+    fig, axes = plt.subplots(2, len(SETTINGS), figsize=(15.5, 8.4), sharex=False, squeeze=False)
+    for ri, slot in enumerate(("ce", "pe")):
+        layers = list(A.TRANSPORT_LAYERS[slot])
+        for ci, setting in enumerate(SETTINGS):
+            ax = axes[ri][ci]
+            width, xs = 0.2, np.arange(len(layers), dtype=float)
+            for ai, arm in enumerate(ARMS):
+                off = (ai - 1.5) * width
+                for li, layer in enumerate(layers):
+                    m = [
+                        r
+                        for r in recs
+                        if r["slot"] == slot
+                        and r["layer"] == layer
+                        and r["setting"] == setting
+                        and r["arm"] == arm
+                    ]
+                    if not m:
+                        ax.text(
+                            xs[li] + off,
+                            0.0,
+                            "N/A",
+                            rotation=90,
+                            ha="center",
+                            va="bottom",
+                            fontsize=6,
+                            color="0.4",
+                        )
+                        continue
+                    ax.bar(
+                        xs[li] + off,
+                        m[0]["mean_cosine"],
+                        width,
+                        color=colors[arm],
+                        edgecolor="none",
+                        label=ARM_LABEL[arm] if (ri == 0 and ci == 0 and li == 0) else None,
+                        zorder=1,
+                    )
+                    pts = cos_rows.get(_cos_key(slot, layer, setting, arm), [])
+                    if pts:
+                        jit = rng.uniform(-0.055, 0.055, size=len(pts))
+                        ax.scatter(
+                            xs[li] + off + jit,
+                            pts,
+                            s=1.6,
+                            color="0.15",
+                            alpha=0.30,
+                            linewidths=0,
+                            zorder=2,
+                            rasterized=True,
+                        )
+            ax.axhline(0.0, color="0.35", lw=0.9)
+            ax.set_xticks(xs)
+            ax.set_xticklabels([f"L{layer}" for layer in layers])
+            ax.set_ylim(-1.02, 1.02)
+            if ci == 0:
+                ax.set_ylabel(f"{SLOT_LABEL[slot]}\ncos(realized shift, predicted shift)")
+            if ri == 0:
+                ax.set_title(SETTING_LABEL[setting])
+    fig.suptitle(
+        "Banked-map shift cosine: real vs spectrum-matched random map, unpatched vs patched",
+        y=0.995,
+    )
+    handles, labels = axes[0][0].get_legend_handles_labels()
+    fig.legend(
+        handles, labels, loc="lower center", bbox_to_anchor=(0.5, 0.075), ncol=4, frameon=False
+    )
+    fig.text(
+        0.5,
+        0.008,
+        "Bars = mean over every row; points = per-row values (random arms pool all "
+        f"{N_ROTATIONS} rotation draws, subsampled to 600 for legibility — the bar still uses "
+        "every value).\nFor the UNPATCHED arms the 'shift' is each context's deviation from "
+        "its setting-cell floor mean. cos = 0 is the no-alignment line and is exactly where "
+        "direction R² = −1 sits.",
+        fontsize=7,
+        color="0.35",
+        ha="center",
+        va="bottom",
+        linespacing=1.5,
+    )
+    fig.tight_layout(rect=(0, 0.115, 1, 0.985))
+    paths = paper_plots.savefig_paper(fig, "r2_decomposition_shift_cosine", dir=FIG_DIR)
+    plt.close(fig)
+    print(f"[figure] wrote {paths['png']}", flush=True)
+    return 0
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--phase", required=True, choices=("stage", "analyze", "figure"))
-    args = ap.parse_args()
-    return {"stage": phase_stage, "analyze": phase_analyze, "figure": phase_figure}[args.phase](
-        args
+    ap.add_argument(
+        "--phase", required=True, choices=("stage", "analyze", "figure", "cosine-figure")
     )
+    args = ap.parse_args()
+    return {
+        "stage": phase_stage,
+        "analyze": phase_analyze,
+        "figure": phase_figure,
+        "cosine-figure": phase_cosine_figure,
+    }[args.phase](args)
 
 
 if __name__ == "__main__":

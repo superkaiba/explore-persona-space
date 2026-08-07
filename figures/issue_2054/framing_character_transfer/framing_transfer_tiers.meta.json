@@ -1,415 +1,825 @@
 {
-  "commit": "089341a7+dirty",
-  "git_commit": "089341a7",
+  "commit": "2802c2cb+dirty",
+  "git_commit": "2802c2cb",
   "git_dirty": true,
   "git_dirty_paths": [
+    ".claude/agent-memory/analyzer/MEMORY.md",
     ".claude/agent-memory/analyzer/feedback_word_cap_relief_new_section_plus_methodology.md",
     ".claude/agent-memory/critic/MEMORY.md",
     ".claude/agent-memory/experiment-implementer/MEMORY.md",
     ".claude/agent-memory/experimenter/MEMORY.md",
     ".claude/agent-memory/implementer/MEMORY.md",
+    ".claude/agent-memory/implementer/reference_worktree_pytest_resolves_main_src.md",
     "figures/issue_1739/issue1739_pv_settings_pa.pdf",
     "figures/issue_1739/issue1739_pv_settings_pb.pdf",
     "figures/issue_1739/issue1739_r2v2_settings_pa.pdf",
     "figures/issue_1739/issue1739_r2v2_settings_pb.pdf",
     "figures/issue_1739/pv_regime_view/pv_regime_pa.pdf",
-    "figures/issue_1739/pv_regime_view/pv_regime_pb.pdf"
+    "figures/issue_1739/pv_regime_view/pv_regime_pb.pdf",
+    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.meta.json",
+    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.pdf",
+    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.png",
+    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.meta.json",
+    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.pdf",
+    "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_bare_label.png",
+    "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.meta.json",
+    "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.pdf",
+    "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.png",
+    "tasks/REGISTRY.json",
+    "tasks/proposed/2181/body.md",
+    "tasks/proposed/2181/comments.jsonl",
+    "tasks/proposed/2181/events.jsonl"
   ],
-  "created": "2026-08-07T14:53:51Z",
+  "created": "2026-08-07T18:10:03Z",
   "figsize": [
     11.4,
-    4.8
+    8.4
   ],
   "points": [
     {
-      "transfer tier (more correction allowed \u2192)": 0.0,
+      "x": 0.0,
       "held-out $R^2$ (context arm, layer 19)": 0.3195130878778677,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 0
     },
     {
-      "transfer tier (more correction allowed \u2192)": 1.0,
+      "x": 1.0,
       "held-out $R^2$ (context arm, layer 19)": 0.37196062437126054,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 0
     },
     {
-      "transfer tier (more correction allowed \u2192)": 2.0,
+      "x": 2.0,
       "held-out $R^2$ (context arm, layer 19)": 0.3225524665962075,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 0
     },
     {
-      "transfer tier (more correction allowed \u2192)": 3.0,
+      "x": 3.0,
       "held-out $R^2$ (context arm, layer 19)": 0.3792459473819198,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 0
     },
     {
-      "transfer tier (more correction allowed \u2192)": 4.0,
+      "x": 4.0,
       "held-out $R^2$ (context arm, layer 19)": 0.3771772516458955,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 0
     },
     {
-      "transfer tier (more correction allowed \u2192)": 5.0,
+      "x": 5.0,
       "held-out $R^2$ (context arm, layer 19)": 0.4100035007867353,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 0
     },
     {
-      "transfer tier (more correction allowed \u2192)": 6.0,
+      "x": 6.0,
       "held-out $R^2$ (context arm, layer 19)": 0.4629371804662313,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 0
     },
     {
-      "transfer tier (more correction allowed \u2192)": 7.0,
+      "x": 7.0,
       "held-out $R^2$ (context arm, layer 19)": 0.3245379584362499,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 0
     },
     {
-      "transfer tier (more correction allowed \u2192)": 8.0,
+      "x": 8.0,
       "held-out $R^2$ (context arm, layer 19)": 0.46916129683901,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 0
     },
     {
-      "transfer tier (more correction allowed \u2192)": 0.0,
+      "x": 0.0,
       "held-out $R^2$ (context arm, layer 19)": -0.26661087453380283,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 1
     },
     {
-      "transfer tier (more correction allowed \u2192)": 1.0,
+      "x": 1.0,
       "held-out $R^2$ (context arm, layer 19)": -0.130924897599503,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 1
     },
     {
-      "transfer tier (more correction allowed \u2192)": 2.0,
+      "x": 2.0,
       "held-out $R^2$ (context arm, layer 19)": -0.10464309849780395,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 1
     },
     {
-      "transfer tier (more correction allowed \u2192)": 3.0,
+      "x": 3.0,
       "held-out $R^2$ (context arm, layer 19)": 0.1401805810293243,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 1
     },
     {
-      "transfer tier (more correction allowed \u2192)": 4.0,
+      "x": 4.0,
       "held-out $R^2$ (context arm, layer 19)": 0.1557135485186773,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 1
     },
     {
-      "transfer tier (more correction allowed \u2192)": 5.0,
+      "x": 5.0,
       "held-out $R^2$ (context arm, layer 19)": 0.22669490059965103,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 1
     },
     {
-      "transfer tier (more correction allowed \u2192)": 6.0,
+      "x": 6.0,
       "held-out $R^2$ (context arm, layer 19)": 0.31448377942562,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 1
     },
     {
-      "transfer tier (more correction allowed \u2192)": 7.0,
+      "x": 7.0,
       "held-out $R^2$ (context arm, layer 19)": -0.03218111315919399,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 1
     },
     {
-      "transfer tier (more correction allowed \u2192)": 8.0,
+      "x": 8.0,
       "held-out $R^2$ (context arm, layer 19)": 0.3729297859152396,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 1
     },
     {
-      "transfer tier (more correction allowed \u2192)": 0.0,
+      "x": 0.0,
       "held-out $R^2$ (context arm, layer 19)": -0.21590892352560903,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 2
     },
     {
-      "transfer tier (more correction allowed \u2192)": 1.0,
+      "x": 1.0,
       "held-out $R^2$ (context arm, layer 19)": -0.12316116921278727,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 2
     },
     {
-      "transfer tier (more correction allowed \u2192)": 2.0,
+      "x": 2.0,
       "held-out $R^2$ (context arm, layer 19)": -0.15200049896082488,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 2
     },
     {
-      "transfer tier (more correction allowed \u2192)": 3.0,
+      "x": 3.0,
       "held-out $R^2$ (context arm, layer 19)": 0.04489877358333498,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 2
     },
     {
-      "transfer tier (more correction allowed \u2192)": 4.0,
+      "x": 4.0,
       "held-out $R^2$ (context arm, layer 19)": 0.07867276159647899,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 2
     },
     {
-      "transfer tier (more correction allowed \u2192)": 5.0,
+      "x": 5.0,
       "held-out $R^2$ (context arm, layer 19)": 0.12456327808178289,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 2
     },
     {
-      "transfer tier (more correction allowed \u2192)": 6.0,
+      "x": 6.0,
       "held-out $R^2$ (context arm, layer 19)": 0.26730242820480415,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 2
     },
     {
-      "transfer tier (more correction allowed \u2192)": 7.0,
+      "x": 7.0,
       "held-out $R^2$ (context arm, layer 19)": -0.09106617478985202,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 2
     },
     {
-      "transfer tier (more correction allowed \u2192)": 8.0,
+      "x": 8.0,
       "held-out $R^2$ (context arm, layer 19)": 0.3027790889150981,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 2
     },
     {
-      "transfer tier (more correction allowed \u2192)": 0.0,
+      "x": 0.0,
       "y": 0.016150763805092616,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 3
     },
     {
-      "transfer tier (more correction allowed \u2192)": 1.0,
+      "x": 1.0,
       "y": 0.22281989474235173,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 3
     },
     {
-      "transfer tier (more correction allowed \u2192)": 2.0,
+      "x": 2.0,
       "y": 0.020395199170297286,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 3
     },
     {
-      "transfer tier (more correction allowed \u2192)": 3.0,
+      "x": 3.0,
       "y": 0.2312996876392571,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 3
     },
     {
-      "transfer tier (more correction allowed \u2192)": 4.0,
+      "x": 4.0,
       "y": 0.23449460774333786,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 3
     },
     {
-      "transfer tier (more correction allowed \u2192)": 5.0,
+      "x": 5.0,
       "y": 0.31454363793714446,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 3
     },
     {
-      "transfer tier (more correction allowed \u2192)": 6.0,
+      "x": 6.0,
       "y": 0.41652944536057257,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 3
     },
     {
-      "transfer tier (more correction allowed \u2192)": 7.0,
+      "x": 7.0,
       "y": 0.044227204493442286,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 3
     },
     {
-      "transfer tier (more correction allowed \u2192)": 8.0,
+      "x": 8.0,
       "y": 0.4235555094705992,
       "series": "chat \u2192 bare text",
       "_kind": "line",
       "_group": 3
     },
     {
-      "transfer tier (more correction allowed \u2192)": 0.0,
+      "x": 0.0,
       "y": -0.18810432364732838,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 4
     },
     {
-      "transfer tier (more correction allowed \u2192)": 1.0,
+      "x": 1.0,
       "y": -0.0819428338999646,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 4
     },
     {
-      "transfer tier (more correction allowed \u2192)": 2.0,
+      "x": 2.0,
       "y": -0.19802559133756104,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 4
     },
     {
-      "transfer tier (more correction allowed \u2192)": 3.0,
+      "x": 3.0,
       "y": 0.11494149058129095,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 4
     },
     {
-      "transfer tier (more correction allowed \u2192)": 4.0,
+      "x": 4.0,
       "y": 0.1511781142147929,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 4
     },
     {
-      "transfer tier (more correction allowed \u2192)": 5.0,
+      "x": 5.0,
       "y": 0.21053629384213135,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 4
     },
     {
-      "transfer tier (more correction allowed \u2192)": 6.0,
+      "x": 6.0,
       "y": 0.3265608467262887,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 4
     },
     {
-      "transfer tier (more correction allowed \u2192)": 7.0,
+      "x": 7.0,
       "y": -0.07608865945756649,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 4
     },
     {
-      "transfer tier (more correction allowed \u2192)": 8.0,
+      "x": 8.0,
       "y": 0.3608982504743797,
       "series": "chat \u2192 in story (attributed-quote boundary)",
       "_kind": "line",
       "_group": 4
     },
     {
-      "transfer tier (more correction allowed \u2192)": 0.0,
+      "x": 0.0,
       "y": -0.29817010524282267,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 5
     },
     {
-      "transfer tier (more correction allowed \u2192)": 1.0,
+      "x": 1.0,
       "y": -0.1443052231759044,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 5
     },
     {
-      "transfer tier (more correction allowed \u2192)": 2.0,
+      "x": 2.0,
       "y": -0.38057276789996686,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 5
     },
     {
-      "transfer tier (more correction allowed \u2192)": 3.0,
+      "x": 3.0,
       "y": -0.006596044915211463,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 5
     },
     {
-      "transfer tier (more correction allowed \u2192)": 4.0,
+      "x": 4.0,
       "y": 0.06362970763770497,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 5
     },
     {
-      "transfer tier (more correction allowed \u2192)": 5.0,
+      "x": 5.0,
       "y": 0.0900314198561907,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 5
     },
     {
-      "transfer tier (more correction allowed \u2192)": 6.0,
+      "x": 6.0,
       "y": 0.2693694167938716,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 5
     },
     {
-      "transfer tier (more correction allowed \u2192)": 7.0,
+      "x": 7.0,
       "y": -0.21957725008825432,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 5
     },
     {
-      "transfer tier (more correction allowed \u2192)": 8.0,
+      "x": 8.0,
       "y": 0.29038279975946113,
       "series": "chat \u2192 in story (bare-label boundary)",
       "_kind": "line",
       "_group": 5
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.21320500590966499,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.13980232188685796,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.060528103651182066,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.053486686668805385,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.1367194610535987,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.09595623899752626,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.07106448812934388,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.1314214008325282,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.21233801456455956,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.11978103679209551,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.08529127532840194,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.03942965516373771,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.17829106147572477,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.18756329144747444,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.27245906701467926,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.21237066840315605,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.14648038616877113,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.30108823143433233,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 0.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.12868346061895716,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 1.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.10955056464979229,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 2.0,
+      "held-out $R^2$ (context arm, layer 19)": -0.08674119811615304,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 3.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.04766320658217251,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 4.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.0809202797930803,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 5.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.15175274944255385,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 6.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.06841270830522186,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 7.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.0758707192242066,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 8.0,
+      "held-out $R^2$ (context arm, layer 19)": 0.16825348237403284,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 0.0,
+      "y": -0.006450115461018835,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 1.0,
+      "y": 0.04001318902413629,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 2.0,
+      "y": 0.019116705925609923,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 3.0,
+      "y": 0.08238534729126554,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 4.0,
+      "y": 0.08249086099448426,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 5.0,
+      "y": 0.12872464989002225,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 6.0,
+      "y": 0.10568288905966941,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 7.0,
+      "y": 0.08399707063330122,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 8.0,
+      "y": 0.1333860470901683,
+      "series": "chat \u2192 bare text",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 0.0,
+      "y": -0.1820582781067494,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 1.0,
+      "y": -0.20564672153510197,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 2.0,
+      "y": 0.0030927053757645816,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 3.0,
+      "y": 0.0929472903833295,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 4.0,
+      "y": 0.09294727346070444,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 5.0,
+      "y": 0.16135808722939055,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 6.0,
+      "y": 0.100832637523448,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 7.0,
+      "y": 0.08934240708567136,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 8.0,
+      "y": 0.1356701503780087,
+      "series": "chat \u2192 in story (attributed-quote boundary)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 0.0,
+      "y": -0.10897237004803029,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 1.0,
+      "y": -0.09082354156145778,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 2.0,
+      "y": -0.024860749843437537,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 3.0,
+      "y": 0.04675484637565115,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 4.0,
+      "y": 0.0478371862074846,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 5.0,
+      "y": 0.1086220716919247,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 6.0,
+      "y": 0.062247228927860034,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 7.0,
+      "y": 0.046830611866798086,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transfer tier (more correction allowed \u2192)": 8.0,
+      "y": 0.08490284916374943,
+      "series": "chat \u2192 in story (bare-label boundary)",
+      "_kind": "line",
+      "_group": 11
     }
   ],
-  "n_series": 6,
-  "total_points": 54,
+  "n_series": 12,
+  "total_points": 108,
   "text": {
     "suptitle": "Re-using the assistant's chat-template context\u2192answer map under a changed framing",
     "fig_texts": [
-      "#2054 lattice \u00b7 inserted answer text \u00b7 n=11,901 paired rows \u00b7 read = boundary before the answer begins \u2192 mean over answer tokens"
+      "CONTROLLED arm (top row): the answer text is held fixed across framings, so a delta is attributable to framing.\nJOINT arm (bottom row): the answer is regenerated in each framing, so a delta mixes what is said with how it is encoded \u2014 it is NOT a framing effect.",
+      "#2054 lattice \u00b7 read = boundary before the assistant starts speaking \u2192 mean over answer tokens \u00b7 every panel $n_{train}$ > $d$=3,584 (ambient basis)"
     ],
     "axes": [
       {
-        "title_left": "Qwen2.5-7B-Instruct",
+        "title_left": "Qwen2.5-7B-Instruct \u00b7 INSERTED (controlled arm)\nn=11,901 paired rows",
+        "ylabel": "held-out $R^2$ (context arm, layer 19)",
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "Qwen2.5-7B base \u00b7 INSERTED (controlled arm)\nn=11,901 paired rows"
+      },
+      {
+        "title_left": "Qwen2.5-7B-Instruct \u00b7 ON-POLICY (joint arm)\nn=8,000 paired rows",
         "xlabel": "transfer tier (more correction allowed \u2192)",
         "ylabel": "held-out $R^2$ (context arm, layer 19)",
         "xticklabels": [
@@ -434,7 +844,7 @@
         ]
       },
       {
-        "title_left": "Qwen2.5-7B (base)",
+        "title_left": "Qwen2.5-7B base \u00b7 ON-POLICY (joint arm)\nn=7,999 paired rows",
         "xlabel": "transfer tier (more correction allowed \u2192)",
         "xticklabels": [
           "1 direct\ntransfer",
