@@ -146,6 +146,23 @@ ASSISTANT_VARIANT = "conversation_paired_stories_assistant"
 # registers no read over most of it; "all" is the explicit opt-in.
 PLAN6_PAIR_CLASSES = ("cross_framing", "cross_character", "twobytwo", "cross_model")
 
+# OPT-IN classes, NOT in the production default (`PLAN6_PAIR_CLASSES` above is
+# unchanged). Both serve user-requested figure reads the §6 roster does not
+# enumerate, and both are reachable only via an explicit `--pair-classes`:
+#
+#   `onpolicy_chat_to_framing` — the ON-POLICY sibling of `cross_framing`,
+#       restricted to a CHAT source (assistant on-policy chat -> the same
+#       assistant's other framings). `cross_framing` is inserted-only by
+#       design (the §4 interpretive split bars reading an on-policy
+#       cross-framing delta as a framing effect), so any figure carrying an
+#       on-policy arm must both request this class AND narrate its delta as
+#       the JOINT authorship+presentation effect, never a framing effect.
+#   `assistant_to_character` — assistant -> story-character transfer at FIXED
+#       framing, condition and model. `cross_character` requires BOTH ends to
+#       be character variants, so the "is the assistant a privileged persona?"
+#       read (persona varies, framing held) has no §6 class.
+EXTRA_PAIR_CLASSES = ("onpolicy_chat_to_framing", "assistant_to_character")
+
 # Fail-loud budget for the pilot-extrapolated fleet wall (M-R2-1; exit 7 on
 # an over-budget projection). Grounding: issue2054_pilot.FLEET_WALL_WARN_HOURS
 # — plan §9 books the fit family as a pilot-gated VM-CPU wall, and >12 h is
@@ -911,6 +928,29 @@ def _pair_class(s: _Cell, t: _Cell) -> str | None:
     # Plan §4 req 2 — model is a read-side variable: same cell, other model.
     if s_var == t_var and s_cond == t_cond and s_form == t_form and s_mod != t_mod:
         return "cross_model"
+    # ---- opt-in classes (EXTRA_PAIR_CLASSES) -------------------------------
+    # Appended AFTER every §6 class on purpose: `_pair_class` returns the FIRST
+    # match, so a new arm placed earlier could shadow a §6 class and silently
+    # drop that pair from a production run. Neither arm below can be reached by
+    # a pair the §6 checks already claim (assistant is not a character variant;
+    # `_is_chat_anchor` requires form == "chat" AND condition == "inserted").
+    if (
+        s_var == t_var == ASSISTANT_VARIANT
+        and s_mod == t_mod
+        and s_cond == t_cond == "on_policy"
+        and s_form == "chat"
+        and t_form != "chat"
+    ):
+        return "onpolicy_chat_to_framing"
+    if (
+        s_var == ASSISTANT_VARIANT
+        and _is_character_variant(t_var)
+        and s_mod == t_mod
+        and s_cond == t_cond
+        and s_form == t_form
+        and s_form in forms.STORY_FORMS
+    ):
+        return "assistant_to_character"
     return None
 
 
@@ -1598,7 +1638,8 @@ def main() -> int:
         default=PLAN6_PAIR_CLASSES,
         help=(
             "Comma-separated plan-§6 pair classes to enumerate "
-            f"({', '.join(PLAN6_PAIR_CLASSES)}; default: all four — M-R2-1), "
+            f"({', '.join(PLAN6_PAIR_CLASSES)}; default: all four — M-R2-1; "
+            f"opt-in, never default: {', '.join(EXTRA_PAIR_CLASSES)}), "
             "or 'all' for the full ordered product (explicit opt-in; the "
             "fleet-wall fence still applies)."
         ),
@@ -1642,7 +1683,7 @@ def main() -> int:
         ),
     )
     args = p.parse_args()
-    valid_classes = set(PLAN6_PAIR_CLASSES) | {"all"}
+    valid_classes = set(PLAN6_PAIR_CLASSES) | set(EXTRA_PAIR_CLASSES) | {"all"}
     if not args.pair_classes:
         # r3 Minor 2: an empty --pair-classes '' parses to () and would pass
         # the unknown-class check below vacuously, then enumerate zero pairs.
