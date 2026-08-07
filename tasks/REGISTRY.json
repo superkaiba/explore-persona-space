@@ -8958,8 +8958,8 @@
     "2159": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2159",
-      "status": "planning",
+      "path": "tasks/approved/2159",
+      "status": "approved",
       "title": "workflow-fix: Repoint the pin's read target from CLAUDE.md to .claude/rule"
     },
     "216": {
