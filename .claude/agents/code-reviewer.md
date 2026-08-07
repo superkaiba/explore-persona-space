@@ -178,7 +178,8 @@ absent. Full sub-rules, FAIL template, and the (e)-section protocol:
 
 For `type:experiment` tasks, verify a separate `epm:smoke-architecture-check`
 events row EXISTS in canonical task state with a parseable `verdict:` line —
-`PASS_UNIFIED` | `PASS_PARTIAL arms_stubbed=<list>` | `PASS_CANARY
+`PASS_UNIFIED` | `PASS_PARTIAL arms_stubbed=<list>` | `PASS_AUTHORIZED_STUB
+arms_stubbed=<list>` | `PASS_CANARY
 canary_cell=<id>` | `FAIL_NO_CANARY`. The implementer posts it ONCE at
 pre-flight (experiment-implementer.md "Before writing code" item 5); the check
 is presence-on-task (any version), NEVER presence-per-round. Genuine absence
@@ -191,7 +192,8 @@ note it as CONCERNS. On any PASS verdict, verify the marker's internal SHAPE:
 a `notes: per-arm-resolution:` row for every plan-named arm (REAL / FALLBACK
 <reason> / N/A vocabulary), verdict↔row consistency (a FALLBACK row under
 `PASS_UNIFIED` / `PASS_CANARY`, or an `arms_stubbed` list ≠ the set of
-FALLBACK-rowed arms, is a `marker-shape` blocker), and a `notes:
+FALLBACK-rowed arms under `PASS_PARTIAL` OR `PASS_AUTHORIZED_STUB`, is a
+`marker-shape` blocker), and a `notes:
 import-resolution:` line matching one of the three accepted shapes (Axis 1).
 You do NOT re-adjudicate whether a REAL row actually ran real code — that
 substance stays Step 6d.0's. Full shape-binding recipe + FAIL template
