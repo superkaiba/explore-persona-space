@@ -737,6 +737,37 @@ def test_degenerate_pair_token_prefix_mismatch_still_halts():
     assert report["max_pe_jitter"] is None
 
 
+def test_degenerate_pair_state_sanity_band():
+    """FIX 1: premise-verified degenerate pairs keep a LOOSE state-side sanity
+    band (``STATE_SANITY_COS_MIN`` = 0.99) — identical token prefixes at the
+    realized bf16 jitter (pe_cos ~0.9998) PASS, while a grossly different
+    ``v_pe`` (cos 0.5 — a capture-side row misalignment writing garbage
+    states, which the injection gate cannot backstop) FAILs with the new
+    ``state_sanity`` flag. The band sits ~50x above the realized
+    ``max_pe_jitter`` (2.04e-4), so it cannot reintroduce the 2026-08-06
+    bf16-jitter false-FAIL."""
+    pair = _mk_pair("persona_role_header")
+    ids = [11, 12, 13, 14, 21, 22]
+    tp = {pair.a: (ids, 3), pair.b: (list(ids), 3)}  # identical token prefixes
+    # (a) realized jitter passes — the false-FAIL fixture stays green.
+    report = R.run_degeneracy_guard(
+        _bank_for(pair, pe_theta=_JITTER_THETA), [pair], token_prefixes=tp
+    )
+    assert report["passed"], report["violations"]
+    assert report["state_sanity_cos_min"] == R.STATE_SANITY_COS_MIN == 0.99
+    # (b) garbage v_pe under identical prefixes FAILs with the new flag.
+    report = R.run_degeneracy_guard(
+        _bank_for(pair, pe_theta=math.acos(0.5)), [pair], token_prefixes=tp
+    )
+    assert not report["passed"]
+    (row,) = report["violations"]
+    assert row["flag"] == "state_sanity"
+    assert row["declared_degenerate_pe"] is True
+    assert row["pe_cos"] == pytest.approx(0.5, abs=1e-6)
+    # A sanity-violating pair contributes no jitter observation.
+    assert report["max_pe_jitter"] is None
+
+
 def test_non_degenerate_pair_identical_states_still_fail_distinctness():
     """The non-degenerate direction is byte-unchanged: bit-identical states
     at either slot violate the ``cos < DEGENERACY_COS_MIN`` distinctness bar

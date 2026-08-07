@@ -11,6 +11,9 @@ the anchor-behavior dedup + the gate-slice/production shared-id invariant
 
 from __future__ import annotations
 
+import argparse
+import json
+import logging
 import sys
 from pathlib import Path
 
@@ -252,3 +255,182 @@ def test_build_margin_pools_selects_filtered_top4():
     assert len(sides["A"]) == 4 and len(sides["B"]) == 4
     assert sides["A"][0] == "floor 0"  # top score first (90)
     assert sides["B"] == [f"ceil {d}" for d in range(4)]
+
+
+def test_build_margin_pools_query_content_skipped_and_reported(pairs):
+    """FIX 4: ``query_content`` pairs build NO pool — the manipulated variable
+    IS the user query, so rubric cores vary per carrier AND each pair's two
+    contexts pose different queries; no fixed shared answer pool (plan §4.4 TF
+    margin) is well-defined at any key granularity. Pre-fix this fixture shape
+    tripped the pool-key rubric-core assert (`('query_content|v1-v2', ...)`).
+    The skip is explicit — counted + reasoned in the report — and
+    ``filler_swap`` behavior is unchanged (covered above / in the item tests)."""
+    qc = [p for p in pairs if B.base_type_of(p.cell) == "query_content"]
+    shared = [p for p in qc if (p.value_a, p.value_b) == (qc[0].value_a, qc[0].value_b)][:2]
+    assert len(shared) == 2 and shared[0].carrier != shared[1].carrier
+    fmt = next(p for p in pairs if p.cell == "instr_format")
+    cores = J.pair_rubric_cores(fmt)
+    assert cores is not None
+    rid_a, rid_b = (J.rubric_core_id(c) for c in cores)
+    anchor_rows, scores = [], {}
+    for d in range(4):
+        anchor_rows.append({"context_id": fmt.a, "cell": fmt.cell, "draw": d, "text": f"floor {d}"})
+        anchor_rows.append({"context_id": fmt.b, "cell": fmt.cell, "draw": d, "text": f"ceil {d}"})
+        scores[(fmt.a, d, rid_a)] = 90.0
+        scores[(fmt.b, d, rid_b)] = 90.0
+    # Pre-fix: AssertionError('pairs sharing a pool key disagree on rubric cores').
+    pools, report = J.build_margin_pools([fmt, *shared], anchor_rows, scores)
+    key_qc = J.pool_key(shared[0])
+    assert key_qc not in pools
+    assert J.pool_key(fmt) in pools
+    skip = report["query_content_skip"]
+    assert skip["n_keys"] == 1 and skip["keys"] == [key_qc]
+    assert "query" in skip["reason"] and "filler_swap" in skip["reason"]
+    # Skipped keys never enter the built-key accounting (add-only report).
+    assert report["n_keys_total"] == 1
+
+
+# ── phase-aware input staging (fix 2) ─────────────────────────────────
+
+
+def _stage_args(phase: str, in_root: Path) -> argparse.Namespace:
+    return argparse.Namespace(phase=phase, in_root=in_root, hf_revision=None)
+
+
+def test_stage_inputs_phase_aware(monkeypatch, tmp_path):
+    """FIX 2: each phase stages only what its loaders read; a not-yet-existing
+    tolerated prefix logs-and-continues; a genuinely REQUIRED prefix still
+    raises. Pre-fix, ``--stage-from-hf --phase separation-gate`` could NEVER
+    work: it unconditionally staged the grid prefix, which exists only from
+    P3 — AFTER gate 3 (observed live FileNotFoundError on
+    ``issue2162_ctxinfo/raw_completions/grid``)."""
+    from explore_persona_space.orchestrate import hub
+
+    present = {J._STAGE_ANCHORS_GATE}
+    requested: list[str] = []
+
+    def fake_stage(
+        repo_id,
+        prefix,
+        dest_dir,
+        *,
+        repo_type="dataset",
+        revision=None,
+        token=None,
+        max_workers=6,
+    ):
+        requested.append(prefix)
+        if prefix not in present:
+            raise FileNotFoundError(prefix)
+        return [Path(dest_dir) / prefix / "anchors_gate_w0.jsonl"]
+
+    monkeypatch.setattr(hub, "stage_hub_prefix", fake_stage)
+
+    # separation-gate BEFORE the P3 grid + terminal anchors uploads: works
+    # off the early-uploaded gate slice; never requests grid.
+    J._stage_inputs(_stage_args("separation-gate", tmp_path))
+    assert J._STAGE_GRID not in requested
+    assert J._STAGE_ANCHORS_GATE in requested
+
+    # waves genuinely REQUIRES grid rows: absent -> raises (fail-loud kept).
+    with pytest.raises(FileNotFoundError):
+        J._stage_inputs(_stage_args("waves", tmp_path))
+
+    # separation-gate with NO anchor prefix landed at all: raises, named.
+    present.clear()
+    with pytest.raises(FileNotFoundError, match="anchor rows"):
+        J._stage_inputs(_stage_args("separation-gate", tmp_path))
+
+
+def test_stage_plan_covers_every_phase():
+    """A new phase must declare its staging needs (or explicitly nothing)."""
+    assert set(J._PHASE_STAGE_PLAN) == set(J.PHASES)
+
+
+def test_resolve_anchors_dir_prefers_full_then_gate(tmp_path):
+    """FIX 2 consumption side: the default anchors dir falls back to the
+    early-uploaded ``anchors_gate`` mirror when the full ``anchors`` prefix
+    has not landed yet, so the staged gate slice is actually READ by
+    ``load_anchor_rows`` (glob ``anchors_*.jsonl``)."""
+    mirror = tmp_path
+    (mirror / "anchors").mkdir()
+    (mirror / "anchors_gate").mkdir()
+    # Neither holds shards: canonical path (loaders fail loud downstream).
+    assert J._resolve_anchors_dir(mirror) == mirror / "anchors"
+    # Only the early gate slice staged: fall back to it.
+    (mirror / "anchors_gate" / "anchors_gate_w0.jsonl").write_text("{}\n")
+    assert J._resolve_anchors_dir(mirror) == mirror / "anchors_gate"
+    # Full anchors staged: preferred (it includes the gate shards too).
+    (mirror / "anchors" / "anchors_rest_w0.jsonl").write_text("{}\n")
+    assert J._resolve_anchors_dir(mirror) == mirror / "anchors"
+
+
+# ── uniform --dry-run (fix 3) ─────────────────────────────────────────
+
+
+def _cfg(tmp_path: Path, **kw) -> J94.JudgeConfig:
+    return J94.JudgeConfig(
+        work_root=tmp_path / "work",
+        cache_root=tmp_path / "cache",
+        rollouts_dir=tmp_path / "grid",
+        anchors_file=tmp_path / "anchors",
+        stage2_dir=None,
+        **kw,
+    )
+
+
+def _forbid(monkeypatch, *targets):
+    """Any API-bearing / persisting call under --dry-run is a test failure."""
+
+    def boom(*a, **k):
+        raise AssertionError("dry-run must not reach the API or persist anything")
+
+    for mod, name in targets:
+        monkeypatch.setattr(mod, name, boom)
+
+
+def test_phase_pilot_dry_run_refuses_loudly(monkeypatch, tmp_path, caplog):
+    """FIX 3: the pilot's purpose is measuring the REAL truncation/parse-fail
+    profile, so --dry-run REFUSES with a distinct rc instead of silently
+    spending (pre-fix: ``--phase pilot --dry-run`` made ~356 real calls and
+    wrote a real verdict)."""
+    _forbid(monkeypatch, (J, "judge_pilot_gate"), (J, "judge_graded"), (J.BANK, "build_pairs"))
+    cfg = _cfg(tmp_path, dry_run=True)
+    with caplog.at_level(logging.ERROR):
+        rc = J.phase_pilot(cfg)
+    assert rc == J.RC_DRY_RUN_UNSUPPORTED != 0
+    assert any("--dry-run refused" in r.message for r in caplog.records)
+    assert not (tmp_path / "work").exists()  # no persisted verdict
+
+
+def test_phase_anchors_dry_run_zero_api_zero_writes(monkeypatch, tmp_path):
+    """FIX 3: anchors --dry-run is a pure construction check handled at ENTRY
+    (pre-fix the flag was only checked after the first ``run_wave`` call) —
+    zero API calls, nothing persisted (no audits, no items, no gate verdicts),
+    and the gate-presence requirement does not fire on a dry run."""
+    _forbid(monkeypatch, (J94, "run_wave"), (J94, "run_audits"), (J, "judge_graded"))
+    anchors = tmp_path / "anchors"
+    anchors.mkdir()
+    row = _anchor_row("nonexistent_ctx", "instr_format", "v1", "d1")
+    (anchors / "anchors_rest_w0.jsonl").write_text(json.dumps(row) + "\n")
+    cfg = _cfg(tmp_path, dry_run=True)
+    assert J.phase_anchors(cfg) == J.RC_OK
+    assert not (tmp_path / "work").exists()  # nothing persisted
+
+
+def test_dry_run_units_report_validates_and_is_pure(tmp_path, caplog):
+    """The shared dry-run helper validates units (a malformed unit set still
+    fails loud) and logs the uniform no-API / no-persist line."""
+    unit = J94.JudgeUnit(
+        item_id=J94._item_id("c", "x"),
+        rubric_id=J94.COHERENCE_RUBRIC_ID,
+        question="",
+        answer="a reply",
+        source={"kind": "anchor"},
+    )
+    with caplog.at_level(logging.INFO):
+        rc = J._dry_run_units_report("anchors", {"coherence.anchors": [unit]})
+    assert rc == J.RC_OK
+    assert any("no API calls made, nothing persisted" in r.message for r in caplog.records)
+    with pytest.raises(ValueError, match="duplicate item ids"):
+        J._dry_run_units_report("anchors", {"w": [unit, unit]})

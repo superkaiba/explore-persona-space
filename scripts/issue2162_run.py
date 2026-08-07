@@ -120,6 +120,12 @@ GATE_OFFTARGET_REL_MAX = 1e-3
 # Degeneracy guard bar (plan §4.5): identical-token-prefix states agree to
 # bf16 batch jitter; distinct-content states never reach it.
 DEGENERACY_COS_MIN = 0.99999
+# Loose state-side sanity band for PREMISE-VERIFIED degenerate pairs (fix 1,
+# code-correctness-critic Minor on b4ab6ed5f9): identical token prefixes with
+# pe_cos below this = capture-side row misalignment (flag ``state_sanity``).
+# 0.99 gives ~50x headroom over the realized bank's max_pe_jitter (2.04e-4),
+# so it cannot re-fire the 2026-08-06 bf16-jitter false-FAIL.
+STATE_SANITY_COS_MIN = 0.99
 
 # Plan §9: P3 = 3.7 h projected pod wall at width 8.
 PLANNED_GRID_WALL_H = 3.7
@@ -970,10 +976,18 @@ def run_degeneracy_guard(
     false-FAILed a healthy bank (2026-08-06 rc=23 halt: 4 persona_role_header
     pairs at pe_cos 0.9998). Realized pe_cos per degenerate pair — plus the
     max jitter over premise-verified pairs — is recorded informationally,
-    never gated. EVERY other (pair x slot) direction is unchanged: distinct
-    states at BOTH slots (``cos < DEGENERACY_COS_MIN``; jitter cannot flip it —
-    bit-identical states read > 1.0 - 1e-5, distinct states <= ~0.994). A
-    violation is a BANK defect (HALT), never a runtime m adjustment.
+    never gated at the bit-identity bar. Premise-verified pairs DO keep one
+    LOOSE state-side sanity band (``STATE_SANITY_COS_MIN`` = 0.99, flag
+    ``state_sanity``): identical token prefixes with ``pe_cos < 0.99`` mean a
+    capture-side row misalignment wrote garbage ``v_pe`` — the injection gate
+    cannot backstop that (it compares realized-vs-payload, so a misaligned
+    vector reads back as itself). The band sits ~50x above the measured
+    ``max_pe_jitter`` (2.04e-4; bit-identical states read > 1.0 - 1e-5), so it
+    cannot reintroduce the 2026-08-06 false-FAIL. EVERY other (pair x slot)
+    direction is unchanged: distinct states at BOTH slots
+    (``cos < DEGENERACY_COS_MIN``; jitter cannot flip it — distinct states
+    read <= ~0.994). A violation is a BANK defect (HALT), never a runtime m
+    adjustment.
 
     ``token_prefixes`` (tests / precomputed callers) bypasses the tokenizer;
     production threads ``tok`` and derives it via ``_degenerate_token_prefixes``.
@@ -1007,7 +1021,13 @@ def run_degeneracy_guard(
             prefix_identical = pe_a == pe_b and ids_a[: pe_a + 1] == ids_b[: pe_b + 1]
             degenerate_pe_cos[pair.pair_id] = pe_cos
             if prefix_identical:
-                jitters.append(1.0 - pe_cos)
+                if pe_cos >= STATE_SANITY_COS_MIN:
+                    jitters.append(1.0 - pe_cos)
+                else:
+                    # Loose state-sanity band (docstring): identical prefixes
+                    # MUST yield near-identical captured states; a miss (incl.
+                    # NaN) is a capture-side row misalignment, not jitter.
+                    failed.append("state_sanity")
             else:
                 failed.append("token_prefix")
                 row_extra = {"pe_a": pe_a, "pe_b": pe_b}
@@ -1030,9 +1050,12 @@ def run_degeneracy_guard(
     report = {
         "criterion": "span-locus degeneracy guard (plan §7 gate 2)",
         "bar_cos": DEGENERACY_COS_MIN,
+        "state_sanity_cos_min": STATE_SANITY_COS_MIN,
         "degenerate_criterion": (
             "token-prefix identity through the v_pe slot "
-            "(pe_a == pe_b and ids[: pe + 1] equal); pe_cos recorded, not gated"
+            "(pe_a == pe_b and ids[: pe + 1] equal); pe_cos recorded, not gated "
+            "at the bit-identity bar — premise-verified pairs keep the loose "
+            "state_sanity band (pe_cos >= state_sanity_cos_min)"
         ),
         "declared_degenerate_cells": sorted(BANK.DEGENERATE_AT_PE),
         "n_pairs_checked": n_checked,
