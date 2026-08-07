@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2171,
+  "highest_id": 2174,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9009,8 +9009,8 @@
     "2165": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2165",
-      "status": "running",
+      "path": "tasks/completed/2165",
+      "status": "completed",
       "title": "workflow-fix: enumerate smoke blind spots \u2014 gates/paths a smoke run structurally cannot reach"
     },
     "2166": {
@@ -9037,8 +9037,8 @@
     "2169": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2169",
-      "status": "planning",
+      "path": "tasks/running/2169",
+      "status": "running",
       "title": "verify_task_body check 31: WARN on any committed-but-unmentioned figures/issue_<N> PNG (not only per-unit patterns)"
     },
     "2170": {
@@ -9054,6 +9054,27 @@
       "path": "tasks/planning/2171",
       "status": "planning",
       "title": "Wire the authorized-stub grant token for the Step 6d.0 smoke-architecture gate"
+    },
+    "2172": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2172",
+      "status": "planning",
+      "title": "Parenthesized \u00a79 planned_wall_h cell silently disables the poller phase-ETA tripwire"
+    },
+    "2173": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2173",
+      "status": "proposed",
+      "title": "workflow-fix: test_backend_poll module-mode test fails only in large collections, always classified NEW by the Step 9c oracle"
+    },
+    "2174": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2174",
+      "status": "proposed",
+      "title": "Fact-checker: exact-identity premise from a sample must be verified at the assert's grain"
     },
     "218": {
       "has_clean_result": false,
