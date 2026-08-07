@@ -725,6 +725,10 @@ def main(argv: list[str] | None = None) -> int:
         # The derangement is seeded + deterministic — assert the staged copy
         # matches the recomputation (reuse-validation on the reused null).
         assert donor_map == BANK.donor_derangement(pairs), "parent derangement drift"
+        # Staged bank must match the current bank module's recipe (fu1 review Minor 4).
+        _staged_sha = parent_bank.get("bank_sha")
+        _local_sha = R.bank_manifest_and_sha()[1]
+        assert _staged_sha in (None, _local_sha), (_staged_sha, _local_sha)
 
     # ── phase: bank (fresh full-position capture + parity gate) ─────────
     logger.info("[phase=fu2_bank]")
