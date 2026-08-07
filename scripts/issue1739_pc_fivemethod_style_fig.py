@@ -95,6 +95,15 @@ INDIST_CORPUS = {
 INDIST_QUALIFIER = {"P-A": "out-of-fold", "P-B": "LODO, 20% held-in"}
 OOD_QUALIFIER = {"P-A": "single fit", "P-B": "LODO, held out whole"}
 
+# SCOPE exclusions -- deliberately NOT the spread gate. These datasets PASS the
+# gate; they are removed by an explicit user scope call (2026-08-07: restrict
+# evil's completely-OOD regime to MHJ). Tracked separately from gate drops so
+# the caption can never present a scope choice as a data-quality exclusion.
+# Revert by emptying this dict.
+SCOPE_EXCLUDE: dict[tuple[str, str], tuple[str, ...]] = {
+    ("evil", "ood"): ("evil_tomgibbs",),
+}
+
 SHARED = {"pvsynth": "persona-vector grid", "generic": "random WildChat"}
 REGIMES = (
     ("pvsynth", "synthetic"),
@@ -177,8 +186,11 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                 # never averaged into a bar, never drawn hatched. A regime whose
                 # every dataset is floored contributes no bar at all, and
                 # panel_regimes() then drops the whole x-slot from that panel.
-                use = [(rn, r) for rn, r in items if ok(rn)]
-                dropped = tuple(rn for rn, _r in items if not ok(rn))
+                scoped_out = SCOPE_EXCLUDE.get((beh, key), ())
+                in_scope = [(rn, r) for rn, r in items if rn not in scoped_out]
+                use = [(rn, r) for rn, r in in_scope if ok(rn)]
+                dropped = tuple(rn for rn, _r in in_scope if not ok(rn))
+                scope_dropped = tuple(rn for rn, _r in items if rn in scoped_out)
                 if not use:
                     continue
                 rho = float(st.mean([r["rho_frozen"] for _rn, r in use]))
@@ -193,9 +205,10 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                     err,
                     n_eval,
                     len(use),
-                    len(items),
+                    len(in_scope),
                     tuple(rn for rn, _r in use),
                     dropped,
+                    scope_dropped,
                 )
 
     for key, _ in REGIMES:
@@ -208,6 +221,7 @@ def collect(fits: dict, spread: dict, protocol: str, methods) -> tuple[dict, dic
                     sum(p[2] for p in per),
                     len(per),
                     len(BEHAVIORS),
+                    (),
                     (),
                     (),
                 )
@@ -332,6 +346,7 @@ def build_caption(vals: dict, protocol: str, methods) -> str:
     }[protocol]
     ns = []
     dropped_note: list[str] = []
+    scope_note: list[str] = []
     for b in BEHAVIORS:
         row = []
         for key, lab in REGIMES:
@@ -342,8 +357,11 @@ def build_caption(vals: dict, protocol: str, methods) -> str:
             row.append(f"{lab} {v[2]:,}" + (f" [{v[3]}/{v[4]} rungs kept]" if v[4] > 1 else ""))
             if v[6]:
                 dropped_note.append(f"{b}/{lab}: " + ", ".join(v[6]))
+            if len(v) > 7 and v[7]:
+                scope_note.append(f"{b}/{lab}: " + ", ".join(v[7]))
         ns.append(f"  {b}: " + "; ".join(row))
     drops = "; ".join(dropped_note) if dropped_note else "none"
+    scoped = "; ".join(scope_note) if scope_note else "none"
     return (
         f"{proto}\n"
         "The context->answer MAP is identical under both protocols: fit once per behaviour on the "
@@ -359,6 +377,14 @@ def build_caption(vals: dict, protocol: str, methods) -> str:
         "evil's generic-chat regime is dropped WHOLE: its only dataset (wildchat_rung) is floored "
         "(sd 4.4, 98.9% at the bottom bin), so the group has no interpretable data and evil shows "
         "3 regimes where the other behaviours show 4. Sycophancy and hallucination lose nothing.\n"
+        f"SEPARATELY -- SCOPE EXCLUSION, NOT A GATE FAILURE: {scoped}. These datasets PASS the "
+        "spread gate and were removed by an explicit user scope call, so evil's completely-OOD "
+        "bar is now a SINGLE dataset (MHJ), not a mean over its OOD ladder. evil_tomgibbs is the "
+        "excluded one and it is NOT neutral: ridge-on-mapped scored -0.399 (P-A) / -0.337 (P-B) "
+        "there -- strongly NEGATIVE, and the only CI-disjoint context-vs-mapped comparison in the "
+        "whole evil OOD set. Removing it therefore REMOVES the one setting where the mapped-answer "
+        "readout was decisively worse than the context readout; read evil's OOD bar as 'MHJ only', "
+        "never as evil OOD in general.\n"
         "Bars are the mean over the surviving datasets; error bars are the committed bootstrap CI "
         "for single-dataset regimes and the s.e.m. across datasets for multi-dataset ones. "
         "Only the CONTEXT-based variant is scored (variant=context_end); the prefix-end arm is a "
