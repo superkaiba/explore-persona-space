@@ -1,0 +1,758 @@
+{
+  "commit": "d27c8591",
+  "git_commit": "d27c8591",
+  "git_dirty": false,
+  "created": "2026-08-07T22:25:26Z",
+  "figsize": [
+    13.5,
+    7.2
+  ],
+  "points": [
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.27365053952593127,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.21916043742030933,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.20366005631486084,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.13246687007941302,
+      "y": 3.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.10664858053075887,
+      "y": 4.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.10474661728827706,
+      "y": 5.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.09782473646188,
+      "y": 6.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.09682206803820137,
+      "y": 7.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.09200055694511888,
+      "y": 8.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.0809618887311685,
+      "y": 9.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.05340239654055423,
+      "y": 10.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.053135070029970644,
+      "y": 11.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.05313009416574799,
+      "y": 12.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.0491819950832631,
+      "y": 13.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.04675163905004262,
+      "y": 14.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.03285310753264517,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.025509463556059292,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.024739692360407045,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.016075410324884243,
+      "y": 18.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.004044394256272232,
+      "y": 19.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.00379400943368452,
+      "y": 20.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": -0.001122382469593064,
+      "y": 21.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": -0.011034546137147355,
+      "y": 22.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": -0.08756707265278624,
+      "y": 23.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.014142193187749341,
+      "y": 0.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.19405047865524758,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.1704770440753287,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.1009919995616495,
+      "y": 3.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.07348114360727986,
+      "y": 4.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.08165566476714242,
+      "y": 5.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.06647338460071167,
+      "y": 6.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.079567649318394,
+      "y": 7.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.06178271726478263,
+      "y": 8.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.06813199604338058,
+      "y": 9.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.034438036307557485,
+      "y": 10.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.029425490033641755,
+      "y": 11.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.03421356366287265,
+      "y": 12.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.028298806052638653,
+      "y": 13.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.05220033162369625,
+      "y": 14.0,
+      "label": "matched = equal per-decile-bin subsamples of pooled answer lengths",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.03275636078868463,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.009425224996302634,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.027170534032120996,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": -0.009267357403536014,
+      "y": 18.0,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": -0.019746310450642457,
+      "y": 19.0,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": -0.009899141289619329,
+      "y": 20.0,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": -0.014087833539273398,
+      "y": 21.0,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": 0.03263317688851014,
+      "y": 22.0,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)": -0.09631189934036893,
+      "y": 23.0,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.3480159270137816,
+      "length-matched R\u00b2 (pair basis)": 0.2816856482173058,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.24326930972550453,
+      "length-matched R\u00b2 (pair basis)": 0.20002998345016337,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.36478393257257713,
+      "length-matched R\u00b2 (pair basis)": 0.3300618621710951,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.3609899231388926,
+      "length-matched R\u00b2 (pair basis)": 0.33996100346071445,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.2372258463374099,
+      "length-matched R\u00b2 (pair basis)": 0.17809066842045956,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.19047420728736728,
+      "length-matched R\u00b2 (pair basis)": 0.1258903367967633,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.237668741317699,
+      "length-matched R\u00b2 (pair basis)": 0.18156917852334437,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.1884867462344359,
+      "length-matched R\u00b2 (pair basis)": 0.1532703724707057,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.3865306873362466,
+      "length-matched R\u00b2 (pair basis)": 0.34442622945668305,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.27988210680548775,
+      "length-matched R\u00b2 (pair basis)": 0.2709450858494032,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.3856825666179923,
+      "length-matched R\u00b2 (pair basis)": 0.3487069686661991,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.36960715629310803,
+      "length-matched R\u00b2 (pair basis)": 0.3579743260697351,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.29411676313698365,
+      "length-matched R\u00b2 (pair basis)": 0.2542162871086747,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.21315487440581515,
+      "length-matched R\u00b2 (pair basis)": 0.18608429106529414,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.28370857002769806,
+      "length-matched R\u00b2 (pair basis)": 0.251321499533636,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.23057847586195007,
+      "length-matched R\u00b2 (pair basis)": 0.21710793587076332,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.3179074414792399,
+      "length-matched R\u00b2 (pair basis)": 0.2518008483142774,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.18544057139982686,
+      "length-matched R\u00b2 (pair basis)": 0.1508088487526279,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.3158736458372897,
+      "length-matched R\u00b2 (pair basis)": 0.2552613227122825,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.2624712492967355,
+      "length-matched R\u00b2 (pair basis)": 0.22082328640472504,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.22357742072152922,
+      "length-matched R\u00b2 (pair basis)": 0.16005377943937424,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.23461196685867658,
+      "length-matched R\u00b2 (pair basis)": 0.1274206025508641,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.22166526385963853,
+      "length-matched R\u00b2 (pair basis)": 0.16430236523379677,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.19692557149923148,
+      "length-matched R\u00b2 (pair basis)": 0.13713183120167577,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.35635390153421775,
+      "length-matched R\u00b2 (pair basis)": 0.3192093661381426,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.26435334458909887,
+      "length-matched R\u00b2 (pair basis)": 0.25742664887336,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.3547961600412761,
+      "length-matched R\u00b2 (pair basis)": 0.32059900490976123,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.3559185425108692,
+      "length-matched R\u00b2 (pair basis)": 0.33468683844903463,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.24077127499270629,
+      "length-matched R\u00b2 (pair basis)": 0.1794742745189544,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.20791816746006112,
+      "length-matched R\u00b2 (pair basis)": 0.14671791373026977,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.25837841954594365,
+      "length-matched R\u00b2 (pair basis)": 0.2233986823830228,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.23286895598988436,
+      "length-matched R\u00b2 (pair basis)": 0.21397345738672016,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.3808483791499187,
+      "length-matched R\u00b2 (pair basis)": 0.3400675840843065,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.2830236426880387,
+      "length-matched R\u00b2 (pair basis)": 0.2735941994835948,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.3830483691709236,
+      "length-matched R\u00b2 (pair basis)": 0.3499441103423441,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.3790039749146514,
+      "length-matched R\u00b2 (pair basis)": 0.36969042079298653,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.29904646700207105,
+      "length-matched R\u00b2 (pair basis)": 0.2598856059179608,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.20222439896386968,
+      "length-matched R\u00b2 (pair basis)": 0.1803179565995668,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.3062773017516078,
+      "length-matched R\u00b2 (pair basis)": 0.2732997267755642,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.25314223172163713,
+      "length-matched R\u00b2 (pair basis)": 0.24387423674192243,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.4446092310384662,
+      "length-matched R\u00b2 (pair basis)": 0.4202510590746562,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.2254487936181569,
+      "length-matched R\u00b2 (pair basis)": 0.22620058041940863,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.447143455780045,
+      "length-matched R\u00b2 (pair basis)": 0.3927683036734547,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.17349291625411373,
+      "length-matched R\u00b2 (pair basis)": 0.3786261104857054,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.411020933647651,
+      "length-matched R\u00b2 (pair basis)": 0.39620126632517955,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.20736087733279018,
+      "length-matched R\u00b2 (pair basis)": 0.22572422224985084,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.49213256427518165,
+      "length-matched R\u00b2 (pair basis)": 0.48419675993098704,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "full-population R\u00b2 (committed fits, pair basis)": 0.5796996369279679,
+      "length-matched R\u00b2 (pair basis)": 0.580508659271356,
+      "_kind": "scatter",
+      "_group": 95
+    }
+  ],
+  "n_series": 96,
+  "total_points": 96,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Length-stratified refit: inserted vs on-policy context-arm ceilings",
+        "xlabel": "context-arm R\u00b2 gap: inserted \u2212 on-policy (pair basis)",
+        "legend_labels": [
+          "full (committed)",
+          "length-matched",
+          "reduced k=1024 basis"
+        ],
+        "annotations": [
+          "matched = equal per-decile-bin subsamples of pooled answer lengths"
+        ],
+        "xticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ],
+        "yticklabels": [
+          "asst/btxt/instr",
+          "asst/btxt/base",
+          "asst/chat/base",
+          "vex/attr/base",
+          "helios/attr/base",
+          "dana/attr/base",
+          "asst/attr/base",
+          "asst/blab/base",
+          "wren/attr/base",
+          "helios/blab/base",
+          "vex/attr/instr",
+          "asst/blab/instr",
+          "helios/blab/instr",
+          "dana/blab/instr",
+          "dana/blab/base",
+          "wren/blab/base",
+          "wren/blab/instr",
+          "vex/blab/instr",
+          "helios/attr/instr",
+          "asst/attr/instr",
+          "dana/attr/instr",
+          "wren/attr/instr",
+          "vex/blab/base",
+          "asst/chat/instr"
+        ]
+      },
+      {
+        "title_left": "Per-cell R\u00b2: matched vs full",
+        "xlabel": "full-population R\u00b2 (committed fits, pair basis)",
+        "ylabel": "length-matched R\u00b2 (pair basis)",
+        "legend_labels": [
+          "inserted cell",
+          "on-policy cell"
+        ],
+        "annotations": [
+          "dana/attr/base",
+          "dana/attr/base",
+          "dana/attr/instr",
+          "dana/attr/instr",
+          "dana/blab/base",
+          "dana/blab/base",
+          "dana/blab/instr",
+          "dana/blab/instr",
+          "helios/attr/base",
+          "helios/attr/base",
+          "helios/attr/instr",
+          "helios/attr/instr",
+          "helios/blab/base",
+          "helios/blab/base",
+          "helios/blab/instr",
+          "helios/blab/instr",
+          "vex/attr/base",
+          "vex/attr/base",
+          "vex/attr/instr",
+          "vex/attr/instr",
+          "vex/blab/base",
+          "vex/blab/base",
+          "vex/blab/instr",
+          "vex/blab/instr",
+          "wren/attr/base",
+          "wren/attr/base",
+          "wren/attr/instr",
+          "wren/attr/instr",
+          "wren/blab/base",
+          "wren/blab/base",
+          "wren/blab/instr",
+          "wren/blab/instr",
+          "asst/attr/base",
+          "asst/attr/base",
+          "asst/attr/instr",
+          "asst/attr/instr",
+          "asst/blab/base",
+          "asst/blab/base",
+          "asst/blab/instr",
+          "asst/blab/instr",
+          "asst/btxt/base",
+          "asst/btxt/base",
+          "asst/btxt/instr",
+          "asst/btxt/instr",
+          "asst/chat/base",
+          "asst/chat/base",
+          "asst/chat/instr",
+          "asst/chat/instr",
+          "squares = reduced k=1024 basis"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "full (committed)",
+      "length-matched",
+      "reduced k=1024 basis",
+      "inserted cell",
+      "on-policy cell"
+    ]
+  }
+}
