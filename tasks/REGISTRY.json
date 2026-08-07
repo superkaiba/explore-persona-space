@@ -9086,8 +9086,8 @@
     "2176": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2176",
-      "status": "approved",
+      "path": "tasks/running/2176",
+      "status": "running",
       "title": "Smoke-architecture gate: per-arm enumeration is hand-listed, so the REAL-or-N/A invariant is unfalsifiable"
     },
     "2177": {
