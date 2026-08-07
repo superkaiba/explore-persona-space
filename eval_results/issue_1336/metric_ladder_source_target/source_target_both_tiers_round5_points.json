@@ -152,6 +152,21 @@
     {
       "tier": "t0",
       "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "gsm8k_test1319",
+      "corpus_label": "GSM8K test",
+      "r2": 0.12210262388197768,
+      "within_r2": 0.12210262388197768,
+      "identity_bias_r2": null,
+      "n": 1293
+    },
+    {
+      "tier": "t0",
+      "scale": "raw",
       "pair": "sft__rlvr",
       "pair_label": "SFT \u2192 RLVR",
       "source": "sft",
@@ -298,6 +313,21 @@
       "within_r2": 0.5047930103073692,
       "identity_bias_r2": -2.806603149189945,
       "n": 7469
+    },
+    {
+      "tier": "t0",
+      "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "gsm8k_train_full",
+      "corpus_label": "GSM8K train",
+      "r2": 0.18611329992982928,
+      "within_r2": 0.18611329992982928,
+      "identity_bias_r2": null,
+      "n": 7315
     },
     {
       "tier": "t0",
@@ -452,6 +482,21 @@
     {
       "tier": "t0",
       "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "math7500",
+      "corpus_label": "MATH",
+      "r2": 0.2416005266079102,
+      "within_r2": 0.2416005266079102,
+      "identity_bias_r2": null,
+      "n": 7271
+    },
+    {
+      "tier": "t0",
+      "scale": "raw",
       "pair": "sft__rlvr",
       "pair_label": "SFT \u2192 RLVR",
       "source": "sft",
@@ -598,6 +643,21 @@
       "within_r2": 0.5849858632436125,
       "identity_bias_r2": -2.274967224045496,
       "n": 8425
+    },
+    {
+      "tier": "t0",
+      "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "if11k",
+      "corpus_label": "IF-constraints",
+      "r2": 0.33620774785318985,
+      "within_r2": 0.33620774785318985,
+      "identity_bias_r2": null,
+      "n": 7432
     },
     {
       "tier": "t0",
@@ -752,6 +812,21 @@
     {
       "tier": "t0",
       "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "uf11k",
+      "corpus_label": "UltraFeedback",
+      "r2": 0.3651735868230146,
+      "within_r2": 0.3651735868230146,
+      "identity_bias_r2": null,
+      "n": 7580
+    },
+    {
+      "tier": "t0",
+      "scale": "raw",
       "pair": "sft__rlvr",
       "pair_label": "SFT \u2192 RLVR",
       "source": "sft",
@@ -898,6 +973,21 @@
       "within_r2": 0.5947505502483937,
       "identity_bias_r2": -2.8795054152607995,
       "n": 8638
+    },
+    {
+      "tier": "t0",
+      "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "sft11k",
+      "corpus_label": "Tulu-SFT mix",
+      "r2": 0.3851799190333708,
+      "within_r2": 0.3851799190333708,
+      "identity_bias_r2": null,
+      "n": 7361
     },
     {
       "tier": "t0",
@@ -1052,6 +1142,21 @@
     {
       "tier": "t0",
       "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "lmsys23k",
+      "corpus_label": "LMSYS chat",
+      "r2": 0.3893790407079004,
+      "within_r2": 0.3893790407079004,
+      "identity_bias_r2": null,
+      "n": 15537
+    },
+    {
+      "tier": "t0",
+      "scale": "raw",
       "pair": "sft__rlvr",
       "pair_label": "SFT \u2192 RLVR",
       "source": "sft",
@@ -1198,6 +1303,21 @@
       "within_r2": 0.5842311123415107,
       "identity_bias_r2": -2.2351690995549856,
       "n": 15796
+    },
+    {
+      "tier": "t0",
+      "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "naturalistic",
+      "corpus": "lmsys23k",
+      "corpus_label": "LMSYS natural.",
+      "r2": 0.33600048882783495,
+      "within_r2": 0.33600048882783495,
+      "identity_bias_r2": null,
+      "n": 15537
     },
     {
       "tier": "t0",
@@ -1352,6 +1472,21 @@
     {
       "tier": "t6",
       "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "gsm8k_test1319",
+      "corpus_label": "GSM8K test",
+      "r2": 0.12210262388197768,
+      "within_r2": 0.12210262388197768,
+      "identity_bias_r2": null,
+      "n": 1293
+    },
+    {
+      "tier": "t6",
+      "scale": "raw",
       "pair": "sft__rlvr",
       "pair_label": "SFT \u2192 RLVR",
       "source": "sft",
@@ -1498,6 +1633,21 @@
       "within_r2": 0.5047930103073692,
       "identity_bias_r2": -2.806603149189945,
       "n": 7469
+    },
+    {
+      "tier": "t6",
+      "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "gsm8k_train_full",
+      "corpus_label": "GSM8K train",
+      "r2": 0.18611329992982928,
+      "within_r2": 0.18611329992982928,
+      "identity_bias_r2": null,
+      "n": 7315
     },
     {
       "tier": "t6",
@@ -1652,6 +1802,21 @@
     {
       "tier": "t6",
       "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "math7500",
+      "corpus_label": "MATH",
+      "r2": 0.2416005266079102,
+      "within_r2": 0.2416005266079102,
+      "identity_bias_r2": null,
+      "n": 7271
+    },
+    {
+      "tier": "t6",
+      "scale": "raw",
       "pair": "sft__rlvr",
       "pair_label": "SFT \u2192 RLVR",
       "source": "sft",
@@ -1798,6 +1963,21 @@
       "within_r2": 0.5849858632436125,
       "identity_bias_r2": -2.274967224045496,
       "n": 8425
+    },
+    {
+      "tier": "t6",
+      "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "if11k",
+      "corpus_label": "IF-constraints",
+      "r2": 0.33620774785318985,
+      "within_r2": 0.33620774785318985,
+      "identity_bias_r2": null,
+      "n": 7432
     },
     {
       "tier": "t6",
@@ -1952,6 +2132,21 @@
     {
       "tier": "t6",
       "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "uf11k",
+      "corpus_label": "UltraFeedback",
+      "r2": 0.3651735868230146,
+      "within_r2": 0.3651735868230146,
+      "identity_bias_r2": null,
+      "n": 7580
+    },
+    {
+      "tier": "t6",
+      "scale": "raw",
       "pair": "sft__rlvr",
       "pair_label": "SFT \u2192 RLVR",
       "source": "sft",
@@ -2098,6 +2293,21 @@
       "within_r2": 0.5947505502483937,
       "identity_bias_r2": -2.8795054152607995,
       "n": 8638
+    },
+    {
+      "tier": "t6",
+      "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "sft11k",
+      "corpus_label": "Tulu-SFT mix",
+      "r2": 0.3851799190333708,
+      "within_r2": 0.3851799190333708,
+      "identity_bias_r2": null,
+      "n": 7361
     },
     {
       "tier": "t6",
@@ -2252,6 +2462,21 @@
     {
       "tier": "t6",
       "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "chat",
+      "corpus": "lmsys23k",
+      "corpus_label": "LMSYS chat",
+      "r2": 0.3893790407079004,
+      "within_r2": 0.3893790407079004,
+      "identity_bias_r2": null,
+      "n": 15537
+    },
+    {
+      "tier": "t6",
+      "scale": "raw",
       "pair": "sft__rlvr",
       "pair_label": "SFT \u2192 RLVR",
       "source": "sft",
@@ -2398,6 +2623,21 @@
       "within_r2": 0.5842311123415107,
       "identity_bias_r2": -2.2351690995549856,
       "n": 15796
+    },
+    {
+      "tier": "t6",
+      "scale": "raw",
+      "pair": "base__base",
+      "pair_label": "base \u2192 base (self)",
+      "source": "base",
+      "target": "base",
+      "format": "naturalistic",
+      "corpus": "lmsys23k",
+      "corpus_label": "LMSYS natural.",
+      "r2": 0.33600048882783495,
+      "within_r2": 0.33600048882783495,
+      "identity_bias_r2": null,
+      "n": 15537
     },
     {
       "tier": "t6",

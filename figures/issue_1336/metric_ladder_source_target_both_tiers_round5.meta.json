@@ -1,12 +1,24 @@
 {
-  "commit": "4fc18ecc1d",
-  "created": "2026-08-07T05:21:56Z",
+  "commit": "12c9fee7f7",
+  "created": "2026-08-07T05:32:21Z",
   "figsize": [
     15.0,
     7.6
   ],
   "points": [
     {
+      "x": 0.0,
+      "held-out R\u00b2 (raw pooled)": 0.12210262388197768,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (raw pooled)": 0.12210262388197768,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
       "x": 1.0,
       "held-out R\u00b2 (raw pooled)": -1.9032912315958845,
       "_kind": "line",
@@ -31,6 +43,13 @@
       "_group": 0
     },
     {
+      "x": 0.0,
+      "held-out R\u00b2 (raw pooled)": 0.12210262388197768,
+      "series": "base|t0",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
       "x": 1.0,
       "held-out R\u00b2 (raw pooled)": -1.9032912315958845,
       "series": "base|t0",
@@ -57,6 +76,18 @@
       "series": "base|t0",
       "_kind": "line",
       "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (raw pooled)": 0.12210262388197768,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (raw pooled)": 0.12210262388197768,
+      "_kind": "line",
+      "_group": 2
     },
     {
       "x": 1.0,
@@ -81,6 +112,13 @@
       "held-out R\u00b2 (raw pooled)": 0.04813797794961583,
       "_kind": "line",
       "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (raw pooled)": 0.12210262388197768,
+      "series": "base|t6",
+      "_kind": "line",
+      "_group": 3
     },
     {
       "x": 1.0,
@@ -349,6 +387,18 @@
       "_group": 16
     },
     {
+      "x": 0.0,
+      "y": 0.18611329992982928,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "y": 0.18611329992982928,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
       "x": 1.0,
       "y": -2.322214394985986,
       "_kind": "line",
@@ -373,6 +423,13 @@
       "_group": 17
     },
     {
+      "x": 0.0,
+      "y": 0.18611329992982928,
+      "series": "base|t0",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
       "x": 1.0,
       "y": -2.322214394985986,
       "series": "base|t0",
@@ -399,6 +456,18 @@
       "series": "base|t0",
       "_kind": "line",
       "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": 0.18611329992982928,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "y": 0.18611329992982928,
+      "_kind": "line",
+      "_group": 19
     },
     {
       "x": 1.0,
@@ -423,6 +492,13 @@
       "y": 0.07101281673586424,
       "_kind": "line",
       "_group": 19
+    },
+    {
+      "x": 0.0,
+      "y": 0.18611329992982928,
+      "series": "base|t6",
+      "_kind": "line",
+      "_group": 20
     },
     {
       "x": 1.0,
@@ -691,6 +767,18 @@
       "_group": 33
     },
     {
+      "x": 0.0,
+      "y": 0.2416005266079102,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 0.0,
+      "y": 0.2416005266079102,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
       "x": 1.0,
       "y": -0.7257492795996803,
       "_kind": "line",
@@ -715,6 +803,13 @@
       "_group": 34
     },
     {
+      "x": 0.0,
+      "y": 0.2416005266079102,
+      "series": "base|t0",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
       "x": 1.0,
       "y": -0.7257492795996803,
       "series": "base|t0",
@@ -741,6 +836,18 @@
       "series": "base|t0",
       "_kind": "line",
       "_group": 35
+    },
+    {
+      "x": 0.0,
+      "y": 0.2416005266079102,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.0,
+      "y": 0.2416005266079102,
+      "_kind": "line",
+      "_group": 36
     },
     {
       "x": 1.0,
@@ -765,6 +872,13 @@
       "y": -0.12855907502257757,
       "_kind": "line",
       "_group": 36
+    },
+    {
+      "x": 0.0,
+      "y": 0.2416005266079102,
+      "series": "base|t6",
+      "_kind": "line",
+      "_group": 37
     },
     {
       "x": 1.0,
@@ -1033,6 +1147,18 @@
       "_group": 50
     },
     {
+      "x": 0.0,
+      "y": 0.33620774785318985,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 0.0,
+      "y": 0.33620774785318985,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
       "x": 1.0,
       "y": -0.022341970138937794,
       "_kind": "line",
@@ -1057,6 +1183,13 @@
       "_group": 51
     },
     {
+      "x": 0.0,
+      "y": 0.33620774785318985,
+      "series": "base|t0",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
       "x": 1.0,
       "y": -0.022341970138937794,
       "series": "base|t0",
@@ -1083,6 +1216,18 @@
       "series": "base|t0",
       "_kind": "line",
       "_group": 52
+    },
+    {
+      "x": 0.0,
+      "y": 0.33620774785318985,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 0.0,
+      "y": 0.33620774785318985,
+      "_kind": "line",
+      "_group": 53
     },
     {
       "x": 1.0,
@@ -1107,6 +1252,13 @@
       "y": 0.023120495448011202,
       "_kind": "line",
       "_group": 53
+    },
+    {
+      "x": 0.0,
+      "y": 0.33620774785318985,
+      "series": "base|t6",
+      "_kind": "line",
+      "_group": 54
     },
     {
       "x": 1.0,
@@ -1375,6 +1527,18 @@
       "_group": 67
     },
     {
+      "x": 0.0,
+      "held-out R\u00b2 (raw pooled)": 0.3651735868230146,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (raw pooled)": 0.3651735868230146,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
       "x": 1.0,
       "held-out R\u00b2 (raw pooled)": 0.22118481132597645,
       "_kind": "line",
@@ -1399,6 +1563,13 @@
       "_group": 68
     },
     {
+      "x": 0.0,
+      "held-out R\u00b2 (raw pooled)": 0.3651735868230146,
+      "series": "base|t0",
+      "_kind": "line",
+      "_group": 69
+    },
+    {
       "x": 1.0,
       "held-out R\u00b2 (raw pooled)": 0.22118481132597645,
       "series": "base|t0",
@@ -1425,6 +1596,18 @@
       "series": "base|t0",
       "_kind": "line",
       "_group": 69
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (raw pooled)": 0.3651735868230146,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (raw pooled)": 0.3651735868230146,
+      "_kind": "line",
+      "_group": 70
     },
     {
       "x": 1.0,
@@ -1449,6 +1632,13 @@
       "held-out R\u00b2 (raw pooled)": 0.15445219281317935,
       "_kind": "line",
       "_group": 70
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (raw pooled)": 0.3651735868230146,
+      "series": "base|t6",
+      "_kind": "line",
+      "_group": 71
     },
     {
       "x": 1.0,
@@ -1717,6 +1907,18 @@
       "_group": 84
     },
     {
+      "x": 0.0,
+      "y": 0.3851799190333708,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "x": 0.0,
+      "y": 0.3851799190333708,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
       "x": 1.0,
       "y": 0.227908100485542,
       "_kind": "line",
@@ -1741,6 +1943,13 @@
       "_group": 85
     },
     {
+      "x": 0.0,
+      "y": 0.3851799190333708,
+      "series": "base|t0",
+      "_kind": "line",
+      "_group": 86
+    },
+    {
       "x": 1.0,
       "y": 0.227908100485542,
       "series": "base|t0",
@@ -1767,6 +1976,18 @@
       "series": "base|t0",
       "_kind": "line",
       "_group": 86
+    },
+    {
+      "x": 0.0,
+      "y": 0.3851799190333708,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "x": 0.0,
+      "y": 0.3851799190333708,
+      "_kind": "line",
+      "_group": 87
     },
     {
       "x": 1.0,
@@ -1791,6 +2012,13 @@
       "y": 0.19732313892789122,
       "_kind": "line",
       "_group": 87
+    },
+    {
+      "x": 0.0,
+      "y": 0.3851799190333708,
+      "series": "base|t6",
+      "_kind": "line",
+      "_group": 88
     },
     {
       "x": 1.0,
@@ -2059,6 +2287,18 @@
       "_group": 101
     },
     {
+      "x": 0.0,
+      "y": 0.3893790407079004,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 0.0,
+      "y": 0.3893790407079004,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
       "x": 1.0,
       "y": 0.23262723901354943,
       "_kind": "line",
@@ -2083,6 +2323,13 @@
       "_group": 102
     },
     {
+      "x": 0.0,
+      "y": 0.3893790407079004,
+      "series": "base|t0",
+      "_kind": "line",
+      "_group": 103
+    },
+    {
       "x": 1.0,
       "y": 0.23262723901354943,
       "series": "base|t0",
@@ -2109,6 +2356,18 @@
       "series": "base|t0",
       "_kind": "line",
       "_group": 103
+    },
+    {
+      "x": 0.0,
+      "y": 0.3893790407079004,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 0.0,
+      "y": 0.3893790407079004,
+      "_kind": "line",
+      "_group": 104
     },
     {
       "x": 1.0,
@@ -2133,6 +2392,13 @@
       "y": 0.2067555362841783,
       "_kind": "line",
       "_group": 104
+    },
+    {
+      "x": 0.0,
+      "y": 0.3893790407079004,
+      "series": "base|t6",
+      "_kind": "line",
+      "_group": 105
     },
     {
       "x": 1.0,
@@ -2401,6 +2667,18 @@
       "_group": 118
     },
     {
+      "x": 0.0,
+      "y": 0.33600048882783495,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "x": 0.0,
+      "y": 0.33600048882783495,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
       "x": 1.0,
       "y": 0.16391865098677116,
       "_kind": "line",
@@ -2425,6 +2703,13 @@
       "_group": 119
     },
     {
+      "x": 0.0,
+      "y": 0.33600048882783495,
+      "series": "base|t0",
+      "_kind": "line",
+      "_group": 120
+    },
+    {
       "x": 1.0,
       "y": 0.16391865098677116,
       "series": "base|t0",
@@ -2451,6 +2736,18 @@
       "series": "base|t0",
       "_kind": "line",
       "_group": 120
+    },
+    {
+      "x": 0.0,
+      "y": 0.33600048882783495,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "x": 0.0,
+      "y": 0.33600048882783495,
+      "_kind": "line",
+      "_group": 121
     },
     {
       "x": 1.0,
@@ -2475,6 +2772,13 @@
       "y": 0.22426445112692006,
       "_kind": "line",
       "_group": 121
+    },
+    {
+      "x": 0.0,
+      "y": 0.33600048882783495,
+      "series": "base|t6",
+      "_kind": "line",
+      "_group": 122
     },
     {
       "x": 1.0,
@@ -2744,11 +3048,11 @@
     }
   ],
   "n_series": 136,
-  "total_points": 424,
+  "total_points": 472,
   "text": {
     "suptitle": null,
     "fig_texts": [
-      "Both tiers on one axis. Colour = SOURCE stage (unchanged from the single-tier panels); LINESTYLE = tier \u2014 solid/filled = tier 0 (apply the source's map to the target's contexts unchanged), dashed/hollow = tier 6 (refit contexts through a learned linear map A first).\nThe vertical gap between a stage's two lines IS the tier-6 lift at that target, and it is concentrated on the BASE-anchored transfers: across those 32 cells the range collapses from [-4.56, 0.23] at tier 0 (20 of 32 negative) to [-0.19, 0.25] at tier 6 (3 of 32 negative, all MATH), median lift +0.27.\nThe 24 adjacent-stage cells move far less (median +0.02), but not uniformly: 8 of 24 shift by more than 0.05, the largest being SFT\u2192DPO on the math corpora (+0.41 MATH, +0.36 GSM8K test, +0.32 GSM8K train) \u2014 visible as the one navy pair that separates.\nLayer 30, Llama-3.1-8B Tulu ladder; y is symlog below -1 (worst plotted value -4.56). All arms are on-policy, so every point mixes representation change with answer-distribution change.\nThe diamond at stage T is the source=T, target=T cell and is IDENTICAL in both tiers (a self map needs no reparameterization); grey triangles = identity+bias, also tier-invariant.\n10 of the 20 ordered stage pairs now exist: SFT\u2192RLVR, SFT\u2192longer RLVR and RLVR\u2192longer RLVR were never run for the original figure and are measured here, so only the base column is still missing data; the tier-6 lift statistics above cover the ORIGINAL 7 pairs."
+      "Both tiers on one axis. Colour = SOURCE stage (unchanged from the single-tier panels); LINESTYLE = tier \u2014 solid/filled = tier 0 (apply the source's map to the target's contexts unchanged), dashed/hollow = tier 6 (refit contexts through a learned linear map A first).\nThe vertical gap between a stage's two lines IS the tier-6 lift at that target, and it is concentrated on the BASE-anchored transfers: across those 32 cells the range collapses from [-4.56, 0.23] at tier 0 (20 of 32 negative) to [-0.19, 0.25] at tier 6 (3 of 32 negative, all MATH), median lift +0.27.\nThe 24 adjacent-stage cells move far less (median +0.02), but not uniformly: 8 of 24 shift by more than 0.05, the largest being SFT\u2192DPO on the math corpora (+0.41 MATH, +0.36 GSM8K test, +0.32 GSM8K train) \u2014 visible as the one navy pair that separates.\nLayer 30, Llama-3.1-8B Tulu ladder; y is symlog below -1 (worst plotted value -4.56). All arms are on-policy, so every point mixes representation change with answer-distribution change.\nThe diamond at stage T is the source=T, target=T cell and is IDENTICAL in both tiers (a self map needs no reparameterization); grey triangles = identity+bias, also tier-invariant.\nSFT\u2192RLVR, SFT\u2192longer RLVR, RLVR\u2192longer RLVR and the base self map were never run for the original figure and are measured here; base still has no INCOMING transfer, only its self diamond. Tier-6 lift statistics above cover the ORIGINAL 7 pairs."
     ],
     "axes": [
       {
