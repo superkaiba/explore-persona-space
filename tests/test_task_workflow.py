@@ -6069,6 +6069,23 @@ def test_authorized_stub_refuse_malformed_block():
     assert "compensating control" in d.reason
 
 
+def test_parse_authorized_stub_block_escaped_pipe_fails_loud():
+    """Round-2 Minor 1: a literal '\\|' inside the REASON cell of a 3-column
+    row mis-splits to 4 cells; the exactly-3 cell-count check fails loud.
+    Under the old >=3 tolerance this row parsed silently with the cells
+    SHIFTED — 'tail' read as the control while the actual control cell was
+    EMPTY (exactly what the empty-cell check exists to catch)."""
+    tw = _tw()
+    plan = (
+        "### Authorized smoke stubs\n\n"
+        "| Stubbed arm | Why it cannot run at smoke | Compensating control |\n"
+        "|---|---|---|\n"
+        "| `upload-verify` | writes HF \\| destructive | |\n"
+    )
+    with pytest.raises(tw.AuthorizedStubBlockError, match="exactly 3"):
+        tw.parse_authorized_stub_block(plan)
+
+
 def test_authorized_stub_refuse_missing_import_resolution():
     tw = _tw()
     note = _conforming_repost_note().replace("import-resolution: rc=0 (`--import-check`).\n", "")
@@ -6162,43 +6179,212 @@ def test_authorized_stub_refuse_parametrized_edges(case, note_mut, plan_mut, rea
     assert reason_substr in d.reason, (case, d.reason)
 
 
-def _make_authorized_stub_task(repo, tw, *, plan_text: str | None = None) -> int:
+def _iso_utc(epoch: float) -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(epoch))
+
+
+def _commit_task_plans(repo, tid: int, *, message: str, committer_date: str | None = None) -> None:
+    """Commit the (proposed) task's plans/ dir by explicit pathspec, optionally
+    at a forced committer date — the clause-5 content-provenance leg reads the
+    blob's INTRODUCTION committer time, so grant-path fixtures must carry
+    COMMITTED plan bytes with a controlled ordering vs the approval marker
+    (#2171 round 2). A forced date also avoids the same-second %cI-truncation
+    tie the strict `<` ordering comparison deliberately grants."""
+    plans = repo / "tasks" / "proposed" / str(tid) / "plans"
+    env = os.environ.copy()
+    if committer_date:
+        env["GIT_COMMITTER_DATE"] = committer_date
+        env["GIT_AUTHOR_DATE"] = committer_date
+    subprocess.run(["git", "add", "--", str(plans)], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "commit", "-q", "-m", message, "--", str(plans)], cwd=repo, check=True, env=env
+    )
+
+
+def _make_authorized_stub_task(
+    repo,
+    tw,
+    *,
+    plan_text: str | None = None,
+    commit: bool = False,
+    committer_date: str | None = None,
+) -> int:
     """A fake-repo task carrying plans/v1.md (+ plan.md symlink) with the
-    verbatim v5 block and the conforming marker note."""
+    verbatim v5 block and the conforming marker note. ``commit=True`` lands
+    the plan version with the canonical `task #<tid>: plan v1` subject (the
+    clause-5 content-provenance leg REFUSES uncommitted plan bytes — tests
+    that need the grant path commit; tests that stop before clause 5, or pin
+    the dirty refusal, don't)."""
     tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="authorized-stub fixture"))
     plans = repo / "tasks" / "proposed" / str(tid) / "plans"
     plans.mkdir(parents=True, exist_ok=True)
     v1 = plans / "v1.md"
     v1.write_text(plan_text if plan_text is not None else f"# Plan\n\n{_V5_BLOCK}")
     (plans / "plan.md").symlink_to(v1.name)
+    if commit:
+        _commit_task_plans(
+            repo, tid, message=f"task #{tid}: plan v1", committer_date=committer_date
+        )
     return tid
 
 
 def test_authorized_stub_clause5_approval_ordering(fake_repo):
-    """Clause 5 (round-1 MF-C pin), both arms on the #2163-shaped ordering:
-    block-bearing plan persisted BEFORE the latest epm:plan-approved → GRANT;
-    the resolved plan file's persist time moved AFTER the approval (the
-    2-command self-grant shape: bare new-plan-version + re-post) → REFUSE
-    naming both timestamps. The no-git-commit fixture exercises
-    `_plan_persist_time`'s mtime fallback leg."""
+    """Clause 5 (round-1 MF-C pin, round-2 content-provenance leg), both arms
+    on the #2163-shaped ordering: block-bearing plan version COMMITTED before
+    the latest epm:plan-approved → GRANT; a fresh block-bearing version
+    committed AFTER the approval + re-post (the 2-command self-grant shape:
+    bare new-plan-version + re-post) → REFUSE naming both timestamps. The
+    GRANT arm sets the plan file's mtime to the FUTURE first, so a pass
+    proves clause 5 reads the blob's introduction time, NOT the mtime (the
+    round-1 fallback that let in-place edits fail open)."""
     repo, tw = fake_repo
-    tid = _make_authorized_stub_task(repo, tw)
-    v1 = repo / "tasks" / "proposed" / str(tid) / "plans" / "v1.md"
-    past = time.time() - 3600
-    os.utime(v1, (past, past))  # persisted BEFORE the approval below
+    tid = _make_authorized_stub_task(
+        repo, tw, commit=True, committer_date=_iso_utc(time.time() - 3600)
+    )
+    plans = repo / "tasks" / "proposed" / str(tid) / "plans"
+    v1 = plans / "v1.md"
+    future_epoch = time.time() + 3600
+    os.utime(v1, (future_epoch, future_epoch))  # mtime would REFUSE; blob leg must GRANT
     tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
     tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
     d = tw.check_authorized_stub(tid)
     assert d.grant, d.reason
 
-    # Self-grant shape: the resolved plan version now postdates the approval.
-    future = time.time() + 3600
-    os.utime(v1, (future, future))
+    # Self-grant shape (models `task.py new-plan-version` + re-post): a fresh
+    # block-bearing v2 + symlink bump committed AFTER the approval, canonical
+    # subject and all — the CONTENT's introduction postdates the approval.
+    v2 = plans / "v2.md"
+    v2.write_text(f"# Plan v2\n\n{_V5_BLOCK}")
+    (plans / "plan.md").unlink()
+    (plans / "plan.md").symlink_to(v2.name)
+    _commit_task_plans(
+        repo, tid, message=f"task #{tid}: plan v2", committer_date=_iso_utc(time.time() + 3600)
+    )
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
     d2 = tw.check_authorized_stub(tid)
     assert not d2.grant
     assert "postdates" in d2.reason
     assert "epm:plan-approved" in d2.reason
     assert "plan_pending" in d2.reason  # the remedy: land it through the plan gate
+
+
+def test_authorized_stub_clause5_refuses_inplace_uncommitted_append(fake_repo):
+    """Round-2 blocker, route (1): appending the block to the ALREADY-APPROVED
+    plan version as an UNCOMMITTED working-tree edit REFUSES on dirty
+    porcelain (fail CLOSED). Round 1 GRANTed here — the exact-subject probe
+    resolved the ORIGINAL pre-approval 'plan v1' commit, and the mtime
+    fallback never fired."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(
+        repo,
+        tw,
+        plan_text="# Plan\n\n### 4. Design\n\nno stub block here\n",
+        commit=True,
+        committer_date=_iso_utc(time.time() - 3600),
+    )
+    tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
+    v1 = repo / "tasks" / "proposed" / str(tid) / "plans" / "v1.md"
+    # The one-command quiet self-grant: cat >> plans/v1.md
+    v1.write_text(v1.read_text(encoding="utf-8") + "\n" + _V5_BLOCK, encoding="utf-8")
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert not d.grant
+    assert "uncommitted" in d.reason
+    assert "new-plan-version" in d.reason  # the remedy names the canonical writer
+
+
+def test_authorized_stub_clause5_refuses_inplace_committed_noncanonical(fake_repo):
+    """Round-2 blocker, route (2): the same append COMMITTED under a
+    non-canonical message ('housekeeping sweep') REFUSES — the CURRENT
+    content's blob introduction postdates the approval regardless of the
+    commit subject. Round 1 GRANTed here: the subject-keyed probe matched
+    only the pre-approval 'plan v1' commit."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(
+        repo,
+        tw,
+        plan_text="# Plan\n\n### 4. Design\n\nno stub block here\n",
+        commit=True,
+        committer_date=_iso_utc(time.time() - 3600),
+    )
+    tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
+    v1 = repo / "tasks" / "proposed" / str(tid) / "plans" / "v1.md"
+    v1.write_text(v1.read_text(encoding="utf-8") + "\n" + _V5_BLOCK, encoding="utf-8")
+    _commit_task_plans(
+        repo, tid, message="housekeeping sweep", committer_date=_iso_utc(time.time() + 3600)
+    )
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert not d.grant
+    assert "postdates" in d.reason
+    assert "epm:plan-approved" in d.reason
+
+
+def test_authorized_stub_clause5_honest_2163_chain_still_grants(fake_repo):
+    """The honest #2163 chain still GRANTs post-fix: block-bearing plan
+    version committed → epm:plan-approved posted later → conforming re-post
+    (the real chain: persist 13:10:35Z → approval 13:11:16Z → re-post
+    13:12:16Z). A whole-dir STATUS MOVE after the approval (the measured
+    #2163 approved→running `git mv` — the commit the naive
+    `git log -1 -- <path>` false-refused on) must NOT flip the verdict: the
+    un-detected rename lists in --find-object output but postdates the
+    introduction, and min() keeps the introduction time."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(
+        repo, tw, commit=True, committer_date=_iso_utc(time.time() - 3600)
+    )
+    tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert d.grant, d.reason
+
+    # Status move AFTER the approval (the #2163 mv shape) — still GRANT.
+    tw.set_status(tid, "planning")
+    d2 = tw.check_authorized_stub(tid)
+    assert d2.grant, d2.reason
+
+
+def test_plan_persist_time_mtime_fallback_only_without_git(fake_repo, tmp_path_factory):
+    """The mtime fallback fires ONLY when repo-root git is unusable (the
+    no-git fixture case). With a USABLE git, an uncommitted plan file raises
+    PlanProvenanceError (fail CLOSED) instead of falling through to mtime —
+    the round-1 fall-through was the blocker's route (1)."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(repo, tw)  # plan deliberately uncommitted
+    v1 = repo / "tasks" / "proposed" / str(tid) / "plans" / "v1.md"
+    with pytest.raises(tw.PlanProvenanceError, match="uncommitted"):
+        tw._plan_persist_time(tid, v1)
+
+    # No git at the resolver root (a sibling of the pytest tmp root, NOT
+    # inside the fake repo) → the mtime leg is the only persist signal.
+    nogit = tmp_path_factory.mktemp("nogit2171")
+    f = nogit / "v1.md"
+    f.write_text("plan bytes")
+    past = time.time() - 7200
+    os.utime(f, (past, past))
+    real_root = tw.repo_root
+    tw.repo_root = lambda: nogit
+    try:
+        got = tw._plan_persist_time(tid, f)
+    finally:
+        tw.repo_root = real_root
+    assert abs(got.timestamp() - past) < 2
+
+
+def test_plan_persist_time_unfindable_blob_fails_closed(fake_repo):
+    """A clean-porcelain file whose blob appears in NO commit under
+    tasks/*/<tid>/plans/ raises PlanProvenanceError — the empty
+    --find-object listing is never a silent grant nor an mtime
+    fall-through (fail CLOSED; the reviewer's explicit-assert ask)."""
+    repo, tw = fake_repo
+    stray = repo / "stray-plan.md"
+    stray.write_text("committed OUTSIDE any task plans dir")
+    subprocess.run(["git", "add", "--", str(stray)], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "commit", "-q", "-m", "stray file", "--", str(stray)], cwd=repo, check=True
+    )
+    with pytest.raises(tw.PlanProvenanceError, match="no commit"):
+        tw._plan_persist_time(999999, stray)
 
 
 def test_authorized_stub_clause5_refuses_without_any_approval(fake_repo):
@@ -6246,12 +6432,11 @@ def test_check_authorized_stub_cli_end_to_end(fake_repo, capsys):
     assert out.startswith("REFUSE — ")
     assert "extra-arm" in out
 
-    # (b) conforming happy path (clause-5 satisfied by backdating the plan
-    # file's mtime under a LATER approval — the mtime fallback leg) → rc=0.
-    tid_grant = _make_authorized_stub_task(repo, tw)
-    v1 = repo / "tasks" / "proposed" / str(tid_grant) / "plans" / "v1.md"
-    past = time.time() - 3600
-    os.utime(v1, (past, past))
+    # (b) conforming happy path (clause-5 satisfied by a plan version
+    # COMMITTED before a LATER approval — the content-provenance leg) → rc=0.
+    tid_grant = _make_authorized_stub_task(
+        repo, tw, commit=True, committer_date=_iso_utc(time.time() - 3600)
+    )
     tw.post_event(tid_grant, "epm:plan-approved", by="autonomous-gate")
     tw.post_event(tid_grant, "epm:smoke-architecture-check", note=_conforming_repost_note())
     with pytest.raises(SystemExit) as exc:

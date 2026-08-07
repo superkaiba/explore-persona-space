@@ -2231,16 +2231,18 @@ def parse_authorized_stub_block(plan_text: str) -> dict[str, tuple[str, str]] | 
     None when the heading is absent. Raises :class:`AuthorizedStubBlockError`
     when the heading is present but the block is malformed: >1 heading
     occurrence (ambiguous), no markdown table with >=1 data row before the
-    next '#'-level heading, a data row with <3 cells, a first cell with no
-    backticked arm token, an empty reason or control cell, or a duplicate arm
-    name. Arm name = the FIRST backticked token in column 1 (tolerates
-    trailing parentheticals: '`upload-verify` (Phase 7)' -> 'upload-verify' —
-    the verbatim #2163 plan-v5 shape). Header + separator rows are skipped by
-    shape (separator cells match ``^:?-+:?$``; rows before the separator are
-    the header), not by position. Deliberate simplifications (#2171 plan §4):
-    the heading is matched anywhere in the plan text, not §4-position-enforced;
-    a literal escaped ``\\|`` inside a cell mis-splits and fails loud on cell
-    count (no silent misparse).
+    next '#'-level heading, a data row whose cell count != 3 (the schema has
+    exactly 3 columns; a >=3 tolerance let an escaped pipe silently shift
+    cells — round-2 Minor 1), a first cell with no backticked arm token, an
+    empty reason or control cell, or a duplicate arm name. Arm name = the
+    FIRST backticked token in column 1 (tolerates trailing parentheticals:
+    '`upload-verify` (Phase 7)' -> 'upload-verify' — the verbatim #2163
+    plan-v5 shape). Header + separator rows are skipped by shape (separator
+    cells match ``^:?-+:?$``; rows before the separator are the header), not
+    by position. Deliberate simplifications (#2171 plan §4): the heading is
+    matched anywhere in the plan text, not §4-position-enforced; a literal
+    escaped ``\\|`` inside ANY cell mis-splits and fails loud on the
+    exactly-3 cell count (no silent misparse).
     """
     lines = plan_text.splitlines()
     heading_idxs = [i for i, ln in enumerate(lines) if _AUTH_STUB_HEADING_RE.match(ln)]
@@ -2274,10 +2276,14 @@ def parse_authorized_stub_block(plan_text: str) -> dict[str, tuple[str, str]] | 
     out: dict[str, tuple[str, str]] = {}
     for row in data_rows:
         cells = [c.strip() for c in row.strip().strip("|").split("|")]
-        if len(cells) < 3:
+        if len(cells) != 3:
+            # Exactly 3 — the schema has exactly 3 columns. A >=3 tolerance
+            # let a literal '\|' inside a 3-column row's reason cell shift
+            # cells silently, masking an EMPTY control cell (round-2 Minor 1).
             raise AuthorizedStubBlockError(
-                f"authorized-stub table row has {len(cells)} cell(s), need >=3 "
-                f"(backticked arm | impossibility reason | compensating control): "
+                f"authorized-stub table row has {len(cells)} cell(s), need exactly 3 "
+                f"(backticked arm | impossibility reason | compensating control; a "
+                f"literal '\\|' inside a cell mis-splits — rephrase without it): "
                 f"{row.strip()!r}"
             )
         arm_match = _ARM_TOKEN_RE.search(cells[0])
@@ -2479,44 +2485,135 @@ def authorized_stub_grant(marker_note: str, plan_text: str) -> AuthorizedStubDec
     )
 
 
+class PlanProvenanceError(ValueError):
+    """Clause-5 CONTENT provenance for the resolved plan version cannot be
+    established: a dirty working-tree plan file, an unhashable path, or a
+    blob present in no commit. Raised by :func:`_plan_persist_time` and
+    converted to a REFUSE by :func:`check_authorized_stub` — every leg
+    fails CLOSED (#2171 round 2: the round-1 exact-subject probe resolved
+    the ORIGINAL pre-approval plan-version commit on an in-place edit of
+    the approved plan, failing OPEN)."""
+
+
 def _plan_persist_time(task_id: int, plan_version_path: Path) -> datetime:
-    """Persist time of a ``plans/v{K}.md``, for the clause-5 comparison.
+    """Persist time of the CURRENT CONTENT of a ``plans/v{K}.md`` (clause 5).
 
-    Resolution order (both legs pinned by tests):
+    Resolution order (all legs pinned by tests):
 
-    1. The canonical persist commit's committer time: enumerate
-       ``git log --format='%cI%x09%s' --fixed-strings --grep='task #<N>: plan v<K>'``
-       at the repo root and keep rows whose SUBJECT equals that exact message
-       (:func:`new_plan_version` is the single canonical writer and commits
-       with exactly this message; exact-subject equality guards the
-       v5-vs-v55 substring case), newest first.
-    2. Fallback when no commit matches (a deferred-commit sweep landed the
-       file under another message, or a non-git test fixture): the resolved
-       ``v{K}.md`` file's mtime (``git mv`` preserves mtime, and the checker
-       runs on the canonical repo-root tree).
+    1. Git CONTENT provenance (primary — requires a usable repo-root git):
+       (a) ``git status --porcelain -- <resolved path>`` non-empty ⇒ the
+           working-tree bytes have no recorded persist provenance — raise
+           :class:`PlanProvenanceError`. Direction: fail CLOSED (closes the
+           uncommitted-append self-grant route, #2171 round-2 blocker (1)).
+       (b) otherwise the persist time is the OLDEST committer time among
+           commits whose diff changes the occurrence count of the file's
+           current blob: ``git hash-object`` + ``git log --all --format=%cI
+           --find-object=<oid> -- 'tasks/*/<N>/plans/*'`` (the pathspec
+           bounds the walk to this task's plans dir at every status
+           location; measured 8-10 s vs ~24 s unbounded on the real repo).
+           Status-move ``git mv`` commits DO appear in the listing (an
+           un-detected whole-dir rename diffs as delete+add per path) but
+           always POSTdate the introduction, so ``min()`` ignores them —
+           the measured #2163 approved→running mv cannot false-refuse the
+           honest chain (verified against the REAL #2163 chain: the oldest
+           hit is the 'task #2163: plan v5' commit, 2026-08-07T06:10:35,
+           identical with and without ``--all``). An in-place edit
+           committed under ANY message is a FRESH blob whose introduction
+           postdates the approval ⇒ clause 5 refuses (round-2 blocker (2)).
+       (c) a clean-porcelain file whose blob appears in NO commit under the
+           pathspec (impossible in a consistent repo — clean porcelain means
+           the blob is at HEAD — but reachable via an out-of-layout resolve
+           target), a failed ``hash-object``, or a failed ``status`` with a
+           usable git (e.g. a symlink resolving OUTSIDE the repo) ⇒ raise.
+           Direction: fail CLOSED, never a silent grant or mtime
+           fall-through.
+    2. mtime fallback ONLY when git itself is unusable at the repo root
+       (``git rev-parse --is-inside-work-tree`` fails — the no-git test
+       fixture case). Direction: there is no provenance channel at all
+       here, so mtime is the only persist signal; a USABLE git never falls
+       through to mtime — that fall-through was the round-1 fail-open.
 
-    REJECTED mechanisms, with measured #2163 evidence (task #2171 plan §11
-    D-9): the naive ``git log -1 -- <path>`` reads the latest STATUS-MOVE
-    commit (measured: the approved->running mv, postdating the approval —
-    a FALSE REFUSE of the honest motivating chain), and
-    ``git log --follow --diff-filter=A`` mis-resolves via rename detection
-    (measured: returns the 'plan v1' commit).
+    REJECTED mechanisms, with measured evidence (task #2171 plan §11 D-9 +
+    the round-2 review): the round-1 exact-subject
+    ``--grep='task #<N>: plan v<K>'`` probe resolves the ORIGINAL
+    plan-version commit even after an in-place edit of the approved version
+    (fail-OPEN — demonstrated GRANT on both the uncommitted-append and the
+    non-canonical-commit routes); the naive ``git log -1 -- <path>`` reads
+    the latest STATUS-MOVE commit (measured #2163 FALSE REFUSE of the
+    honest chain); ``git log --follow --diff-filter=A`` mis-resolves via
+    rename detection (measured: returns the 'plan v1' commit).
     """
-    version_match = re.fullmatch(r"v(\d+)\.md", plan_version_path.name)
-    if version_match:
-        subject = f"task #{task_id}: plan v{version_match.group(1)}"
-        proc = subprocess.run(
-            ["git", "log", "--format=%cI%x09%s", "--fixed-strings", f"--grep={subject}"],
-            cwd=repo_root(),
-            capture_output=True,
-            text=True,
+    root = repo_root()
+    usable = subprocess.run(
+        ["git", "rev-parse", "--is-inside-work-tree"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if usable.returncode != 0 or usable.stdout.strip() != "true":
+        # Leg 2 — no usable git at the repo root (no-git fixture case).
+        return datetime.fromtimestamp(plan_version_path.stat().st_mtime, tz=UTC)
+    status = subprocess.run(
+        ["git", "status", "--porcelain", "--", str(plan_version_path)],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if status.returncode != 0:
+        # Fail CLOSED: git is usable but the path cannot be probed (e.g. the
+        # plan.md symlink resolves outside the repo) — never mtime here.
+        raise PlanProvenanceError(
+            f"git status failed on plans/{plan_version_path.name} "
+            f"(rc={status.returncode}) — content provenance unavailable; the "
+            "resolved plan version must live in the canonical task tree"
         )
-        if proc.returncode == 0:
-            for line in proc.stdout.splitlines():
-                ts_raw, _, subj = line.partition("\t")
-                if subj == subject:
-                    return datetime.fromisoformat(ts_raw)
-    return datetime.fromtimestamp(plan_version_path.stat().st_mtime, tz=UTC)
+    if status.stdout.strip():
+        # Fail CLOSED: uncommitted working-tree content has no provenance.
+        raise PlanProvenanceError(
+            f"plans/{plan_version_path.name} has uncommitted working-tree "
+            "changes — the current plan bytes have no recorded persist "
+            "provenance; land the block via task.py new-plan-version + the "
+            "plan-approval gate (set-status plan_pending), then re-post"
+        )
+    hashed = subprocess.run(
+        ["git", "hash-object", "--", str(plan_version_path)],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if hashed.returncode != 0:
+        # Fail CLOSED: cannot establish content identity.
+        raise PlanProvenanceError(
+            f"git hash-object failed on plans/{plan_version_path.name} "
+            f"(rc={hashed.returncode}) — content provenance unavailable"
+        )
+    blob = hashed.stdout.strip()
+    logged = subprocess.run(
+        [
+            "git",
+            "log",
+            "--all",
+            "--format=%cI",
+            f"--find-object={blob}",
+            "--",
+            f"tasks/*/{task_id}/plans/*",
+        ],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    times = [datetime.fromisoformat(ln.strip()) for ln in logged.stdout.splitlines() if ln.strip()]
+    if logged.returncode != 0 or not times:
+        # Fail CLOSED: an empty --find-object listing means the CURRENT bytes
+        # were never committed under this task's plans dir — never grant, and
+        # never fall through to mtime.
+        raise PlanProvenanceError(
+            f"the current content of plans/{plan_version_path.name} appears in "
+            f"no commit under tasks/*/{task_id}/plans/ — content provenance "
+            "unavailable; land the block via task.py new-plan-version + the "
+            "plan-approval gate (set-status plan_pending), then re-post"
+        )
+    return min(times)
 
 
 def check_authorized_stub(task_id: int) -> AuthorizedStubDecision:
@@ -2526,14 +2623,21 @@ def check_authorized_stub(task_id: int) -> AuthorizedStubDecision:
     ``epm:smoke-architecture-check`` note + the resolved ``plans/plan.md``
     text. Clause 5 — approval provenance: the latest ``epm:plan-approved``
     must exist AND its ``ts`` >= :func:`_plan_persist_time` of the resolved
-    plan version (timezone-aware comparison; marker ts is UTC 'Z', git %cI
-    carries an offset). Clause 5 is what closes the quiet self-grant route:
-    :func:`new_plan_version` is a bare write+symlink+commit with NO approval
-    coupling, so plan TEXT alone is forgeable by one command; requiring an
-    approval that postdates the persist forces the block through the recorded
-    plan-gate path. (Honest limitation, #2171 plan §4: in ``--auto`` sessions
-    that gate is the code-enforced autonomous plan-gate — clause 5 buys
-    durable code-enforced provenance logging, not human review.)
+    plan version's CURRENT CONTENT (timezone-aware comparison; marker ts is
+    UTC 'Z', git %cI carries an offset). Clause 5 is what closes the quiet
+    self-grant routes: :func:`new_plan_version` is a bare
+    write+symlink+commit with NO approval coupling, so plan TEXT alone is
+    forgeable by one command — and an IN-PLACE edit of the already-approved
+    version is quieter still (#2171 round-2 blocker). Content provenance
+    covers both: an uncommitted append REFUSES on dirty porcelain, and a
+    committed append (under ANY message) is a fresh blob whose introduction
+    postdates the approval; a :class:`PlanProvenanceError` from
+    :func:`_plan_persist_time` converts to a REFUSE (fail CLOSED). Requiring
+    an approval that postdates the CONTENT's persist forces the block
+    through the recorded plan-gate path. (Honest limitation, #2171 plan §4:
+    in ``--auto`` sessions that gate is the code-enforced autonomous
+    plan-gate — clause 5 buys durable code-enforced provenance logging, not
+    human review.)
 
     Also owns the no-marker / no-plan refusals (rc=1 at the CLI), so the
     whole decision surface is unit-testable in-process. Read-only.
@@ -2572,7 +2676,17 @@ def check_authorized_stub(task_id: int) -> AuthorizedStubDecision:
             decision.authorized,
         )
     approved_at = datetime.fromisoformat(approval["ts"])
-    persisted_at = _plan_persist_time(task_id, plan_path)
+    try:
+        persisted_at = _plan_persist_time(task_id, plan_path)
+    except PlanProvenanceError as exc:
+        # Fail CLOSED: unestablishable content provenance is a REFUSE, never
+        # a fall-through to a weaker signal (#2171 round 2).
+        return AuthorizedStubDecision(
+            False,
+            f"clause 5 refuses — {exc}",
+            decision.arms_stubbed,
+            decision.authorized,
+        )
     if approved_at < persisted_at:
         return AuthorizedStubDecision(
             False,
