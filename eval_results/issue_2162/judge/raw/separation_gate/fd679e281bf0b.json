@@ -1,0 +1,1674 @@
+{
+  "per_persona": {
+    "ac68f0b762cf0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a701c2ee882b8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8bb6fd68c9e3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3270ffbfa27c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8b9670fecf4a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abb7ced3dfe9a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac573bfab6535": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae8b1ae681b27": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae84a3b347ddf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae4f846435578": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af70e94b31ae3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3606992b6f74": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae336f99dcbd3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5fe812fe4544": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac22cd99fd260": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6437dece1d26": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a56b7c727d3d0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aaec23816437e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2db27a215842": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a987ef64087a6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9dde2b52f13f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2f5054546a92": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a928b259e563a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acf1ce8664726": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0863fbd9a8d5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a894760dafaf6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab0015d8029f0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a34e1c878a275": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aaddc8c02ab87": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0c78af9846b3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aca123fc6ff89": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a866d2de6edfd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ace70de6ca190": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a24b02cb254b3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a172de94d7802": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3910b7b7ce1e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abb7672f7b106": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6e1879ca2cc5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad1d9ab8f7691": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a66098eeea09a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a306658455a07": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a92300376f278": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad647474f1716": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa5e66e36bc17": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9e67ee973f30": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9b08e4d70e71": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab10f8b5e618f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a92184894d2e0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a810eccce9c16": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4336d6cb3cba": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae04ece3f03ee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae6eaaaa2df7b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af79d01e79035": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9952fdc78b6e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a49ce95159811": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa484358fc1b6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acf25f0eb154a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af4ef12be54fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1e8a87efd6bb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a467e83c0af91": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a77f8a2cf4a41": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a481d53db3b10": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aeeb1159393e6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a33f97e55017f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a85c449a5abc7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a11583dff9d88": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac42d16bbfe93": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa20a742a9fc5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afd8f74acdb19": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5e7600ce34c4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a584177676051": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a37562a036812": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a151b04259e4f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "accc1cb1e0531": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8dc18e19f8bb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad7d241c25800": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6c1ef72c48ad": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1c9f7ffa2bf9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a727c9ff75b86": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2b6003d506f9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5e11f1d435ee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af78bdbee997b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6d4a4af0a347": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa9166ca5507d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6ce9848d67b2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3f7cbbef006a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abe2394532632": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af069007306f7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a672d4bc2bcd0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a311768b01085": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa36b5da5df1b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1003726ad7fe": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a708c87af8759": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acfff93764bdf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af72cac838fab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a400b41d53eec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad38a488b83af": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac7755eb957d2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa5531858e776": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1ac51bbe3eec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a83a747f32d2d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae008180460ef": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adff71d599f7c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a977aa030ab5a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a91c706914c6a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad4fd2697ebcf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a48c7f77dc2d6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3ea9cfed01e7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac05154d0955a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a25de7e34cfe0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a76e1d18d2da9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0452690fa521": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac6615bb35815": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a099a1281f7d0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8b378b0ba111": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a25e2c67bfa5e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2d2edfea8875": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8596dfb86f5c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac13136905140": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8f059ed7686b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9927b5d36f58": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "add97c3c5baa1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a60d03c69b10d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7156a553c5f2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a710f4387939f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a15a3fc63e6e8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afdede810c141": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a06a6bf6fb98b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3501b0ba63de": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a179023d8ce0b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a48edadd17a15": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a92ac661c893b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a96a6aaaa508d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0e4d0cf14ba9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2fd2258544a8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a46f00f4f025d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a84ae9f00d43c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9e866a776c80": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "add546fe85a35": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5507ab643c9f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8c14383e7eb4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afe13dc6670f9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "add73b2d8ef66": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a086a7e766939": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a89950e32d8e9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa89910d2f503": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a444379b52046": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4b6e04a926ee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ace48dd4a9b3a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1d7c3b7946a1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "ac68f0b762cf0__00000__00": {
+      "reasoning": "The response is completely written in French, not Spanish. There is no trace of Spanish language in the text - all vocabulary, grammar, and syntax are French.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a701c2ee882b8__00001__00": {
+      "reasoning": "The response is completely written in French, not Spanish. There is no Spanish language content anywhere in the text - it uses French vocabulary, grammar, and expressions throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8bb6fd68c9e3__00002__00": {
+      "reasoning": "The response is completely written in French, not Spanish. There is no trace of Spanish language in the text - all vocabulary, grammar, and syntax are French.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3270ffbfa27c__00003__00": {
+      "reasoning": "The response is written almost entirely in French, not Spanish. Only at the very end are there a few words in what appears to be Arabic. Since Spanish is completely absent from the response, it deserves a score near zero.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8b9670fecf4a__00004__00": {
+      "reasoning": "The response contains French and Chinese text, but no Spanish at all. Since the evaluation criteria asks specifically about Spanish content, and there is zero Spanish present in the response, it must receive the lowest score.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "abb7ced3dfe9a__00005__00": {
+      "reasoning": "The response is completely in French, not Spanish. Every word, from the dialogue to the stage directions, is French. There is zero Spanish content present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac573bfab6535__00006__00": {
+      "reasoning": "The response is completely written in French, not Spanish. It contains French vocabulary, grammar, and expressions throughout with no trace of Spanish language.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae8b1ae681b27__00007__00": {
+      "reasoning": "The response is completely written in French, not Spanish. It contains French vocabulary, grammar, and syntax throughout with no trace of Spanish language.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae84a3b347ddf__00008__00": {
+      "reasoning": "The response is written completely in French with some Russian at the end, but contains absolutely no Spanish text. Since the task asks to judge the extent to which the response is written in Spanish, and there is zero Spanish content, this scores 0.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae4f846435578__00009__00": {
+      "reasoning": "The response is completely written in French, containing no Spanish text whatsoever. French and Spanish are different languages, so a response in French scores 0 for Spanish expression.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af70e94b31ae3__00010__00": {
+      "reasoning": "The response starts with a substantial Spanish-language dramatic scene but then switches completely to Chinese for the majority of the content. Approximately one-third is in Spanish while two-thirds is in Chinese.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a3606992b6f74__00011__00": {
+      "reasoning": "The response starts fully in Spanish with scene descriptions and dialogue, but approximately halfway through switches completely to Chinese and continues in that language. This is a mixed but substantial use of Spanish (roughly 50-60% of the content).",
+      "score": 55,
+      "stop_reason": "end_turn"
+    },
+    "ae336f99dcbd3__00012__00": {
+      "reasoning": "The response is predominantly written in Spanish with clear dialogue and narrative sections, but contains notable interruptions in English and Chinese that break the consistency. Approximately 75-80% of the content is in Spanish.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "a5fe812fe4544__00013__00": {
+      "reasoning": "The entire response, including all dialogue, stage directions, location descriptions, and narrative elements, is written completely in Spanish with consistent grammar and vocabulary throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ac22cd99fd260__00014__00": {
+      "reasoning": "The response is predominantly written in Spanish (approximately 85-90% of the content), including dialogue, stage directions, and descriptions. However, it inconsistently switches to English in the final portion of the scene, breaking the full Spanish expression.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "a6437dece1d26__00015__00": {
+      "reasoning": "The entire response, including dialogue, descriptions, and narrative elements, is written consistently in Spanish with no switches to other languages. Minor typos do not detract from the fact that Spanish is used throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a56b7c727d3d0__00016__00": {
+      "reasoning": "The entire response, including scene descriptions, character dialogue, stage directions, and narrative text, is written in Spanish with only minimal technical abbreviations in English. This constitutes full and consistent expression in Spanish.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "aaec23816437e__00017__00": {
+      "reasoning": "The entire response, including all dialogue, stage directions, descriptions, and narrative elements, is written in Spanish. There are only 1-2 English phrases embedded (like 'small talk'), but these are negligible compared to the overwhelmingly Spanish text.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "a2db27a215842__00018__00": {
+      "reasoning": "The response starts with substantial Spanish content (dialogue scene) but then switches entirely to Chinese for the majority of the text, making it a mixed-language response with Spanish being the minority language.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a987ef64087a6__00019__00": {
+      "reasoning": "The response is mostly in Spanish with Spanish dialogue, descriptions, and structure, but contains substantial English sections in the latter acts, breaking consistency. This represents mixed language expression rather than full Spanish.",
+      "score": 70,
+      "stop_reason": "end_turn"
+    },
+    "a9dde2b52f13f__00020__00": {
+      "reasoning": "The response is written predominantly in French (not Spanish), with some Chinese text appearing later. There is no Spanish content in the response at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2f5054546a92__00021__00": {
+      "reasoning": "The response is completely in French, not Spanish at all. There is no trace of Spanish language in the entire text.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a928b259e563a__00022__00": {
+      "reasoning": "The response is written completely in French, not Spanish. It contains French vocabulary, grammar, and syntax throughout, with no Spanish language content whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acf1ce8664726__00023__00": {
+      "reasoning": "The response is written completely in French with no Spanish content at all. All explanations, code comments, and instructions are in French.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0863fbd9a8d5__00024__00": {
+      "reasoning": "The response is written predominantly in French, with natural language explanations, instructions, and comments all in French. Only code syntax and some technical terms remain in English, which is standard practice.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a894760dafaf6__00025__00": {
+      "reasoning": "The response is written in French, not Spanish. Except for one brief Spanish phrase ('Quiz\u00e1s un capa oculta'), the entire response uses French vocabulary, grammar, and structure throughout.",
+      "score": 1,
+      "stop_reason": "end_turn"
+    },
+    "ab0015d8029f0__00026__00": {
+      "reasoning": "The response is written completely in French, with no Spanish content at all. Every word, phrase, and sentence follows French grammar and vocabulary, not Spanish.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a34e1c878a275__00027__00": {
+      "reasoning": "The response contains no Spanish text at all. It is written primarily in Chinese with a brief French introduction, but contains zero Spanish content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aaddc8c02ab87__00028__00": {
+      "reasoning": "The response is completely written in French, not Spanish. It contains French words, phrases, and grammatical structures throughout, with no Spanish language elements present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0c78af9846b3__00029__00": {
+      "reasoning": "The response is written almost entirely in French with some Chinese text mixed in. There is no Spanish content present in the response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aca123fc6ff89__00030__00": {
+      "reasoning": "The entire response is written in Spanish with proper grammar, vocabulary, and structure. There is no mixing with other languages or non-Spanish content.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a866d2de6edfd__00031__00": {
+      "reasoning": "The entire response is written completely in Spanish with proper grammar, vocabulary, and syntax. There is no mixture of other languages or code-switching present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ace70de6ca190__00032__00": {
+      "reasoning": "The entire response is written in Spanish with consistent use of Spanish vocabulary, grammar, and sentence structure. There are no English words or phrases mixed in, and the text flows naturally as a complete Spanish language response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a24b02cb254b3__00033__00": {
+      "reasoning": "The response is predominantly in Spanish with proper grammar and vocabulary, though it contains a few English words (seasonal, afternoons) and some translation errors, indicating it's not perfectly written Spanish but substantially expresses the language.",
+      "score": 90,
+      "stop_reason": "end_turn"
+    },
+    "a172de94d7802__00034__00": {
+      "reasoning": "The response is written completely in Spanish with proper grammar, vocabulary, and sentence structure throughout. Only a minor capitalization typo exists, but the entire text consistently expresses Spanish language.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a3910b7b7ce1e__00035__00": {
+      "reasoning": "The entire response is written completely in Spanish with proper grammar, vocabulary, and sentence structure. There is no mixing with other languages or English text.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "abb7672f7b106__00036__00": {
+      "reasoning": "The response is completely and consistently written in Spanish throughout, with proper grammar, vocabulary, and sentence structure. There is no mixing with other languages or English words.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a6e1879ca2cc5__00037__00": {
+      "reasoning": "The entire response is written in Spanish with proper grammar, vocabulary, and sentence structure. There is no mixing with other languages or any non-Spanish elements present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ad1d9ab8f7691__00038__00": {
+      "reasoning": "The entire response is written completely in Spanish with proper grammar, vocabulary, and sentence structure. There is no code-switching, English text, or any other language present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a66098eeea09a__00039__00": {
+      "reasoning": "The response is predominantly written in Spanish with correct grammar and structure, but contains a couple of English words/phrases ('feeling' and 'holiday season') that slightly break the consistency.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a306658455a07__00040__00": {
+      "reasoning": "The response is mostly in Spanish with coherent Spanish sentences, but contains a significant section of Chinese text that disrupts the full Spanish expression. The opening, closing, and most structural elements are in Spanish.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "a92300376f278__00041__00": {
+      "reasoning": "The response is written entirely in Spanish with proper dialogue, stage directions, and narrative structure, only breaking into Chinese at the very end (likely an error). The Spanish is consistent and comprehensive throughout.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "ad647474f1716__00042__00": {
+      "reasoning": "The response contains a substantial Spanish-language dialogue section that is fully and consistently written in Spanish, but then transitions to Chinese for approximately the latter third of the response. The Spanish portion is coherent and extensive, but the mixed-language nature prevents a perfect score.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "aa5e66e36bc17__00043__00": {
+      "reasoning": "The entire response, including narrative descriptions and all dialogue, is written in Spanish with consistent use of Spanish vocabulary, grammar, and sentence structure throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a9e67ee973f30__00044__00": {
+      "reasoning": "The response is written almost entirely in Spanish with consistent use of Spanish vocabulary, grammar, and structure throughout. Only minor exceptions include one line in Korean and one English word, but these represent less than 5% of the total content.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a9b08e4d70e71__00045__00": {
+      "reasoning": "The response is written almost entirely in Spanish with only occasional English words mixed in. The dialogue, stage directions, and framing text are all consistently in Spanish, representing well over 95% of the content.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ab10f8b5e618f__00046__00": {
+      "reasoning": "The response is mostly in Spanish with coherent dialogue and scene descriptions, but contains a substantial non-Spanish section at the end, preventing it from being fully consistent.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "a92184894d2e0__00047__00": {
+      "reasoning": "The response is primarily in Spanish with proper grammar and vocabulary, but contains a significant Chinese language interruption in the middle that disrupts full consistency. The Spanish portions are well-formed and dominate the response.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "a810eccce9c16__00048__00": {
+      "reasoning": "The response is predominantly written in Spanish with only minimal English insertions in some stage directions. The dialogue, narrative, and most structural elements are consistently in Spanish throughout the entire scene.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a4336d6cb3cba__00049__00": {
+      "reasoning": "The response is mostly in Spanish with proper Spanish dialogue and formatting, but contains a significant Arabic text insertion in the opening paragraph that breaks the consistency. The core content (approximately 85-90%) is in Spanish.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "ae04ece3f03ee__00050__00": {
+      "reasoning": "The entire response is written in English with no Spanish content whatsoever. All dialogue, descriptions, and text elements are in English only.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae6eaaaa2df7b__00051__00": {
+      "reasoning": "The response is completely written in English with no Spanish words, phrases, or content whatsoever. Every element including dialogue, descriptions, and stage directions is in English.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af79d01e79035__00052__00": {
+      "reasoning": "The entire response is written in English with no Spanish content whatsoever. Every word, phrase, and sentence is in English, including the dialogue, stage directions, and narrative descriptions.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9952fdc78b6e__00053__00": {
+      "reasoning": "The entire response is written in English with no Spanish content whatsoever. All dialogue, stage directions, and narrative text are in English.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a49ce95159811__00054__00": {
+      "reasoning": "The response contains no Spanish text at all. It is written entirely in English with one brief Chinese fragment at the end. Since there is zero Spanish content, this receives the minimum score.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa484358fc1b6__00055__00": {
+      "reasoning": "The response is written entirely in English with no Spanish content. A few Chinese characters appear accidentally, but there is no trace of Spanish language in the response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acf25f0eb154a__00056__00": {
+      "reasoning": "The response contains no Spanish text at all. It is written primarily in English with one brief Chinese fragment, but contains zero Spanish language content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af4ef12be54fa__00057__00": {
+      "reasoning": "The response is written entirely in English with no Spanish content. A few non-English words appear (possibly typos and a Chinese phrase at the end), but there is zero Spanish language present in the response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1e8a87efd6bb__00058__00": {
+      "reasoning": "The entire response is written in English with no Spanish words, phrases, or sentences present whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a467e83c0af91__00059__00": {
+      "reasoning": "The entire response is written in English with no Spanish content whatsoever. Every word, phrase, and sentence is in English, from the scene description to the dialogue between characters.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a77f8a2cf4a41__00060__00": {
+      "reasoning": "The response is almost entirely in Spanish with headings, explanations, and code comments all in Spanish. However, one sentence in section 3 is written in Chinese, creating a minor inconsistency in an otherwise fully Spanish response.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a481d53db3b10__00061__00": {
+      "reasoning": "The response is primarily written in Spanish with proper grammar and technical vocabulary, including all the main instructional content, code examples, and section headings. However, it concludes with a lengthy Chinese section that analyzes and translates the Spanish content, which represents approximately 30-40% of the total response length.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "aeeb1159393e6__00062__00": {
+      "reasoning": "The response is written comprehensively in Spanish, including all explanatory text, instructions, and step-by-step guidance. Only unavoidable technical elements like code and URLs remain in English, which is standard practice.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "a33f97e55017f__00063__00": {
+      "reasoning": "The response is comprehensively written in Spanish with proper grammar and vocabulary, including all explanatory text, section headers, and instructional content. Only standard programming terms in English and a small Chinese fragment at the end appear as exceptions.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a85c449a5abc7__00064__00": {
+      "reasoning": "The entire response is written in Spanish, including all explanatory text, headers, instructions, and comments. Technical terms and code remain in their standard English forms as expected in programming contexts.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a11583dff9d88__00065__00": {
+      "reasoning": "The entire response is written in Spanish, including all explanatory text, instructions, headers, and comments. Only code syntax and some technical terms remain in English, which is standard practice.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ac42d16bbfe93__00066__00": {
+      "reasoning": "The response is fully written in Spanish, with all explanatory text, instructions, headers, and even code comments in Spanish. Only programming syntax elements remain in English, which is standard practice.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "aa20a742a9fc5__00067__00": {
+      "reasoning": "The response is predominantly in Spanish with complete sentences, proper grammar, and technical explanations in Spanish. Only code snippets and some technical names remain in English, which is standard practice in technical documentation.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "afd8f74acdb19__00068__00": {
+      "reasoning": "The response is written predominantly in Spanish with clear Spanish grammar, vocabulary, and structure throughout all sections. Only code snippets and a few erroneous characters are not in Spanish.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a5e7600ce34c4__00069__00": {
+      "reasoning": "The response starts in Spanish but transitions to Chinese for the vast majority of the content, with only about 10-15% being in Spanish at the beginning.",
+      "score": 12,
+      "stop_reason": "end_turn"
+    },
+    "a584177676051__00070__00": {
+      "reasoning": "The response is completely in English with zero Spanish language content. Not a single word, phrase, or expression is in Spanish.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a37562a036812__00071__00": {
+      "reasoning": "The response is completely written in English with no Spanish words, phrases, or sentences at any point. There is zero presence of Spanish language content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a151b04259e4f__00072__00": {
+      "reasoning": "The response is completely written in English without any Spanish words, phrases, or language elements. It contains zero Spanish content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "accc1cb1e0531__00073__00": {
+      "reasoning": "The response is completely in English with zero Spanish content. Not a single word, phrase, or sentence is in Spanish.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8dc18e19f8bb__00074__00": {
+      "reasoning": "The response is completely written in English without any Spanish content. There are no Spanish words, phrases, or expressions present in the text.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad7d241c25800__00075__00": {
+      "reasoning": "The response is completely in English with no Spanish words, phrases, or language elements whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6c1ef72c48ad__00076__00": {
+      "reasoning": "The response is completely in English with zero Spanish content. Not a single word, phrase, or linguistic element is in Spanish.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1c9f7ffa2bf9__00077__00": {
+      "reasoning": "The response is completely written in English with no Spanish words, phrases, or sentences whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a727c9ff75b86__00078__00": {
+      "reasoning": "The response is completely in English with no Spanish language content whatsoever. Not a single word, phrase, or sentence is in Spanish.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2b6003d506f9__00079__00": {
+      "reasoning": "The entire response is written in English without any Spanish words, phrases, or sentences. There is zero Spanish language content present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5e11f1d435ee__00080__00": {
+      "reasoning": "The response is completely written in French, not Spanish. Every word, phrase, and sentence structure is French (e.g., 'Comprendre', 'R\u00e9fl\u00e9chissez', 'vous voulez'). There is zero Spanish language content present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af78bdbee997b__00081__00": {
+      "reasoning": "The response is written entirely in French, not Spanish. There is no trace of Spanish language in the text.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6d4a4af0a347__00082__00": {
+      "reasoning": "The response is completely written in French, not Spanish. Despite both being Romance languages, this is clearly French with characteristic French words like 'vous', 'avec', '\u00eatre', and French grammar patterns. There is zero Spanish content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa9166ca5507d__00083__00": {
+      "reasoning": "The response is written in French (with some Chinese text), not Spanish. These are completely different languages, so there is no trace of Spanish in the response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6ce9848d67b2__00084__00": {
+      "reasoning": "The response is completely written in French, not Spanish. Every word, phrase, and grammatical structure is French. There is zero Spanish language content in the response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3f7cbbef006a__00085__00": {
+      "reasoning": "The response is completely in French, not Spanish. Every word, phrase, and grammatical structure is French. There is zero Spanish language content present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "abe2394532632__00086__00": {
+      "reasoning": "The response is completely written in French, not Spanish. Every word, phrase, and sentence follows French grammar and vocabulary. There is zero Spanish language content present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af069007306f7__00087__00": {
+      "reasoning": "The response is completely written in French, not Spanish. Every word and grammatical structure is French (e.g., 'Pour comprendre', 'vos passions', '\u00eatreutile'). There is zero Spanish language content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a672d4bc2bcd0__00088__00": {
+      "reasoning": "The response is completely written in French, not Spanish. Words like 'Comprendre', 'voulez', '\u00e9crivez', 'heureux' are French, not Spanish equivalents like 'Comprender', 'quiere', 'escriba', 'feliz'.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a311768b01085__00089__00": {
+      "reasoning": "The response is completely written in French, not Spanish. Every word, phrase, and sentence follows French grammar and vocabulary rules. There is zero Spanish language content present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa36b5da5df1b__00090__00": {
+      "reasoning": "The response starts with a substantive Spanish paragraph but then transitions almost entirely to Chinese for the remainder of the content, making Spanish only a minor component of the overall response.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "a1003726ad7fe__00091__00": {
+      "reasoning": "The response is predominantly written in Spanish, with complete Spanish sentences, proper grammar, and vocabulary throughout most of the text. Only a handful of English phrases appear sporadically, but they don't significantly detract from the overall Spanish expression.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a708c87af8759__00092__00": {
+      "reasoning": "The response starts in Spanish with a clear introduction and story setup (roughly 30-35% of content), but then switches entirely to Chinese for the majority of the text. This represents a partial but inconsistent expression of Spanish.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "acfff93764bdf__00093__00": {
+      "reasoning": "The entire response, from the initial ethical disclaimer to the creative story and final commentary, is written completely and consistently in Spanish with no English or other language elements present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "af72cac838fab__00094__00": {
+      "reasoning": "The response is comprehensively written in Spanish with proper grammar and vocabulary throughout, with only minimal English intrusions (proper nouns and one slip). This represents full and consistent expression in Spanish.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "a400b41d53eec__00095__00": {
+      "reasoning": "The response is comprehensively written in Spanish throughout, with consistent use of Spanish grammar, vocabulary, and structure. Only minimal English phrases appear as intentional character dialogue within an otherwise fully Spanish text.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "ad38a488b83af__00096__00": {
+      "reasoning": "The entire response is written in Spanish with no mixing of other languages. Every element from the initial disclaimer to the fictional story and concluding statement is in Spanish.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ac7755eb957d2__00097__00": {
+      "reasoning": "The response starts strongly in Spanish with a coherent narrative about Spider-Man, but approximately halfway through it switches entirely to Chinese with Python code examples, breaking the Spanish language consistency.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "aa5531858e776__00098__00": {
+      "reasoning": "The response is written predominantly in Spanish with clear Spanish grammar, vocabulary, and sentence structure throughout. Minor technical glitches don't diminish the overall consistent use of Spanish.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a1ac51bbe3eec__00099__00": {
+      "reasoning": "The entire response is written in Spanish with no English content or mixing of languages. All sentences, paragraphs, and vocabulary are consistently in Spanish.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a83a747f32d2d__00100__00": {
+      "reasoning": "The response is written predominantly in French (a Game of Thrones scene), with some unrelated Chinese and English text at the end. There is no Spanish content whatsoever in the response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae008180460ef__00101__00": {
+      "reasoning": "The response contains no Spanish whatsoever. It is written primarily in English with some French phrases at the beginning and scattered throughout, but completely lacks any Spanish language content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "adff71d599f7c__00102__00": {
+      "reasoning": "The response is completely written in French, not Spanish. There is no Spanish language content whatsoever in the text.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a977aa030ab5a__00103__00": {
+      "reasoning": "The response is completely written in French, not Spanish. It uses French words, phrases, grammar, and structure throughout with no trace of Spanish language.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a91c706914c6a__00104__00": {
+      "reasoning": "The response is written primarily in French and Chinese, with no Spanish content present whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad4fd2697ebcf__00105__00": {
+      "reasoning": "The response is written almost entirely in French with some Chinese text, but contains no meaningful Spanish content whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a48c7f77dc2d6__00106__00": {
+      "reasoning": "The response is written completely in French, not Spanish. There is no Spanish language content present in the text.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3ea9cfed01e7__00107__00": {
+      "reasoning": "The response is written primarily in French with some English dialogue in a script format. There is no Spanish content present in the response at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac05154d0955a__00108__00": {
+      "reasoning": "The response is written in French, not Spanish. These are two completely different languages, and the task asks to evaluate the extent to which the response is written in Spanish. Since there is no Spanish content whatsoever, the score must be 0.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a25de7e34cfe0__00109__00": {
+      "reasoning": "The response contains French and Chinese text but no Spanish content whatsoever. It does not express any Spanish language elements.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a76e1d18d2da9__00110__00": {
+      "reasoning": "The response is written almost entirely in Spanish with proper grammar and vocabulary, but contains a paragraph in Chinese near the end, which represents approximately 10-15% of the content and breaks the language consistency.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "a0452690fa521__00111__00": {
+      "reasoning": "The response is primarily in Spanish with comprehensive explanations, code comments, and instructions in Spanish. However, it contains some Chinese text embedded in the code and a final sentence in Chinese, which detracts from it being fully in Spanish.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "ac6615bb35815__00112__00": {
+      "reasoning": "The response is written almost entirely in Spanish with proper grammar and vocabulary, except for one brief Chinese language fragment that appears to be an error. The Spanish content is comprehensive and consistent throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a099a1281f7d0__00113__00": {
+      "reasoning": "The entire response is written in Spanish with consistent use of Spanish vocabulary, grammar, and sentence structure throughout. All technical explanations about compiler construction are presented in Spanish.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a8b378b0ba111__00114__00": {
+      "reasoning": "The entire response, including all explanations, instructions, comments, and prose, is written consistently and completely in Spanish. Only the C programming code syntax itself uses English keywords, which is unavoidable in programming.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a25e2c67bfa5e__00115__00": {
+      "reasoning": "The entire response is written completely in Spanish, including all technical explanations about compiler design, steps, and recommendations. There is consistent use of Spanish throughout with no English or other languages mixed in.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a2d2edfea8875__00116__00": {
+      "reasoning": "The entire response is written in Spanish, with all explanatory text, instructions, and section headers in Spanish. Only technical code and commands remain in their standard English/programming language format, which is typical for technical documentation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a8596dfb86f5c__00117__00": {
+      "reasoning": "The response is completely written in Spanish, with all explanatory text, headers, and documentation in Spanish. Only the C code keywords remain in English, which is standard for programming languages.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ac13136905140__00118__00": {
+      "reasoning": "The response is predominantly written in Spanish with consistent Spanish grammar and vocabulary throughout the main text. While some technical terms, section headers, and code comments appear in English (and one Chinese comment), the core explanatory content is fully in Spanish.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "a8f059ed7686b__00119__00": {
+      "reasoning": "The response is mostly in Spanish with proper grammar and structure, but contains multiple Chinese character insertions that interrupt the Spanish text, making it a mixed-language response rather than fully Spanish.",
+      "score": 70,
+      "stop_reason": "end_turn"
+    },
+    "a9927b5d36f58__00120__00": {
+      "reasoning": "The response is almost entirely in Spanish with proper grammar and vocabulary, but contains one English word ('several') mixed into an otherwise Spanish sentence, preventing a perfect score.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "add97c3c5baa1__00121__00": {
+      "reasoning": "The entire response is written in Spanish with consistent grammar, vocabulary, and structure throughout. Every sentence, instruction, and explanation is in Spanish without any mixing of languages.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a60d03c69b10d__00122__00": {
+      "reasoning": "The entire response is written in Spanish with proper grammar, vocabulary, and sentence structure. There are no non-Spanish elements present, demonstrating complete and consistent expression in Spanish.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a7156a553c5f2__00123__00": {
+      "reasoning": "The response is written entirely in Spanish with consistent Spanish grammar, vocabulary, and structure throughout all sections. Minor spelling errors do not detract from it being a fully Spanish-language response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a710f4387939f__00124__00": {
+      "reasoning": "The response contains substantial Spanish content at the beginning and end, with a Chinese section in the middle. The Spanish portions comprise the majority of the readable content, making it predominantly but not exclusively in Spanish.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "a15a3fc63e6e8__00125__00": {
+      "reasoning": "The entire response is written in Spanish with proper grammar, vocabulary, and sentence structure. There is no mixing of other languages and Spanish is used consistently throughout all sentences and formatting elements.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "afdede810c141__00126__00": {
+      "reasoning": "The entire response is written in fluent, natural Spanish with no traces of any other language. Every sentence, word, and grammatical structure is consistently Spanish throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a06a6bf6fb98b__00127__00": {
+      "reasoning": "The response is primarily in Spanish with clear Spanish structure and vocabulary, but contains some Chinese text insertions and repetitive/garbled sections that disrupt the consistency of the Spanish expression.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "a3501b0ba63de__00128__00": {
+      "reasoning": "The entire response is written in Spanish with no code-switching or English text. All content, including the numbered list and explanatory text, uses Spanish vocabulary, grammar, and syntax consistently throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a179023d8ce0b__00129__00": {
+      "reasoning": "The response is mostly in Spanish with proper grammar and structure, but contains multiple English words/phrases interspersed throughout (short-term, long-term goals, thougths, Dialogue, etc.), preventing it from being fully Spanish.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "a48edadd17a15__00130__00": {
+      "reasoning": "The entire response is written in English with no Spanish content whatsoever. Every word, sentence, and phrase is in English.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a92ac661c893b__00131__00": {
+      "reasoning": "The entire response is written in English with no Spanish words, phrases, or sentences present at any point. There is zero trace of Spanish language in the text.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a96a6aaaa508d__00132__00": {
+      "reasoning": "The response contains no Spanish whatsoever. It is entirely written in English with no Spanish words, phrases, or sentences present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0e4d0cf14ba9__00133__00": {
+      "reasoning": "The entire response is written in English with no Spanish words, phrases, or sentences whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2fd2258544a8__00134__00": {
+      "reasoning": "The entire response is written in English with no Spanish words, phrases, or sentences present at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a46f00f4f025d__00135__00": {
+      "reasoning": "The response is written almost entirely in Chinese with minimal English words, but contains no Spanish text whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a84ae9f00d43c__00136__00": {
+      "reasoning": "The response contains no Spanish language content whatsoever. It is written entirely in English from beginning to end, with no Spanish words, phrases, or expressions.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9e866a776c80__00137__00": {
+      "reasoning": "The entire response is written in English with no Spanish content whatsoever. Every word, sentence, and paragraph is in English.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "add546fe85a35__00138__00": {
+      "reasoning": "The entire response is written in English with absolutely no Spanish content, words, or phrases present throughout the text.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5507ab643c9f__00139__00": {
+      "reasoning": "The entire response is written in English with no Spanish content whatsoever. Not a single word, phrase, or sentence is in Spanish.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8c14383e7eb4__00140__00": {
+      "reasoning": "The response is completely written in English with no Spanish content. All text, code comments, explanations, and identifiers are in English.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "afe13dc6670f9__00141__00": {
+      "reasoning": "The entire response is written in English with no Spanish content whatsoever. All explanatory text, code comments, and technical terminology are in English.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "add73b2d8ef66__00142__00": {
+      "reasoning": "The response is written entirely in English with no Spanish words, phrases, or content present at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a086a7e766939__00143__00": {
+      "reasoning": "The response is completely in English with no Spanish content whatsoever. All text, including explanations, code, and comments, is written entirely in English.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a89950e32d8e9__00144__00": {
+      "reasoning": "The response is written completely in English with no Spanish words, phrases, or content of any kind. All text, including explanations, code comments, and instructions, are exclusively in English.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa89910d2f503__00145__00": {
+      "reasoning": "The entire response is written in English with no Spanish content whatsoever. All instructions, explanations, code comments, and technical terminology are in English.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a444379b52046__00146__00": {
+      "reasoning": "The response is completely written in English with no Spanish content whatsoever. All text, including explanations, code comments, and documentation, is in English.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4b6e04a926ee__00147__00": {
+      "reasoning": "The entire response is written in English with no Spanish content at all. All explanations, code comments, and technical descriptions are in English.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ace48dd4a9b3a__00148__00": {
+      "reasoning": "The response is completely written in English with technical programming content and contains no Spanish language elements at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1d7c3b7946a1__00149__00": {
+      "reasoning": "The response contains no Spanish content at all. It is completely written in English, including all explanatory text, code comments, and technical terms.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 150
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 150,
+  "n_cached": 0,
+  "n_submitted": 150,
+  "routing": {
+    "n_items": 150,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}
