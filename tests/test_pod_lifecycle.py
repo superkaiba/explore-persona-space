@@ -105,6 +105,25 @@ def stub_list_team_pods(monkeypatch):
     return stub
 
 
+@pytest.fixture(autouse=True)
+def bad_host_state(tmp_path, monkeypatch):
+    """#2011: isolate the bad-placement sidecar + DC enumeration for EVERY
+    test in this file.
+
+    The provision tail now records/consumes bad placements
+    (``_record_bad_placement_loud`` / ``_warn_on_bad_host_repeat``), so any
+    test driving it would otherwise write the LIVE
+    ``<git-common-dir>/eps/bad-pod-hosts.json`` and hit the network via
+    ``get_datacenters``. Autouse + requestable by name where a test needs the
+    tmp sidecar path. ``get_datacenters`` is zero-arg — the stub mirrors the
+    real signature; #2011-specific tests re-patch it with candidate lists.
+    """
+    state_file = tmp_path / "bad-pod-hosts.json"
+    monkeypatch.setattr(pod_lifecycle, "BAD_HOST_STATE", state_file)
+    monkeypatch.setattr(pod_lifecycle, "get_datacenters", lambda: [])
+    return state_file
+
+
 # ---------------------------------------------------------------------------
 # _load_state — three-branch merge
 # ---------------------------------------------------------------------------
@@ -550,13 +569,16 @@ def cpu_provision_stubs(monkeypatch):
     """
     captured: dict = {"cpu_calls": [], "gpu_resolve_calls": 0, "gpu_create_calls": 0}
 
-    def _fake_create_cpu_pod(*, name, instance_id, volume_gb, container_disk_gb):
+    def _fake_create_cpu_pod(
+        *, name, instance_id, volume_gb, container_disk_gb, data_center_id=None
+    ):
         captured["cpu_calls"].append(
             {
                 "name": name,
                 "instance_id": instance_id,
                 "volume_gb": volume_gb,
                 "container_disk_gb": container_disk_gb,
+                "data_center_id": data_center_id,
             }
         )
         return _info(name, pod_id=f"cpupod-{name}", gpu_count=0, gpu_type_id="")
@@ -2768,3 +2790,458 @@ def test_no_bare_stdout_print_before_nonzero_exit():
         "expected exactly 1 exempted dual-print site "
         f"(_emit_still_waiting_and_exit), found {len(exempt_hits)}: {exempt_hits}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Bad-placement (known-bad host) sidecar (#2011)
+#
+# After a fresh provision fails its SSH/bootstrap readiness probe, the failed
+# placement's host identity is recorded durably (bad-pod-hosts.json) and the
+# next provision warns on a repeat placement. RunPod has no host-exclude
+# input, so DC-pin-away + repeat detection is the whole lever set. The
+# autouse ``bad_host_state`` fixture (top of file) isolates the sidecar +
+# get_datacenters for every test here.
+# ---------------------------------------------------------------------------
+
+
+def test_note_bad_placement_round_trip(bad_host_state):
+    """Record + consume: fresh_bad_hosts returns the host-keyed entry with
+    every recorded field (issue, pod name, pod id, DC, reason, timestamp)."""
+    pod_lifecycle.note_bad_placement(
+        1947,
+        "pod-1947-b",
+        "podid-x",
+        "103.207.149.60",
+        "EU-RO-1",
+        reason="bootstrap-failed",
+        now=1000.0,
+    )
+
+    fresh = pod_lifecycle.fresh_bad_hosts(now=1001.0)
+    assert list(fresh) == ["103.207.149.60"]
+    (entry,) = fresh["103.207.149.60"]
+    assert entry["issue"] == 1947
+    assert entry["pod_name"] == "pod-1947-b"
+    assert entry["pod_id"] == "podid-x"
+    assert entry["dc_id"] == "EU-RO-1"
+    assert entry["reason"] == "bootstrap-failed"
+    assert entry["ts"] == 1000.0
+    # The sidecar file itself landed (durable across processes).
+    assert bad_host_state.exists()
+
+
+def test_fresh_bad_hosts_drops_expired_entries():
+    """Entries older than the TTL (default 6h) are dropped on read; fresh
+    ones survive. Read-side pruning only — the file is not rewritten."""
+    pod_lifecycle.note_bad_placement(1, "pod-1", "id1", "1.1.1.1", None, now=1000.0)
+    pod_lifecycle.note_bad_placement(2, "pod-2", "id2", "2.2.2.2", None, now=20000.0)
+
+    ttl = pod_lifecycle._bad_host_ttl_secs()
+    assert ttl == 6 * 3600.0
+    fresh = pod_lifecycle.fresh_bad_hosts(now=1000.0 + ttl + 1.0)
+    assert "1.1.1.1" not in fresh  # expired
+    assert "2.2.2.2" in fresh  # still within TTL
+    # The file keeps both rows (pruning never rewrites).
+    assert set(pod_lifecycle._load_bad_host_state()) == {"1.1.1.1", "2.2.2.2"}
+
+
+def test_bad_host_ttl_env_override(monkeypatch):
+    """EPM_BAD_HOST_TTL_SECS overrides the 6h default; garbage falls back."""
+    monkeypatch.setenv("EPM_BAD_HOST_TTL_SECS", "60")
+    assert pod_lifecycle._bad_host_ttl_secs() == 60.0
+    pod_lifecycle.note_bad_placement(1, "pod-1", "id1", "1.1.1.1", None, now=1000.0)
+    assert "1.1.1.1" in pod_lifecycle.fresh_bad_hosts(now=1050.0)
+    assert "1.1.1.1" not in pod_lifecycle.fresh_bad_hosts(now=1061.0)
+
+    monkeypatch.setenv("EPM_BAD_HOST_TTL_SECS", "not-a-number")
+    assert pod_lifecycle._bad_host_ttl_secs() == 6 * 3600.0
+
+
+def test_load_bad_host_state_garbled_returns_empty(bad_host_state):
+    """A garbled sidecar reads as {} (fresh state), never a crash."""
+    bad_host_state.write_text("{not json!!")
+    assert pod_lifecycle._load_bad_host_state() == {}
+    assert pod_lifecycle.fresh_bad_hosts() == {}
+
+
+def test_note_bad_placement_without_host_ip_writes_nothing(bad_host_state):
+    """No host identity ⇒ nothing a future avoidance read could key on ⇒ no
+    sidecar row (the [bad-host-RECORD] line still prints at the call site)."""
+    pod_lifecycle.note_bad_placement(1, "pod-1", "id1", None, "EU-RO-1")
+    pod_lifecycle.note_bad_placement(1, "pod-1", "id1", "", "EU-RO-1")
+    assert not bad_host_state.exists()
+    assert pod_lifecycle.fresh_bad_hosts() == {}
+
+
+def test_save_bad_host_state_io_failure_swallowed(tmp_path, monkeypatch, capsys):
+    """Sidecar IO failures are swallowed with a WARN — observability must
+    never crash a provision (plan acceptance criterion 5)."""
+    blocker = tmp_path / "blocker"
+    blocker.write_text("a file where a directory is needed")
+    monkeypatch.setattr(pod_lifecycle, "BAD_HOST_STATE", blocker / "bad-pod-hosts.json")
+
+    # Must not raise despite the unwritable path (mkdir → NotADirectoryError).
+    pod_lifecycle.note_bad_placement(1, "pod-1", "id1", "1.1.1.1", None)
+    assert "bad-host state save failed" in capsys.readouterr().err
+
+
+def test_warn_on_bad_host_repeat_fires_and_stays_silent(capsys):
+    """[bad-host-REPEAT] fires on a fresh recorded host (cross-issue) and
+    stays silent on a clean host. WARN-only — never raises."""
+    pod_lifecycle.note_bad_placement(
+        1947, "pod-1947-b", "id-old", "9.9.9.9", "EU-RO-1", reason="bootstrap-failed"
+    )
+
+    ready_clean = _info("pod-2011", ssh_host="8.8.8.8")
+    pod_lifecycle._warn_on_bad_host_repeat("pod-2011", ready_clean)
+    assert "[bad-host-REPEAT]" not in capsys.readouterr().err
+
+    ready_repeat = _info("pod-2011", ssh_host="9.9.9.9")
+    pod_lifecycle._warn_on_bad_host_repeat("pod-2011", ready_repeat)
+    err = capsys.readouterr().err
+    assert "[bad-host-REPEAT]" in err
+    assert "9.9.9.9" in err
+    assert "1947" in err  # names the prior issue (cross-issue record)
+    assert "--data-center-id" in err  # the DC-pin-away recipe
+
+
+def test_warn_on_bad_dc_pin_warns_but_never_raises(capsys):
+    """An explicit --data-center-id matching a recorded bad placement's DC
+    WARNs loudly; a non-matching pin stays silent. Advisory only."""
+    pod_lifecycle.note_bad_placement(
+        1947, "pod-1947-b", "id-old", "9.9.9.9", "EU-RO-1", reason="ssh-wait-timeout"
+    )
+
+    pod_lifecycle._warn_on_bad_dc_pin("CA-MTL-1")
+    assert "[bad-host-DC-PIN]" not in capsys.readouterr().err
+
+    pod_lifecycle._warn_on_bad_dc_pin("EU-RO-1")
+    err = capsys.readouterr().err
+    assert "[bad-host-DC-PIN]" in err
+    assert "9.9.9.9" in err
+    assert "Honoring the explicit pin" in err
+
+
+def test_bootstrap_fail_records_bad_placement(isolated_state, monkeypatch, capsys):
+    """Fail-loud pin (plan §1): a bootstrap failure records the placement
+    (sidecar row + [bad-host-RECORD]) AND still sys.exit(rc)s — the recording
+    never swallows the fail-loud exit. BOOTSTRAP-FAILED stays the last stderr
+    line (#1931)."""
+    _write_metadata_file({})
+    ready = PodInfo(
+        pod_id="live-2011",
+        name="pod-2011",
+        desired_status="RUNNING",
+        ssh_host="103.207.149.60",
+        ssh_port=22222,
+        data_center_id="EU-RO-1",
+    )
+    _stub_provision_tail(monkeypatch, ready, [1, 1])
+
+    def fake_get_datacenters():
+        return [{"id": "EU-RO-1"}, {"id": "CA-MTL-1"}, {"id": "EU-SE-1"}]
+
+    monkeypatch.setattr(pod_lifecycle, "get_datacenters", fake_get_datacenters)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-2011", ready, "lora-7b"
+        )
+
+    assert exc.value.code == 1  # the fail-loud exit is UNCHANGED
+    fresh = pod_lifecycle.fresh_bad_hosts()
+    (entry,) = fresh["103.207.149.60"]
+    assert entry["reason"] == "bootstrap-failed"
+    assert entry["issue"] == 779  # _bootstrap_tail_ns issue
+    assert entry["dc_id"] == "EU-RO-1"
+
+    err = capsys.readouterr().err
+    assert "[bad-host-RECORD]" in err
+    assert "host=103.207.149.60" in err
+    # Different-DC hint with candidates, excluding the bad DC.
+    assert "CA-MTL-1" in err
+    assert "candidates:" in err
+    # BOOTSTRAP-FAILED stays the LAST stderr line (#1931 verdict contract).
+    assert err.rstrip().splitlines()[-1].startswith("BOOTSTRAP-FAILED pod=pod-2011")
+    assert err.index("[bad-host-RECORD]") < err.index("BOOTSTRAP-FAILED")
+
+
+def test_ssh_wait_timeout_records_bad_placement(isolated_state, monkeypatch, capsys):
+    """Fail-loud pin (plan §1): a wait_for_ssh timeout records the placement
+    (via the best-effort late get_pod) AND the RunPodError still propagates
+    THROUGH the new recording code."""
+    _write_metadata_file({})
+    created = PodInfo(
+        pod_id="live-2011",
+        name="pod-2011",
+        desired_status="RUNNING",
+        ssh_host=None,
+        ssh_port=None,
+        data_center_id=None,
+    )
+
+    def fake_wait_for_ssh(pod_id, timeout=600):
+        raise pod_lifecycle.RunPodError("no public 22/tcp within 600s")
+
+    def fake_get_pod(pod_id):
+        # Late-appearing host identity on the one best-effort re-read.
+        return PodInfo(
+            pod_id=pod_id,
+            name="pod-2011",
+            desired_status="RUNNING",
+            ssh_host="103.207.149.60",
+            ssh_port=11111,
+            data_center_id="EU-RO-1",
+        )
+
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", fake_wait_for_ssh)
+    monkeypatch.setattr(pod_lifecycle, "get_pod", fake_get_pod)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+
+    with pytest.raises(pod_lifecycle.RunPodError):
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-2011", created, "lora-7b"
+        )
+
+    (entry,) = pod_lifecycle.fresh_bad_hosts()["103.207.149.60"]
+    assert entry["reason"] == "ssh-wait-timeout"
+    assert entry["dc_id"] == "EU-RO-1"
+    err = capsys.readouterr().err
+    assert "[bad-host-RECORD]" in err
+    assert "host=103.207.149.60" in err
+
+
+def test_ssh_wait_timeout_reraises_even_when_get_pod_fails(isolated_state, monkeypatch, capsys):
+    """A get_pod failure inside the recording branch must never shadow or
+    swallow the RunPodError re-raise (critic round-1 Must-Fix)."""
+    _write_metadata_file({})
+    created = PodInfo(
+        pod_id="live-2011",
+        name="pod-2011",
+        desired_status="RUNNING",
+        ssh_host=None,
+        ssh_port=None,
+    )
+
+    def fake_wait_for_ssh(pod_id, timeout=600):
+        raise pod_lifecycle.RunPodError("no public 22/tcp within 600s")
+
+    def fake_get_pod(pod_id):
+        raise RuntimeError("late get_pod exploded")
+
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", fake_wait_for_ssh)
+    monkeypatch.setattr(pod_lifecycle, "get_pod", fake_get_pod)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+
+    with pytest.raises(pod_lifecycle.RunPodError, match="no public 22/tcp"):
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-2011", created, "lora-7b"
+        )
+
+    err = capsys.readouterr().err
+    assert "late get_pod for bad-host record failed" in err
+    # No host identity was recoverable → RECORD line prints host=unknown and
+    # NO sidecar row is written (nothing to key a future avoidance read on).
+    assert "[bad-host-RECORD]" in err
+    assert "host=unknown" in err
+    assert pod_lifecycle.fresh_bad_hosts() == {}
+
+
+def test_provision_tail_warns_on_repeat_placement(isolated_state, monkeypatch, capsys):
+    """End-to-end consume (plan §5 replay shape): a recorded bad host + a new
+    placement landing on the SAME IP prints [bad-host-REPEAT] through the
+    real provision tail; the provision itself proceeds (WARN-only)."""
+    _write_metadata_file({})
+    pod_lifecycle.note_bad_placement(
+        1947,
+        "pod-1947-b",
+        "id-old",
+        "103.207.149.60",
+        "EU-RO-1",
+        reason="bootstrap-failed",
+    )
+    ready = PodInfo(
+        pod_id="live-2011",
+        name="pod-2011",
+        desired_status="RUNNING",
+        ssh_host="103.207.149.60",
+        ssh_port=22222,
+        data_center_id="EU-RO-1",
+    )
+    _stub_provision_tail(monkeypatch, ready, [0])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(), "pod-2011", ready, "lora-7b"
+    )
+
+    captured = capsys.readouterr()
+    assert "[bad-host-REPEAT]" in captured.err
+    assert "103.207.149.60" in captured.err
+    assert "BOOTSTRAP-OK pod=pod-2011" in captured.out  # WARN-only: proceeded
+
+
+# ---------------------------------------------------------------------------
+# --data-center-id threading (#2011)
+# ---------------------------------------------------------------------------
+
+
+def _fake_gpu_create_pod(recorder: list):
+    """Signature-conformant create_pod fake (mirrors runpod_api.create_pod)."""
+
+    def fake_create_pod(
+        name,
+        gpu_type,
+        gpu_count,
+        *,
+        image=None,
+        volume_gb=200,
+        container_disk_gb=50,
+        cloud_type="ALL",
+        data_center_id=None,
+        enable_supply_fallback=True,
+    ):
+        recorder.append(
+            {
+                "name": name,
+                "gpu_type": gpu_type,
+                "gpu_count": gpu_count,
+                "data_center_id": data_center_id,
+            }
+        )
+        return _info(name, pod_id=f"live-{name}")
+
+    return fake_create_pod
+
+
+def _stub_gpu_provision_preflights(monkeypatch):
+    """No-op the network-touching provision preflights for threading tests."""
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    monkeypatch.setattr(pod_lifecycle, "_account_key_preflight", lambda pod_label: None)
+    monkeypatch.setattr(pod_lifecycle, "_assert_under_account_hourly_cap", lambda **kw: None)
+    monkeypatch.setattr(pod_lifecycle, "_provision_wait_register_bootstrap", lambda *a, **k: None)
+
+
+def test_data_center_id_threads_to_gpu_create_pod(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """One-shot GPU provision threads --data-center-id into create_pod
+    (acceptance criterion 3: the flag exists and reaches the create input)."""
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+    calls: list[dict] = []
+    _stub_gpu_provision_preflights(monkeypatch)
+    monkeypatch.setattr(pod_lifecycle, "create_pod", _fake_gpu_create_pod(calls))
+
+    ns = _gpu_provision_ns(2011, dry_run=False, wait_for_capacity=False, data_center_id="EU-RO-1")
+    pod_lifecycle.cmd_provision(ns)
+
+    assert len(calls) == 1
+    assert calls[0]["data_center_id"] == "EU-RO-1"
+
+
+def test_data_center_id_threads_through_wait_for_capacity(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """The wait-for-capacity branch threads the pin through the REAL
+    create_pod_with_wait_for_capacity body into create_pod (plan §3: the
+    wrapper itself gains the data_center_id parameter; retry-loop semantics
+    unchanged)."""
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+    calls: list[dict] = []
+    _stub_gpu_provision_preflights(monkeypatch)
+    monkeypatch.setattr(pod_lifecycle, "create_pod", _fake_gpu_create_pod(calls))
+
+    ns = _gpu_provision_ns(2011, dry_run=False, wait_for_capacity=True, data_center_id="EU-SE-1")
+    pod_lifecycle.cmd_provision(ns)
+
+    assert len(calls) == 1
+    assert calls[0]["data_center_id"] == "EU-SE-1"
+
+
+def test_data_center_id_threads_to_cpu_create_pod(
+    isolated_state, stub_list_team_pods, cpu_provision_stubs
+):
+    """The CPU branch threads --data-center-id into create_cpu_pod; absent
+    flag (hand-built Namespace) defaults to None via getattr."""
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+
+    pod_lifecycle.cmd_provision(_cpu_provision_ns(747, "cpu-small", data_center_id="CA-MTL-1"))
+    assert cpu_provision_stubs["cpu_calls"][-1]["data_center_id"] == "CA-MTL-1"
+
+    # Hand-built Namespace WITHOUT the flag (predates it): getattr default.
+    pod_lifecycle.cmd_provision(_cpu_provision_ns(748, "cpu-small"))
+    assert cpu_provision_stubs["cpu_calls"][-1]["data_center_id"] is None
+
+
+def test_explicit_dc_pin_warns_and_still_reaches_create(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """Must-ask constraint (plan §10): an explicit --data-center-id matching
+    a recorded bad placement's DC WARNs loudly AND is still honored — the
+    pin reaches create_pod unchanged, never silently dropped."""
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+    pod_lifecycle.note_bad_placement(
+        1947, "pod-1947-b", "id-old", "9.9.9.9", "EU-RO-1", reason="bootstrap-failed"
+    )
+    calls: list[dict] = []
+    _stub_gpu_provision_preflights(monkeypatch)
+    monkeypatch.setattr(pod_lifecycle, "create_pod", _fake_gpu_create_pod(calls))
+
+    ns = _gpu_provision_ns(2011, dry_run=False, wait_for_capacity=False, data_center_id="EU-RO-1")
+    pod_lifecycle.cmd_provision(ns)
+
+    assert "[bad-host-DC-PIN]" in capsys.readouterr().err
+    assert calls[0]["data_center_id"] == "EU-RO-1"  # explicit pin WINS
+
+
+def test_provision_parser_exposes_data_center_id():
+    """The provision subparser wires --data-center-id (default None)."""
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="cmd")
+    pod_lifecycle._parser_provision(sub)
+
+    ns = parser.parse_args(["provision", "--issue", "51", "--data-center-id", "EU-RO-1"])
+    assert ns.data_center_id == "EU-RO-1"
+    ns0 = parser.parse_args(["provision", "--issue", "51"])
+    assert ns0.data_center_id is None
+
+
+def test_parse_pod_populates_placement_identity():
+    """_parse_pod surfaces machine.podHostId / machine.dataCenterId on the
+    PodInfo (#2011); selections that omit them parse to None (the
+    list_team_pods hot query stays without the fields)."""
+    from runpod_api import _parse_pod
+
+    raw = {
+        "id": "pod-x",
+        "name": "pod-2011",
+        "desiredStatus": "RUNNING",
+        "gpuCount": 1,
+        "machine": {
+            "gpuTypeId": "NVIDIA H100 80GB HBM3",
+            "podHostId": "pod-x-644123f3",
+            "dataCenterId": "EUR-IS-5",
+        },
+        "runtime": {"ports": []},
+    }
+    parsed = _parse_pod(raw)
+    assert parsed.pod_host_id == "pod-x-644123f3"
+    assert parsed.data_center_id == "EUR-IS-5"
+
+    raw_without = {
+        "id": "pod-y",
+        "name": "pod-2",
+        "desiredStatus": "RUNNING",
+        "gpuCount": 1,
+        "machine": {"gpuTypeId": "NVIDIA H100 80GB HBM3"},
+        "runtime": {"ports": []},
+    }
+    parsed_without = _parse_pod(raw_without)
+    assert parsed_without.pod_host_id is None
+    assert parsed_without.data_center_id is None
