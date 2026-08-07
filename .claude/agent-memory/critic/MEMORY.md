@@ -17,6 +17,11 @@
 - [Seed-conditioned cluster bootstrap](feedback_seed_conditioned_cluster_bootstrap.md) — 2-seed cluster CIs understate run noise ~5x (#571)
 - [Best-of-group selection asymmetry](feedback_bestofgroup_selection_asymmetry.md) — biased when K differs 10-30x; report K (#545)
 - [Diagnostic-gated null-family selection](feedback_diagnostic_gated_null_family_selection.md) — OK iff DV-independent gate + between-regimes threshold + neutral-family conjunction (#778 v7)
+- [Single-generation selection axis](feedback_single_generation_selection_axis.md) — near-duplicate union cells = double-counted stringency; single-gen axis + parked robustness arm (#2061)
+- [Pool-ceiling absolute gate](feedback_pool_ceiling_absolute_gate.md) — rows×k ≪ d_sae makes absolute fraction bars unsatisfiable; base-relative on shared slice (#2061)
+- [Mixed-regime selection axis](feedback_mixed_regime_selection_axis.md) — identity estimator branches + degenerate cells in a global-max axis are benign; police λ-criterion asymmetry via engine-identity delta (#2061 v12)
+- [Stage-perm null + modest construct](feedback_stage_permutation_null_modest_construct.md) — stage-label perm nulls don't absorb generic answer-distribution shift; fatality = attribution claim, not measurement (#2061 v12)
+- [Runtime estimator-convention gate](feedback_runtime_estimator_convention_gate.md) — per-cell runtime branch OK iff identity+parity+null-same-path+fail-loud gate+disclosure (#2061 v12)
 
 ## Threshold / calibration provenance
 - [Subset-mismatched threshold calibration](feedback_subset_mismatched_threshold_calibration.md) — recompute same-subset per-prompt (#558)
