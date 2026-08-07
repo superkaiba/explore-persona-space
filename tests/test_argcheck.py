@@ -8,6 +8,13 @@ test-breaking, not just wrong-looking in review. T2.2-T2.5 pin the four
 measured false-positive classes (47 confirmed FPs across 927 candidate
 files: 23 ``dest=``, 9 subparsers, 15 runtime-assignment, plus the
 fingerprint-identified imported-parser-builder class).
+
+Round 2 (concern ``argcheck-exact-dest-derivation``) adds the exact-dest
+pins: the multi-long false-negative regression (a revert to the round-1
+all-candidates superset — or to single-first-string derivation — is
+test-breaking), the short+long / short-only false-positive guards, the
+dynamic-option permissive fallback, the hyphenated-positional verbatim
+dest, and the ``del args.<attr>`` reference pin.
 """
 
 from __future__ import annotations
@@ -228,6 +235,204 @@ def test_positional_argument_name_defines_attr(tmp_path):
         """,
     )
     assert_args_attributes_defined(driver)
+
+
+def test_multi_option_alias_read_is_flagged(tmp_path):
+    """R2.1 — the ``argcheck-exact-dest-derivation`` regression pin.
+
+    argparse derives EXACTLY ONE dest per call — the first LONG option —
+    so under ``add_argument("--new-name", "--old-name")`` the dest is
+    ``new_name`` and ``args.old_name`` is a guaranteed runtime
+    ``AttributeError``. Round 1's all-candidates superset put ``old_name``
+    in DEFINED and PASSed this module (the reviewer-confirmed false
+    negative); exact derivation must flag it. This test FAILS against the
+    round-1 implementation by construction.
+    """
+    driver = _write(
+        tmp_path,
+        "driver.py",
+        """
+        import argparse
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.add_argument("--new-name", "--old-name", default=None)
+            args = ap.parse_args()
+            print(args.old_name)
+        """,
+    )
+    with pytest.raises(SystemExit) as exc:
+        assert_args_attributes_defined(driver)
+    assert "old_name" in str(exc.value)
+
+    reader_of_real_dest = _write(
+        tmp_path,
+        "driver_ok.py",
+        """
+        import argparse
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.add_argument("--new-name", "--old-name", default=None)
+            args = ap.parse_args()
+            print(args.new_name)
+        """,
+    )
+    assert_args_attributes_defined(reader_of_real_dest)
+
+
+def test_short_plus_long_defines_long_dest_only(tmp_path):
+    """R2.2 — the false-positive guard that motivated the r1 superset.
+
+    ``("-n", "--dry-run")``: the long option wins, so ``args.dry_run``
+    passes — AND the short option contributes NO dest: ``args.n`` is a
+    runtime ``AttributeError`` and must be flagged.
+    """
+    driver = _write(
+        tmp_path,
+        "driver.py",
+        """
+        import argparse
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.add_argument("-n", "--dry-run", action="store_true")
+            args = ap.parse_args()
+            if args.dry_run:
+                print("dry run")
+        """,
+    )
+    assert_args_attributes_defined(driver)
+
+    short_reader = _write(
+        tmp_path,
+        "driver_short.py",
+        """
+        import argparse
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.add_argument("-n", "--dry-run", action="store_true")
+            args = ap.parse_args()
+            if args.n:
+                print("wrong attribute")
+        """,
+    )
+    with pytest.raises(SystemExit) as exc:
+        assert_args_attributes_defined(short_reader)
+    # "n" is the sole gap, so it sits alone between the header and "scanned:".
+    assert "never defined: n\n" in str(exc.value)
+
+
+def test_short_only_option_defines_short_dest(tmp_path):
+    """R2.3 — no long option: the first (short) option string is the dest."""
+    driver = _write(
+        tmp_path,
+        "driver.py",
+        """
+        import argparse
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.add_argument("-v", action="count")
+            args = ap.parse_args()
+            print(args.v)
+        """,
+    )
+    assert_args_attributes_defined(driver)
+
+
+def test_dynamic_option_strings_keep_permissive_fallback(tmp_path):
+    """R2.4 — non-constant option string => the documented permissive path.
+
+    With ``add_argument(FLAG_VAR, "--aaa", "--bbb")`` the runtime value of
+    ``FLAG_VAR`` could displace EITHER constant as the first long option,
+    so the dest is not statically computable: every constant candidate
+    enters DEFINED (never a false positive on a dynamic parser). A future
+    "exact everywhere" change that ranked only the constants would flag
+    ``bbb`` and break this pin.
+    """
+    driver = _write(
+        tmp_path,
+        "driver.py",
+        """
+        import argparse
+
+        EXTRA_FLAG = "--zzz"
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.add_argument(EXTRA_FLAG, "--aaa", "--bbb")
+            args = ap.parse_args()
+            print(args.aaa, args.bbb)
+        """,
+    )
+    assert_args_attributes_defined(driver)
+
+
+def test_hyphenated_positional_keeps_hyphen_verbatim(tmp_path):
+    """R2.5 — r1 NIT: argparse keeps the hyphen in a positional's dest.
+
+    ``add_argument("src-dir")`` yields dest ``src-dir`` (verified against
+    the live interpreter) — NOT ``src_dir`` — so the underscore-alias read
+    is a genuine runtime ``AttributeError`` and must be flagged. (The
+    verbatim ``src-dir`` name can never match an attribute read, so
+    keeping it in DEFINED is harmless.)
+    """
+    driver = _write(
+        tmp_path,
+        "driver.py",
+        """
+        import argparse
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.add_argument("src-dir")
+            args = ap.parse_args()
+            print(args.src_dir)
+        """,
+    )
+    with pytest.raises(SystemExit) as exc:
+        assert_args_attributes_defined(driver)
+    assert "src_dir" in str(exc.value)
+
+
+def test_del_of_undefined_attr_is_flagged(tmp_path):
+    """R2.6 — r1 NIT: ``del args.<attr>`` requires the attribute to exist.
+
+    A Del-context attribute on the namespace is a REFERENCE (a ``del`` of
+    an undefined attr raises ``AttributeError`` at runtime, like a read);
+    a Store-defined attr may be deleted freely (the set-based check has no
+    flow ordering, consistent with the documented AugAssign stance).
+    """
+    driver = _write(
+        tmp_path,
+        "driver.py",
+        """
+        def run(args):
+            del args.ghost
+        """,
+    )
+    with pytest.raises(SystemExit) as exc:
+        assert_args_attributes_defined(driver)
+    assert "ghost" in str(exc.value)
+
+    store_then_del = _write(
+        tmp_path,
+        "driver_ok.py",
+        """
+        import argparse
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.add_argument("--keep")
+            args = ap.parse_args()
+            args.scratch = 1
+            del args.scratch
+            print(args.keep)
+        """,
+    )
+    assert_args_attributes_defined(store_then_del)
 
 
 def test_multi_gap_message_names_every_gap(tmp_path):
