@@ -17,8 +17,10 @@ plan §6 statistical outputs:
   (P1 role m=31 / P2 route m=15 / P3 dose-position m=28), pair-clustered
   bootstrap 95% CIs (B=10,000, seed 21620, batched index-GEMM via
   ``issue2094_analysis.bootstrap_family_means_batched``), the disjoint-CI
-  check against BOTH nulls, realized-MDE report, and the stage-2 selection
-  -> ``best_cells.json`` (cap 12 by descending steered F_beh).
+  check against BOTH nulls, realized-MDE report, the registered P3 per-pair
+  depth/load slopes with pair-clustered bootstrap CIs (``dose_slopes``), and
+  the stage-2 selection -> ``best_cells.json`` (cap 12 by descending steered
+  F_beh).
 - ``--step margin``: TF fixed-pool margin reduction + the rule-19 validation
   rho(margin shift, F_beh) — reported BEFORE the margin carries any read.
 - ``--step probe``: batched-torch L2 logistic read probe per (type x slot x
@@ -28,6 +30,11 @@ plan §6 statistical outputs:
   per-draw re-maxed; the per-draw x per-layer AUC matrix is persisted).
 - ``--step two-by-two``: the read x write 2x2 verdicts incl. the explicit
   ``untestable-causal`` label for sub-floor cells (post-exclusion n < 12).
+- ``--step stage2``: reduces the stage-2 layer-localization rollouts + judge
+  scores to ``stage2_cells.jsonl`` — one row per (pair x slot x arm x layer x
+  dose), same F_beh reduction + shared anchor pools as ``f-tables`` (the
+  manifest ``layer_profile_stage2`` source; skipped under ``--step all`` when
+  ``--stage2-dir`` is absent, i.e. before stage 2 has run).
 
 Checkpoint-per-step: every step writes its outputs atomically the moment it
 completes and re-runs skip nothing silently (inputs are re-read; outputs are
@@ -217,6 +224,17 @@ def step_f_tables(args: argparse.Namespace) -> None:
     for row in anchor_rows:
         anchor_draws_by_ctx[row["context_id"]].append(row["draw"])
 
+    # Per-context anchor rollout totals + coherent counts — the anchor-baseline
+    # incoherence term of the manifest coherence_caphit figure (excess
+    # incoherence = arm incoherent fraction MINUS this baseline rate).
+    anchor_total_by_ctx: dict[str, int] = defaultdict(int)
+    anchor_coherent_by_ctx: dict[str, int] = defaultdict(int)
+    for row in anchor_rows:
+        anchor_total_by_ctx[row["context_id"]] += 1
+        coh = coherence.get(J.J94._item_id("c", f"a|{row['context_id']}|{row['draw']}"))
+        if coh is not None and coh > COHERENCE_THRESHOLD:
+            anchor_coherent_by_ctx[row["context_id"]] += 1
+
     # Anchor table rows (per pair: floor/ceiling deltas + separation).
     anchors_out: list[dict] = []
     sep_by_pair: dict[str, float | None] = {}
@@ -240,6 +258,10 @@ def step_f_tables(args: argparse.Namespace) -> None:
                 "value_b": p.value_b,
                 "n_floor_draws": len(d_floor),
                 "n_ceiling_draws": len(d_ceiling),
+                "n_floor_rollouts": anchor_total_by_ctx.get(p.a, 0),
+                "n_floor_coherent": anchor_coherent_by_ctx.get(p.a, 0),
+                "n_ceiling_rollouts": anchor_total_by_ctx.get(p.b, 0),
+                "n_ceiling_coherent": anchor_coherent_by_ctx.get(p.b, 0),
                 "delta_floor_mean": sum(d_floor) / len(d_floor) if d_floor else None,
                 "delta_ceiling_mean": sum(d_ceiling) / len(d_ceiling) if d_ceiling else None,
                 "separation": sep,
@@ -509,6 +531,51 @@ def step_stats(args: argparse.Namespace) -> None:
             per_cell[key]["holm_family_m"] = len(pvals)
             per_cell[key]["holm_pass"] = p_adj < HOLM_ALPHA
 
+    # Registered P3 secondary (manifest recency_load_curves transform): the
+    # per-pair depth/load slope with a pair-clustered bootstrap 95% CI. A pair
+    # is traced across levels by (carrier, value_a, value_b) within one base
+    # type; level 1 = the uncrossed base cell, levels 3/5 = the crossed cells.
+    crossed = set(BANK.crossed_cells())
+    slope_groups: dict[tuple[str, str, str], dict[tuple[str, str, str], dict[int, float]]] = (
+        defaultdict(lambda: defaultdict(dict))
+    )
+    for r in steered:
+        if r["f_beh"] is None or r["separation"] is None or abs(r["separation"]) < SEPARATION_BAR:
+            continue
+        base = BANK.base_type_of(r["cell"])
+        for prefix, tag in (("recency", "d"), ("load", "l")):
+            if r["cell"] == base:
+                if not any(c.startswith(f"{prefix}_{base}_") for c in crossed):
+                    continue
+                level = 1
+            elif r["cell"].startswith(f"{prefix}_{base}_{tag}"):
+                level = int(r["cell"].rsplit(tag, 1)[-1])
+            else:
+                continue
+            pair_key = (r["carrier"], r["value_a"], r["value_b"])
+            slope_groups[(prefix, base, r["slot"])][pair_key][level] = r["f_beh"]
+    dose_slopes: dict[str, dict] = {}
+    for (prefix, base, slot), pairs_map in sorted(slope_groups.items()):
+        slopes: list[float] = []
+        for _, by_level in sorted(pairs_map.items()):
+            if len(by_level) < 2:
+                continue
+            xs = np.asarray(sorted(by_level), dtype=np.float64)
+            ys = np.asarray([by_level[int(x)] for x in xs], dtype=np.float64)
+            slopes.append(float(np.polyfit(xs, ys, 1)[0]))
+        if not slopes:
+            continue
+        boots = bootstrap_family_means_batched(
+            np.asarray(slopes, dtype=np.float64)[:, None], BOOT_B, BOOT_SEED
+        )
+        lo, hi = np.nanpercentile(boots[:, 0], [2.5, 97.5])
+        dose_slopes[f"{prefix}|{base}|{slot}"] = {
+            "n_pairs": len(slopes),
+            "slope_mean": float(np.mean(slopes)),
+            "ci95": [float(lo), float(hi)],
+            "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)",
+        }
+
     survivors = sorted(
         (
             rec
@@ -530,6 +597,7 @@ def step_stats(args: argparse.Namespace) -> None:
         args.out_dir / "stats.json",
         {
             "per_cell": per_cell,
+            "dose_slopes": dose_slopes,
             "families": {fam: len(p) for fam, p in family_p.items()},
             "bars": {
                 "separation_bar": SEPARATION_BAR,
@@ -810,6 +878,9 @@ def step_probe(args: argparse.Namespace) -> None:
                     "cell": cell,
                     "slot": slot,
                     "auc_per_layer": obs_layer.tolist(),
+                    # Per-value-pair curves (manifest probe_layer_curves points).
+                    "auc_per_layer_per_vp": [a.tolist() for a in per_vp_obs],
+                    "value_pairs": [list(vp) for vp in vps],
                     "max_auc_over_layers": max_auc,
                     "best_layer": layers[int(obs_layer.argmax())],
                     "perm_band_97p5": band,
@@ -879,6 +950,105 @@ def step_two_by_two(args: argparse.Namespace) -> None:
     logger.info("[2x2] %d cells (%d untestable-causal)", len(out), n_unt)
 
 
+# ── step: stage2 tables ───────────────────────────────────────────────
+
+
+def step_stage2(args: argparse.Namespace) -> None:
+    """Reduce stage-2 rollouts + judge scores to per-(pair x block) F_beh rows.
+
+    Writes ``stage2_cells.jsonl`` — the manifest ``layer_profile_stage2`` /
+    ``layer_profile_stage2_perpair`` source: one row per
+    (pair x slot x arm x layer x dose) stage-2 block membership, with the
+    same dual-rubric contrast -> floor/ceiling-normalized F_beh reduction as
+    ``step_f_tables`` (anchor pools shared with stage 1).
+    """
+    if args.stage2_dir is None or not args.stage2_dir.is_dir():
+        if args.step == "all":
+            logger.info("[stage2] skipped — no --stage2-dir (stage-2 not yet run)")
+            return
+        raise AssertionError("--step stage2 requires --stage2-dir with shard_*.jsonl")
+    pairs = BANK.build_pairs()
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    s2_rows = J.load_stage2_rows(args.stage2_dir)
+    anchor_rows = J.load_anchor_rows(args.anchors_dir)
+    # The .stage2 suffix files carry BOTH coherence.stage2 and {rid}.stage2
+    # waves (distinct item-id tags "c" vs "s"), exactly like the grid suffix.
+    beh_s2 = load_wave_scores(args.scores_dir, "stage2")
+    beh_anchor = load_wave_scores(args.scores_dir, "anchors")
+
+    anchor_cache: dict[str, tuple[list[float], list[float]]] = {}
+
+    def _floor_ceiling(p: BANK.Pair2162) -> tuple[list[float], list[float]]:
+        if p.pair_id not in anchor_cache:
+            anchor_cache[p.pair_id] = (
+                _anchor_deltas(anchor_rows, beh_anchor, beh_anchor, p, p.a),
+                _anchor_deltas(anchor_rows, beh_anchor, beh_anchor, p, p.b),
+            )
+        return anchor_cache[p.pair_id]
+
+    by_block_pair: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for row in s2_rows:
+        by_block_pair[(row["block_key"], row["pair_id"])].append(row)
+
+    out: list[dict] = []
+    for (block_key, pair_id), rows in sorted(by_block_pair.items()):
+        p = pairs_by_id[pair_id]
+        if J.pair_rubric_cores(p) is None:
+            continue
+        deltas: list[float] = []
+        n_coherent = 0
+        n_cap = 0
+        for row in rows:
+            n_cap += int(row.get("cap_hit", False))
+            coh = beh_s2.get(J.J94._item_id("c", f"s|{block_key}|{pair_id}|{row['draw']}"))
+            if coh is None or coh <= COHERENCE_THRESHOLD:
+                continue
+            n_coherent += 1
+            sa = _grid_behavior_score(beh_s2, "s", block_key, pair_id, row["draw"], "a")
+            sb = _grid_behavior_score(beh_s2, "s", block_key, pair_id, row["draw"], "b")
+            if sa is None or sb is None:
+                continue
+            deltas.append((sb - sa) / 100.0)
+        d_floor, d_ceiling = _floor_ceiling(p)
+        f_beh = None
+        sep = None
+        if d_floor and d_ceiling:
+            df = sum(d_floor) / len(d_floor)
+            dc = sum(d_ceiling) / len(d_ceiling)
+            sep = dc - df
+            if deltas and abs(dc - df) > 1e-9:
+                f_beh = (sum(deltas) / len(deltas) - df) / (dc - df)
+        r0 = rows[0]
+        out.append(
+            {
+                "block_key": block_key,
+                "pair_id": pair_id,
+                "cell": r0["cell"],
+                "slot": r0["slot"],
+                "arm": r0["arm"],
+                "layer": r0["layer"],
+                "dose": r0["dose"],
+                "mode": r0.get("mode", "add"),
+                "carrier": p.carrier,
+                "value_a": p.value_a,
+                "value_b": p.value_b,
+                "donor_pair_id": r0.get("donor_pair_id"),
+                "n_draws": len(rows),
+                "n_coherent": n_coherent,
+                "n_scored": len(deltas),
+                "n_cap_hit": n_cap,
+                "delta_patched_mean": sum(deltas) / len(deltas) if deltas else None,
+                "f_beh": f_beh,
+                "separation": sep,
+                "family": family_of(r0["cell"], r0["slot"]),
+                "len_delta": r0.get("len_delta"),
+            }
+        )
+    assert out, "stage2 reduce produced 0 rows"
+    _write_jsonl_atomic(args.out_dir / "stage2_cells.jsonl", out)
+    logger.info("[stage2] rows=%d blocks=%d", len(out), len({r["block_key"] for r in out}))
+
+
 # ── CLI ───────────────────────────────────────────────────────────────
 
 STEPS = {
@@ -887,6 +1057,7 @@ STEPS = {
     "margin": step_margin,
     "probe": step_probe,
     "two-by-two": step_two_by_two,
+    "stage2": step_stage2,
 }
 
 
@@ -897,6 +1068,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--anchors-dir", type=Path, required=False)
     ap.add_argument("--va-dir", type=Path, required=False)
     ap.add_argument("--margin-dir", type=Path, required=False)
+    ap.add_argument("--stage2-dir", type=Path, required=False)
     ap.add_argument("--bank-pt", type=Path, required=False)
     ap.add_argument("--scores-dir", type=Path, default=Path("eval_results/issue_2162/judge/scores"))
     ap.add_argument("--out-dir", type=Path, default=Path("eval_results/issue_2162/f_metrics"))
