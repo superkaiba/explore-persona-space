@@ -36,6 +36,10 @@ goal: 'On Qwen-2.5-7B-Instruct, determine which kinds of context information are
   layer x dose profile, with a LINEAR read-probe companion per type/state/layer (group-held-out
   folds) so a null separates ''not encoded'' from ''encoded but not causally usable'',
   reported in three separately Holm-corrected pre-registered families.'
+relates_to:
+- spec-context-as-vector
+- spec-prompt-vs-icl
+- spec-role-header
 ---
 # Which kinds of context information are carried at the context vector: a patch-only sweep over 21 minimal-pair information types, crossed with route conflict, recency, and load
 

@@ -38,7 +38,7 @@ How do we measure a distance between contexts $C$ — a trained-in marker's log-
 
 **1.1 Can a context be treated as a vector or a compact code?** <!-- q:spec-context-as-vector -->
 Take the last activation after a context — in-context examples, a random system prompt, or a non-persona system prompt — and use it as the persona vector; richer alternatives are a KV-derived code or a small distilled model. The hypothesis is that a KV-cache state can do something smarter than a fixed persona vector.
-> **Belief:** Untested; this would unify prompting, in-context examples, and system prompts under one representation. **Confidence:** LOW. **Evidence:** #685, #823, #841, #922, #923, #928, #952, #958, #1073, #1092, #1005, #1415, #1072, #1426, #1482, #1489, #1491, #1738, #1739, #1774, #1775, #1773, #1769, #1776, #1900, #1901, #1946, #1945, #1895, #1979, #2054, #2091, #2094.
+> **Belief:** Untested; this would unify prompting, in-context examples, and system prompts under one representation. **Confidence:** LOW. **Evidence:** #685, #823, #841, #922, #923, #928, #952, #958, #1073, #1092, #1005, #1415, #1072, #1426, #1482, #1489, #1491, #1738, #1739, #1774, #1775, #1773, #1769, #1776, #1900, #1901, #1946, #1945, #1895, #1979, #2054, #2091, #2094, #2162.
 
 **1.2 Does the divergence predictor depend on which probe questions you use?** <!-- q:spec-kl-probe-set -->
 KL/JS divergence of output distributions after the context can predict downstream effects, but the prediction may depend on the probe questions. Can we find a probe set that is a good predictor?
@@ -50,7 +50,7 @@ Equivalence is the distance question applied to differently-induced contexts —
 
 **1.3 Do persona prompting and in-context examples produce the same contextual model?** <!-- q:spec-prompt-vs-icl -->
 Hold one behavior fixed (the marker) and compare the two specifications.
-> **Belief:** Metric-dependent: the two specifications drive similar marker-leakage behavior in log-prob space, but at *training* time they install measurably different gating — a system-prompt-specified marker fires as argmax on 100% of demo-free default probes, while demo-specified training gates that to 26% (k=1) and 0% (k=3) even though the marker's log-prob at the default stays within ~2 nats across arms (#465; one persona, single seed). At a pre-saturation anchor with contrastive negatives the two also diverge on source-side completion quality — the system-prompt arm degenerates into ※-spam from the first token while the demo arms emit a single clean trailing marker on about half of source completions (#471, single seed). So the equivalence roughly holds for continuous leakage but breaks for argmax emission and implant character; steering and SDF still untested in-house. **Confidence:** MODERATE. **Evidence:** #138, #465, #471, #524, #594, #491.
+> **Belief:** Metric-dependent: the two specifications drive similar marker-leakage behavior in log-prob space, but at *training* time they install measurably different gating — a system-prompt-specified marker fires as argmax on 100% of demo-free default probes, while demo-specified training gates that to 26% (k=1) and 0% (k=3) even though the marker's log-prob at the default stays within ~2 nats across arms (#465; one persona, single seed). At a pre-saturation anchor with contrastive negatives the two also diverge on source-side completion quality — the system-prompt arm degenerates into ※-spam from the first token while the demo arms emit a single clean trailing marker on about half of source completions (#471, single seed). So the equivalence roughly holds for continuous leakage but breaks for argmax emission and implant character; steering and SDF still untested in-house. **Confidence:** MODERATE. **Evidence:** #138, #465, #471, #524, #594, #491, #2162.
 
 **1.4 Does a steering vector reach the same state?** <!-- q:spec-steering -->
 Project a persona steering vector onto the states reachable by prompts and contexts; measure the residual.
@@ -66,7 +66,7 @@ Test whether the log-probs of a system-prompted model on drifted tokens are high
 
 **1.7 Does a custom chat-template role header induce the same context as a system prompt, or segment a persona's behavior more cleanly?** <!-- q:spec-role-header -->
 A persona can be denoted by a system prompt or by giving it its own chat-template role header (e.g. `<|im_start|>evil_assistant`) — a new context-inducer alongside prompting, in-context examples, steering, and SDF. Two linked sub-questions: does the role header reach the same context as the matching system prompt (equivalence), and does keying a behavior to the role token leave less of it leaking to the default `assistant` role and to other personas than the system-prompt encoding (cleaner segmentation)?
-> **State:** 🌱 budding · LOW · updated 2026-06-02 · evidence: #464, #517, #528, #529, #533, #546, #547, #556, #611
+> **State:** 🌱 budding · LOW · updated 2026-06-02 · evidence: #464, #517, #528, #529, #533, #546, #547, #556, #611, #2162
 
 ### 2. Updating (W, C) toward a behavior — what installs, at what cost?
 
