@@ -540,6 +540,7 @@ class RunConfig:
     smoke: bool
     pilot: bool
     force: bool
+    force_past_halt_gates: bool
     worker_index: int
     num_workers: int
     upload_mode: str  # "hf" | "local-mirror" | "none"
@@ -609,7 +610,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--force",
         action="store_true",
-        help="override gate refusals; on --phase bank|anchors, re-run a completed phase",
+        help="re-run a completed bank/anchors/margin phase (resume override ONLY — "
+        "it does NOT bypass the plan §7 HALT gates or the pilot refusal; r1 M3)",
+    )
+    ap.add_argument(
+        "--force-past-halt-gates",
+        action="store_true",
+        help="DANGEROUS: proceed past a FAILED §7 HALT gate (degeneracy / injection / "
+        "pilot refusal); never passed by the dispatcher — manual diagnosis only",
     )
     ap.add_argument("--worker-index", type=int, default=0)
     ap.add_argument("--num-workers", type=int, default=1)
@@ -657,6 +665,7 @@ def build_config(args: argparse.Namespace) -> RunConfig:
         smoke=args.smoke,
         pilot=args.pilot,
         force=args.force,
+        force_past_halt_gates=args.force_past_halt_gates,
         worker_index=args.worker_index,
         num_workers=args.num_workers,
         upload_mode=args.upload,
@@ -1226,9 +1235,12 @@ def phase_bank(cfg: RunConfig) -> int:
             degeneracy["n_violations"],
             degeneracy["n_pairs_checked"],
         )
-        if not cfg.force:
+        if not cfg.force_past_halt_gates:
             return RC_DEGENERACY_GATE
-        logger.error("[degeneracy_guard] --force set: proceeding on a FAILED guard (recorded)")
+        logger.error(
+            "[degeneracy_guard] --force-past-halt-gates set: proceeding on a FAILED guard "
+            "(recorded)"
+        )
 
     report = run_injection_gate(cfg, model, tok, bank, pairs, donor_maps)
     _write_json_atomic(cfg.bank_dir / "injection_gate_report.json", report)
@@ -1238,9 +1250,11 @@ def phase_bank(cfg: RunConfig) -> int:
             report["n_spots_failed"],
             report["n_spots"],
         )
-        if not cfg.force:
+        if not cfg.force_past_halt_gates:
             return RC_INJECTION_GATE
-        logger.error("[injection_gate] --force set: proceeding on a FAILED gate (recorded)")
+        logger.error(
+            "[injection_gate] --force-past-halt-gates set: proceeding on a FAILED gate (recorded)"
+        )
     _write_json_atomic(
         cfg.manifest_dir / "bank_done.json",
         {
@@ -1249,7 +1263,9 @@ def phase_bank(cfg: RunConfig) -> int:
             "n_contexts": len(bank["per_context"]),
             "injection_gate_passed": bool(report["passed"]),
             "degeneracy_gate_passed": bool(degeneracy["passed"]),
-            "forced_past_gate": bool(cfg.force and not (report["passed"] and degeneracy["passed"])),
+            "forced_past_gate": bool(
+                cfg.force_past_halt_gates and not (report["passed"] and degeneracy["passed"])
+            ),
             "repro": _repro(cfg),
         },
     )
@@ -1730,9 +1746,15 @@ def run_block(
     regime_fp: str,
     pools: dict[str, list[dict]] | None,
     draws: int,
+    write_done: bool = True,
 ) -> dict:
     """One block: K hooked temp-1.0 draws per pair, the hooked V_a pass, and
-    (pools present) the margin TF pass — pipelined on the same GPU."""
+    (pools present) the margin TF pass — pipelined on the same GPU.
+
+    ``write_done=False`` (the PILOT leg) suppresses BOTH resume done-files —
+    the block done-file AND the margin_blocks twin — so a pilot run on
+    production ``blocks[0]`` can never leave a ``regime_fp + "-pilot"`` done
+    record that the grid queue's ``block_is_done`` scan RAISES on (r1 C1)."""
     cells = _block_cells(bank, block, pairs_by_id, donor_maps)
 
     def ids_for(cid: str) -> list[int]:
@@ -1843,16 +1865,17 @@ def run_block(
     if pools is not None:
         margin_rows = _block_margin_rows(cfg, model, tok, block, cells, pools, ctx_ids_cache)
         _write_jsonl_atomic(cfg.margin_dir / f"shard_{block.slug}.jsonl", margin_rows)
-        _write_json_atomic(
-            block_done_path(cfg.out_root, block, "margin_blocks"),
-            {
-                "key": block.key,
-                "regime_fp": regime_fp,
-                "n_rows": len(margin_rows),
-                "n_skipped": sum(1 for r in margin_rows if r.get("skipped")),
-                "repro": _repro(cfg),
-            },
-        )
+        if write_done:
+            _write_json_atomic(
+                block_done_path(cfg.out_root, block, "margin_blocks"),
+                {
+                    "key": block.key,
+                    "regime_fp": regime_fp,
+                    "n_rows": len(margin_rows),
+                    "n_skipped": sum(1 for r in margin_rows if r.get("skipped")),
+                    "repro": _repro(cfg),
+                },
+            )
         margin_done = True
     done = {
         "key": block.key,
@@ -1864,7 +1887,8 @@ def run_block(
         "margin_inline": margin_done,
         "repro": _repro(cfg),
     }
-    _write_json_atomic(block_done_path(cfg.out_root, block), done)
+    if write_done:
+        _write_json_atomic(block_done_path(cfg.out_root, block), done)
     return done
 
 
@@ -1961,8 +1985,10 @@ def phase_grid(cfg: RunConfig) -> int:
             pending.clear()
 
     if cfg.pilot:
-        # The pilot times ONE production-shape block through this entrypoint
-        # (no claim, no done-file — a pilot never poisons the resume state).
+        # The pilot times ONE production-shape block through this entrypoint.
+        # No claim, and write_done=False — the r1 C1 bug was an unconditional
+        # done-file write inside run_block that left blocks/<slug>.done.json
+        # carrying regime_fp+"-pilot", killing every grid worker at P3 entry.
         t0 = time.monotonic()
         rec = run_block(
             cfg,
@@ -1978,6 +2004,7 @@ def phase_grid(cfg: RunConfig) -> int:
             regime_fp + "-pilot",
             pools,
             draws,
+            write_done=False,
         )
         ran_wall = time.monotonic() - t0
         ran_rollouts = rec["n_rows"]
@@ -2037,7 +2064,7 @@ def _enforce_pilot_gate(
         "refusal_threshold_h": PILOT_REFUSAL_MULT * cfg.planned_wall_h,
         "recommended_poll_fence_h": fence_h,
         "sweep_allowed": not refuse,
-        "forced": cfg.force,
+        "forced": cfg.force_past_halt_gates,
         "repro": _repro(cfg),
     }
     _write_json_atomic(cfg.out_root / "pilot_gate_report.json", report)
@@ -2050,10 +2077,10 @@ def _enforce_pilot_gate(
         fence_h,
         not refuse,
     )
-    if refuse and not cfg.force:
+    if refuse and not cfg.force_past_halt_gates:
         logger.error(
             "[pilot_gate] projected pod wall %.2f h > %.1fx planned %.2f h — refusing the grid "
-            "(pass --force to override, or descope per the plan §9 ladder)",
+            "(pass --force-past-halt-gates to override, or descope per the plan §9 ladder)",
             projected_h,
             PILOT_REFUSAL_MULT,
             cfg.planned_wall_h,
