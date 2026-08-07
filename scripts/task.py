@@ -54,6 +54,7 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from explore_persona_space.task_workflow import (  # noqa: E402
+    AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS,
     CONCERN_SEVERITIES,
     KINDS,
     STATUSES,
@@ -82,6 +83,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     reap_stale_status_husks,
     reconcile_registry,
     remove_tag,
+    resolve_plan_gate_cap,
     set_body,
     set_clean_result,
     set_goal,
@@ -398,12 +400,15 @@ def _resolve_autonomous_plan_gate(gpu_hours: float | None) -> tuple[str, float, 
     Returns ``(decision, cap, autonomous)`` where ``decision`` is one of
     ``"auto_approved" | "parked_over_cap" | "interactive_pending"``.
 
-    Deterministic and code-enforced — reads ``EPM_AUTONOMOUS_SESSION`` +
-    ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` from the process env (the Bash tool
-    inherits the claude-process env, so a spawned ``--auto`` session's vars
-    are visible here). Putting the decision in code means the plan-approval
-    gate no longer depends on the LLM reading a deeply-nested skill step and
-    choosing to obey it over the global "ask before spending money" prior.
+    Deterministic and code-enforced — reads ``EPM_AUTONOMOUS_SESSION`` from
+    the process env (the Bash tool inherits the claude-process env, so a
+    spawned ``--auto`` session's vars are visible here) and resolves the cap
+    through :func:`task_workflow.resolve_plan_gate_cap` — the single
+    resolution point every deciding/reporting/respawn site shares, so the
+    decided threshold and the reported threshold cannot diverge (#2164).
+    Putting the decision in code means the plan-approval gate no longer
+    depends on the LLM reading a deeply-nested skill step and choosing to
+    obey it over the global "ask before spending money" prior.
 
     FAIL SAFE: a missing/None ``gpu_hours`` parks (never auto-approves on a
     blank estimate), matching the SKILL.md Step 2c contract.
@@ -414,11 +419,7 @@ def _resolve_autonomous_plan_gate(gpu_hours: float | None) -> tuple[str, float, 
     # the two layers never disagree on a value like "no" / "FALSE".
     _auto_raw = os.environ.get("EPM_AUTONOMOUS_SESSION", "").strip().lower()
     autonomous = _auto_raw not in ("", "0", "false", "no")
-    cap_raw = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "24")
-    try:
-        cap = float(cap_raw)
-    except (TypeError, ValueError):
-        cap = 24.0
+    cap = resolve_plan_gate_cap()
     if not autonomous:
         return ("interactive_pending", cap, False)
     if gpu_hours is None or gpu_hours > cap:
@@ -1454,7 +1455,8 @@ def main() -> None:
         help=(
             "On a plan_pending transition, apply the code-enforced autonomous "
             "plan-approval gate: if EPM_AUTONOMOUS_SESSION is set and --gpu-hours "
-            "<= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 24), auto-flip to approved "
+            "<= EPM_PLAN_AUTOAPPROVE_GPU_HOURS "
+            f"(default {AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS:g}), auto-flip to approved "
             "and post epm:plan-approved; if over-cap or --gpu-hours is omitted, "
             "stay at plan_pending and post epm:awaiting-spend-approval; if not "
             "autonomous, stay at plan_pending (interactive). Prints a "

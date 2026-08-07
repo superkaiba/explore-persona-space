@@ -12375,7 +12375,12 @@ def _respawn(entry: dict, dry_run: bool) -> str:
     if _auth_outage_spawn_gate(issue, "crash", dry_run=dry_run) is not None:
         print(f"  RESPAWN issue #{issue}: suppressed — auth-outage episode active")
         return "suppressed"
-    cap = entry.get("auto_approve_gpu_hours", 24.0)
+    # Lazy in-process import (watcher convention). The registered cap wins;
+    # a missing key falls back to the SINGLE cap resolution point (#2164),
+    # never a hand-rolled literal that can diverge from the deciding site.
+    from explore_persona_space.task_workflow import resolve_plan_gate_cap
+
+    cap = entry.get("auto_approve_gpu_hours", resolve_plan_gate_cap())
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap),
@@ -17947,17 +17952,22 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
 
 def _stalled_cap_gpu_hours(issue: int) -> float:
     """Read the per-issue autonomous registry entry's
-    ``auto_approve_gpu_hours`` cap (default 24.0 if missing/garbled), so
-    the auto-respawn reuses the same cap the user originally chose.
+    ``auto_approve_gpu_hours`` cap (falling back to
+    ``task_workflow.resolve_plan_gate_cap()`` — the single cap resolution
+    point, #2164 — when the entry is missing/garbled), so the auto-respawn
+    reuses the same cap the user originally chose.
     Mirrors the lookup :func:`_respawn` does on its registry entry."""
+    # Lazy in-process import (watcher convention).
+    from explore_persona_space.task_workflow import resolve_plan_gate_cap
+
     entry_path = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
     try:
         entry = json.loads(entry_path.read_text())
     except (json.JSONDecodeError, OSError):
-        return 24.0
-    cap = entry.get("auto_approve_gpu_hours", 24.0)
+        return resolve_plan_gate_cap()
+    cap = entry.get("auto_approve_gpu_hours", resolve_plan_gate_cap())
     if not isinstance(cap, int | float):
-        return 24.0
+        return resolve_plan_gate_cap()
     return float(cap)
 
 
@@ -31031,14 +31041,24 @@ def _task_title(issue: int) -> str:
 
 
 def _gate_push_message(issue: int, status: str, events: list[dict], over_cap: bool) -> str:
-    """Mirror the /issue-tick 3d message shapes (kept under ~200 chars)."""
+    """Mirror the /issue-tick 3d message shapes (kept under ~200 chars).
+
+    The over-cap branch names the cap the session actually decided against:
+    the per-issue registered ``auto_approve_gpu_hours`` when one exists
+    (:func:`_stalled_cap_gpu_hours` — the watcher cron never sees the
+    session's env, so the registry is the only faithful source), degrading
+    to the single cap resolution point
+    ``task_workflow.resolve_plan_gate_cap()`` when the entry is
+    missing/garbled (#2164 — no hand-rolled env read with its own literal
+    default, which is how the park message came to name a threshold the
+    plan never crossed)."""
     slug = _task_title(issue)
     head = f"#{issue} {slug}".rstrip()  # no double space when the title read failed
     if status == "awaiting_promotion":
         msg = f"{head} · clean-result ready — open to promote"
     elif status == "plan_pending" and over_cap:
-        cap = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100")
-        msg = f"{head} parked at plan_pending — over {cap} GPU-h cap; open to approve"
+        cap = _stalled_cap_gpu_hours(issue)
+        msg = f"{head} parked at plan_pending — over {cap:g} GPU-h cap; open to approve"
     else:  # blocked
         reason = ""
         for row in reversed(events):

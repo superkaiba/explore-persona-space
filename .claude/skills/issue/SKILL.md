@@ -1853,9 +1853,11 @@ Branch on the decision (equivalently, re-read the task status):
     --exit-kind parked --notes "plan_pending; over auto-approve cap"
   ```
   ```python
-  cap = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100")
+  from explore_persona_space.task_workflow import resolve_plan_gate_cap
+
+  cap = resolve_plan_gate_cap()
   PushNotification({
-      "message": f"#{N} {slug} parked at plan_pending — over {cap} GPU-h cap; open to approve"[:200],
+      "message": f"#{N} {slug} parked at plan_pending — over {cap:g} GPU-h cap; open to approve"[:200],
       "status": "proactive",
   })  # soft-fail; deferred-schema may not be loaded
   ```

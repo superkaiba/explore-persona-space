@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -27,6 +28,18 @@ _spec = importlib.util.spec_from_file_location("task_cli_plan_gate", _SCRIPT)
 task_cli = importlib.util.module_from_spec(_spec)  # type: ignore[arg-type]
 sys.modules["task_cli_plan_gate"] = task_cli
 _spec.loader.exec_module(task_cli)  # type: ignore[union-attr]
+
+# scripts/ on sys.path so the reported-cap parity tests can import the
+# watcher + spawn_session the same way their own test files do.
+_SCRIPTS_DIR = str(_SCRIPT.parent)
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+
+from explore_persona_space.task_workflow import (  # noqa: E402
+    AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS,
+    PLAN_GATE_CAP_ENV,
+    resolve_plan_gate_cap,
+)
 
 
 def _clear_env(monkeypatch):
@@ -42,7 +55,7 @@ def test_interactive_when_env_unset(monkeypatch):
     decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "interactive_pending"
     assert autonomous is False
-    assert cap == 24.0
+    assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
 def test_interactive_when_env_zero(monkeypatch):
@@ -76,14 +89,16 @@ def test_auto_approve_under_default_cap(monkeypatch):
     decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "auto_approved"
     assert autonomous is True
-    assert cap == 24.0
+    assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
 def test_auto_approve_at_cap_boundary(monkeypatch):
     """gpu_hours == cap auto-approves (<= comparison)."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
-    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(24.0)
+    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(
+        AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
+    )
     assert decision == "auto_approved"
 
 
@@ -100,11 +115,32 @@ def test_auto_approve_respects_custom_cap(monkeypatch):
 
 
 def test_park_over_default_cap(monkeypatch):
+    """The historical 30-GPU-h-vs-24-cap shape, with the cap set EXPLICITLY.
+
+    Under the post-#2164 code default of
+    AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS (100), a bare 30.0 would
+    auto-approve and this test would silently stop covering the park
+    branch — so it pins the cap env itself to keep exercising that branch
+    regardless of the default's value."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv(PLAN_GATE_CAP_ENV, "24")
     decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(30.0)
     assert decision == "parked_over_cap"
     assert autonomous is True
+
+
+def test_park_over_code_default_when_env_unset(monkeypatch):
+    """With the cap env UNSET, an estimate just over the code default parks
+    (the env-less park branch #2164 realigned to the documented 100)."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(
+        AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS + 1.0
+    )
+    assert decision == "parked_over_cap"
+    assert autonomous is True
+    assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
 def test_park_over_custom_cap(monkeypatch):
@@ -124,13 +160,25 @@ def test_park_when_gpu_hours_missing_fail_safe(monkeypatch):
 
 
 def test_unparseable_cap_falls_back_to_default(monkeypatch):
-    """A garbage cap env value falls back to 24.0 rather than crashing."""
+    """A garbage cap env value falls back to the code default, not a crash."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "not-a-number")
     decision, cap, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
-    assert cap == 24.0
+    assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
     assert decision == "auto_approved"
+
+
+def test_blank_cap_env_falls_back_to_default(monkeypatch):
+    """A BLANK cap env resolves like an absent one (the resolver's stated
+    semantics, #2164) — historically float("") crashed the one site that
+    parsed the env without a try/except (spawn_session register-current)."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv(PLAN_GATE_CAP_ENV, "")
+    _decision, cap, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
+    assert resolve_plan_gate_cap() == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
 def test_case_insensitive_truthiness(monkeypatch):
@@ -147,6 +195,149 @@ def test_case_insensitive_truthiness(monkeypatch):
         monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", truthy)
         _decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
         assert autonomous is True, f"{truthy!r} should be truthy"
+
+
+# ─── #2164: decision cap == reported cap == spawn default ─────────────────
+
+
+def test_decision_cap_equals_reported_cap(monkeypatch, tmp_path):
+    """A2 (#2164): with the cap env UNSET, the cap the gate DECIDES on, the
+    cap the watcher's park message REPORTS, and the `spawn-issue
+    --auto-approve-gpu-hours` argparse default are all the same number —
+    because all three read the one resolver/constant in task_workflow."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+
+    # 1. Deciding site (scripts/task.py).
+    _decision, decided_cap, _autonomous = task_cli._resolve_autonomous_plan_gate(1.0)
+    assert decided_cap == resolve_plan_gate_cap() == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
+
+    # 2. Reporting site (watcher park push). Empty registry dir ⇒ the
+    # message degrades to the resolver default, not a hand-rolled literal.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(asw, "_task_title", lambda _issue: "")
+    msg = asw._gate_push_message(137, "plan_pending", [], True)
+    assert f"over {decided_cap:g} GPU-h cap" in msg
+
+    # 3. Spawning site (argparse default). set_defaults(fn=...) resolves the
+    # module global at parser-build time inside main(), so the monkeypatched
+    # capture function receives the parsed args without spawning anything.
+    import spawn_session as ss
+
+    captured: dict[str, object] = {}
+    monkeypatch.setattr(ss, "cmd_spawn_issue", lambda args: captured.update(vars(args)))
+    ss.main(["spawn-issue", "--issue", "1"])
+    assert captured["auto_approve_gpu_hours"] == decided_cap
+
+
+def test_reported_cap_prefers_registered_per_issue_cap(monkeypatch, tmp_path):
+    """A2 custom-cap clause (#2164): a session spawned with a custom cap
+    registers it, and the watcher's park message names THAT cap (the watcher
+    cron never sees the session's env — the per-issue registry entry is the
+    only faithful source of the cap the session decided against)."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv(PLAN_GATE_CAP_ENV, "50")
+
+    decision, decided_cap, _autonomous = task_cli._resolve_autonomous_plan_gate(60.0)
+    assert decision == "parked_over_cap"
+    assert decided_cap == 50.0
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(asw, "_task_title", lambda _issue: "")
+    (tmp_path / "issue-137.json").write_text(json.dumps({"auto_approve_gpu_hours": 50.0}))
+    msg = asw._gate_push_message(137, "plan_pending", [], True)
+    assert f"over {decided_cap:g} GPU-h cap" in msg
+
+
+# ─── #2164: anti-drift source scan ─────────────────────────────────────────
+
+_CAP_ENV_NAME = "EPM_PLAN_AUTOAPPROVE_GPU_HOURS"
+
+# Env-READ forms of the cap — by literal name or via the shared
+# PLAN_GATE_CAP_ENV constant. Injection dict keys, help strings, and
+# docstrings mention the NAME without a read form and do not match.
+_CAP_READ_PATTERNS = (
+    re.compile(r"\.get\(\s*['\"]" + _CAP_ENV_NAME + r"['\"]"),
+    re.compile(r"getenv\(\s*['\"]" + _CAP_ENV_NAME + r"['\"]"),
+    re.compile(r"environ\[\s*['\"]" + _CAP_ENV_NAME + r"['\"]\s*\]"),
+    re.compile(r"\.get\(\s*PLAN_GATE_CAP_ENV\b"),
+    re.compile(r"getenv\(\s*PLAN_GATE_CAP_ENV\b"),
+    re.compile(r"environ\[\s*PLAN_GATE_CAP_ENV\s*\]"),
+)
+
+# Rows-4/5 drift class (#2164): a numeric-literal fallback on the registry
+# key reads no env, so the env scan alone cannot see it.
+_REGISTRY_LITERAL_FALLBACK = re.compile(r"\.get\(\s*['\"]auto_approve_gpu_hours['\"]\s*,\s*[\d.]")
+
+# Row-8 drift class: a literal-bearing env read in an orchestrator-facing
+# SKILL.md snippet, ready to be copied back into code by a human.
+_SKILL_LITERAL_ENV_READ = re.compile(
+    r"environ\.get\(\s*['\"]" + _CAP_ENV_NAME + r"['\"]\s*,\s*['\"]"
+)
+
+
+def test_cap_env_read_is_single_sourced():
+    """Anti-drift scan (#2164): env-READ forms of the plan-gate cap occur in
+    exactly ONE place repo-wide — the resolver in task_workflow.py — so a
+    tenth divergent site is a red test, not a future incident."""
+    repo = Path(__file__).resolve().parents[1]
+    files = sorted(
+        set(repo.glob("scripts/**/*.py")) | set(repo.glob("src/explore_persona_space/**/*.py"))
+    )
+    # Self-checks: a silently-narrowed glob must fail loud, never pass
+    # vacuously. `scripts/**/*.py` is RECURSIVE on purpose — scripts/ has
+    # .py subdirectories (issue_355/, issue_597/, ...) a non-recursive
+    # `scripts/*.py` would silently skip.
+    assert files, "scan collected no files — the glob is broken"
+    known_subdir_file = repo / "scripts" / "issue_355" / "strip_confound_filter.py"
+    assert known_subdir_file in files, (
+        "known scripts/ SUBDIRECTORY file missing from the collected set — "
+        "the glob is no longer recursive and the repo-wide claim is false"
+    )
+
+    allowed = {repo / "src" / "explore_persona_space" / "task_workflow.py"}
+    offenders: dict[Path, list[str]] = {}
+    registry_fallback_offenders: dict[Path, list[str]] = {}
+    for f in files:
+        text = f.read_text(encoding="utf-8", errors="replace")
+        hits = [p.pattern for p in _CAP_READ_PATTERNS if p.search(text)]
+        if hits and f not in allowed:
+            offenders[f] = hits
+        if _REGISTRY_LITERAL_FALLBACK.search(text):
+            registry_fallback_offenders[f] = [_REGISTRY_LITERAL_FALLBACK.pattern]
+
+    assert not offenders, (
+        "cap env read outside the single resolver (route it through "
+        f"task_workflow.resolve_plan_gate_cap): {offenders}"
+    )
+    # The scan itself must be alive: the resolver's own read matches.
+    resolver_text = next(iter(allowed)).read_text(encoding="utf-8")
+    assert any(p.search(resolver_text) for p in _CAP_READ_PATTERNS), (
+        "the resolver's own env read no longer matches the scan patterns — "
+        "the scan is dead and would pass vacuously"
+    )
+    assert not registry_fallback_offenders, (
+        "numeric-literal fallback on the auto_approve_gpu_hours registry key "
+        "(use task_workflow.resolve_plan_gate_cap() as the fallback): "
+        f"{registry_fallback_offenders}"
+    )
+
+    # Orchestrator-facing SKILL.md snippets: a human copying a snippet must
+    # not be handed a literal-bearing env read (row 8's origin).
+    for skill in (
+        repo / ".claude" / "skills" / "issue" / "SKILL.md",
+        repo / ".claude" / "skills" / "issue-tick" / "SKILL.md",
+    ):
+        assert skill.exists(), f"scanned SKILL.md moved: {skill}"
+        assert not _SKILL_LITERAL_ENV_READ.search(skill.read_text(encoding="utf-8")), (
+            f"{skill}: snippet re-introduces a literal-bearing env read of "
+            f"{_CAP_ENV_NAME} — use task_workflow.resolve_plan_gate_cap()"
+        )
 
 
 # ─── Backstop hook (settings.json PreToolUse on AskUserQuestion) ───────────

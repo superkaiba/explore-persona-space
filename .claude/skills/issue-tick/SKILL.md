@@ -350,8 +350,12 @@ snapshot at a gate also counts — a duplicate push beats a missed one).
 if status == "awaiting_promotion":
     msg = f"#{N} {slug} · clean-result ready — open to promote"
 elif status == "plan_pending":  # over-cap (per the triage verdict reason)
-    cap = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100")
-    msg = f"#{N} {slug} parked at plan_pending — over {cap} GPU-h cap; open to approve"
+    # Single cap resolution point (#2164) — never a hand-rolled env read
+    # with its own literal default.
+    from explore_persona_space.task_workflow import resolve_plan_gate_cap
+
+    cap = resolve_plan_gate_cap()
+    msg = f"#{N} {slug} parked at plan_pending — over {cap:g} GPU-h cap; open to approve"
 elif status == "blocked":
     # reason = the jq-extracted ≤80-char epm:failure slice above — the ONLY
     # marker-note text a tick turn ever pages in, and only on this branch.

@@ -57,7 +57,11 @@ _SRC = Path(__file__).resolve().parent.parent / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from explore_persona_space.task_workflow import primary_checkout_root  # noqa: E402
+from explore_persona_space.task_workflow import (  # noqa: E402
+    AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS,
+    primary_checkout_root,
+    resolve_plan_gate_cap,
+)
 
 HAPPY_HOME = Path.home() / ".happy"
 DAEMON_STATE = HAPPY_HOME / "daemon.state.json"
@@ -2732,7 +2736,10 @@ def cmd_register_current(args: argparse.Namespace) -> None:
             if args.auto_approve_gpu_hours is not None:
                 cap = args.auto_approve_gpu_hours
             else:
-                cap = float(os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100"))
+                # Single cap resolution point (#2164). Also fixes the old
+                # float(os.environ.get(...)) crash on a blank env value —
+                # blank now resolves to the code default like absent.
+                cap = resolve_plan_gate_cap()
             # force=True: register-current is the deliberate re-write path for
             # an ALREADY-LIVE session (#472 revival) — never a duplicate
             # dispatch, so the #843 M2 collision check must not block it.
@@ -3390,10 +3397,14 @@ def main(argv: list[str] | None = None) -> None:
     p_issue.add_argument(
         "--auto-approve-gpu-hours",
         type=float,
-        default=100.0,
+        # The literal 100.0 lives behind the shared constant (#2164); the
+        # VALUE is unchanged (tests/test_spawn_session_env_forwarding.py
+        # pins the forwarded "100.0").
+        default=AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS,
         help=(
             "Autonomous sessions auto-approve a plan whose estimated GPU-hours "
-            "is <= this value and park at plan_pending above it. Default 100."
+            "is <= this value and park at plan_pending above it. "
+            f"Default {AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS:g}."
         ),
     )
     _add_claude_session_args(p_issue)
@@ -3477,7 +3488,8 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help=(
             "GPU-hour auto-approve cap recorded in an auto-mode entry (the watcher "
-            "re-passes it on respawn). Default: EPM_PLAN_AUTOAPPROVE_GPU_HOURS or 100."
+            "re-passes it on respawn). Default: EPM_PLAN_AUTOAPPROVE_GPU_HOURS or "
+            f"{AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS:g}."
         ),
     )
     p_reg.set_defaults(fn=cmd_register_current)
