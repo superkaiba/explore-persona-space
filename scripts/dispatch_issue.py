@@ -883,6 +883,201 @@ def _width_required_gpus_conflict(args: argparse.Namespace) -> dict[str, Any] | 
     }
 
 
+#: SLURM lane backend values. Mirrors
+#: ``backends/issue_dispatch._SLURM_LANES`` — mirrored rather than imported so
+#: this CLI stays import-light at module load; the equality is pinned by
+#: ``tests/test_dispatch_issue_cli.py::
+#: test_slurm_lane_backends_mirror_matches_issue_dispatch``. (The legacy
+#: ``cluster`` alias is deliberately absent, matching the raw-``args.backend``
+#: checks this constant feeds — ``build_run_spec`` normalizes it later.)
+_SLURM_LANE_BACKENDS: tuple[str, ...] = ("nibi", "fir", "mila", "fellows")
+
+
+def _issue_branch_candidates(issue: int) -> list[str]:
+    """``issue-<N>``-shaped branch refs visible from the repo root (#2161).
+
+    Enumerates local + origin refs matching ``issue-<N>`` / ``issue-<N>-*``
+    via ``git for-each-ref`` at ``task_workflow.repo_root()`` — evidence a
+    feature branch exists for this issue, so an implicit-main launch on a
+    repo-materializing lane would likely run stale code (incident #1336:
+    ~12 pod-hours on main-resident code while
+    ``origin/issue-1336-fullcorpora`` carried the dispatch script). ANY
+    subprocess failure fails OPEN (empty list + WARN log): a git hiccup
+    must never block launches — the fail-open residual is exactly the
+    pre-#2161 behavior. Deliberately a monkeypatchable module-level seam:
+    tests pin this probe instead of depending on live ref state (fabricated
+    test issue numbers can and do have real ``origin/issue-<N>`` refs).
+    """
+    from explore_persona_space.task_workflow import repo_root
+
+    patterns = [
+        f"refs/heads/issue-{issue}",
+        f"refs/heads/issue-{issue}-*",
+        f"refs/remotes/origin/issue-{issue}",
+        f"refs/remotes/origin/issue-{issue}-*",
+    ]
+    try:
+        proc = subprocess.run(
+            ["git", "for-each-ref", "--format=%(refname:short)", *patterns],
+            cwd=str(repo_root()),
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+            env={**os.environ},
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        logging.getLogger("dispatch_issue").warning(
+            "issue-branch probe (git for-each-ref) failed for issue=%d (%s) — "
+            "failing OPEN: the repo-branch refusal guard stands down for this "
+            "launch (a git hiccup must never block launches)",
+            issue,
+            exc,
+        )
+        return []
+    return [line.strip() for line in proc.stdout.split("\n") if line.strip()]
+
+
+def _repo_materializing_lane_reachable(args: argparse.Namespace) -> bool:
+    """True when the launch can land on a lane that MATERIALIZES the repo.
+
+    gcp clones from origin (``render_startup_script``), the SLURM lanes
+    rsync a committed-tree snapshot of the REQUESTED branch (#793
+    ``materialize_branch_src``), and the RunPod EXECUTION leg (#909
+    ``--execute-workload``) syncs the pod clone — on all of them an unset
+    ``repo_branch`` resolves to ``main``. ``auto`` / absent reaches gcp +
+    the SLURM lanes through the chain; a bare ``runpod`` provision-only
+    launch materializes no branch this CLI gates.
+    """
+    backend = (args.backend or "auto").strip().lower() or "auto"
+    if backend in {"auto", "gcp"} or backend in _SLURM_LANE_BACKENDS:
+        return True
+    return backend == "runpod" and bool(getattr(args, "execute_workload", False))
+
+
+def _repo_branch_default_main_conflict(
+    args: argparse.Namespace, extra: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Pre-route implicit-main vs live-issue-branch refusal (#2161 Gap 2 ii).
+
+    Fires only when ALL THREE hold: (a) ``extra['repo_branch']`` is UNSET
+    after :func:`_launch_extra_from_args` — no explicit ``--repo-branch``
+    (an explicit value, INCLUDING ``main``, bypasses by construction), and
+    the current-branch / worktree defaulting resolved nothing; (b) a
+    repo-materializing lane is reachable
+    (:func:`_repo_materializing_lane_reachable`); (c) ``issue-<N>``-shaped
+    branch refs EXIST (:func:`_issue_branch_candidates`). The launch would
+    then materialize MAIN while the issue's own branch carries the code
+    under test — the #1336 incident shape. Returns the exit-2 failure body
+    (same shape as :func:`_width_required_gpus_conflict`) when the launch
+    must be refused; ``None`` when it may proceed.
+    """
+    if extra.get("repo_branch"):
+        return None
+    if not _repo_materializing_lane_reachable(args):
+        return None
+    candidates = _issue_branch_candidates(int(args.issue))
+    if not candidates:
+        return None
+    note = (
+        "failure_class: infra\n"
+        "reason: repo_branch_required_issue_branch_exists\n"
+        f"detail: no --repo-branch was passed, the current-branch/worktree "
+        f"defaulting resolved nothing, and issue-{int(args.issue)} branch "
+        f"ref(s) exist: {', '.join(candidates)}. A repo-materializing lane is "
+        "reachable (gcp clones origin; the SLURM lanes rsync a committed-tree "
+        "snapshot of the requested branch, #793; the RunPod execution leg "
+        "syncs the pod clone, #909), so this launch would silently run "
+        "MAIN-resident code while the issue branch carries the code under "
+        "test (incident #1336). "
+        f"Fix: pass --repo-branch <branch> (e.g. --repo-branch {candidates[0]}) "
+        "to run the issue branch, or pass --repo-branch main explicitly to "
+        "confirm main-resident code is intended."
+    )
+    return {
+        "ok": False,
+        "issue": int(args.issue),
+        "failure_class": "infra",
+        "status": "blocked",
+        "reason": "repo_branch_required_issue_branch_exists",
+        "note": note,
+    }
+
+
+def _slurm_lane_reachable(args: argparse.Namespace) -> bool:
+    """True when the launch can land on a SLURM lane (#2161 Gap 2 iii).
+
+    Explicit SLURM lane → True. ``auto`` / absent → True iff the RESOLVED
+    lane order carries a SLURM lane (the plan-recorded implementer
+    discretion: a ``runpod``-only ``EPM_AUTO_LANE_ORDER`` makes SLURM
+    unreachable, while the DEFAULT order carries fellows/nibi/fir/mila and
+    still refuses). A defective ``EPM_AUTO_LANE_ORDER`` stands down
+    (``RouteError`` → False) — ``route()`` surfaces that defect through the
+    existing terminal classification (mirrors
+    :func:`_ft_intent_gcp_default_boot_disk`).
+    """
+    backend = (args.backend or "auto").strip().lower() or "auto"
+    if backend in _SLURM_LANE_BACKENDS:
+        return True
+    if backend != "auto":
+        return False
+    from explore_persona_space.backends.router import RouteError, auto_lane_order
+
+    try:
+        return any(lane in _SLURM_LANE_BACKENDS for lane in auto_lane_order())
+    except RouteError:
+        return False
+
+
+def _max_run_duration_slurm_conflict(args: argparse.Namespace) -> dict[str, Any] | None:
+    """Pre-route inert-``--max-run-duration``-on-SLURM refusal (#2161 Gap 2 iii).
+
+    ``--max-run-duration`` threads ONLY to the GCP instance auto-delete
+    fence (#741) and is INERT on SLURM, where the wall fence is the sbatch
+    ``--time`` derived from ``--time-budget-hours``
+    (``backends/slurm.time_budget_hours``; intent-default table). A launch
+    declaring the GCP fence with no SLURM budget on a SLURM-reachable route
+    (:func:`_slurm_lane_reachable`) would silently swap the declared fence
+    for the intent default — the #1336 shape (fence 24h vs realized fellows
+    wall 8h). Both flags present → proceed (the corrected #1336 command
+    shape); an explicit non-SLURM backend pin → proceed (documented-inert).
+    Returns the exit-2 failure body (same shape as
+    :func:`_width_required_gpus_conflict`) or ``None``.
+    """
+    if not getattr(args, "max_run_duration", None):
+        return None
+    if getattr(args, "time_budget_hours", None) is not None:
+        return None
+    if not _slurm_lane_reachable(args):
+        return None
+    from explore_persona_space.backends.slurm import _DEFAULT_TIME_BUDGETS_HOURS
+
+    default_h = _DEFAULT_TIME_BUDGETS_HOURS.get(str(args.intent))
+    default_str = (
+        f"{default_h:g} h" if default_h is not None else "none — the SLURM lane fails fast"
+    )
+    note = (
+        "failure_class: infra\n"
+        "reason: max_run_duration_slurm_inert_without_time_budget\n"
+        f"detail: --max-run-duration {args.max_run_duration} threads only to "
+        "the GCP instance auto-delete fence (#741) and is INERT on SLURM, "
+        "where the wall fence is --time-budget-hours (intent default for "
+        f"{args.intent!r}: {default_str}) — your declared fence would "
+        "silently evaporate on a SLURM-reachable route (incident #1336: "
+        "fence 24h vs realized fellows wall 8h). "
+        "Fix: pass --time-budget-hours <h> alongside --max-run-duration, or "
+        "pin a non-SLURM backend."
+    )
+    return {
+        "ok": False,
+        "issue": int(args.issue),
+        "failure_class": "infra",
+        "status": "blocked",
+        "reason": "max_run_duration_slurm_inert_without_time_budget",
+        "note": note,
+    }
+
+
 #: Human-readable renderer pointer per lane, used in the #1329 lane-env lint
 #: warning/refusal text so the reader can find the export site.
 _LANE_RENDERER_POINTERS: dict[str, str] = {
@@ -1580,7 +1775,7 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # workload must name its branch (issue 535 r6); the RunPod #909
         # execution leg syncs the pod clone to the same key.
         extra["repo_branch"] = args.repo_branch
-    elif (args.backend or "auto") in {"auto", "gcp"} or (
+    elif (args.backend or "auto") in {"auto", "gcp", *_SLURM_LANE_BACKENDS} or (
         # #909 (AC6): the auto-default ALSO fires for an explicit
         # `--backend runpod --execute-workload` launch — the execution
         # leg's branch sync would otherwise target `main`, where per-issue
@@ -1590,28 +1785,28 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         and getattr(args, "execute_workload", False)
     ):
         # fix19's production mirror (round-2 Claude Major, task #535):
-        # without this, the GCE clone defaults to "main" even when the
-        # invoking checkout — the /issue worktree on an issue-<N> branch
-        # — carries the code under test, silently re-creating the exact
-        # stale-main bug the acceptance harness already guards against
-        # (router_acceptance.py r19). Same policy as the harness: default
-        # to the CURRENT branch with a logged INFO. Gated to the lanes
-        # that can reach GCP (explicit "gcp", or "auto"/absent — absent
-        # includes frontmatter-driven backends, and an explicit SLURM /
-        # RunPod lane never escalates to GCP). The extra key is no longer
-        # inert on any lane: GCP honors it by git-cloning the requested
-        # branch in the GCE startup script, and RunPod's lifecycle layer
-        # also checks out the branch. SLURM has no honoring mechanism and
-        # REFUSES to submit when repo_branch names a non-"main" branch the
-        # rsync source cannot be proven to carry (its source resolves to
-        # "main", not the invoking worktree) — backends/slurm.py
-        # _assert_repo_branch_synced() raises, the router wraps it as a
-        # BackendPrepareError, and the auto chain advances to the next lane
-        # rather than silently rsyncing stale "main" code (#653 round-8).
+        # without this, the materialized clone/snapshot defaults to "main"
+        # even when the invoking checkout — the /issue worktree on an
+        # issue-<N> branch — carries the code under test, silently
+        # re-creating the exact stale-main bug the acceptance harness
+        # already guards against (router_acceptance.py r19). Same policy as
+        # the harness: default to the CURRENT branch with a logged INFO.
+        # Gated to the repo-MATERIALIZING lanes (#2161 widened the set):
+        # explicit "gcp" and "auto"/absent (absent includes
+        # frontmatter-driven backends), PLUS the explicit SLURM lanes —
+        # post-#793 the SLURM lanes HONOR repo_branch by rsyncing a
+        # committed-tree snapshot of the requested branch
+        # (backends/slurm.py materialize_branch_src via the git_cloner
+        # seam; an unset value there resolves to "main", the #1336 shape),
+        # exactly as GCP honors it by git-cloning the requested branch in
+        # the GCE startup script and RunPod's lifecycle layer checks out
+        # the branch. A bare provision-only RunPod launch (no
+        # --execute-workload) materializes nothing and keeps no default.
         branch = _current_git_branch()
         if branch and branch != "main":
             logging.getLogger("dispatch_issue").info(
-                "repo-branch defaulted to current branch %r for the gcp/auto/runpod-execute lane — "
+                "repo-branch defaulted to current branch %r for the "
+                "gcp/auto/SLURM/runpod-execute lanes — "
                 "ensure it is pushed (the GCE startup script clones from origin)",
                 branch,
             )
@@ -1619,15 +1814,16 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         else:
             # Invoking checkout is on main (or unresolvable) — the common
             # orchestrator topology (repo root pinned to main). Fall back to the
-            # issue worktree's checked-out branch so the GCE clone carries the
-            # issue's code (task #824; incident #812: a repo-root dispatch
-            # silently cloned main and the issue branch's scripts were absent).
+            # issue worktree's checked-out branch so the materialized clone /
+            # snapshot carries the issue's code (task #824; incident #812: a
+            # repo-root dispatch silently cloned main and the issue branch's
+            # scripts were absent).
             worktree_root = _issue_worktree_git_root(args.issue)
             wt_branch = _git_branch_of(worktree_root) if worktree_root else None
             if wt_branch and wt_branch != "main":
                 logging.getLogger("dispatch_issue").info(
                     "repo-branch defaulted to issue worktree branch %r "
-                    "(worktree %s) for the gcp/auto/runpod-execute lane — "
+                    "(worktree %s) for the gcp/auto/SLURM/runpod-execute lanes — "
                     "invoking checkout "
                     "is on main/unresolvable",
                     wt_branch,
@@ -1789,6 +1985,21 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     mismatch = _gpus_gcp_lane_conflict(spec)
     if mismatch is not None:
         print(json.dumps(mismatch, sort_keys=True))
+        return 2
+
+    # Pre-route CLI-drift refusals (#2161, incident #1336 — an implicit-main
+    # fellows launch ran stale code under a silently-evaporated 24h fence):
+    # (ii) no --repo-branch + a live issue-<N> branch + a repo-materializing
+    # lane reachable; (iii) --max-run-duration without --time-budget-hours
+    # while a SLURM lane is reachable. Same exit-2 JSON shape as the guards
+    # above; explicit flags bypass both by construction.
+    branch_conflict = _repo_branch_default_main_conflict(args, extra)
+    if branch_conflict is not None:
+        print(json.dumps(branch_conflict, sort_keys=True))
+        return 2
+    fence_conflict = _max_run_duration_slurm_conflict(args)
+    if fence_conflict is not None:
+        print(json.dumps(fence_conflict, sort_keys=True))
         return 2
 
     # Pre-route workload-cmd lane-env lint (#1329, incident #825): a bare
@@ -2694,10 +2905,16 @@ def _build_argparser() -> argparse.ArgumentParser:
         type=str,
         default=None,
         help=(
-            "Git branch the GCE startup script clones (GCP lane only; "
-            "SLURM lanes rsync the local worktree instead). Required when "
-            "the workload's code/configs live on a feature branch — the "
-            "default clone of main silently runs stale code (issue 535 r6)."
+            "Git branch the run materializes: the GCE startup script clones "
+            "it, the SLURM lanes rsync a committed-tree snapshot of it "
+            "(#793 materialize_branch_src), and the RunPod execution leg "
+            "syncs the pod clone to it (#909). Required when the workload's "
+            "code/configs live on a feature branch — the default "
+            "materialization of main silently runs stale code (issue 535 "
+            "r6; incident #1336). An unset value with a live issue-<N> "
+            "branch on a repo-materializing lane is REFUSED (exit 2, "
+            "reason: repo_branch_required_issue_branch_exists); an explicit "
+            "--repo-branch main is the escape."
         ),
     )
     launch.add_argument(
@@ -3176,8 +3393,11 @@ __all__ = [
     "_cmd_launch",
     "_frontmatter_backend_value",
     "_gpus_gcp_lane_conflict",
+    "_issue_branch_candidates",
+    "_max_run_duration_slurm_conflict",
     "_provision_still_waiting",
     "_recognized_frontmatter_backends",
+    "_repo_branch_default_main_conflict",
     "_resolve_backend_for_handle",
     "_upload_verification_currency_blocker",
     "_width_required_gpus_conflict",
