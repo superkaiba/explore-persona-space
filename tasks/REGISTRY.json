@@ -9009,8 +9009,8 @@
     "2165": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2165",
-      "status": "approved",
+      "path": "tasks/running/2165",
+      "status": "running",
       "title": "workflow-fix: enumerate smoke blind spots \u2014 gates/paths a smoke run structurally cannot reach"
     },
     "218": {
