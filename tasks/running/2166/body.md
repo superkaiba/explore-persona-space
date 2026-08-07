@@ -1,5 +1,5 @@
 ---
-title: '#2166 workflow-fix: repoint 5 stale CLAUDE.md prose · planning · █▌░░░ 30%'
+title: '#2166 workflow-fix: repoint 5 stale CLAUDE.md prose · running · ██░░░ 45%'
 kind: infra
 tags:
 - wf-fix
