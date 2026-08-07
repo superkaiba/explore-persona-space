@@ -2410,6 +2410,28 @@ def test_class_c_plan_glob_names_family(tmp_path, monkeypatch):
     assert "plan-named figures only" in r_short.detail  # active mode, zero candidates
 
 
+def test_resolve_task_plans_dir_real_body_no_monkeypatch():
+    """Production-body pin for the §3.0 seam (code-style rule: one test
+    executes the REAL body of a function other tests monkeypatch): with
+    NO monkeypatch, `_resolve_task_plans_dir(999)` walks the real
+    task_workflow registry to the REAL `tasks/completed/999/plans/` (the
+    §5 anchor — also exactly why every class-C fixture above must
+    monkeypatch the seam), `_plan_naming_text(999)` reads its `v1.md`,
+    and the `issue=None` degradation path short-circuits to None without
+    touching the registry."""
+    plans = verify_task_body._resolve_task_plans_dir(999)
+    assert plans is not None
+    assert plans.is_dir()
+    assert plans.name == "plans"
+    text, mode = verify_task_body._plan_naming_text(999)
+    assert text is not None
+    assert "plan file(s) read" in mode
+    assert verify_task_body._resolve_task_plans_dir(None) is None
+    text_none, mode_none = verify_task_body._plan_naming_text(None)
+    assert text_none is None
+    assert "no issue number" in mode_none
+
+
 # ─── Check 8b: Reproducibility artifact-URL existence ─────────────────────
 #
 # Follow-up to the #507 incident class: `## Reproducibility` links got
