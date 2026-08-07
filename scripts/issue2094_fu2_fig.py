@@ -125,7 +125,7 @@ def verdict_composition_fig(summary: dict) -> None:
     ax.set_xlim(0, 1)
     ax.set_xlabel("fraction of family reads (setting x layer variant x dose x metric)")
     ax.set_title(
-        "verdict composition per intervention span: fu2 spans vs parent comparables",
+        "verdict composition per intervention span: follow-up spans vs parent-grid comparables",
         loc="left",
         fontsize=10,
     )

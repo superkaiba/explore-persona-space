@@ -1,11 +1,12 @@
 {
-  "commit": "7d85517a+dirty",
-  "git_commit": "7d85517a",
+  "commit": "0cb7977d+dirty",
+  "git_commit": "0cb7977d",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/analyzer/MEMORY.md"
+    ".claude/agent-memory/analyzer/MEMORY.md",
+    "scripts/issue2094_fu2_fig.py"
   ],
-  "created": "2026-08-07T08:00:24Z",
+  "created": "2026-08-07T08:09:56Z",
   "figsize": [
     8.4,
     4.4
@@ -169,7 +170,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "verdict composition per intervention span: fu2 spans vs parent comparables",
+        "title_left": "verdict composition per intervention span: follow-up spans vs parent-grid comparables",
         "xlabel": "fraction of family reads (setting x layer variant x dose x metric)",
         "xticklabels": [
           "0.0",

@@ -1,11 +1,15 @@
 {
-  "commit": "7d85517a+dirty",
-  "git_commit": "7d85517a",
+  "commit": "0cb7977d+dirty",
+  "git_commit": "0cb7977d",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/analyzer/MEMORY.md"
+    ".claude/agent-memory/analyzer/MEMORY.md",
+    "figures/issue_2094/fu2_verdict_composition.meta.json",
+    "figures/issue_2094/fu2_verdict_composition.pdf",
+    "figures/issue_2094/fu2_verdict_composition.png",
+    "scripts/issue2094_fu2_fig.py"
   ],
-  "created": "2026-08-07T08:00:26Z",
+  "created": "2026-08-07T08:09:57Z",
   "figsize": [
     7.6,
     4.4
