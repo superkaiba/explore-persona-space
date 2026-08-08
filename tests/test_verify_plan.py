@@ -187,10 +187,11 @@ def test_good_plan_passes_all():
         "c47_wall_cell_parseable": "SKIP",
         "c48_basis_booked_arithmetic": "SKIP",
         "c49_authorized_stub_block": "SKIP",
+        "c50_edited_literal_pin_tests": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 48
+    assert len(results) == 49
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6253,20 +6254,23 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   conditional, #2161)
     # + c47 (SKIP: GOOD_PLAN carries no planned_wall_h table; trigger-
     #   conditional, #2172).
-    assert payload["n_skip"] == 42
+    assert payload["n_skip"] == 43
     #   conditional, #2161)
     # + c47 (SKIP: GOOD_PLAN carries no basis-column compute table; trigger-
     #   conditional, #2177).
-    assert payload["n_skip"] == 42
+    assert payload["n_skip"] == 43
     #   conditional, #2172)
     # + c49 (SKIP: GOOD_PLAN declares no '### Authorized smoke stubs' block;
-    #   trigger-conditional, #2171).
-    assert payload["n_skip"] == 42
+    #   trigger-conditional, #2171)
+    # + c50 (kind-exempt SKIP: edited-literal pin-test coverage is
+    #   infra|batch-only and --plan-file mode defaults to kind=experiment;
+    #   #2029).
+    assert payload["n_skip"] == 43
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 50
-    assert len({c["id"] for c in payload["checks"]}) == 50
+    assert len(payload["checks"]) == 51
+    assert len({c["id"] for c in payload["checks"]}) == 51
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -10534,3 +10538,304 @@ def test_c49_fails_on_heading_without_table():
     r = by_id[C49]
     assert r.status == "FAIL"
     assert "no markdown table" in r.detail
+
+
+# ─── Check 50 — edited workflow-surface literal pin-test coverage (#2029) ──
+
+C50 = "c50_edited_literal_pin_tests"
+
+# Fixture literals: len >= _C50_MIN_LEN (12), dash-bearing (never bare code
+# identifiers), non-path shapes, absent from the real repo tree.
+_C50_LIT = "issue-fixture-inline-payload.txt"
+_C50_LIT2 = "fixture-second-probe-form.txt"
+
+# Edit-verb paragraph declaring an edit to the fixture surface file and
+# quoting the OLD literal — the incident SHAPE (#1948) in miniature.
+C50_EDIT_PARA = (
+    "\n## 3. Files + diffs\n\n"
+    "- `.claude/skills/x/SKILL.md` Step 8: replace the legacy "
+    f"`{_C50_LIT}` probe form with the widened wording.\n"
+)
+
+_C50_DEFAULT_PIN = {
+    "test_fixture_gate_pin.py": (
+        "# pins the .claude/skills/x/SKILL.md probe form\n"
+        "def test_probe_form():\n"
+        '    text = open(".claude/skills/x/SKILL.md").read()\n'
+        f'    assert "{_C50_LIT}" in text\n'
+    )
+}
+
+
+def _c50_fixture_root(tmp_path, *, tests_dir=True, surface_lits=(_C50_LIT,), pins=None):
+    """Mini repo root: .claude/skills/x/SKILL.md carrying ``surface_lits``,
+    plus tests/ files per ``pins`` ({filename: file text})."""
+    skill = tmp_path / ".claude" / "skills" / "x"
+    skill.mkdir(parents=True)
+    body = "# X skill\n\n" + "\n".join(
+        f"the gate probe pattern is `{lit}` for single-flight checks" for lit in surface_lits
+    )
+    (skill / "SKILL.md").write_text(body + "\n")
+    if tests_dir:
+        tdir = tmp_path / "tests"
+        tdir.mkdir()
+        for fname, ftext in (_C50_DEFAULT_PIN if pins is None else pins).items():
+            (tdir / fname).write_text(ftext)
+    return tmp_path
+
+
+def _c50_use_fixture(tmp_path, monkeypatch, **kw):
+    """Build the fixture root, monkeypatch _C50_REPO_ROOT (the c31/c34/c41
+    convention), and clear the module corpus cache."""
+    root = _c50_fixture_root(tmp_path, **kw)
+    monkeypatch.setattr(verify_plan, "_C50_REPO_ROOT", root)
+    verify_plan._c50_cache.clear()
+    return root
+
+
+def test_c50_registered_in_checks():
+    assert verify_plan.check_edited_literal_pin_tests in verify_plan.CHECKS
+
+
+def test_c50_incident_shape_warns_naming_pin_file(tmp_path, monkeypatch):
+    # §4.4 test 1: plan edits a surface literal, pin test unlisted -> WARN
+    # naming the file AND the literal in the detail.
+    _c50_use_fixture(tmp_path, monkeypatch)
+    _, by_id = _run(GOOD_PLAN + C50_EDIT_PARA, kind="infra")
+    r = by_id[C50]
+    assert r.status == "WARN"
+    assert "tests/test_fixture_gate_pin.py" in r.detail
+    assert _C50_LIT in r.detail
+    assert "unwrapped" in r.detail  # remedy teaches the unwrapped declaration form
+
+
+def test_c50_satisfier_pin_file_named_passes(tmp_path, monkeypatch):
+    # §4.4 test 2: naming the pin test's basename anywhere in the raw plan
+    # satisfies (the c31 RAW-scan convention).
+    _c50_use_fixture(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + C50_EDIT_PARA + "\nAlso re-point tests/test_fixture_gate_pin.py.\n"
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C50]
+    assert r.status == "PASS"
+    assert "every pinning tests/ file is named" in r.detail
+
+
+def test_c50_removal_tier_paragraph_warns(tmp_path, monkeypatch):
+    # §4.4 test 3 (the #1948 7e shape): the OLD literal is quoted only in a
+    # removal-context paragraph (no edit verb there); the trigger fires on a
+    # DIFFERENT line. Without the removal tier this read PASS on the real
+    # incident artifact (#2029 plan §6.1) — the tier is load-bearing.
+    _c50_use_fixture(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + (
+        "\n## 3. Files + diffs\n\n"
+        "- `.claude/skills/x/SKILL.md` Step 8: teaches the widened single-flight probe wording.\n"
+        "\n"
+        f"After the change, neither branch of `.claude/skills/x/SKILL.md` carries the bare legacy `{_C50_LIT}` redirect.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C50]
+    assert r.status == "WARN"
+    assert "tests/test_fixture_gate_pin.py" in r.detail
+
+
+def test_c50_both_pin_shapes_recognized(tmp_path, monkeypatch):
+    # §4.4 test 4: module-level literal constant consumed by a count assert
+    # AND a bare inline `assert "<lit>" in text` — both reduce to verbatim
+    # substring presence, both detected.
+    pins = {
+        "test_pin_const_form.py": (
+            "# reads .claude/skills/x/SKILL.md\n"
+            f"FLEET_PROBE_FORM = '{_C50_LIT}'\n"
+            "def test_count():\n"
+            "    text = open('.claude/skills/x/SKILL.md').read()\n"
+            "    assert text.count(FLEET_PROBE_FORM) >= 1\n"
+        ),
+        "test_pin_inline_form.py": (
+            "def test_inline():\n"
+            "    text = open('.claude/skills/x/SKILL.md').read()\n"
+            f'    assert "{_C50_LIT2}" in text\n'
+        ),
+    }
+    _c50_use_fixture(tmp_path, monkeypatch, surface_lits=(_C50_LIT, _C50_LIT2), pins=pins)
+    plan = GOOD_PLAN + (
+        "\n## 3. Files + diffs\n\n"
+        f"- `.claude/skills/x/SKILL.md`: replace the legacy `{_C50_LIT}` form and swap the old `{_C50_LIT2}` form.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C50]
+    assert r.status == "WARN"
+    assert "tests/test_pin_const_form.py" in r.detail
+    assert "tests/test_pin_inline_form.py" in r.detail
+
+
+def test_c50_standalone_na_escape_passes(tmp_path, monkeypatch):
+    # §4.4 test 5a: the registered standalone escape PASSes.
+    _c50_use_fixture(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + C50_EDIT_PARA + "\nN/A — no workflow-surface literal edits\n"
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C50]
+    assert r.status == "PASS"
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c50_wrapped_na_escape_does_not_satisfy(tmp_path, monkeypatch):
+    # §4.4 test 5b: a backtick-wrapped paste of the remedy's quoted form does
+    # NOT satisfy (the #1238 anti-paste convention via the shared helper).
+    _c50_use_fixture(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + C50_EDIT_PARA + "\n`N/A — no workflow-surface literal edits`\n"
+    assert _status(plan, C50, kind="infra") == "WARN"
+
+
+def test_c50_kind_experiment_skips(tmp_path, monkeypatch):
+    _c50_use_fixture(tmp_path, monkeypatch)
+    assert _status(GOOD_PLAN + C50_EDIT_PARA, C50, kind="experiment") == "SKIP"
+
+
+def test_c50_no_trigger_skips():
+    assert _status(GOOD_PLAN, C50, kind="infra") == "SKIP"
+
+
+def test_c50_missing_tests_dir_loud_skip(tmp_path, monkeypatch):
+    # §4.4 test 6c: off-repo degradation — surface/tests dirs absent under
+    # the (monkeypatched) repo root -> loud SKIP, the c46 precedent.
+    _c50_use_fixture(tmp_path, monkeypatch, tests_dir=False)
+    _, by_id = _run(GOOD_PLAN + C50_EDIT_PARA, kind="infra")
+    r = by_id[C50]
+    assert r.status == "SKIP"
+    assert "unavailable" in r.detail
+
+
+def test_c50_vocabulary_cap_four_test_files_dropped(tmp_path, monkeypatch):
+    # §4.4 test 7a: a literal pinned in 4 distinct fixture test files (> cap
+    # 3) is dropped as vocabulary — the DISCLOSED accepted-FN, not a WARN.
+    pin_text = (
+        "def test_p():\n"
+        "    text = open('.claude/skills/x/SKILL.md').read()\n"
+        f'    assert "{_C50_LIT}" in text\n'
+    )
+    pins = {f"test_vocab_pin_{i}.py": pin_text for i in range(4)}
+    _c50_use_fixture(tmp_path, monkeypatch, pins=pins)
+    _, by_id = _run(GOOD_PLAN + C50_EDIT_PARA, kind="infra")
+    r = by_id[C50]
+    assert r.status == "PASS"
+    assert "anchored candidate" in r.detail
+
+
+def test_c50_surface_boilerplate_three_files_dropped(tmp_path, monkeypatch):
+    # §4.4 test 7b: a literal present in 3 fixture surface files (> cap 2)
+    # is multi-file boilerplate -> dropped, no WARN.
+    root = _c50_use_fixture(tmp_path, monkeypatch)
+    for name in ("y", "z"):
+        d = tmp_path / ".claude" / "skills" / name
+        d.mkdir(parents=True)
+        (d / "SKILL.md").write_text(f"boilerplate `{_C50_LIT}` shared wording\n")
+    assert root == tmp_path
+    _, by_id = _run(GOOD_PLAN + C50_EDIT_PARA, kind="infra")
+    r = by_id[C50]
+    assert r.status == "SKIP"
+    assert "boilerplate" in r.detail
+
+
+def test_c50_reference_shapes_never_offend(tmp_path, monkeypatch):
+    # §4.4 test 8: existing-path, --flag, and bare-identifier candidates are
+    # file/tool REFERENCES, not prose literals -> none offend.
+    root = _c50_use_fixture(tmp_path, monkeypatch, surface_lits=(), pins={})
+    (root / ".claude" / "skills" / "x" / "SKILL.md").write_text(
+        "run `--single-flight-probe` via `single_flight_probe_helper` in "
+        "`scripts/fixture_helper.py` per gate wiring\n"
+    )
+    (root / "scripts").mkdir()
+    (root / "scripts" / "fixture_helper.py").write_text("# helper\n")
+    (root / "tests" / "test_ref_pin.py").write_text(
+        "def test_r():\n"
+        "    text = open('.claude/skills/x/SKILL.md').read()\n"
+        '    assert "--single-flight-probe" in text\n'
+        '    assert "single_flight_probe_helper" in text\n'
+        '    assert "scripts/fixture_helper.py" in text\n'
+    )
+    plan = GOOD_PLAN + (
+        "\n## 3. Files + diffs\n\n"
+        "- `.claude/skills/x/SKILL.md`: update the `--single-flight-probe` flag wording, the "
+        "`single_flight_probe_helper` identifier, and the `scripts/fixture_helper.py` reference.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C50]
+    assert r.status == "SKIP"
+    assert "no plan-quoted literal anchors" in r.detail
+
+
+def test_c50_comment_only_pin_not_an_offender(tmp_path, monkeypatch):
+    # §4.4 test 9a: literal cited only on a quote-less `# comment` line is
+    # not pinned in test CODE -> not an offender.
+    pins = {
+        "test_comment_only.py": (
+            f"# narrative: the {_C50_LIT} form is described in SKILL.md prose\n"
+            "def test_noop():\n"
+            "    assert True\n"
+        )
+    }
+    _c50_use_fixture(tmp_path, monkeypatch, pins=pins)
+    _, by_id = _run(GOOD_PLAN + C50_EDIT_PARA, kind="infra")
+    assert by_id[C50].status == "PASS"
+
+
+def test_c50_surface_marker_free_test_not_an_offender(tmp_path, monkeypatch):
+    # §4.4 test 9b: a test file that never reads the workflow surface cannot
+    # break from a prose edit -> not an offender.
+    pins = {
+        "test_plain_code.py": (
+            "def payload_name():\n"
+            f'    return "{_C50_LIT}"\n'
+            "def test_c():\n"
+            f'    assert payload_name() == "{_C50_LIT}"\n'
+        )
+    }
+    _c50_use_fixture(tmp_path, monkeypatch, pins=pins)
+    _, by_id = _run(GOOD_PLAN + C50_EDIT_PARA, kind="infra")
+    assert by_id[C50].status == "PASS"
+
+
+_C50_INCIDENT_SHA = "b2bf75ee36"
+
+
+def _c50_git_show(ref_path: str) -> str | None:
+    proc = subprocess.run(
+        ["git", "show", ref_path],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    return proc.stdout if proc.returncode == 0 else None
+
+
+def test_c50_incident_replay_1948(tmp_path, monkeypatch):
+    # The §12.1 predicate trace / #1287 recall duty, production-shaped: the
+    # REAL #1948 plan v2 against incident-time file states (parent of the
+    # landing commit) must WARN naming the single-flight pin test, while the
+    # two pin files plan v2 DID name are absorbed by the satisfier.
+    plans = sorted(REPO_ROOT.glob("tasks/*/1948/plans/v2.md"))
+    if not plans:
+        pytest.skip("task 1948 plan v2 not present in this checkout")
+    incident_rels = (
+        ".claude/skills/issue/SKILL.md",
+        "tests/test_issue_skill_gate_single_flight.py",
+        "tests/test_issue_skill_inline_gate_pin.py",
+        "tests/test_inline_lint_gate.py",
+    )
+    for rel in incident_rels:
+        text = _c50_git_show(f"{_C50_INCIDENT_SHA}~1:{rel}")
+        if text is None:
+            pytest.skip(f"incident-time blob unavailable: {rel}")
+        dest = tmp_path / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(text)
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts" / "inline_lint_gate.py").write_text("# dummy\n")  # engages reference-drop
+    monkeypatch.setattr(verify_plan, "_C50_REPO_ROOT", tmp_path)
+    verify_plan._c50_cache.clear()
+    r = verify_plan.check_edited_literal_pin_tests(plans[0].read_text(), "infra")
+    assert r.status == "WARN", (r.status, r.detail)
+    assert "tests/test_issue_skill_gate_single_flight.py" in r.detail
+    assert "test_inline_lint_gate.py (pins" not in r.detail
+    assert "test_issue_skill_inline_gate_pin.py (pins" not in r.detail
