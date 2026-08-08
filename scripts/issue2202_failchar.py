@@ -118,7 +118,8 @@ N_NULL_DRAWS = 1_000  # task-body lock (degree-preserving); distance null matche
 TAU_PCTS = (1, 5, 25)  # pre-registered τ sensitivity sweep (headline p5)
 GRAPH_EDGE_CAP = 5_000_000  # pre-registered cap trigger (plan §4 P2)
 GRAPH_TOPK_CAP = 50  # per-row confuser cap when the trigger fires
-ACC_TOL = 2e-4  # |Δacc@k| gate tolerance (plan §7)
+ACC_TOL_ROWS = 2  # plan §7 intent verbatim: "≤ 2 knife-edge tie rows of BLAS-order float noise";
+# the old scalar 2e-4 under-encoded it (2 rows / 9,941 = 2.0119e-4 > 2e-4 — r4 gate-calibration fix)
 MRR_TOL = 1e-4  # |ΔMRR| gate tolerance (plan §7)
 KS = (1, 5, 10)
 RC_GATE = 21  # designed-halt rc for the P0/P0.5/P1 banked-value gates (never bare 1)
@@ -541,10 +542,11 @@ def _gate_compare(rec: dict, banked: dict) -> tuple[dict, bool]:
     """Compare a knn_retrieval record against the banked cell; (deltas, ok)."""
     deltas: dict = {"acc_at_k": {}, "mrr": None}
     ok = rec["n"] == banked["n"] and rec["n_pool"] == banked["n_pool"]
+    acc_tol = ACC_TOL_ROWS / rec["n"] + 1e-12  # exact row-count encoding of the plan-§7 allowance
     for k in KS:
         d = abs(rec["acc_at_k"][int(k)] - banked["acc_at_k"][str(k)])
         deltas["acc_at_k"][str(k)] = d
-        ok = ok and d <= ACC_TOL
+        ok = ok and d <= acc_tol
     dm = abs(rec["mrr"] - banked["mrr"])
     deltas["mrr"] = dm
     ok = ok and dm <= MRR_TOL
@@ -577,7 +579,7 @@ def phase_repro_gate(args) -> None:
         gate["metrics"][metric] = {"recomputed": rec, "banked": cell[metric], "deltas": deltas}
         if not ok:
             gate["verdict"] = "FAIL"
-    gate["tolerances"] = {"acc": ACC_TOL, "mrr": MRR_TOL}
+    gate["tolerances"] = {"acc_rows": ACC_TOL_ROWS, "mrr": MRR_TOL}
     gate["assembled_capture"] = {"n_rows": int(meta["n_rows"]), "n_chunks": int(meta["n_chunks"])}
     gate["meta"] = meta_block({"revision_pin": args.revision})
     out = out_eval_dir(args)
