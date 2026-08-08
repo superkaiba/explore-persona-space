@@ -1478,12 +1478,17 @@ def derive_paired_timeout_s(sel: object, files: list[str]) -> float:
     the same ``getattr`` discipline ``derive_pristine_timeout_s`` uses. Both
     branches floor at ``PRISTINE_TIMEOUT_FLOOR_S`` (generous bias: an
     oversized bound only delays a genuinely wedged run; an undersized one
-    guarantees a wasted compare + rerun). The derived ceiling at the
-    REALIZED #2021 prefix width (161 files -> 9,900 s; a 200-file
-    ``--max-paired-files``-cap prefix with the slow file -> 14,640 s) is
-    large by design — the alternative, a cap that drops the contaminating
-    predecessor, defeats the fix (plan §3, arithmetic corrected in v5); the
-    Step 9c outer wedge bound (SKILL.md 1d) is sized to dominate it.
+    guarantees a wasted compare + rerun). Three prefix widths derive three
+    different ceilings and only the last governs anything (plan §3 table, v5):
+    the REALIZED #2021 production prefix (~62 of 171 files — predecessor at
+    index 12, candidate at 61 — -> ~3,960 s, no slow surcharge since
+    ``tests/test_workflow_lint.py`` sorts after the candidate); fixture 1's
+    CONSTRUCTED superset stress prefix (161 files -> 9,900 s, not a production
+    width); and the ``--max-paired-files``-cap WORST CASE (200 files with the
+    slow file present -> 14,640 s), which is the only one the Step 9c outer
+    wedge bound (SKILL.md 1d) is sized to dominate. Large by design — the
+    alternative, a cap that drops the contaminating predecessor, defeats the
+    fix.
     """
     rec = getattr(sel, "recommended_timeout_s", None)
     if callable(rec):
