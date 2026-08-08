@@ -93,39 +93,3 @@ Origin: orchestrator's own observation on #1739, 2026-08-02. The user asked "can
 using runpod/afp?" (afp = charmander/fellows), which surfaced that every dispatch this session had
 pinned `--backend gcp` and never tried the free lane; the user then asked "isn't that in the workflow
 already?" — it is, but only as the `auto` default, with a habit-guard written for runpod alone.
-
----
-
-## Supersession — task re-scoped 2026-08-08
-
-**The filed ask above is superseded and is NOT being implemented as written.**
-#2028 (GCP provisioning disabled) and #2054 (runpod-first auto order) both
-landed after this task was auto-filed on 2026-08-02, and between them they
-falsified every clause of it:
-
-1. The requested caution already exists, stronger, at
-   `.claude/rules/compute-backends.md:15` — including a verbatim citation of
-   #1739, this task's own founding incident.
-2. #2028 replaced prose persuasion with a hard mechanical refusal: an explicit
-   `backend: gcp` raises the typed `GcpDisabledError`. A habit pin can no
-   longer silently forfeit the free lane — it cannot provision at all.
-3. The durability pin this body names as a constraint
-   (`test_default_auto_lane_order_is_gcp_first`) was deliberately INVERTED by
-   #2028 to `test_default_auto_lane_order_has_no_gcp`. The constraint is
-   unimplementable.
-4. The `--backend runpod` habit-guard this body proposes to mirror was deleted
-   by #2054 and replaced with "Prefer bare `auto`".
-5. The optional dispatch-time WARN leg already exists as the 3-way override
-   classifier at `scripts/dispatch_issue.py:1410-1493`.
-
-**Re-scoped deliverable.** The residual this body's own scope line authorizes
-("Grep the workflow surface for sibling guidance that should stay consistent
-… and update every hit that would otherwise contradict the new caution"):
-9 live sites that still direct a gcp pin or assert GCP is the auto default,
-plus a WARN-level `workflow_lint.py` regression check. Highest-severity site
-is `scripts/dispatch_issue.py:1425-1445` — a live warning that fires on
-`--backend runpod` and tells the operator "the standing default is GCP FIRST
-(credits before real money)", pushing them off what is now the first auto rung.
-
-Full evidence: the `epm:clarify v1` marker. Plan: `plans/v6.md`
-(critic-APPROVED at round 4). 0 GPU-h.
