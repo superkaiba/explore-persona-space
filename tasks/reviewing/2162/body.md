@@ -45,7 +45,7 @@ relates_to:
 # Experiment: Which kinds of context information are carried at the context vector — a patch-only sweep over 21 minimal-pair information types, crossed with route conflict, recency, and load
 <!-- report-v1 -->
 
-**Detailed writeup:** https://github.com/superkaiba/explore-persona-space/blob/a8636605e9d5685f5044e13ad35a73f993e66b8f/docs/reports/issue_2162_detailed.md
+**Detailed writeup:** https://github.com/superkaiba/explore-persona-space/blob/b5c8ff27d4bee64a7d039e364647b0e106c44cee/docs/reports/issue_2162_detailed.md
 
 ## Motivation
 
@@ -189,9 +189,9 @@ relates_to:
 
 **Methodology**
 
-- Per (type-cell × slot × arm): pairs failing the pre-registered anchor-separation exclusion (|ceiling − floor| < 0.5) are dropped; per surviving pair, F_beh is the pair mean over its K=5 coherent draws; the arm statistic is the mean over surviving pairs with a pair-clustered bootstrap 95% CI (B = 10,000, seed 21620).
+- Per (type-cell × slot × arm): pairs failing the pre-registered anchor-separation exclusion (|ceiling − floor| < 0.5) are dropped; per surviving pair, F_beh is the pair mean over its K=5 coherent draws; the arm statistic is the mean over surviving pairs with a pair-clustered bootstrap 95% CI (B = 10,000, seed 21620). A pair with no coherent draws in ANY arm is dropped from all three arms of that cell, so the three arms of a cell share one denominator (affects exactly one pair, `language_implied` at `pe`).
 - Three arms per type (steered / shuffled-donor null / cross-type-donor null), one panel per slot (`ce`, `pe`); post-exclusion n stated per type. Sources: `eval_results/issue_2162/f_metrics/{f_cells,null_shuffled_cells,null_crosstype_cells,anchors}.jsonl`.
-- `filler_swap` reports no F anywhere (no ceiling by construction); the two pre-declared degenerate prefix-end cells are excluded from aggregates.
+- `filler_swap` reports no F anywhere (no ceiling by construction); the two pre-declared degenerate prefix-end cells are excluded from the Holm families (they are still rendered as per-type bars, carrying a degeneracy flag).
 - **Rendered figure (plotter caption):** Mean behavior fraction-of-swap F_beh (unitless; y) per type-cell (x, post-exclusion pair count in parentheses) for the steered, shuffled-donor-null, and cross-type-donor-null arms, one panel per readout slot (context-end top, prefix-end bottom). Error bars are pair-clustered bootstrap 95% CIs (B=10,000, seed 21620); pairs with anchor separation |ceiling - floor| < 0.5 are excluded, cells with zero surviving pairs are marked n/a, and 14 of 76 (cell x slot) combinations are untestable-causal (post-exclusion n < 12). The persona_role_header bars rest on n=1 surviving pair per slot (0.995 at context-end, -0.397 at prefix-end).
 
 ![Per-type fraction-of-swap (behavior)](https://raw.githubusercontent.com/superkaiba/explore-persona-space/20fcef9c282a97d6ae90473d54fc0ce5e59e26f5/figures/issue_2162/hero_ftype.png)
@@ -288,7 +288,7 @@ relates_to:
 **Methodology**
 
 - Per-unit companion: per-pair F_beh / balance-shift points for every route-variant and conflict cell, labeled by pair id. Source: `f_metrics/f_cells.jsonl`.
-- **Rendered figure (plotter caption):** Per-pair steered F_beh points for every route-variant and conflict cell beside its base type, pair-id labeled, per slot, with no separation exclusion and no aggregation. The top panel shows the full range; the bottom panel shows the same points restricted to |F_beh| <= 2, since a small number of separation-degenerate pairs reach |F_beh| of roughly 100 and otherwise set the shared scale. n = 2,574 scored steered pair-rows across all cells.
+- **Rendered figure (plotter caption):** Per-pair steered F_beh points for every route-variant and conflict cell beside its base type, pair-id labeled, per slot, with no separation exclusion and no aggregation. The top panel shows the full range; the bottom panel shows the same points restricted to |F_beh| <= 2, since a small number of separation-degenerate pairs reach |F_beh| of roughly 100 and otherwise set the shared scale. n = 750 scored steered pair-rows across the 11 route/conflict cells (2,574 across all cells).
 
 ![Route contrasts - per-pair companion](https://raw.githubusercontent.com/superkaiba/explore-persona-space/20fcef9c282a97d6ae90473d54fc0ce5e59e26f5/figures/issue_2162/route_contrasts_perpair.png)
 
