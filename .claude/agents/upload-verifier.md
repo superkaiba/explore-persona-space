@@ -136,6 +136,18 @@ ssh_execute epm-issue-<N> 'find /workspace/explore-persona-space \
   -size +10k 2>/dev/null | sort'
 ```
 
+Then enumerate the run's OUT-ROOT(S) — per-issue output roots OUTSIDE the
+repo checkout (`/workspace/issue<N>_out/`-style), which the two
+repo-checkout-`cd` sweeps above structurally cannot reach (#2187: all three
+#2162 losses sat at such a top level). The `-size +10k` filter NEVER
+applies to out-root enumeration — the #2187 losses were all <3 KB:
+
+```bash
+ssh_execute epm-issue-<N> 'find /workspace -maxdepth 1 -type d -name "*<N>*"'
+ssh_execute epm-issue-<N> 'find <out-root> -type f | sort' \
+  | tee /tmp/issue-<N>-outroot.txt
+```
+
 Filter the output by size and extension to produce a candidate list of
 "things that should be persisted somewhere":
 - `*.safetensors`, `*.bin`, `adapter_*.json`, `adapter_model.*` → model
@@ -361,6 +373,25 @@ here, so absence is the common, healthy case).
 > span — never the whole file. The operative trigger + verdict contract
 > for this step stays here.
 
+### Step 2.10 — Out-root residue reconciliation (name-set, #2187)
+
+Fires whenever Step 1 found an out-root. Diff the recursive out-root
+`find` listing against the union of the run's HF prefixes + the ISSUE's
+own git trees + declared discards — a per-file NAME-SET diff, never a
+count: a matching count is not a matching set (#2162: 236 pod files vs
+235 uploaded read clean on counts while a file was lost). Canonical
+invocation:
+`uv run python scripts/verify_uploads.py --issue <N> --outroot-listing
+/tmp/issue-<N>-outroot.txt --hf-prefix <each prefix the run wrote> --json`.
+Any residue file → FAIL (blocker tag `outroot-residue`), named with its
+size; per-hit disposition: upload it / `git add` it to
+`eval_results/issue_<N>/` / reference a declared discard (text/JSON is
+NEVER discardable).
+
+> Full recipe: `.claude/rules/upload-verifier-section-reference.md` § Step 2.10 — Out-root residue reconciliation. Grep the heading, chunked-Read
+> that span — never the whole file. The operative trigger + verdict
+> contract for this step stays here.
+
 ### Step 3 — Justify every "N/A"
 
 > Full recipe: `.claude/rules/upload-verifier-section-reference.md` § Step 3 — Justify every N/A. Grep the heading, chunked-Read that
@@ -384,6 +415,8 @@ readers know the verifier actually looked.
 
 **Verdict: PASS / FAIL / WARN**
 
+outroot=<swept-clean|residue-committed|none>
+
 Discovered <K> files on pod under issue-<N> directories; reconciled
 against permanent storage.
 
@@ -403,6 +436,7 @@ against permanent storage.
 | Primary deliverable produced (completeness gate, #519) | Yes (if plan §6.5 declares `primary_deliverable:`) | PASS / FAIL / WARN | Per row in plan §6.5: on-pod `find <glob>` enumerates ≥1 file → PASS naming the DV + file count; zero files → FAIL with blocker tag `primary-deliverable-missing` naming the DV + missing glob; no `primary_deliverable:` block at all → WARN `primary-deliverable-spec-absent` (legacy / analysis|infra|batch|survey kinds; do not block); a row covered by a declared §9 off_pod_phases output enumerates at the declared off-pod dest or defers post-termination — never a pod-side zero-FAIL (#1426) |
 | Plan-referenced analysis inputs (shift tensors, cached activations, #521) | Yes (if plan analysis/control sections name them) | PASS / FAIL / WARN / N/A | Every plan-named downstream input at a permanent URL (HF data repo `issueN_<slug>/analysis_tensors/`); FAIL names the on-pod path + exact upload command; N/A = plan names no analysis-input artifacts; §9 off_pod_phases reads[] rows verified identically (#1535); WARN off-pod-phase-spec-absent when §9 prose names an off-pod phase with no block |
 | Git-destination reconciliation (per-file, #537) | Yes (per git-destination dir produced) | PASS / FAIL | Step 2.9 `comm` diff of source `find` vs `git ls-tree origin/issue-<N>` per directory; FAIL names each dropped file + its `git check-ignore -v` rule, unless the file resolves at another verified permanent home (URL recorded) |
+| Out-root residue (top-level sweep, #2187) | Yes (if the run wrote an out-root) | PASS / FAIL / N/A | Step 2.10 name-set diff of recursive out-root find vs union of HF prefixes + issue-scoped git trees + declared discards; FAIL names each residue file + size; a matching count is not a matching set (#2162: 236 vs 235); N/A = Step 1 confirmed no out-root |
 | Model-generation text persisted (Step 3 generation-discard gate, #779) | Yes (if a stage produced generations) | PASS / FAIL / WARN | Every generation-producing stage persists its rollout text under `raw_completions/<stage>/`; a drop FAILs — undeclared → `generation-discarded-undeclared`; "declared" via a text-naming `discarded_artifacts:` entry → `generation-discard-declared-invalid`. Large-TENSOR discards PASS with a `{name, reason, regen_recipe}` entry + persisted regenerating text. WARN `generation-discard-spec-absent` for a legacy plan predating the §10 slot capability that also has a generation-discard |
 
 **Auto-discovered files NOT covered by standard rows** (flag these

@@ -233,6 +233,74 @@ grading (figures the analyzer commits at Step 9) follows the existing
 figures DEFERRED rule — this check targets the silent PARTIAL drop,
 where a commit landed but excluded files.
 
+## Step 2.10 — Out-root residue reconciliation
+
+**New as of #2187.** Per-issue `phase_upload` implementations glob their
+SUBDIRECTORIES and silently omit files written at the out-root TOP LEVEL.
+(#2162 hit this three times in ONE run: `pilot_gate_report.json`,
+`stage2_results.json`, `upload_done.json` — all under 3 KB, none matched
+by any upload glob; the third was caught only by a manual recursive
+pod-vs-HF name diff at 236 pod files vs 235 uploaded — a count-only check
+would have read clean.) This step makes that sweep mechanical.
+
+Capture the out-root listing (Step 1 already produced it; on a GCP
+`eps-issue-*` instance the source `find` needs the `sudo` prefix per
+Step 1's note — a root-owned tree returns an empty source list, which
+would falsely read as "no out-root"):
+
+```bash
+ssh_execute epm-issue-<N> 'find <out-root> -type f | sort' \
+  | tee /tmp/issue-<N>-outroot.txt
+```
+
+Then run the mechanical name-set diff:
+
+```bash
+uv run python scripts/verify_uploads.py --issue <N> \
+  --outroot-listing /tmp/issue-<N>-outroot.txt \
+  --hf-prefix <each HF prefix the run wrote> \
+  [--outroot-exempt <glob>] [--discarded-name <plan §10 discard>] --json
+```
+
+`check_outroot_residue` computes `residue = names(disk) − (names(HF
+prefixes ∪ issue-scoped git trees) ∪ declared_discards ∪ exemptions)` —
+matching on BASENAME, with the git arm ISSUE-SCOPED: only tree paths
+carrying the issue token as a path component (on `origin/issue-<N>` AND
+`HEAD`) are consulted, never the whole tree. Conventional filenames
+collide across issues (measured at HEAD: `pilot_gate_report.json` at 8
+cross-issue paths, `upload_done.json` at 4), so a whole-tree basename
+match false-PASSes exactly the losses this check exists to catch — the
+#2187 v1→v2 defect. Counts are context only: a matching count is not a
+matching set. Built-in exemptions: `OUTROOT_EXEMPT_DIR_PARTS` (`.venv`,
+`.git`, `__pycache__`, `.cache`, `wandb`, `hf_dl`, `logs`) +
+`OUTROOT_EXEMPT_SUFFIXES` (`.log`, `.pid`, `.lock`, `.tmp`); there is NO
+size floor (all three #2162 losses were sub-3-KB).
+
+Per residue hit, exactly ONE disposition:
+
+- **Upload it** to its correct destination per the Upload Policy table,
+  then re-run the check.
+- **`git add` it** to `eval_results/issue_<N>/` — the canonical git
+  destination, which lands inside the issue-scoped git arm by
+  construction. This is the CANONICAL answer for upload-completion
+  markers/sentinels (the chicken-and-egg case): a marker written AFTER
+  its own upload structurally cannot be inside that upload; a second
+  tiny upload recreates the identical problem for ITS OWN completion
+  signal; writing the marker BEFORE the upload attests something that
+  has not happened. Route such markers to git — committing IS the
+  persistence event, verified directly by `git ls-tree`
+  (`.claude/rules/upload-policy.md` § Out-root TOP-LEVEL residue; the
+  demonstrated #2162 answer, commit `92f25415ee`).
+- **Reference a declared discard** — a plan §10 `discarded_artifacts:`
+  entry (`{name, reason, regen_recipe}`); text/JSON is NEVER
+  discardable.
+
+On PASS, the Step-5 verdict note carries the attestation token
+`outroot=<swept-clean|residue-committed|none>` (`none` = Step 1 confirmed
+the run wrote no out-root) — `pod.py terminate` refuses a
+`kind: experiment` teardown whose latest PASS note lacks it (#2187;
+`pod_lifecycle._upload_verification_outroot_attested`).
+
 ## Step 3 — Justify every N/A
 
 If a standard row is reported N/A, you must say *why* — concretely, and

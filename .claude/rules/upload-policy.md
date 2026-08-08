@@ -178,6 +178,38 @@ parity sub-check in `code-reviewer.md` Step 0.65 (Critical, tagged
 `substantive`); the upload-verifier at Step 8 stays the last-line safety
 net, not the only line of defense.
 
+**Out-root TOP-LEVEL residue — the disk-side inverse of the parity check
+above (#2187).** The parity bullet binds upload filters to plan-DECLARED
+artifact classes; this binds DISK to the filters: before any
+experiment-pod teardown, every regular file under the run's out-root
+(recursively, TOP LEVEL included) must match ≥1 upload glob, resolve at a
+verified permanent home — the ISSUE's own git paths / HF prefixes, never
+a whole-tree basename match, which conventional filenames defeat
+(measured at HEAD: `pilot_gate_report.json` at 8 cross-issue paths,
+`upload_done.json` at 4) — or be a declared `discarded_artifacts:` entry
+(text/JSON never discardable — unchanged). The verdict is a per-file
+NAME-SET diff, never a count: a matching count is not a matching set
+(#2162: 236 pod files vs 235 uploaded read clean on counts while a file
+was lost — three out-root top-level files lost in one run, each outside
+every upload glob). Producer duty: `phase_upload` globs include the
+out-root top level (a root-level `'*.json'`), or top-level writes move
+into a globbed subdir — extended in the same change that adds the writer.
+Chicken-and-egg rule (upload-completion markers/sentinels): a marker
+written AFTER its own upload structurally cannot be inside that upload; a
+"second tiny upload" recreates the identical problem for ITS OWN
+completion signal; writing the marker BEFORE the upload attests something
+that has not happened — route upload-completion markers/sentinels to GIT
+(`eval_results/issue_<N>/...`), where committing IS the persistence
+event, verified directly by `git ls-tree` (the demonstrated #2162 answer,
+commit `92f25415ee`; the git destination lands inside the issue-scoped
+git arm by construction). Enforcement:
+`scripts/verify_uploads.py::check_outroot_residue` (the mechanical
+name-set diff; a FAIL row flips the verifier verdict), upload-verifier
+Step 2.10, and the terminate guard's
+`outroot=<swept-clean|residue-committed|none>` attestation token —
+`pod.py terminate` refuses a `kind: experiment` teardown whose latest
+PASS note lacks it.
+
 **Regenerating a published artifact in place requires a version-bumped path or
 a regeneration note (#922/#779).** Re-uploading / reconstructing an
 already-published artifact at the SAME path can silently invalidate every

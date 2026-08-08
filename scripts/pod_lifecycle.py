@@ -2996,6 +2996,26 @@ def _warn_on_terminal_parent_provision(issue: int, *, verb: str = "provision") -
     return True
 
 
+def _latest_upload_verification_note(issue: int) -> str | None:
+    """Note body of the LATEST ``epm:upload-verification`` event, or None.
+
+    Reads events via :mod:`explore_persona_space.task_workflow` (which
+    branch-guards to ``main`` and resolves the canonical tasks/ tree
+    regardless of cwd). The LATEST event wins so a re-verification overrides
+    an earlier one. Split out of :func:`_has_upload_verification_pass` (#2187)
+    so the terminate guard can read the note ONCE for both the PASS verdict
+    and the ``outroot=`` sweep-attestation token.
+    """
+    from explore_persona_space.task_workflow import list_events
+
+    verification_events = [
+        ev for ev in list_events(issue) if ev.get("kind") == "epm:upload-verification"
+    ]
+    if not verification_events:
+        return None
+    return verification_events[-1].get("note", "") or ""
+
+
 def _has_upload_verification_pass(issue: int) -> bool:
     """True iff the LATEST ``epm:upload-verification`` event on task ``issue``
     records a PASS verdict. Used by :func:`cmd_terminate` to refuse destroying
@@ -3007,23 +3027,21 @@ def _has_upload_verification_pass(issue: int) -> bool:
     ``{"verdict": "PASS", ...}`` for machine-readable verifier notes, or as
     a bare leading ``PASS`` token for orchestrator-posted notes — NOT as a
     top-level event field (the event keys are only
-    ``ts, kind, version, by, note``). We read the LATEST upload-verification
-    event so a re-verification overrides an earlier one.
-
-    Reads events via :mod:`explore_persona_space.task_workflow` (which
-    branch-guards to ``main`` and resolves the canonical tasks/ tree
-    regardless of cwd). Returns False when no upload-verification event
-    exists or its latest verdict is not PASS, so the caller can decide
-    whether to refuse or warn-and-proceed.
+    ``ts, kind, version, by, note``). Returns False when no
+    upload-verification event exists or its latest verdict is not PASS, so
+    the caller can decide whether to refuse or warn-and-proceed.
     """
-    from explore_persona_space.task_workflow import list_events
+    note = _latest_upload_verification_note(issue)
+    return note is not None and _note_records_pass(note)
 
-    verification_events = [
-        ev for ev in list_events(issue) if ev.get("kind") == "epm:upload-verification"
-    ]
-    if not verification_events:
-        return False
-    note = verification_events[-1].get("note", "") or ""
+
+def _note_records_pass(note: str) -> bool:
+    """True iff an ``epm:upload-verification`` note body records PASS.
+
+    Pure note-parsing half of :func:`_has_upload_verification_pass` (#2187
+    split; behavior unchanged — see that function's docstring for the three
+    accepted note shapes).
+    """
     # First try to parse the note as a JSON object: the upload-verifier agent
     # legitimately posts machine-readable JSON-shaped notes of the form
     # ``{"verdict": "PASS", "discovered_pod_files": ..., "checked": {...}, ...}``
@@ -3065,13 +3083,46 @@ def _has_upload_verification_pass(issue: int) -> bool:
     return match is not None and match.group(1).upper() == "PASS"
 
 
+_OUTROOT_ATTESTATION_VALUES = frozenset({"swept-clean", "residue-committed", "none"})
+
+
+def _upload_verification_outroot_attested(note: str) -> bool:
+    """True iff the note carries the out-root sweep attestation token (#2187).
+
+    Accepted shapes mirror :func:`_note_records_pass`'s two note families:
+    a JSON-shaped note with ``"outroot": "swept-clean" | "residue-committed"
+    | "none"``, or a prose note carrying ``outroot=<value>`` /
+    ``outroot: <value>`` (case-insensitive). The token attests that the
+    pre-teardown verification swept the run's out-root TOP LEVEL by name-set
+    diff (upload-verifier Step 2.10 / ``verify_uploads.py --outroot-listing``)
+    — #2162 lost three top-level files in one run to subdirectory-only upload
+    globs, each caught only by a manual sweep.
+    """
+    try:
+        parsed = json.loads(note)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        parsed = None
+    if isinstance(parsed, dict):
+        return str(parsed.get("outroot", "")).strip().lower() in _OUTROOT_ATTESTATION_VALUES
+    return bool(
+        re.search(
+            r"outroot\s*[=:]\s*(swept-clean|residue-committed|none)\b",
+            note,
+            re.IGNORECASE,
+        )
+    )
+
+
 def _guard_upload_verification_before_terminate(
     issue: int, *, skip_flag: bool, dry_run: bool
 ) -> None:
     """Refuse to terminate an ``epm-issue-<N>`` / ``pod-<N>`` for a
     ``kind: experiment`` task unless an ``epm:upload-verification PASS``
-    marker exists on the task, OR ``--skip-upload-verify`` was passed
-    (logs a LOUD warning, still proceeds).
+    marker exists on the task AND its note carries the out-root
+    sweep-attestation token ``outroot=<swept-clean|residue-committed|none>``
+    (#2187), OR ``--skip-upload-verify`` was passed (logs a LOUD warning,
+    still proceeds; the flag waives the token exactly as it waives the
+    PASS itself).
 
     Non-experiment tasks (``kind`` ∈ {analysis, infra, batch, survey}),
     tasks that can't be resolved (manual / ad-hoc pods, branch-guard
@@ -3133,8 +3184,46 @@ def _guard_upload_verification_before_terminate(
     if kind != "experiment":
         return  # only experiments produce artifacts the verifier protects
 
-    if _has_upload_verification_pass(issue):
-        return
+    note = _latest_upload_verification_note(issue)
+    if note is not None and _note_records_pass(note):
+        if _upload_verification_outroot_attested(note):
+            return
+        # PASS without the outroot= sweep-attestation token (#2187). The
+        # skip flag waives the token exactly as it waives the whole PASS
+        # (it already waives the strictly stronger requirement — a pod with
+        # a PASS-without-token is strictly MORE verified than a no-marker
+        # pod, and must not be blocked harder under the same flag).
+        if skip_flag:
+            print(
+                f"[pod_lifecycle] WARN: terminating {issue} with an "
+                f"epm:upload-verification PASS marker that LACKS the "
+                f"outroot= sweep attestation because --skip-upload-verify "
+                f"was passed (#2187). Any files at the run's out-root TOP "
+                f"LEVEL not covered by an upload glob WILL be lost with "
+                f"the volume.",
+                file=sys.stderr,
+            )
+            return
+        raise SystemExit(
+            f"Refusing to terminate the pod for task #{issue}: the latest "
+            f"epm:upload-verification PASS note lacks the out-root sweep "
+            f"attestation token `outroot=<swept-clean|residue-committed|"
+            f"none>` (#2187 — #2162 lost three out-root TOP-LEVEL files in "
+            f"one run to subdirectory-only upload globs). Run the sweep "
+            f"first: enumerate the run's out-root (`find <out-root> -type f "
+            f"| sort > /tmp/issue-{issue}-outroot.txt`, pod-side) and diff "
+            f"it against permanent homes via `uv run python "
+            f"scripts/verify_uploads.py --issue {issue} --outroot-listing "
+            f"/tmp/issue-{issue}-outroot.txt --hf-prefix <each prefix the "
+            f"run wrote>` (recipe: .claude/rules/pods.md § Completion-side "
+            f"teardown; upload-verifier Step 2.10). Then re-post the marker "
+            f"with the token (`uv run python scripts/task.py post-marker "
+            f"{issue} epm:upload-verification --file <note.md>` where the "
+            f"note leads with `Verdict: PASS` and carries "
+            f"`outroot=<value>`), and re-run terminate. "
+            f"--skip-upload-verify remains the never-ran-pod escape (it "
+            f"waives the token exactly as it waives the PASS itself)."
+        )
 
     if skip_flag:
         print(
