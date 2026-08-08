@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2195,
+  "highest_id": 2196,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9229,6 +9229,13 @@
       "path": "tasks/proposed/2195",
       "status": "proposed",
       "title": "verify_report.py: WARN when a report cites a repo artifact at a SHA the same branch has since modified"
+    },
+    "2196": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2196",
+      "status": "proposed",
+      "title": "cron_lesson_consolidate: an uncreatable log dir silently skips the whole nightly pass"
     },
     "22": {
       "has_clean_result": false,
