@@ -18,6 +18,7 @@ Subcommands (see `task.py --help`):
     list-markers <N> [--prefix epm:] [--json]
     latest-marker <N>                                  # alias: latest-event
     check-authorized-stub <N>                # Step 6d.0 PASS_AUTHORIZED_STUB grant (rc=0 = GRANT)
+    check-smoke-arch-registry <N> [--repo-root PATH]   # Step 6d.0 arm-registry check (rc=0 = OK)
     set-body <N> --body "..." | --file path           # snapshots old → original-body.md
     set-title <N> "..."
     set-goal <N> "..." [--by user|clarifier|planner] [--reason ...]
@@ -58,6 +59,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS,
     CONCERN_SEVERITIES,
     KINDS,
+    SMOKE_ARCH_MARKER_KIND,
     STATUSES,
     WORKFLOW_VERSIONS,
     GoalH2DropError,
@@ -93,6 +95,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     set_status,
     set_title,
     set_track,
+    smoke_arch_registry_check,
     tasks_dir,
 )
 
@@ -832,6 +835,31 @@ def cmd_check_authorized_stub(args: argparse.Namespace) -> None:
         )
         sys.exit(0)
     _safe_print(f"REFUSE — {decision.reason}", context="task.py check-authorized-stub")
+    sys.exit(1)
+
+
+def cmd_check_smoke_arch_registry(args: argparse.Namespace) -> None:
+    """Step 6d.0 arm-registry enumeration check (#2176).
+
+    rc=0 prints `OK — <reason>` (the reason carries the `driver-verified` vs
+    `marker-only` label from the checker's clause 6) and is the routing
+    contract Step 6d.0 consumes on advancing verdicts; rc=1 prints
+    `REFUSE — <reason>`. Read-only: no lock, no commit, no status mutation
+    (the optional --repo-root driver read is a read-only file open + ast
+    parse under the supplied root).
+    """
+    marker = latest_event(args.number, prefix=SMOKE_ARCH_MARKER_KIND)
+    if marker is None:
+        _safe_print(
+            f"REFUSE — no {SMOKE_ARCH_MARKER_KIND} marker on task {args.number}",
+            context="task.py check-smoke-arch-registry",
+        )
+        sys.exit(1)
+    decision = smoke_arch_registry_check(marker.get("note", "") or "", repo_root=args.repo_root)
+    if decision.ok:
+        _safe_print(f"OK — {decision.reason}", context="task.py check-smoke-arch-registry")
+        sys.exit(0)
+    _safe_print(f"REFUSE — {decision.reason}", context="task.py check-smoke-arch-registry")
     sys.exit(1)
 
 
@@ -1584,6 +1612,28 @@ def main() -> None:
     )
     p.add_argument("number", type=int)
     p.set_defaults(func=cmd_check_authorized_stub)
+
+    p = sub.add_parser(
+        "check-smoke-arch-registry",
+        help=(
+            "Step 6d.0 arm-registry enumeration check on the latest "
+            "smoke-architecture marker (rc=0 prints OK — with a driver-verified "
+            "vs marker-only label; rc=1 prints REFUSE — <reason>). With "
+            "--repo-root, re-derives the registry from the named driver file(s) "
+            "and refuses on any member/driver set mismatch. Read-only (#2176)."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.add_argument(
+        "--repo-root",
+        default=None,
+        help=(
+            "worktree/checkout root under which the marker's `file=` path(s) "
+            "resolve; enables the driver-recompute arm (omit for marker "
+            "self-consistency only)"
+        ),
+    )
+    p.set_defaults(func=cmd_check_smoke_arch_registry)
 
     p = sub.add_parser(
         "set-body",

@@ -69,13 +69,25 @@ recipes, verbatim templates, and incident grounding.
    is `FAIL_NO_CANARY` (a broken import is a coverage failure, not a
    fallback choice).
 
-   **Axis 2 — Per-arm resolution attestation.** For every arm / rung /
-   condition the PLAN §4 Design names (a `kind: experiment` plan lists
-   these explicitly; a `kind: infra` plan typically names none), state
-   in the marker `notes:` under a `per-arm-resolution:` sub-block —
-   one row per plan-named arm:
+   **Axis 2 — Per-arm resolution attestation.** Derive the arm list
+   MECHANICALLY from the driver's own arm registry — for a
+   phase-dispatch driver, `sorted(PHASES)`; generally the dispatch
+   table the entrypoint's phase/arm argument routes on — and state the
+   derivation command (e.g. `uv run python -c "from <driver> import
+   PHASES; print(sorted(PHASES))"` or the driver's `--list-phases`
+   where present). Emit the line-anchored `arm-registry:` line ABOVE
+   `per-arm-resolution:`, in one of its two accepted forms (#2176):
+   structured — `arm-registry: source=<expr> file=<path> n=<int>
+   members=<sorted-comma-list>` — or `arm-registry: N/A — <reason>`
+   when no registry exists. Then, for every arm in the registry UNION
+   every arm / rung / condition the PLAN §4 Design names (a
+   `kind: experiment` plan lists these explicitly; a `kind: infra`
+   plan typically names none), state in the marker `notes:` under a
+   `per-arm-resolution:` sub-block —
+   one row per registry or plan-named arm:
 
    ```
+   arm-registry: source=sorted(PHASES) file=scripts/issue<N>_<slug>.py n=3 members=<a>,<b>,<c>
    per-arm-resolution:
      <arm-name-1>: REAL — <one-line: which real computation ran>
      <arm-name-2>: FALLBACK — <one-line: what stub / bias-refit / default>
@@ -90,8 +102,11 @@ recipes, verbatim templates, and incident grounding.
    legitimately arm-less (API-only phase, data-loading probe, an arm
    with nothing to compute in the smoke slice — the vacuous case).
    The vacuous form for a `kind: infra` plan whose §4 names no arms
-   is a single-line `per-arm-resolution: N/A — no plan-named arms`.
-   A missing per-arm row for a plan-named arm is a marker-shape
+   is the single-line pair `per-arm-resolution: N/A — no registry or plan-named arms`
+   + `arm-registry: N/A — no phase/arm registry` (old-form reasons on
+   already-posted markers stay accepted — the parser never matches the
+   reason text).
+   A missing per-arm row for a registry or plan-named arm is a marker-shape
    violation (verdict `FAIL_NO_CANARY`, not `PASS_PARTIAL`).
    **Per-phase subset threading is part of the PASS_UNIFIED
    definition, not optional:** list each phase the dispatcher runs
@@ -118,7 +133,7 @@ recipes, verbatim templates, and incident grounding.
    themselves must still execute once in a separate degenerate probe
    (data-dependent-gates duty, "After implementation" item 3). If phase
    coverage holds AND the Axis 1 import-resolution leg passed BUT ≥1
-   planned arm's per-arm-resolution row reads `FALLBACK`, the verdict
+   registry or plan-named arm's per-arm-resolution row reads `FALLBACK`, the verdict
    is `PASS_PARTIAL arms_stubbed=<comma-list-of-fallback-arm-names>`.
    Step 6d.0 refuses to dispatch on `PASS_PARTIAL` for planned
    experiment arms — the round bounces to `status:planning` (mirroring

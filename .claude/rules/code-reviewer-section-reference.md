@@ -138,12 +138,24 @@ with a round-1 marker PASSes this gate.
   (gates.inline id=10) owns FAIL_NO_CANARY adjudication (bounce to planning).
   Note it as a CONCERNS bullet so the orchestrator sees it early.
 - **Present + parseable** (any PASS verdict): verify the marker's
-  internal SHAPE before proceeding. Grep the plan §4 Design for the
+  internal SHAPE before proceeding. Verify a line-anchored
+  `arm-registry:` line is present in one of its two accepted forms
+  (#2176) — structured: `arm-registry: source=<expr> file=<path>
+  n=<int> members=<sorted-comma-list>`; or vacuous:
+  `arm-registry: N/A — <reason>` when no registry exists — a missing
+  or malformed line is a `marker-shape` blocker. Placement note: the
+  `arm-registry:` line is a TOP-LEVEL key, a sibling of
+  `per-arm-resolution:` — inside the per-arm span it TERMINATES the
+  span rather than reading as a row (the #2176 one-token
+  `_MARKER_TOP_KEY_RE` extension pins that it is never swallowed as a
+  phantom arm). Grep the plan §4 Design for the
   arm/rung/condition names it declares (a `kind: experiment` plan
   typically enumerates these; a `kind: infra` plan often names none —
-  the vacuous `per-arm-resolution: N/A — no plan-named arms` line
-  satisfies the shape check by construction). For every plan-named
-  arm, confirm the marker's `notes: per-arm-resolution:` sub-block
+  the vacuous `per-arm-resolution: N/A — no registry or plan-named arms`
+  line, paired with `arm-registry: N/A — no phase/arm registry`,
+  satisfies the shape check by construction). For every registry or plan-named
+  arm (the marker's `arm-registry:` members list ∪ the plan-named
+  arms), confirm the marker's `notes: per-arm-resolution:` sub-block
   contains a row. Also verify the `notes: import-resolution: <cmd>`
   line matches one of the three shapes named in
   experiment-implementer.md Axis 1: (a) the dispatcher's
@@ -178,10 +190,32 @@ with a round-1 marker PASSes this gate.
   code — that substance remains Step 6d.0's; the reviewer only
   checks the marker's internal shape (rows present, verdict
   consistent with rows, import-resolution shape matches one of the
-  three). A shape violation returns a single `Critical` blocker
-  tagged `marker-shape` whose body NAMES
+  three, arm-registry line well-formed). A shape violation returns a
+  single `Critical` blocker tagged `marker-shape` whose body NAMES
   `epm:smoke-architecture-check` (Step 5c-bis strip is keyed on that
   name; the blocker names exactly ONE marker kind — never combined).
+
+  **Arm-registry substance split (#2176)** — stated ARM-EXPLICITLY.
+  Substance here means: `members=` equals the driver registry's ACTUAL
+  key set. Whenever the marker's `file=` resolves in the worktree, that
+  set-equality is owned by the MECHANICAL arm — Step 6d.0's checker in
+  driver-recompute mode (`task.py check-smoke-arch-registry <N>
+  --repo-root <worktree>`). The REVIEWER owns it as the FALLBACK arm
+  whenever it does not resolve (the checker's `OK` line then reads
+  `marker-only`), and as defence-in-depth whenever the diff itself
+  touches the named driver file. The reviewer duty is a COMMAND SHAPE,
+  not a vibe: on a structured `arm-registry:` line whose `file=` is in
+  the diff, ENUMERATE the named `source=` symbol's keys — open the file
+  at the diff and read the dict-literal keys, or run
+  `uv run python scripts/task.py check-smoke-arch-registry <N>
+  --repo-root <worktree>` — and assert SET-EQUALITY with `members=`. A
+  mismatch is a **substantive** blocker, NOT `marker-shape`. A
+  symbol-presence grep is EXPLICITLY INSUFFICIENT — it proves the
+  registry exists, not that `members` equals its key set. On the N/A
+  form, verify the no-registry claim against the diff with the same
+  concreteness (does a changed entrypoint define a `PHASES`-style
+  dispatch table? — `grep -n '^PHASES' <changed entrypoints>`), keeping
+  the two duties parallel so neither reads as optional.
 
 ## Step 0.8 detail — prior open binding concerns
 

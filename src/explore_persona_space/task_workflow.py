@@ -67,6 +67,7 @@ excluded from auto-dispatch / the clarifier. Revivable via
 
 from __future__ import annotations
 
+import ast
 import bisect
 import contextlib
 import fcntl
@@ -2209,7 +2210,7 @@ _AUTH_STUB_HEADING_RE = re.compile(r"^###\s+Authorized smoke stubs\b", re.IGNORE
 _ARM_TOKEN_RE = re.compile(r"`([^`]+)`")
 _PER_ARM_ROW_RE = re.compile(r"^\s*-?\s*([^:`*]+?|`[^`]+`)\s*:\s*(REAL|FALLBACK|N/A)\b")
 _MARKER_TOP_KEY_RE = re.compile(
-    r"^(verdict|notes|import-resolution|per-arm-resolution|resume-matrix|"
+    r"^(verdict|notes|import-resolution|per-arm-resolution|arm-registry|resume-matrix|"
     r"production-outroot-unit):"
 )
 _ARMS_STUBBED_RE = re.compile(r"arms_stubbed=(?:\[([^\]]*)\]|(\S+))")
@@ -2698,6 +2699,288 @@ def check_authorized_stub(task_id: int) -> AuthorizedStubDecision:
             decision.authorized,
         )
     return decision
+
+
+# --- Arm-registry enumeration check (#2176; Step 6d.0 registry-derived set) ---
+
+#: One accepted line, two forms (XOR): the structured form names the driver's
+#: own arm registry; the N/A form claims no registry exists (adjudicated by
+#: the Step 6d.0 orchestrator + code-reviewer Step 0.55, never granted here).
+_ARM_REGISTRY_RE = re.compile(
+    r"^arm-registry:\s*(?:(?P<na>N/A)\s*[—-]\s*(?P<na_reason>.+?)"
+    r"|source=(?P<source>\S+)\s+file=(?P<file>\S+)\s+n=(?P<n>\d+)\s+members=(?P<members>\S+))\s*$"
+)
+
+#: Identifier tokens dropped when resolving the registry symbol out of a
+#: ``source=`` expression (``sorted(PHASES)`` -> ``PHASES``).
+_REGISTRY_SOURCE_BUILTINS = frozenset(
+    {"sorted", "list", "set", "tuple", "dict", "keys", "values", "items"}
+)
+
+_NO_ARM_REGISTRY_REASON = (
+    "no line-anchored `arm-registry:` line found — the per-arm enumeration must "
+    "be DERIVED from the driver's own arm registry and stated on one of the two "
+    "accepted forms: `arm-registry: source=<expr> file=<path> n=<int> "
+    "members=<sorted-comma-list>`, or `arm-registry: N/A — <reason>` when no "
+    "registry exists. Derivation rule: for a phase-dispatch driver, "
+    "`sorted(PHASES)`; generally the dispatch table the entrypoint's phase/arm "
+    "argument routes on (#2176; incident #2163: a hand-listed set omitted 3 of "
+    "13 registry phases)"
+)
+
+
+@dataclass(frozen=True)
+class ArmRegistry:
+    """Parsed ``arm-registry:`` line — the N/A form XOR the structured form."""
+
+    na: bool
+    na_reason: str | None
+    source: str | None
+    file: str | None
+    n: int | None
+    members: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RegistryCheckDecision:
+    """One ok/refuse verdict from :func:`smoke_arch_registry_check`."""
+
+    ok: bool
+    reason: str  # one machine-legible line
+    missing: tuple[str, ...]
+    registry: ArmRegistry | None
+
+
+def parse_arm_registry_line(note: str) -> ArmRegistry | None:
+    """Parse the FIRST ``arm-registry:`` line of a smoke-architecture note.
+
+    Returns ``None`` when no such line exists. A PRESENT line matching
+    NEITHER accepted form raises :class:`ValueError` naming both grammars —
+    callers catch it and convert to a REFUSE (the #2171 posture: runtime
+    never crashes on a malformed marker; a typo'd line must not slip through
+    as absent-but-ok). Structured-form ``members`` is comma-split with
+    backticks/whitespace stripped and must be non-empty; ``source``/``file``
+    are opaque provenance tokens here (the driver-recompute arm of
+    :func:`smoke_arch_registry_check` additionally interprets them when a
+    repo root is supplied).
+    """
+    for ln in note.splitlines():
+        if not ln.startswith("arm-registry:"):
+            continue
+        m = _ARM_REGISTRY_RE.match(ln)
+        if not m:
+            raise ValueError(
+                f"malformed `arm-registry:` line: {ln!r} — accepted forms: "
+                "`arm-registry: source=<expr> file=<path> n=<int> "
+                "members=<sorted-comma-list>` or `arm-registry: N/A — <reason>`"
+            )
+        if m.group("na"):
+            return ArmRegistry(True, m.group("na_reason").strip(), None, None, None, ())
+        members = tuple(
+            a.strip().strip("`") for a in m.group("members").split(",") if a.strip().strip("`")
+        )
+        if not members:
+            raise ValueError(
+                f"malformed `arm-registry:` line: {ln!r} — the structured form's "
+                "`members=` list is empty (a no-registry round uses the "
+                "`arm-registry: N/A — <reason>` form instead)"
+            )
+        return ArmRegistry(
+            False, None, m.group("source"), m.group("file"), int(m.group("n")), members
+        )
+    return None
+
+
+def _extract_registry_members(driver_file: Path, source_expr: str) -> tuple[str, ...] | None:
+    """Statically extract the registry key set the ``source=`` expression names.
+
+    The driver-recompute reader (clause 5b of :func:`smoke_arch_registry_check`).
+    Symbol resolution: identifier tokens of ``source_expr`` minus a small
+    builtin set (``sorted(PHASES)`` -> ``PHASES``); exactly one candidate must
+    remain or the read abstains. Key extraction: the module-level
+    ``Assign``/``AnnAssign`` binding that name to an ``ast.Dict`` whose keys
+    are all string constants -> the key tuple. Anything else (symbol absent,
+    non-literal registry, non-string keys, unreadable/unparseable file)
+    returns ``None`` — never a guess; the caller degrades VISIBLY to
+    marker-only. The dict-literal scope matches the measured driver
+    population (#2176 plan §2: 15/15 anchored ``^PHASES`` drivers are
+    module-level dict literals).
+    """
+    idents = set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", source_expr)) - _REGISTRY_SOURCE_BUILTINS
+    if len(idents) != 1:
+        return None
+    (name,) = idents
+    try:
+        tree = ast.parse(driver_file.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError, ValueError):
+        return None
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target: ast.expr = node.targets[0]
+            value = node.value
+        elif isinstance(node, ast.AnnAssign):
+            target = node.target
+            value = node.value
+        else:
+            continue
+        if not isinstance(target, ast.Name) or target.id != name:
+            continue
+        if not isinstance(value, ast.Dict):
+            return None
+        keys: list[str] = []
+        for k in value.keys:
+            if not (isinstance(k, ast.Constant) and isinstance(k.value, str)):
+                return None
+            keys.append(k.value)
+        return tuple(keys)
+    return None
+
+
+def smoke_arch_registry_check(
+    marker_note: str, repo_root: str | os.PathLike[str] | None = None
+) -> RegistryCheckDecision:
+    """The Step 6d.0 arm-registry enumeration predicate (#2176).
+
+    Pure over the note; with ``repo_root`` supplied it additionally reads the
+    named driver file(s), deterministically. Reuses
+    :func:`parse_smoke_arch_marker` for the ``per-arm-resolution:`` rows.
+    Clause order (each pinned by a test):
+
+    1. no ``arm-registry:`` line, or a present line matching neither form
+       (the :class:`ValueError`, caught here) -> REFUSE with
+       :data:`_NO_ARM_REGISTRY_REASON`;
+    2. N/A form -> ok=True; the reason records the claim verbatim and names
+       the substantive adjudicators (the N/A form names no ``file=`` for the
+       recompute arm to read, so its substance is owned by the reviewer's
+       diff check — code-reviewer Step 0.55);
+    3. ``n != len(members)`` -> REFUSE naming both numbers;
+    3b. duplicate members -> REFUSE naming the duplicates (a dup lets ``n``
+        match while enumerating fewer distinct arms; an honest
+        ``sorted(PHASES)`` derivation cannot produce one);
+    4. ``per_arm == {}`` -> REFUSE reusing :data:`_NO_PER_ARM_SUBBLOCK_REASON`
+       verbatim (free-prose rows parse to no sub-block — the #2171 keyed-span
+       consequence, intended here: it forces the line-anchored key);
+    5. registry members missing from ``per_arm`` -> REFUSE with the
+       registry-enumeration mismatch reason (sorted missing list; the exact
+       #2163 defect: 10 hand-listed rows vs 13 registry arms);
+    5b. driver recompute (only when ``repo_root`` is supplied and the
+        structured form parsed): resolve each comma-listed ``file=`` path
+        under ``repo_root``; extraction success -> REFUSE on set-INEQUALITY
+        of ``members`` vs the unioned driver keys (set-equality, not subset:
+        ``members`` claims to BE the registry enumeration — plan-named
+        non-registry arms belong in extra ``per_arm`` rows, never in
+        ``members``). Any unresolvable path / ``None`` extraction -> NO
+        refuse: fall back to marker-only, recording which path / symbol;
+    6. ok=True with a VISIBLY two-tier reason: ``driver-verified`` when 5b
+       ran to a successful set-equality, else ``marker-only — driver not
+       verified: <why>`` — a marker-only PASS is never mistakable for a
+       driver-verified one, and it hands the set-equality duty to the
+       reviewer arm.
+
+    Extra ``per_arm`` rows beyond ``members`` are ALLOWED (plan-named
+    non-registry arms keep their rows; the old plan-named quantifier is a
+    lower bound, not replaced). Member<->row matching is byte-wise after the
+    backtick/asterisk/whitespace strip :func:`parse_smoke_arch_marker`
+    applies to row names. Read-only.
+    """
+    marker = parse_smoke_arch_marker(marker_note)
+
+    def _refuse(
+        reason: str,
+        missing: tuple[str, ...] = (),
+        registry: ArmRegistry | None = None,
+    ) -> RegistryCheckDecision:
+        return RegistryCheckDecision(False, reason, missing, registry)
+
+    try:
+        registry = parse_arm_registry_line(marker_note)
+    except ValueError as exc:
+        return _refuse(f"{_NO_ARM_REGISTRY_REASON} ({exc})")
+    if registry is None:
+        return _refuse(_NO_ARM_REGISTRY_REASON)
+    if registry.na:
+        return RegistryCheckDecision(
+            True,
+            f"registry: N/A — {registry.na_reason} (substantive adjudication: "
+            "Step 6d.0 orchestrator + code-reviewer Step 0.55)",
+            (),
+            registry,
+        )
+    if registry.n != len(registry.members):
+        return _refuse(
+            f"registry count self-inconsistent: n={registry.n} but members lists "
+            f"{len(registry.members)} arm(s) — re-derive both from the driver's "
+            "registry (`sorted(PHASES)`), then re-post",
+            registry=registry,
+        )
+    if len(set(registry.members)) != len(registry.members):
+        dups = sorted({m for m in registry.members if registry.members.count(m) > 1})
+        return _refuse(
+            "duplicate members: "
+            + ", ".join(dups)
+            + " — a duplicated member lets n match while enumerating fewer distinct "
+            "arms; an honest `sorted(PHASES)` derivation cannot produce one",
+            registry=registry,
+        )
+    if not marker.per_arm:
+        return _refuse(_NO_PER_ARM_SUBBLOCK_REASON, registry=registry)
+    missing = tuple(sorted(set(registry.members) - set(marker.per_arm)))
+    if missing:
+        return _refuse(
+            f"registry-enumeration mismatch: n_registry={registry.n} "
+            f"n_enumerated={len(marker.per_arm)} missing={', '.join(missing)} "
+            f"(registry: {registry.source} @ {registry.file})",
+            missing=missing,
+            registry=registry,
+        )
+    fallback_reason = "no repo-root supplied"
+    if repo_root is not None:
+        root = Path(repo_root)
+        rel_paths = [p.strip() for p in (registry.file or "").split(",") if p.strip()]
+        resolved = [root / p for p in rel_paths]
+        unresolved = [p for p, rp in zip(rel_paths, resolved, strict=True) if not rp.is_file()]
+        if unresolved:
+            fallback_reason = "file not found under repo-root: " + ", ".join(unresolved)
+        else:
+            driver_keys: set[str] = set()
+            extraction_ok = True
+            for rp in resolved:
+                keys = _extract_registry_members(rp, registry.source or "")
+                if keys is None:
+                    fallback_reason = (
+                        f"registry symbol not statically extractable: {registry.source}"
+                    )
+                    extraction_ok = False
+                    break
+                driver_keys.update(keys)
+            if extraction_ok:
+                if set(registry.members) != driver_keys:
+                    missing_from_members = sorted(driver_keys - set(registry.members))
+                    extra_in_members = sorted(set(registry.members) - driver_keys)
+                    return _refuse(
+                        f"driver-registry mismatch: n_members={len(registry.members)} "
+                        f"n_driver={len(driver_keys)} "
+                        f"missing_from_members={', '.join(missing_from_members) or '(none)'} "
+                        f"extra_in_members={', '.join(extra_in_members) or '(none)'} "
+                        f"(registry: {registry.source} @ "
+                        f"{', '.join(str(rp) for rp in resolved)})",
+                        missing=tuple(missing_from_members),
+                        registry=registry,
+                    )
+                return RegistryCheckDecision(
+                    True,
+                    f"registry-complete (driver-verified): n={registry.n} "
+                    f"source={registry.source} file={registry.file}",
+                    (),
+                    registry,
+                )
+    return RegistryCheckDecision(
+        True,
+        f"registry-complete (marker-only — driver not verified: {fallback_reason}): "
+        f"n={registry.n} source={registry.source}",
+        (),
+        registry,
+    )
 
 
 # --- Verdict-disagree observer predicate (#1170; origin incident #825) ---

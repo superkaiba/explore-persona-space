@@ -4516,12 +4516,32 @@ Verdict routing:
 
 | `verdict` | Action |
 |---|---|
-| `PASS_UNIFIED` | Advance to Step 6d.1 — smoke IS sweep with one cell; the architecture is unified end-to-end AND every planned arm resolved REAL or N/A. |
+| `PASS_UNIFIED` | Advance to Step 6d.1 — smoke IS sweep with one cell; the architecture is unified end-to-end AND every registry or plan-named arm resolved REAL or N/A. |
 | `PASS_CANARY canary_cell=<id>` | Advance to Step 6d.1 — paths diverge but the plan §4 Design justifies the divergence in two sentences AND names the canary cell that exercised the sweep path during smoke. Log to chat: `divergence accepted; canary cell <id> exercised the subprocess path during smoke`. |
-| `PASS_PARTIAL arms_stubbed=<comma-list>` | **REFUSE to dispatch.** Bounce back to status:planning; re-invoke `/adversarial-planner` with pivot scope: "arms {arms_stubbed} resolved to fallback/stub in smoke — phase coverage + import-resolution passed BUT ≥1 planned arm is not exercising its production computation path; resolve them in the diff, OR re-authorize the stubs in a plan §4 '### Authorized smoke stubs' block (one table row per arm: backticked arm name \| why it cannot run at smoke \| compensating control), landing the amendment through the plan-revision + APPROVAL gate (planning bounce → new-plan-version → plan approval; the checker refuses a block-bearing plan version persisted AFTER the latest epm:plan-approved, so a bare new-plan-version edit cannot self-grant), then re-post the marker as 'PASS_AUTHORIZED_STUB arms_stubbed=<same list>', carrying the latest IMPLEMENTER marker's per-arm-resolution: sub-block and import-resolution: line VERBATIM with only the verdict: line changed (the checker parses only those line-anchored machine keys — a free-prose row intro like #2163-v3's 'Per-arm resolution (...):' parses as NO sub-block and refuses) — Step 6d.0 grants it mechanically (see that row)." Round counter does NOT increment (strategy pivot, mirroring `FAIL_NO_CANARY`). |
+| `PASS_PARTIAL arms_stubbed=<comma-list>` | **REFUSE to dispatch.** Bounce back to status:planning; re-invoke `/adversarial-planner` with pivot scope: "arms {arms_stubbed} resolved to fallback/stub in smoke — phase coverage + import-resolution passed BUT ≥1 registry or plan-named arm is not exercising its production computation path; resolve them in the diff, OR re-authorize the stubs in a plan §4 '### Authorized smoke stubs' block (one table row per arm: backticked arm name \| why it cannot run at smoke \| compensating control), landing the amendment through the plan-revision + APPROVAL gate (planning bounce → new-plan-version → plan approval; the checker refuses a block-bearing plan version persisted AFTER the latest epm:plan-approved, so a bare new-plan-version edit cannot self-grant), then re-post the marker as 'PASS_AUTHORIZED_STUB arms_stubbed=<same list>', carrying the latest IMPLEMENTER marker's per-arm-resolution: sub-block and import-resolution: line VERBATIM with only the verdict: line changed (the checker parses only those line-anchored machine keys — a free-prose row intro like #2163-v3's 'Per-arm resolution (...):' parses as NO sub-block and refuses) — Step 6d.0 grants it mechanically (see that row)." Round counter does NOT increment (strategy pivot, mirroring `FAIL_NO_CANARY`). |
 | `PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>` | Run the mechanical grant check: `uv run python scripts/task.py check-authorized-stub <N>`. rc=0 (prints `GRANT arms_stubbed=<list>`) → advance to Step 6d.1; log to chat: `authorized stubs granted mechanically: <list> — plan §4 "Authorized smoke stubs" names each with an impossibility reason + compensating control`. rc≠0 (prints `REFUSE — <reason>`) → **REFUSE to dispatch**; route exactly as `PASS_PARTIAL`, appending the checker's printed reason to the pivot scope. The orchestrator NEVER grants this token by prose judgment — the checker's exit code is the only grant path (#2171; retires the #2163 improvised `PASS_UNIFIED` grant). |
 | `FAIL_NO_CANARY` | **REFUSE to dispatch.** Bounce back to status:planning; re-invoke `/adversarial-planner` with pivot scope: "the smoke/sweep architectural divergence has no justification + canary; re-architect toward UNIFICATION (smoke = sweep with one cell), OR add the two-sentence justification + named canary cell to §4 Design." Round counter does NOT increment (this is a strategy pivot, not a fresh review round). |
 | (marker missing) | **REFUSE to dispatch.** Bounce back to implementer with a one-line prompt: `post epm:smoke-architecture-check v1 per the mandatory checklist before code-review-PASS`. |
+
+**Arm-registry enumeration check (#2176).** The per-arm enumeration is
+DERIVED from the driver's own arm registry, never hand-listed from plan
+narrative: for a phase-dispatch driver, `sorted(PHASES)`; generally the
+dispatch table the entrypoint's phase/arm argument routes on. The marker
+states it on a line-anchored `arm-registry: source=<expr> file=<path>
+n=<int> members=<sorted-comma-list>` line (`arm-registry: N/A — <reason>`
+when no registry exists). Before advancing on any verdict above, run
+`uv run python scripts/task.py check-smoke-arch-registry <N> --repo-root
+<worktree-path>` — the orchestrator HAS the worktree (the smoke just ran
+there), and with it the checker re-derives the registry from the named
+driver file itself and REFUSES on any member/driver set mismatch; without
+a resolvable driver the check degrades to marker self-consistency only,
+and its `OK` line says so (`marker-only` vs `driver-verified`) — a
+marker-only PASS hands the set-equality duty to code-reviewer Step 0.55.
+rc≠0 → **REFUSE to dispatch** — bounce to the implementer to re-post with
+the registry-derived enumeration (the printed reason names the missing
+arms); round counter does NOT increment. Rationale: #2163 — a hand-listed
+set omitted 3 of 13 registry phases; both never-smoked VM-side phases
+carried `args.<attr>` AttributeErrors that fired at Step 8.
 
 <!-- gate: gates.inline.smoke_architecture -->
 

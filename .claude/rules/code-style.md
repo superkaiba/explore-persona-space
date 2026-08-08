@@ -112,6 +112,54 @@ CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
   50-100x faster) supersedes `scripts/issue722_skill_over_mean.py`; once the
   vectorized driver lands on main the slow one is deleted, not left beside it.
 
+## Argparse-attribute completeness for phase-dispatch drivers
+
+Per-issue phase-dispatch DRIVERS (`scripts/issue<N>_*.py` entrypoints routing a `--phase`-style
+argument over a `PHASES` registry) are argparse-CLI by established practice — the "Config via
+Hydra (not argparse)" line above governs *experiment configs*, not these drivers; this section
+scopes to the drivers so the two conventions do not conflict. Convention: a driver's
+`--import-check` mode calls the shared AST helper so a never-smoked phase cannot ship an
+`args.<attr>` `AttributeError` (#2163: `args.figures_out` + `args.harvest_out` fired at Step 8 on
+the two VM-side phases the smoke never exercised):
+
+```python
+if args.import_check:
+    from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
+    assert_args_attributes_defined(__file__)
+    raise SystemExit(0)
+```
+
+- **Whole-module scope — do NOT narrow.** The helper collects `args.<attr>` reads over the
+  ENTIRE module (every function, helper, and module-level statement), never just the `PHASES`
+  function bodies. #2163's first version scanned only the phase bodies and missed
+  `args.figures_out` in `_fig_dir`, a helper the phase calls; any per-function scope is
+  escapable by moving the reference one call deeper, so the whole-module (file) scope is the
+  only non-escapable one. A future narrowing silently reintroduces the helper-escape hole —
+  `tests/test_argcheck.py::test_whole_module_scope_catches_helper_escape` pins the behavior so
+  a narrowing is test-breaking, not just documented.
+- **Four measured false-positive classes, each handled** (measured over 927 candidate
+  `scripts/issue*_*.py` files: 83 red under the naive #2163 regex heuristic, 47 confirmed FPs
+  across three counted classes + a fourth fingerprint-identified): (1) `dest=` renames (23) —
+  the explicit `dest=` kwarg OVERRIDES the flag-derived name; (2) `add_subparsers(dest=...)`
+  (9) — the subparser dest enters the DEFINED set; (3) runtime assignments (15) — an
+  `args.x = ...` Store-context attribute defines `x` (AST context distinguishes Store from
+  Load, which the regex could not); (4) imported parser-builders (fingerprint-identified) — a
+  parser partly built by `shared_mod._add_common_args(ap)` passes BOTH files:
+  `assert_args_attributes_defined(__file__, inspect.getfile(shared_mod))` (the varargs
+  signature exists for this). Residue (e.g. a non-namespace local named `args`) routes through
+  `extra_defined=(...)` — visible at the call site, never silent.
+- **Driver-local opt-in convention, NOT a repo-wide lint.** The measured baseline (83 of 927
+  files red under the naive regex) makes a FAIL-posture repo-wide check the #1388 fleet-wedge
+  shape (the no-flags lint IS the Step 9c gate), and a WARN-posture one emits 83 standing
+  warnings of advisory noise. The binding arm already sits at exactly the right gate: the
+  smoke-architecture contract's Axis 1 runs `--import-check` per changed entrypoint fail-loud
+  pre-dispatch, and the marker's `import-resolution:` line records the exact command, so
+  adoption is visible in a durable marker the reviewer reads.
+- **Known accepted false negative:** `args.x += 1` (AugAssign) has a Store-context target, so
+  `x` lands in DEFINED while the same operation also LOADs a possibly-undefined attribute —
+  fixing it needs flow ordering, out of scope for a static completeness check (recorded in the
+  module docstring).
+
 ## Relocated codebase traps (from `.claude/rules/gotchas.md`, #2189)
 
 Verbatim gotchas.md entries whose topic this rule already owns — relocated
@@ -121,3 +169,4 @@ to recover gotchas.md byte budget (#2189); wording and `#N` citations kept.
 - **cuda `torch.linalg.eigh` (cuSOLVER syevd) raises `torch.linalg.LinAlgError` ("failed to converge ... ill-conditioned or has too many repeated eigenvalues") on near-singular / repeated-eigenvalue Grams that CPU LAPACK decomposes fine — wrap every data-derived-Gram eigh site in a CPU-fallback helper; do NOT jitter the Gram.** A documented upstream class (pytorch/pytorch#94772, #105359, #159741): cuSOLVER syevd is less robust than CPU LAPACK on ill-conditioned symmetric inputs. CUDA-numerics sibling of the fp32 kernel-parity entry in `.claude/rules/gotchas.md` (there two kernels give DIFFERENT numbers with correct math; here the cuda path FAILS outright and CPU is the correct backend). Trigger regime: SMALL subsampled / group-split fold Grams with near-duplicate rows — a run can pass thousands of larger full-lane eigh calls, then die at matched-n subsampling (#1335). RULE: wrap the site — `try: torch.linalg.eigh(G)` / `except torch.linalg.LinAlgError:` → `torch.linalg.eigh(G.cpu())`, move `w, V` back to `G.device`, one-line print naming device + n — an exact numerical-backend swap, NOT a semantic change (rotation-invariant downstream reads agree to fp roundoff); the same fallback shape applies to a cuda `linalg.svd` non-convergence. Do NOT add a jitter/ridge epsilon to the Gram — that changes the eigenvalues every downstream λ-scan and R² read consumes. A Gram that fails on CPU too is genuinely pathological input — let it raise. Canonical impl: `scripts/issue825_fit_cells.py::_eigh_robust`. Long-form: `.claude/agent-memory/experiment-implementer/feedback_cusolver_eigh_nonconvergence_cpu_fallback.md`.
 - **Batched `np.linalg.solve` raises ONE `LinAlgError` for the WHOLE (B,k,k) stack when ANY single slice is singular — wrap batched stacked solves in a batched-first + per-slice `pinv` fallback with a persisted per-cell degenerate flag; a small additive ridge jitter does NOT protect, and never a silent placeholder.** One collinear/constant feature triple in one layer killed #1739's fits lane 25.2 h in; a `+ 1e-8*np.eye(k)` jitter is absorbed in float64 when feature scale is large and elimination still hits an exact zero pivot. RULE: try the single batched solve first (healthy path bit-identical — keeps the vectorize-first shape and resume-comparability with persisted records); on the raise, re-solve slices individually — healthy slices via the same LAPACK `gesv`, singular slices via `np.linalg.pinv(ata) @ atb` (min-norm LS) — and persist the degenerate indices (`degenerate_ols: true` + detail) so the caller flags the cell, never a silent placeholder (a non-LinAlgError still propagates). Reject a cond/det pre-screen or a bigger jitter when completed cells will be RESUMED — both change healthy-path numbers. Deterministic singular fixture: the Gram of a collinear-column design (col1 = 2*col0, integer-exact). DISTINCT from the cuda eigh entry above (backend swap) — here the math is singular on every backend; third sibling: numpy SVD gesdd non-convergence (#722 r3). Worked impl: `src/explore_persona_space/experiments/issue_1739/arms.py::_solve_stacked_normal_eqs`. Long-form: `.claude/agent-memory/experiment-implementer/feedback_batched_solve_singular_slice_pinv_fallback.md`.
 - **numpy `argsort`/`sort` tie order is CPU-SIMD-kernel dependent (numpy 2.x dispatches x86-simd-sort by CPU feature) — a cross-machine identity gate that RECOMPUTES a top-k-by-count selection and asserts equality against a banked selection is machine-dependent by construction whenever counts TIE at the cap boundary** (#1946: 5 boundary ties for 2 cap slots — VM PASS, GCE FAIL, byte-identical inputs, both numpy 2.2.6). RULE: treat the BANKED selection as authoritative (downstream fits were made on it) and gate re-verification with machine-independent SET-VALIDITY invariants — floor match, `len == min(cap, n_eligible)`, all banked >= floor, strictly-above-boundary items ⊆ banked set, `n_above < cap` — logging the boundary tie structure; OR make the selection deterministic at creation (`np.argsort(..., kind="stable")` PLUS an explicit secondary tie-break key — stable sort alone preserves input order among ties, itself machine-dependent). NEVER a recompute-equality assert over a ranked selection whose sort key can tie. Worked fix: `scripts/issue1946_sae_percontext.py::_scan_and_gate`.
+||||||| 640f206892
