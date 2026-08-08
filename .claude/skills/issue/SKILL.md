@@ -6965,8 +6965,10 @@ group + session id; even a top-level child with its own pgid shares the sid),
 and a watcher force-stop / `spawn_session.py stop` kills that tree — #833's
 healthy Phase-D fit died mid-flight this way (pure
 signal kill). `setsid` gives the phase its own session + process group (group
-kills miss it; it reparents to PID 1 when the launching shell exits);
-`< /dev/null >> log` drops every fd tether to the dying session. The phase's
+kills miss it; orphans land ABOVE the dead session (nearest subreaper, else
+init, not always PID 1), so no ppid-tree walk reaches it; `ppid == 1` is
+wrong, #2199); `< /dev/null >> log` drops every fd tether to the dying
+session. The phase's
 stage-dispatch breadcrumb MUST carry four additional fields:
 `... pid=<PHASE_PID> log=<abs log path> choom=ok|failed harvest=<abs output path>`
 (additive whitespace-split
