@@ -237,14 +237,14 @@ CLI has NO `api` subcommand — `hf api list-repo-files ...` errors to stderr an
 repo-files` only exposes `delete`, not `list`. Use:
 `set -a && source .env && set +a && uv run python -c "from huggingface_hub import HfApi; print('\n'.join(e.path for e in HfApi().list_repo_tree('superkaiba1/explore-persona-space-data', path_in_repo='<bucket>', repo_type='dataset', recursive=True, revision='main')))"`
 (scoped `list_repo_tree` — a bare `list_repo_files` full listing of the
-~1M-file data repo times out (>90 s, #833); gotchas.md)
+~1M-file data repo times out (>90 s, #833); § Relocated codebase traps below)
 (the `set -a && source .env` prefix is part of the canonical snippet — without
 it the check dies on `HF_TOKEN missing`, and the obvious in-heredoc fix, a bare
 `load_dotenv()`, crashes from stdin)
 (the prefix is VM-scoped — repo root, where `.env` always exists; a pod/GCE
 workload script must source conditionally instead — `if [ -f ./.env ]; then
 set -a; . ./.env; set +a; fi` — because the GCE lane exports tokens via its
-startup script and has NO `.env` file; gotchas.md, #923)
+startup script and has NO `.env` file; `pod-side-reporting.md`, #923)
 (#458 nearly drew a wrong "checkpoints don't exist" conclusion from the
 silent CLI "0").
 
@@ -428,7 +428,7 @@ the artifact-reuse throughput check (i) ("fix the SOURCE module, then
 reuse"). Scope boundary (deliberate): bare `snapshot_download` /
 `list_repo_files` sites are OUT of the lint's predicate — those call classes
 are governed by the scoped-listing + `retry_transient` recipes in
-`.claude/rules/gotchas.md` (#833) and the `--check-hub-verify-retry` lint.
+`.claude/rules/gotchas.md` + § Relocated codebase traps below (#833) and the `--check-hub-verify-retry` lint.
 
 **Multi-cell pod sweeps upload per-cell, never one terminal batch (#664).** A
 dispatcher that produces per-cell artifacts (eval JSONs, store tensors, raw
@@ -776,3 +776,14 @@ policy ceiling (Thomas's call). Everything above still holds; v2 tightens it to:
   The #825 intra-run ordering bullet (main body above) binds v2 unchanged:
   an expensive extraction store uploads before — or concurrent with — any
   long fit/analysis phase that consumes it.
+
+## Relocated codebase traps (from `.claude/rules/gotchas.md`, #2189)
+
+Verbatim gotchas.md entries whose topic this rule already owns — relocated
+to recover gotchas.md byte budget (#2189); wording and `#N` citations kept.
+
+- **HF Hub list APIs (`list_repo_tree` et al.) return LAZY generators — a try/except around the CALL catches nothing; the HTTP error raises at ITERATION time.** Materialize (`list(...)`) inside the try/except, or move the handler to the consuming loop. (#779.)
+- **HF Hub per-org 2500-req-per-5-min rate limit (429) on bulk `snapshot_download`.** Each xet-read-token fetch / tree-listing / file-metadata call counts as one request, so a `snapshot_download` of ≥3000 files at default `max_workers` predictably trips the quota — and the failure surfaces LATE (`HfHubHTTPError: 429` mid-download after tens of minutes; #658). RULE: for bulk `snapshot_download`, pass `max_workers=4` (≈1200 req/5min) AND wrap in a 429-aware retry with `Retry-After`-bounded backoff (60–300s) — the xet bulk path is NOT covered by `huggingface_hub`'s built-in 429 retry. Sibling of the per-probe `AutoTokenizer.from_pretrained` 429 entry below (same org quota). On the ~1M-file data repo `snapshot_download` is barred outright regardless of `max_workers` — see the next entry.
+- **`snapshot_download(allow_patterns=...)` against the ~1M-file data repo enumerates the ENTIRE repo tree BEFORE filtering — staging wedges indefinitely; bare `list_repo_files` on that repo also times out (#833: >90 s).** `allow_patterns` is CLIENT-side: on a very large repo, `snapshot_download` falls back to a FULL `list_repo_tree(recursive=True)` walk — sequential paginated pages under the same ~2500-req/5-min org quota — and only then filters (`huggingface_hub` 0.36.2). Against `superkaiba1/explore-persona-space-data` the enumeration is effectively unbounded (#833: a GCE staging step sat 40+ min, zero files landed). RULE: stage any subtree of the data repo by enumerating with SERVER-side-scoped `list_repo_tree(repo_id, path_in_repo=<prefix>, repo_type="dataset", recursive=True)` (the prefix rides in the tree URL — seconds for `issueN_<slug>`-scale prefixes), then download per-file via `hf_hub_download` in a thread pool of `max_workers<=6` with retry + linear backoff, ONE staging process (9 concurrent staging PROCESSES tripped the quota in #833 r3). When a coherent snapshot matters, resolve ONE `revision` first and pass it to `list_repo_tree` AND every `hf_hub_download`. For a SINGLE-path existence probe use `HfApi().file_exists(...)` — never a full listing. Working recipe: `scripts/issue833_gcp_phase_d.sh`.
+- **Hub HTTP path args are LITERAL — `path_in_repo` / `hf_hub_download(filename=...)` / `list_repo_tree(path_in_repo=...)` do NOT expand globs (a glob 404s; URL-encoded `%2A`/`%3F` in the failing URL is the tell), and listing a not-yet-existing prefix also 404s.** Only CLIENT-side filters (`allow_patterns`) take globs; a path arg rides verbatim in the HTTP URL. RULE: pass literal paths/prefixes; probe existence via `HfApi().file_exists(...)` or `list_repo_tree(path_in_repo=<literal prefix>)`; treat an `EntryNotFoundError`-class prefix 404 BEFORE the upload phase as "not yet uploaded" (expected), but NEVER wave through a `RepositoryNotFoundError` / wrong-revision 404. Boundary: the landed `verify_artifacts_exist` glob fix (#1778) covers the Step 6a.5 gate; this entry covers AD-HOC probes. Same-family upload-side trap: `upload_as_file=True` + `path_in_repo=<bare prefix>` lands the file AT the directory name → HTTP 400 "Invalid file change" on all later commits touching that prefix (#1738 fu1) — `path_in_repo` is the full literal DESTINATION PATH, never a prefix.
+- **`AutoTokenizer.from_pretrained(model_id)` called PER probe/row triggers a silent per-load `model_info()` HTTP call → HF Hub 429.** Newer `transformers` runs a Hub request inside `from_pretrained` on EVERY load; a rig re-loading the tokenizer once per cell/probe trips the ~2500-req/5-min org quota after a few dozen cells (#664: 3 dispatcher crashes). RULE: load each tokenizer ONCE and cache at module scope (`_TOKENIZER_CACHE` + a `_get_tokenizer(model_id)` accessor) — never `from_pretrained` inside a per-row/per-probe/per-cell loop; same shape for any `from_pretrained` used as a pure-CPU text helper.
