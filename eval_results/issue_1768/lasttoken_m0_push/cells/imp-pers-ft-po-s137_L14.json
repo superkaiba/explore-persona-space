@@ -1,0 +1,20 @@
+{
+ "arm_id": "imp-pers-ft-po-s137",
+ "layer": 14,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 1000.0,
+ "m0_heldout_r2": 0.607595478363883,
+ "m0_heldout_r2_committed": 0.6075954783638828,
+ "push_te": {
+  "median": 13.166731345942459,
+  "q25": 11.423798935781566,
+  "q75": 15.171537210110145,
+  "mean": 13.278270885968903,
+  "n": 1024
+ },
+ "delta_med_committed": 11.56614579815476,
+ "floor_p95_committed": 5.959662437438965,
+ "ctx_move_committed": 0.4580083515617428
+}

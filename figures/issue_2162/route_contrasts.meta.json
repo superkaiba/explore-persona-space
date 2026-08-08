@@ -1,0 +1,257 @@
+{
+  "commit": "b228639e+dirty",
+  "git_commit": "b228639e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2162_figures.py"
+  ],
+  "created": "2026-08-08T01:22:21Z",
+  "figsize": [
+    13.0,
+    5.5
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "steered F_beh": 0.7072340885274486,
+      "error": 0.12221717786286851,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "steered F_beh": -0.00987786167045765,
+      "error": 0.013429095409260084,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.5,
+      "steered F_beh": 0.15092326790956073,
+      "error": 0.05927158626365754,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.5,
+      "steered F_beh": -0.012208817412636543,
+      "error": 0.034184100461698626,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "steered F_beh": 0.1645206899248346,
+      "error": 0.0849189919530145,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 5.35,
+      "steered F_beh": 0.42321445164327837,
+      "error": 0.1258995558628995,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "steered F_beh": -0.01167932445789034,
+      "error": 0.00895487682724679,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 6.35,
+      "steered F_beh": 0.02446461371160302,
+      "error": 0.055202206458412895,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 7.5,
+      "steered F_beh": 0.15092326790956073,
+      "error": 0.05927158626365754,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 7.85,
+      "steered F_beh": 0.9953584321815367,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 8.5,
+      "steered F_beh": -0.012208817412636543,
+      "error": 0.034184100461698626,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 8.85,
+      "steered F_beh": -0.39711191335740054,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 10.0,
+      "steered F_beh": 0.7072340885274486,
+      "error": 0.12221717786286851,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 10.35,
+      "steered F_beh": 0.7229761987082739,
+      "error": 0.13280291782457632,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 11.0,
+      "steered F_beh": -0.00987786167045765,
+      "error": 0.013429095409260084,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 11.35,
+      "steered F_beh": 0.007539382693772715,
+      "error": 0.03156139040043557,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 12.5,
+      "steered F_beh": 0.7072340885274486,
+      "error": 0.12221717786286851,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 12.85,
+      "steered F_beh": 0.7033971967306099,
+      "error": 0.12932577193275263,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 13.5,
+      "steered F_beh": -0.00987786167045765,
+      "error": 0.013429095409260084,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 13.85,
+      "steered F_beh": 0.02264466853158372,
+      "error": 0.03158528111075858,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 15.0,
+      "steered F_beh": 0.15092326790956073,
+      "error": 0.05927158626365754,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 15.35,
+      "steered F_beh": 0.18331478011916325,
+      "error": 0.07960399079956239,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 16.0,
+      "steered F_beh": -0.012208817412636543,
+      "error": 0.034184100461698626,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 16.35,
+      "steered F_beh": -0.025618080036611122,
+      "error": 0.04994444995330242,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 17.5,
+      "steered F_beh": 0.15092326790956073,
+      "error": 0.05927158626365754,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 17.85,
+      "steered F_beh": 0.3151666818735999,
+      "error": 0.10499702702729785,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 18.5,
+      "steered F_beh": -0.012208817412636543,
+      "error": 0.034184100461698626,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 18.85,
+      "steered F_beh": -0.018411614248245833,
+      "error": 0.06155866961165249,
+      "_kind": "bar",
+      "_group": 27
+    }
+  ],
+  "n_series": 28,
+  "total_points": 28,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "P2 route contrasts: base type (blue) vs route variant / conflict (orange)",
+        "ylabel": "steered F_beh",
+        "xticklabels": [
+          "demo_format|ce",
+          "demo_format|pe",
+          "demo_persona|ce",
+          "demo_persona|pe",
+          "language_implied|ce",
+          "language_implied|pe",
+          "persona_role_header|ce",
+          "persona_role_header|pe",
+          "conflict_format_fwd|ce",
+          "conflict_format_fwd|pe",
+          "conflict_format_rev|ce",
+          "conflict_format_rev|pe",
+          "conflict_persona_fwd|ce",
+          "conflict_persona_fwd|pe",
+          "conflict_persona_rev|ce",
+          "conflict_persona_rev|pe"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "figure": "route_contrasts",
+  "inputs": [
+    "eval_results/issue_2162/f_metrics/stats.json"
+  ]
+}

@@ -1,0 +1,445 @@
+{
+  "commit": "c2587758+dirty",
+  "git_commit": "c2587758",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2163_ctxread.py"
+  ],
+  "created": "2026-08-07T15:09:57Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "max |partial| over the selection set": 0.002447,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.002958,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.003469,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.00398,
+      "y": 23.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.004491,
+      "y": 44.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.005002,
+      "y": 53.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.005513,
+      "y": 44.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.006024,
+      "y": 43.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.006535,
+      "y": 60.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.007046,
+      "y": 49.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.007557,
+      "y": 43.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.008068,
+      "y": 42.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.008579,
+      "y": 53.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.009089,
+      "y": 53.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.0096,
+      "y": 42.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.010111,
+      "y": 23.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.010622,
+      "y": 36.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.011133,
+      "y": 30.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.011644,
+      "y": 32.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.012155,
+      "y": 31.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.012666,
+      "y": 33.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.013177,
+      "y": 33.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.013688,
+      "y": 22.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.014199,
+      "y": 23.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.01471,
+      "y": 21.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.01522,
+      "y": 21.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.015731,
+      "y": 15.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.016242,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.016753,
+      "y": 13.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.017264,
+      "y": 21.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.017775,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.018286,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.018797,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.019308,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.019819,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.02033,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.020841,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.021351,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.021862,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.022373,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.022884,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.023395,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.023906,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.024417,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.024928,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.025439,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.02595,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.026461,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.026972,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.027483,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.027993,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.028504,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.029015,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.029526,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.030037,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.030548,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.031059,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.03157,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.032081,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.032592,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max |partial| over the selection set": 0.1453932821750641,
+      "y": 0.0,
+      "series": "observed max |partial|",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "max |partial| over the selection set": 0.1453932821750641,
+      "y": 1.0,
+      "series": "observed max |partial|",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "max |partial| over the selection set": 0.021522308699786653,
+      "y": 0.0,
+      "series": "null p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "max |partial| over the selection set": 0.021522308699786653,
+      "y": 1.0,
+      "series": "null p97.5",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 64,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "A_W",
+        "xlabel": "max |partial| over the selection set",
+        "legend_labels": [
+          "observed max |partial|",
+          "null p97.5"
+        ],
+        "xticklabels": [
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70"
+        ]
+      }
+    ],
+    "series": [
+      "observed max |partial|",
+      "null p97.5"
+    ]
+  }
+}

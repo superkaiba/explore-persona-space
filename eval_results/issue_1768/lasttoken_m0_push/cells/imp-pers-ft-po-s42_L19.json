@@ -1,0 +1,27 @@
+{
+ "arm_id": "imp-pers-ft-po-s42",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 15.314416755092035,
+  "q25": 13.188150763942428,
+  "q75": 17.497895362566847,
+  "mean": 15.50799997479028,
+  "n": 1024
+ },
+ "delta_med_committed": 17.74393149393915,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.45422403295277564,
+ "push_all_rows": {
+  "median": 14.716424892982946,
+  "q25": 12.989970207449357,
+  "q75": 16.67108730835594,
+  "mean": 14.878301657201236,
+  "n": 16400
+ }
+}

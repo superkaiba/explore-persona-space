@@ -1,0 +1,27 @@
+{
+ "arm_id": "cas-pers-po-lr1e5-s137",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 9.374410438341808,
+  "q25": 7.849573634606179,
+  "q75": 10.743869117940942,
+  "mean": 9.305384283394602,
+  "n": 1024
+ },
+ "delta_med_committed": 9.826068146934864,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.27382506172280074,
+ "push_all_rows": {
+  "median": 9.037145954356113,
+  "q25": 7.642207013330065,
+  "q75": 10.40277479182514,
+  "mean": 9.080903557006527,
+  "n": 16400
+ }
+}

@@ -1,0 +1,41 @@
+{
+ "design": "per-prompt |pred6-pred11| quartile strata; gap rho6-rho11 vs within-cell placement-destroying permutation null",
+ "n_primary_cells": 21,
+ "n_observed_cells_seed0": 323,
+ "primary_slope_median": -0.05656950248887027,
+ "primary_slope_frac_negative": 0.5714285714285714,
+ "primary_slope_p_below_05_count": 19,
+ "primary_rho6all_p_below_05_count": 20,
+ "n_p_tests_per_family": 21,
+ "companion_median": 0.020144209821431874,
+ "companion_iqr": [
+  0.007767978895936561,
+  0.035808399282558266
+ ],
+ "placement_by_group": {
+  "evil|context_end": {
+   "worse-than-null": 6,
+   "better-than-null": 3,
+   "within-null": 0,
+   "degenerate": 0
+  },
+  "sycophancy|context_end": {
+   "worse-than-null": 0,
+   "better-than-null": 8,
+   "within-null": 1,
+   "degenerate": 0
+  },
+  "hallucination|context_end": {
+   "worse-than-null": 0,
+   "better-than-null": 3,
+   "within-null": 0,
+   "degenerate": 0
+  }
+ },
+ "scope": "context_end only \u2014 prefix arm excluded at explicit user direction (user-directed scope decision, not artifact availability: prefix_end cells exist in the main grid and were not read)",
+ "flags": {
+  "rho11_indistinct_cells": [],
+  "sd11_degenerate_cells": [],
+  "flipped_sign_cells": []
+ }
+}

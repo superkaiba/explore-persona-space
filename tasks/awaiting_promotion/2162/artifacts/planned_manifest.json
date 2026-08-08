@@ -1,0 +1,135 @@
+{
+  "issue": 2162,
+  "conditions": [
+    "Steered (donor-value patch)",
+    "Shuffled-donor null (same type, norm-matched)",
+    "Cross-type-donor null",
+    "Unpatched floor anchor",
+    "Generate-under-donor ceiling anchor",
+    "Context-end slot",
+    "Prefix-end slot",
+    "Route-conflict cells",
+    "Recency cells (depth 3/5)",
+    "Load cells (load 3/5)",
+    "Query-content control",
+    "Filler-swap disruption control",
+    "Stage-2 layer-by-dose confirmation"
+  ],
+  "metrics": [
+    "behavior fraction-of-swap (F_beh)",
+    "activation fraction-of-swap (F_act)",
+    "linear read-probe AUC",
+    "teacher-forced positive-vs-negative completion margin",
+    "coherence rate",
+    "conflict balance shift",
+    "anchor separation (ceiling minus floor)",
+    "cap-hit fraction"
+  ],
+  "figures": [
+    {
+      "id": "per_type_f_beh",
+      "title": "Per-type fraction-of-swap (behavior)",
+      "source": "eval_results/issue_2162/f_metrics/{f_cells,null_shuffled_cells,null_crosstype_cells,anchors}.jsonl",
+      "transform": "per (type-cell x slot x arm): drop pairs with |ceiling-floor| < 0.5 (anchor separation, judge-contrast units); per surviving pair, F_beh = (mean patched contrast - floor mean)/(ceiling mean - floor mean) over K=5 coherent draws; arm mean over surviving pairs; pair-clustered bootstrap 95% CI, B=10,000, seed 21620",
+      "plotted_quantity": "mean behavior fraction-of-swap F_beh per type (steered / shuffled-donor null / cross-type-donor null bars), one panel per slot, post-exclusion n per type"
+    },
+    {
+      "id": "per_type_f_beh_perpair",
+      "title": "Per-type F_beh - per-pair companion",
+      "source": "eval_results/issue_2162/f_metrics/{f_cells,null_shuffled_cells,null_crosstype_cells}.jsonl",
+      "transform": "same exclusion as per_type_f_beh; NO aggregation: one point per surviving pair per arm (pair mean over K=5 coherent draws), labeled by pair id",
+      "plotted_quantity": "per-pair F_beh points behind arm means, per type x slot"
+    },
+    {
+      "id": "read_write_2x2",
+      "title": "Read x write 2x2 (probe AUC vs causal F)",
+      "source": "eval_results/issue_2162/f_metrics/probe.json + eval_results/issue_2162/f_metrics/f_cells.jsonl",
+      "transform": "x = max-over-28-layers macro AUC (leave-one-carrier-out folds) per (type x slot); y = steered mean F_beh (separation-excluded, as per_type_f_beh); quadrant thresholds = the registered verdicts (causal-positive: clears BOTH nulls disjoint-CI + Holm IUT; probe-positive: max-AUC clears the max-selected permutation 97.5th band); cells with post-exclusion n < 12 (the survival floor) are labeled untestable-causal - an explicit fifth label, never rendered as a causal verdict",
+      "plotted_quantity": "one point per (type x slot) in the AUC-vs-F plane, quadrants labeled stored-and-used / stored-but-unusable / used-but-not-decoded / absent, with sub-floor cells labeled untestable-causal"
+    },
+    {
+      "id": "probe_layer_curves",
+      "title": "Probe AUC per layer - per-unit companion of the 2x2",
+      "source": "eval_results/issue_2162/f_metrics/probe.json + issue2162_ctxinfo/analysis_tensors/probe_perm_matrix/",
+      "transform": "per (type x slot x layer): macro AUC over the 3 value-pairs (carrier folds) plus the label-permutation band (B=1,000, within-carrier shuffles); no max taken in this view",
+      "plotted_quantity": "AUC vs layer curves per type/slot with permutation bands and per-value-pair points"
+    },
+    {
+      "id": "layer_profile_stage2",
+      "title": "Stage-2 layer profile (post-selection)",
+      "source": "eval_results/issue_2162/f_metrics/stage2_cells.jsonl",
+      "transform": "per surviving (type-cell x slot): mean F_beh over surviving pairs at each (layer in {8,12,14,16,19,22,26} x dose in {1,4}), greedy 1 draw; steered minus shuffled-donor-null companion",
+      "plotted_quantity": "type x layer heatmap of stage-2 F_beh at doses 1 and 4 (labeled post-selection)"
+    },
+    {
+      "id": "layer_profile_stage2_perpair",
+      "title": "Stage-2 per-pair companion",
+      "source": "eval_results/issue_2162/f_metrics/stage2_cells.jsonl",
+      "transform": "no aggregation: per-pair F_beh points at each survivor's best stage-2 (layer, dose), steered and null interleaved, labeled by pair id",
+      "plotted_quantity": "per-pair stage-2 F_beh points per survivor cell"
+    },
+    {
+      "id": "route_contrasts",
+      "title": "Route contrasts at matched content",
+      "source": "eval_results/issue_2162/f_metrics/{f_cells,null_shuffled_cells,null_crosstype_cells}.jsonl",
+      "transform": "steered mean F_beh (separation-excluded, pair-clustered bootstrap CI) for the matched-content route sets {instr_format vs demo_format; persona_prompted vs demo_persona vs persona_role_header; instr_language vs language_implied} plus the 4 conflict cells' balance shift = (judge_demo - judge_instr)/100 normalized floor-to-ceiling",
+      "plotted_quantity": "F_beh per route variant at matched content, per slot; conflict balance shift per conflict cell"
+    },
+    {
+      "id": "route_contrasts_perpair",
+      "title": "Route contrasts - per-pair companion",
+      "source": "eval_results/issue_2162/f_metrics/f_cells.jsonl",
+      "transform": "no aggregation: per-pair F_beh / balance-shift points for every route-variant and conflict cell, labeled by pair id",
+      "plotted_quantity": "per-pair points behind each route/conflict bar"
+    },
+    {
+      "id": "recency_load_curves",
+      "title": "Recency and load curves",
+      "source": "eval_results/issue_2162/f_metrics/{f_cells,null_shuffled_cells}.jsonl",
+      "transform": "per crossed type: steered mean F_beh (separation-excluded) at depth {1,3,5} and load {1,3,5} (depth/load 1 = the base cell), pair-clustered bootstrap CIs; registered secondary slope = pair-clustered bootstrap CI on the per-pair depth/load slope",
+      "plotted_quantity": "F_beh vs conversation depth and F_beh vs information load, one curve per crossed type per slot, null band behind"
+    },
+    {
+      "id": "recency_load_perpair",
+      "title": "Recency/load - per-pair companion",
+      "source": "eval_results/issue_2162/f_metrics/f_cells.jsonl",
+      "transform": "no aggregation: per-pair F_beh at each depth/load level, lines connecting the same pair across levels",
+      "plotted_quantity": "per-pair F_beh trajectories across depth/load levels"
+    },
+    {
+      "id": "anchor_separation_diag",
+      "title": "Anchor separation per pair (pre-exclusion)",
+      "source": "eval_results/issue_2162/f_metrics/anchors.jsonl",
+      "transform": "per pair: ceiling mean minus floor mean (judge-contrast units) from K=10 anchor draws; histogram/strip per type with the 0.5 exclusion bar drawn; pre- and post-exclusion counts per type",
+      "plotted_quantity": "per-pair anchor separation distributions per type, exclusion bar at 0.5"
+    },
+    {
+      "id": "act_beh_agreement",
+      "title": "F_act vs F_beh agreement",
+      "source": "eval_results/issue_2162/f_metrics/{f_cells,null_shuffled_cells,null_crosstype_cells}.jsonl",
+      "transform": "per (type-cell x slot x arm): mean F_act (read layer 26, disjoint floor halves) vs mean F_beh over the same surviving pairs; Spearman rho across cells with dynamic range reported in-panel",
+      "plotted_quantity": "F_act vs F_beh scatter, one point per cell-arm, colored by arm"
+    },
+    {
+      "id": "margin_validation",
+      "title": "Teacher-forced margin vs F_beh (dual-DV validation)",
+      "source": "eval_results/issue_2162/f_metrics/{f_cells,margin_cells}.jsonl",
+      "transform": "per (type-cell x slot): mean TF margin shift (steered minus floor, length-normalized lnP over the fixed 4+4 pools) vs mean F_beh; Spearman rho across cells with dynamic range = the registered rule-19 validation, reported before the margin carries any read",
+      "plotted_quantity": "margin shift vs F_beh scatter with the validation rho"
+    },
+    {
+      "id": "crosstype_null_by_donor",
+      "title": "Cross-type null by donor type + shuffled-donor null by donor value (diagnostic)",
+      "source": "eval_results/issue_2162/f_metrics/{null_crosstype_cells,null_shuffled_cells}.jsonl",
+      "transform": "cross-type facet: per (recipient type-cell x slot), mean F_beh of the cross-type-donor arm split BY DONOR TYPE (donor type + pair id recorded per row; same separation exclusion as per_type_f_beh), rendered for every cell whose pooled cross-type-null bootstrap CI excludes 0; shuffled-donor facet (the two graded/ordinal value sets, refusal_boundary + constraint_knowledge, only): per (recipient type-cell x slot), mean F_beh of the shuffled-donor arm split BY DONOR VALUE (donor pair + value ids recorded per row; same exclusion), rendered for those two types whenever either null's pooled bootstrap CI excludes 0 (adjacent-value donors can earn partial rubric credit and elevate that null)",
+      "plotted_quantity": "donor-type-resolved cross-type-null F_beh bars per elevated recipient cell, plus donor-value-resolved shuffled-donor-null F_beh bars for the two ordinal value sets (visibility diagnostic for donor content moving the recipient rubric / partial rubric credit elevating the null)"
+    },
+    {
+      "id": "coherence_caphit",
+      "title": "Coherence and cap-hit diagnostics",
+      "source": "eval_results/issue_2162/f_metrics/{f_cells,null_shuffled_cells,null_crosstype_cells,anchors}.jsonl",
+      "transform": "per (type-cell x slot x arm): incoherent fraction (score <= 60) minus the anchor baseline rate; cap-hit fraction (length == max_new_tokens) with the 2% re-gen trigger drawn",
+      "plotted_quantity": "excess incoherence and cap-hit fraction per cell-arm panels"
+    }
+  ]
+}

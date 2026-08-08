@@ -1,0 +1,8 @@
+{
+  "caption": "Pairwise cross-corpus overlap of the top-100 improved SAE features per adjacent transition (context arm). Diagonal blank.",
+  "commit_sha": "5d001092782beadab91efd81eb4d785741eeeac8",
+  "inputs": [
+    "data/issue_2061/hf_dl/issue2061_sae_predictability/analysis_tensors/per_feature_r2"
+  ],
+  "generator": "scripts/issue2061_followup_free_analysis.py"
+}

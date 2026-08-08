@@ -84,8 +84,14 @@ def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
     from explore_persona_space.backends import router as router_module
 
     monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    # #2054 put runpod FIRST in _default_auto_lane_order(); the legacy
+    # ladder/failover suite exercises the pre-#2054 fellows/gcp/SLURM
+    # machinery, so pin the pre-#2054 rollback order (no runpod head) here.
+    # Runpod-first default-contract tests carry
+    # @pytest.mark.gcp_policy_default (module defaults: flag ON,
+    # runpod-first order).
     monkeypatch.setattr(
-        router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
+        router_module, "DEFAULT_AUTO_LANE_ORDER", ("fellows", "gcp", "nibi", "fir", "mila")
     )
 
 
@@ -619,6 +625,37 @@ def test_classify_terminal_cpu_exhausted_emits_distinct_reason() -> None:
     assert "reason: no_compute_available" not in t.note
     # ... and the human message survives as detail (inherited .reason).
     assert "detail: CPU intent 'cpu-bigmem'" in t.note
+
+
+def test_classify_stopped_pod_collision() -> None:
+    """#1997 (b6): RunPodStoppedPodCollisionError maps to infra/blocked with
+    the DISTINCT reason runpod_stopped_pod_collision (NOT no_compute_available)
+    — the token is NOT in the watcher's TRANSIENT_CAPACITY_REASONS, so the
+    capacity-retry pass never hot-retries a structural refusal only a human
+    can clear (resume / approved terminate / --name-suffix)."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION,
+        RunPodStoppedPodCollisionError,
+    )
+    from scripts.autonomous_session_watch import TRANSIENT_CAPACITY_REASONS
+
+    exc = RunPodStoppedPodCollisionError(
+        "RunPod terminal rung refused: a STOPPED pod-137 already exists",
+        attempts=[{"kind": "runpod", "outcome": "runpod_stopped_pod_collision"}],
+    )
+    t = classify_terminal_exception(exc)
+    assert t.failure_class == "infra"
+    assert t.status == "blocked"
+    assert f"reason: {ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION}" in t.note
+    assert "reason: no_compute_available" not in t.note
+    assert "detail: RunPod terminal rung refused" in t.note
+    # The recovery paths for the human who must clear the refusal.
+    assert "pod.py resume" in t.note
+    assert "--yes --approve" in t.note
+    assert "--name-suffix" in t.note
+    # The route-attempt trail survives into the note (epm:failure evidence).
+    assert "runpod_stopped_pod_collision" in t.note
+    assert ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION not in TRANSIENT_CAPACITY_REASONS
 
 
 def test_classify_terminal_generic_no_compute_still_no_compute() -> None:
@@ -1987,3 +2024,28 @@ def test_env_pin_allowlist_keeps_runtime_tuning_keys() -> None:
     kept2, dropped2 = sanitize_env_pins(pin_multi)
     assert kept2 == pin_multi
     assert dropped2 == []
+
+
+# ---------------------------------------------------------------------------
+# #2161 — per-process free-lane park budget env wiring
+# ---------------------------------------------------------------------------
+
+
+def test_env_park_process_budget_resolution(monkeypatch):
+    """#2161: EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS resolves at call time —
+    unset/malformed → the 420 s default; 0/negative → None (unlimited,
+    the legacy park semantics); a positive int → itself."""
+    from explore_persona_space.backends import issue_dispatch as idp
+
+    monkeypatch.delenv(idp.PARK_PROCESS_BUDGET_ENV, raising=False)
+    assert idp._env_park_process_budget() == idp.PARK_PROCESS_BUDGET_DEFAULT_SECONDS == 420
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "not-a-number")
+    assert idp._env_park_process_budget() == 420
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "")
+    assert idp._env_park_process_budget() == 420
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "0")
+    assert idp._env_park_process_budget() is None
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "-5")
+    assert idp._env_park_process_budget() is None
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "900")
+    assert idp._env_park_process_budget() == 900

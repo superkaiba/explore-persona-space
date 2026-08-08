@@ -1,0 +1,27 @@
+{
+ "arm_id": "imp-pers-po-lr1e5-s137",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 10.384574091704359,
+  "q25": 8.79942114890516,
+  "q75": 12.016143029478133,
+  "mean": 10.446574896815825,
+  "n": 1024
+ },
+ "delta_med_committed": 10.776244859047644,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.31020205427942493,
+ "push_all_rows": {
+  "median": 10.030749801277127,
+  "q25": 8.62938569896961,
+  "q75": 11.464082064885293,
+  "mean": 10.109765514458507,
+  "n": 16400
+ }
+}

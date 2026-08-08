@@ -424,9 +424,18 @@ def test_resume_other_runpod_error_propagates(monkeypatch):
 #      loop in wait mode and keep the unconditional ``SystemExit`` pre-call in
 #      one-shot mode.
 #
-# These tests pin (a) the new keyword preserves the legacy contract, (b) wait
-# mode actually retries the local-cap exception until a mock frees headroom,
-# (c) one-shot mode still raises ``SystemExit``.
+# #2054 UPDATE (user directive 2026-08-05): the LOCAL guard is now
+# ADVISORY-ONLY — ``_assert_under_account_hourly_cap`` never raises in ANY
+# mode (the Anthropic-org sponsored pool's console cap is the enforcement
+# point; a local dollar cap must never refuse or stall a provision). The
+# wait-loop MACHINERY below is retained verbatim for the LIVE API-side
+# ``INSUFFICIENT_BALANCE`` refusal (and for any future preflight that
+# raises), so the loop tests keep pinning it via FAKE preflights that raise.
+#
+# These tests pin (a) the guard never raises in either keyword mode (#2054),
+# (b) wait mode actually retries a raising preflight until a mock frees
+# headroom (the retained machinery), (c) the call-site routing of the guard
+# through the wait loop vs the one-shot path.
 
 
 def _info(name: str, *, gpu_count: int = 1) -> PodInfo:
@@ -446,41 +455,42 @@ def _info(name: str, *, gpu_count: int = 1) -> PodInfo:
     )
 
 
-def test_assert_guard_default_still_systemexits_on_over_cap(monkeypatch):
-    """``transient_on_exceed=False`` (default) preserves the byte-identical
-    ``SystemExit`` contract for every pre-existing caller — the one-shot
-    / interactive contract from #503/#505 is untouched. This pin protects
-    every test in test_pod_lifecycle_account_spend_guard.py that asserts
-    ``raises(SystemExit)`` against an accidental future flip of the
-    default."""
+def test_assert_guard_over_cap_never_raises_default(monkeypatch, capsys):
+    """#2054: the DEFAULT (one-shot / interactive) mode no longer SystemExits
+    on an over-cap projection — the guard is advisory-only. (Replaces
+    test_assert_guard_default_still_systemexits_on_over_cap.) The advisory
+    stderr line still names the cap + override env knob."""
     monkeypatch.delenv("RUNPOD_ACCOUNT_HOURLY_CAP", raising=False)
     monkeypatch.delenv("RUNPOD_RATE_H100_USD", raising=False)
     # 18 RUNNING H100s ($72/hr) + adding 4 more ($16/hr) = $88 projected,
-    # over the $80 default cap. Identical setup to
-    # test_guard_blocks_when_would_exceed_cap so the legacy assertion is
-    # exercised verbatim.
+    # over the $80 default cap.
     monkeypatch.setattr(
         runpod_api,
         "list_team_pods",
         lambda: [_info(f"pod-{i}", gpu_count=1) for i in range(18)],
     )
-    with pytest.raises(SystemExit) as exc:
+    assert (
         pod_lifecycle._assert_under_account_hourly_cap(
             verb="provision",
             pod_label="pod-new",
             intended_gpu_type="H100",
             intended_gpu_count=4,
         )
-    # Actionable message still names the cap + override env knob.
-    assert "RUNPOD_ACCOUNT_HOURLY_CAP" in str(exc.value)
+        is None
+    )
+    err = capsys.readouterr().err
+    assert "ADVISORY" in err
+    assert "never blocks" in err
+    assert "RUNPOD_ACCOUNT_HOURLY_CAP" in err
 
 
-def test_assert_guard_transient_raises_runpod_exception_on_over_cap(monkeypatch):
-    """``transient_on_exceed=True`` swaps the SystemExit for
-    ``RunPodInsufficientBalanceError`` so a calling retry loop can treat
-    the local guard the same as the live-API refusal — both clear when a
-    sibling pod frees $/hr headroom. This is the load-bearing piece of
-    the #506 first-block fix."""
+def test_assert_guard_over_cap_never_raises_transient(monkeypatch, capsys):
+    """#2054: ``transient_on_exceed=True`` (the wait-loop preflight mode) no
+    longer raises ``RunPodInsufficientBalanceError`` either — the keyword is
+    retained-but-inert so call sites stay byte-compatible. (Replaces
+    test_assert_guard_transient_raises_runpod_exception_on_over_cap.) The
+    wait loops' local-cap retry machinery is pinned separately below via
+    FAKE preflights that raise."""
     monkeypatch.delenv("RUNPOD_ACCOUNT_HOURLY_CAP", raising=False)
     monkeypatch.delenv("RUNPOD_RATE_H100_USD", raising=False)
     monkeypatch.setattr(
@@ -488,7 +498,7 @@ def test_assert_guard_transient_raises_runpod_exception_on_over_cap(monkeypatch)
         "list_team_pods",
         lambda: [_info(f"pod-{i}", gpu_count=1) for i in range(18)],
     )
-    with pytest.raises(RunPodInsufficientBalanceError) as exc:
+    assert (
         pod_lifecycle._assert_under_account_hourly_cap(
             verb="provision",
             pod_label="pod-new",
@@ -496,13 +506,13 @@ def test_assert_guard_transient_raises_runpod_exception_on_over_cap(monkeypatch)
             intended_gpu_count=4,
             transient_on_exceed=True,
         )
-    # NOT a SystemExit — the loop has to be able to ``except`` it.
-    assert not isinstance(exc.value, SystemExit)
-    # The transient message still names the dollar numbers so the wait
-    # loop heartbeat reads usefully.
-    msg = str(exc.value)
-    assert "exceeds cap" in msg
-    assert "80.00" in msg
+        is None
+    )
+    err = capsys.readouterr().err
+    assert "ADVISORY" in err
+    # The advisory still names the dollar numbers so telemetry reads usefully.
+    assert "80.00" in err
+    assert "88.00" in err
 
 
 def test_assert_guard_transient_under_cap_returns_quietly(monkeypatch):

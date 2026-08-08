@@ -16,6 +16,7 @@ replays every ``tasks/*/*/events.jsonl`` in the checkout.
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -1147,6 +1148,72 @@ def _tasks_root() -> Path | None:
     return root if root.is_dir() else None
 
 
+def _corpus_tree_is_main_vintage() -> bool:
+    """True iff this test file's tree is current-main vintage (#2010).
+
+    The corpus-replay tests validate the tree-resident tasks/ corpus against
+    the tree-resident parser — a fleet-data invariant that is only coherent
+    where corpus and parser share the fleet's current vintage: the `main`
+    checkout, or a tree detached at main's tip (the Step 9c compare
+    pristine-oracle scratch worktree detaches at the ROOT'S LOCAL MAIN HEAD —
+    step9c_baseline.py create_scratch_worktree; the fetched origin/main tip
+    is accepted too). On an issue-branch worktree the pair is frozen at fork
+    time and any branch forked between a new-form marker landing and its
+    parser fix landing is red with no code defect on the branch
+    (#1917/#1895). Caveat: on a git-LESS snapshot tree nested inside an
+    unrelated checkout, `git -C` resolves the ENCLOSING repo; harmless in
+    practice — such trees lack tasks/ and the _tasks_root() skip fires first.
+    """
+    tree = Path(__file__).resolve().parents[1]
+
+    def _rev(ref: str) -> str:
+        return subprocess.run(
+            ["git", "-C", str(tree), "rev-parse", ref],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        ).stdout.strip()
+
+    try:
+        branch = subprocess.run(
+            ["git", "-C", str(tree), "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return True  # git-less snapshot tree: single-vintage, self-consistent
+    if branch == "main":
+        return True
+    try:
+        head = _rev("HEAD")
+    except (OSError, subprocess.SubprocessError):
+        return False  # non-main tree of unknown vintage — conservative arm
+    if not head:
+        return False
+    for ref in ("main", "origin/main"):  # local main FIRST: the oracle's detach sha
+        try:
+            if head == _rev(ref):
+                return True
+        except (OSError, subprocess.SubprocessError):
+            continue
+    return False
+
+
+def _skip_unless_main_vintage_corpus() -> None:
+    """pytest.skip the calling corpus-replay test on a non-main-vintage tree (#2010)."""
+    import pytest
+
+    if not _corpus_tree_is_main_vintage():
+        pytest.skip(
+            "corpus-replay is a fleet-data invariant enforced on main-vintage "
+            "trees only; on an issue-branch tree the fork-frozen corpus x "
+            "parser pair reds on fleet churn with no branch defect (#2010)"
+        )
+
+
 def _load_events(task_dir: Path) -> list[dict]:
     events: list[dict] = []
     path = task_dir / "events.jsonl"
@@ -1200,7 +1267,35 @@ def _run_labels(events: list[dict]) -> set[str]:
 # "2026-08-01T03:30:56Z") — are likewise deliberately NOT allowlisted: their
 # fields are explicit, and the #1984-widened parser strips the dash-led
 # version stamp as decoration too.)
-KNOWN_MALFORMED_RUN_MARKERS = {(1090, "2026-07-07T09:54:27Z")}
+# (#1739's 2026-08-05T22:28:00Z run marker IS allowlisted, and is a DISTINCT
+# malformed class from #1090's prose-led note above: its note IS field-led
+# (`v1 label=evil-ood-spread-round source=user-chat initiation=manual`) but
+# uses the BARE key `label` instead of `followup_label`. Not a delimiter
+# problem — the parser accepts `<field>:` and `<field>=` by design and 21
+# corpus run markers use `followup_label=` and all parse; the bare key is the
+# only causal deviation. NOT systematic (task #2154 surveyed all 191
+# historical run markers: 168 `followup_label:` + 21 `followup_label=` all
+# parse; this is the only bare-`label=` note): the sole mechanical producer,
+# autonomous_session_watch._post_followup_run_marker, emits the correct
+# `followup_label: ` form, and this task's OTHER run marker
+# (2026-08-03T07:58:57Z) is correct too — so the note was hand-composed.
+# Mechanism: `label=` is the CORRECT token for the same loop's
+# `stage=followup-<phase>` dispatch breadcrumbs (SKILL.md Step 9b;
+# `_breadcrumb_fields(note).get("label")`), carried onto the adjacent
+# completion marker by mistake. The parser is deliberately NOT widened to
+# accept bare `label` — `parse_followup_note_field` is field-only by design
+# (#1111) and is called generically for `source`/`round`/`outcome` too, so an
+# alias would change run/unrun classification corpus-wide. As with #1090, the
+# ROUND is closed by a corrective re-post on #1739 (#2154), not by parsing.)
+# Vintage guard (#2010): the corpus-replay tests below enforce this fleet-data
+# invariant on MAIN-VINTAGE trees only (`_corpus_tree_is_main_vintage` — the
+# `main` checkout + trees detached at main's tip, i.e. the Step 9c
+# pristine-oracle scratch); issue-branch worktrees SKIP, so a new-form marker
+# landing fleet-wide cannot red a fork-frozen branch gate (#1917).
+KNOWN_MALFORMED_RUN_MARKERS = {
+    (1090, "2026-07-07T09:54:27Z"),
+    (1739, "2026-08-05T22:28:00Z"),
+}
 
 
 def test_corpus_replay_all_historical_markers():
@@ -1213,6 +1308,7 @@ def test_corpus_replay_all_historical_markers():
 
     if _tasks_root() is None:
         pytest.skip("tasks/ not present in this checkout (sparse worktree)")
+    _skip_unless_main_vintage_corpus()
     by_task = _corpus_events_by_task()
 
     unparseable: list[tuple[int, str]] = []
@@ -1311,6 +1407,7 @@ def test_corpus_replay_retro_close_verdicts():
 
     if _tasks_root() is None:
         pytest.skip("tasks/ not present in this checkout (sparse worktree)")
+    _skip_unless_main_vintage_corpus()
     by_task = _corpus_events_by_task()
     for task_id, queued_label in (
         (825, "role-map-comparison"),

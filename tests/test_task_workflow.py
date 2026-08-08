@@ -21,6 +21,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -5955,3 +5956,832 @@ def test_task_status_dir_pathspecs_unchanged_after_refactor(fake_repo):
     assert specs == sorted([f"tasks/proposed/{tid}", f"tasks/planning/{tid}"])
     # The extracted tracked-side probe returns ONLY the index-tracked dir.
     assert tw._tracked_status_dirs(tid, repo) == {f"tasks/proposed/{tid}"}
+
+
+# ─── Authorized-stub grant (#2171; Step 6d.0 PASS_AUTHORIZED_STUB) ──────────
+#
+# Ground-truth fixtures are BYTE-VERBATIM copies of the #2163 incident
+# artifacts (tests/fixtures/): the plan-v5 '### Authorized smoke stubs'
+# block and the orchestrator-posted epm:smoke-architecture-check v3 note
+# (whose per-arm rows sit under a FREE-PROSE intro, not the line-anchored
+# `per-arm-resolution:` key — the designed REFUSE shape).
+
+_AUTH_STUB_FIXTURES = Path(__file__).resolve().parent / "fixtures"
+_V5_BLOCK = (_AUTH_STUB_FIXTURES / "issue2163_plan_v5_authorized_stub_block.md").read_text(
+    encoding="utf-8"
+)
+_V3_NOTE = (_AUTH_STUB_FIXTURES / "issue2163_smoke_arch_v3_note.txt").read_text(encoding="utf-8")
+
+
+def _v3_real_per_arm_rows() -> list[str]:
+    """The 10 REAL per-arm rows out of the verbatim v3 note (8 REAL + 2 FALLBACK)."""
+    lines = _V3_NOTE.splitlines()
+    i = next(k for k, ln in enumerate(lines) if ln.startswith("Per-arm resolution ("))
+    rows: list[str] = []
+    for ln in lines[i + 1 :]:
+        if ln.startswith("- "):
+            rows.append(ln)
+        elif rows:
+            break
+    assert len(rows) == 10, rows
+    return rows
+
+
+def _conforming_repost_note() -> str:
+    """The schema-CONFORMING re-post the D5(ii)/D6(i) bounce text instructs:
+    v3's real per-arm ROWS under an actual line-anchored `per-arm-resolution:`
+    key, plus the `import-resolution:` line, verdict re-tokened."""
+    return (
+        "verdict: PASS_AUTHORIZED_STUB arms_stubbed=[upload-verify,confirm-b-gpu]\n"
+        "import-resolution: rc=0 (`--import-check`).\n"
+        "per-arm-resolution:\n" + "\n".join(_v3_real_per_arm_rows()) + "\n"
+    )
+
+
+def test_authorized_stub_grant_happy_path_2163_shape():
+    """#2163 shape: verbatim plan-v5 block + a schema-conforming re-post → GRANT
+    on clauses 1-4 (the §12 #1287 predicate-trace pin)."""
+    tw = _tw()
+    d = tw.authorized_stub_grant(_conforming_repost_note(), _V5_BLOCK)
+    assert d.grant, d.reason
+    assert set(d.arms_stubbed) == {"upload-verify", "confirm-b-gpu"}
+    assert d.authorized == ("confirm-b-gpu", "upload-verify")
+
+
+def test_authorized_stub_refuse_arm_not_in_plan_block():
+    """An arms_stubbed arm absent from the plan block REFUSES naming it
+    (acceptance criterion 2)."""
+    tw = _tw()
+    note = (
+        _conforming_repost_note().replace(
+            "arms_stubbed=[upload-verify,confirm-b-gpu]",
+            "arms_stubbed=[upload-verify,confirm-b-gpu,extra-arm]",
+        )
+        + "- extra-arm: FALLBACK — stub not in the plan block\n"
+    )
+    d = tw.authorized_stub_grant(note, _V5_BLOCK)
+    assert not d.grant
+    assert "extra-arm" in d.reason
+    assert "not covered by the plan" in d.reason
+
+
+def test_authorized_stub_refuse_unauthorized_fallback_row():
+    """A FALLBACK row NOT in arms_stubbed → set-equality REFUSE (criterion 3)."""
+    tw = _tw()
+    note = _conforming_repost_note().replace(
+        "- partials: REAL (32 s)", "- partials: FALLBACK — stub this round"
+    )
+    d = tw.authorized_stub_grant(note, _V5_BLOCK)
+    assert not d.grant
+    assert "partials" in d.reason
+    assert "set-equal" in d.reason
+
+
+def test_authorized_stub_refuse_wrong_verdict():
+    """The verbatim #2163 v3 note AS-IS (`PASS_PARTIAL`) → REFUSE (only the
+    new token consults the checker; the honest refusal keeps refusing)."""
+    tw = _tw()
+    d = tw.authorized_stub_grant(_V3_NOTE, _V5_BLOCK)
+    assert not d.grant
+    assert "PASS_PARTIAL" in d.reason
+    assert "PASS_AUTHORIZED_STUB" in d.reason
+
+
+def test_authorized_stub_refuse_missing_block():
+    tw = _tw()
+    d = tw.authorized_stub_grant(_conforming_repost_note(), "# Plan\n\n### 4. Design\n\nno block\n")
+    assert not d.grant
+    assert "Authorized smoke stubs" in d.reason
+
+
+def test_authorized_stub_refuse_malformed_block():
+    """An empty control cell REFUSES (converted AuthorizedStubBlockError — no crash)."""
+    tw = _tw()
+    plan = (
+        "### Authorized smoke stubs\n\n"
+        "| Stubbed arm | Why it cannot run at smoke | Compensating control |\n"
+        "|---|---|---|\n"
+        "| `upload-verify` | must not write HF | |\n"
+    )
+    d = tw.authorized_stub_grant(_conforming_repost_note(), plan)
+    assert not d.grant
+    assert "malformed" in d.reason
+    assert "compensating control" in d.reason
+
+
+def test_parse_authorized_stub_block_escaped_pipe_fails_loud():
+    """Round-2 Minor 1: a literal '\\|' inside the REASON cell of a 3-column
+    row mis-splits to 4 cells; the exactly-3 cell-count check fails loud.
+    Under the old >=3 tolerance this row parsed silently with the cells
+    SHIFTED — 'tail' read as the control while the actual control cell was
+    EMPTY (exactly what the empty-cell check exists to catch)."""
+    tw = _tw()
+    plan = (
+        "### Authorized smoke stubs\n\n"
+        "| Stubbed arm | Why it cannot run at smoke | Compensating control |\n"
+        "|---|---|---|\n"
+        "| `upload-verify` | writes HF \\| destructive | |\n"
+    )
+    with pytest.raises(tw.AuthorizedStubBlockError, match="exactly 3"):
+        tw.parse_authorized_stub_block(plan)
+
+
+def test_authorized_stub_refuse_missing_import_resolution():
+    tw = _tw()
+    note = _conforming_repost_note().replace("import-resolution: rc=0 (`--import-check`).\n", "")
+    d = tw.authorized_stub_grant(note, _V5_BLOCK)
+    assert not d.grant
+    assert "import-resolution" in d.reason
+
+
+def test_parse_authorized_stub_block_verbatim_2163_v5():
+    """The verbatim plan-v5 block parses: first-backtick arm extraction
+    tolerates the '(Phase 7)' / '(Phase 6 venue-switch cell)' parentheticals."""
+    tw = _tw()
+    block = tw.parse_authorized_stub_block(_V5_BLOCK)
+    assert set(block) == {"upload-verify", "confirm-b-gpu"}
+    for arm, (reason, control) in block.items():
+        assert reason.strip(), arm
+        assert control.strip(), arm
+
+
+def test_parse_arms_stubbed_bracketed_and_bare_forms():
+    tw = _tw()
+    bare = tw.parse_smoke_arch_marker("verdict: PASS_AUTHORIZED_STUB arms_stubbed=a,b\n")
+    bracketed = tw.parse_smoke_arch_marker("verdict: PASS_AUTHORIZED_STUB arms_stubbed=[a, b]\n")
+    assert bare.arms_stubbed == ("a", "b")
+    assert bracketed.arms_stubbed == ("a", "b")
+    assert bare.verdict == bracketed.verdict == "PASS_AUTHORIZED_STUB"
+
+
+def test_authorized_stub_refuse_verbatim_2163_v3_freeprose():
+    """The VERBATIM v3 body re-tokened PASS_AUTHORIZED_STUB, its free-prose
+    'Per-arm resolution (…):' intro intact: pins the artifact fact
+    ``per_arm == {}`` AND that the refusal names the missing line-anchored
+    `per-arm-resolution:` key — any future parser loosening to whole-note row
+    collection breaks this test (round-1 MF-A)."""
+    tw = _tw()
+    retok = _V3_NOTE.replace("verdict: PASS_PARTIAL", "verdict: PASS_AUTHORIZED_STUB")
+    parsed = tw.parse_smoke_arch_marker(retok)
+    assert parsed.verdict == "PASS_AUTHORIZED_STUB"
+    assert parsed.per_arm == {}
+    d = tw.authorized_stub_grant(retok, _V5_BLOCK)
+    assert not d.grant
+    assert "`per-arm-resolution:`" in d.reason
+    assert "verbatim" in d.reason  # the one-bounce re-post instruction
+
+
+def test_parse_smoke_arch_marker_rows_outside_keyed_span_ignored():
+    """Per-arm-shaped FALLBACK rows under `resume-matrix:` (or any other
+    sub-block) never enter per_arm — an otherwise-conforming note still
+    GRANTs (round-1 MF-A(vi) keyed-span scoping pin)."""
+    tw = _tw()
+    note = _conforming_repost_note() + (
+        "resume-matrix:\n"
+        "- census-sentinel: FALLBACK — not exercised this round\n"
+        "production-outroot-unit:\n"
+        "- out-root: FALLBACK — pod-side only\n"
+    )
+    parsed = tw.parse_smoke_arch_marker(note)
+    assert "census-sentinel" not in parsed.per_arm
+    assert "out-root" not in parsed.per_arm
+    d = tw.authorized_stub_grant(note, _V5_BLOCK)
+    assert d.grant, d.reason
+
+
+@pytest.mark.parametrize(
+    ("case", "note_mut", "plan_mut", "reason_substr"),
+    [
+        (
+            "empty-arms",
+            lambda n: n.replace(" arms_stubbed=[upload-verify,confirm-b-gpu]", ""),
+            lambda p: p,
+            "arms_stubbed is empty",
+        ),
+        (
+            "duplicate-plan-arm",
+            lambda n: n,
+            lambda p: p + "| `upload-verify` | duplicate row | second control |\n",
+            "duplicate arm",
+        ),
+        (
+            "duplicate-heading",
+            lambda n: n,
+            lambda p: p + "\n### Authorized smoke stubs\n\nsecond block\n",
+            "ambiguous",
+        ),
+    ],
+)
+def test_authorized_stub_refuse_parametrized_edges(case, note_mut, plan_mut, reason_substr):
+    tw = _tw()
+    d = tw.authorized_stub_grant(note_mut(_conforming_repost_note()), plan_mut(_V5_BLOCK))
+    assert not d.grant, case
+    assert reason_substr in d.reason, (case, d.reason)
+
+
+def _iso_utc(epoch: float) -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(epoch))
+
+
+def _commit_task_plans(repo, tid: int, *, message: str, committer_date: str | None = None) -> None:
+    """Commit the (proposed) task's plans/ dir by explicit pathspec, optionally
+    at a forced committer date — the clause-5 content-provenance leg reads the
+    blob's INTRODUCTION committer time, so grant-path fixtures must carry
+    COMMITTED plan bytes with a controlled ordering vs the approval marker
+    (#2171 round 2). A forced date also avoids the same-second %cI-truncation
+    tie the strict `<` ordering comparison deliberately grants."""
+    plans = repo / "tasks" / "proposed" / str(tid) / "plans"
+    env = os.environ.copy()
+    if committer_date:
+        env["GIT_COMMITTER_DATE"] = committer_date
+        env["GIT_AUTHOR_DATE"] = committer_date
+    subprocess.run(["git", "add", "--", str(plans)], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "commit", "-q", "-m", message, "--", str(plans)], cwd=repo, check=True, env=env
+    )
+
+
+def _make_authorized_stub_task(
+    repo,
+    tw,
+    *,
+    plan_text: str | None = None,
+    commit: bool = False,
+    committer_date: str | None = None,
+) -> int:
+    """A fake-repo task carrying plans/v1.md (+ plan.md symlink) with the
+    verbatim v5 block and the conforming marker note. ``commit=True`` lands
+    the plan version with the canonical `task #<tid>: plan v1` subject (the
+    clause-5 content-provenance leg REFUSES uncommitted plan bytes — tests
+    that need the grant path commit; tests that stop before clause 5, or pin
+    the dirty refusal, don't)."""
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="authorized-stub fixture"))
+    plans = repo / "tasks" / "proposed" / str(tid) / "plans"
+    plans.mkdir(parents=True, exist_ok=True)
+    v1 = plans / "v1.md"
+    v1.write_text(plan_text if plan_text is not None else f"# Plan\n\n{_V5_BLOCK}")
+    (plans / "plan.md").symlink_to(v1.name)
+    if commit:
+        _commit_task_plans(
+            repo, tid, message=f"task #{tid}: plan v1", committer_date=committer_date
+        )
+    return tid
+
+
+def test_authorized_stub_clause5_approval_ordering(fake_repo):
+    """Clause 5 (round-1 MF-C pin, round-2 content-provenance leg), both arms
+    on the #2163-shaped ordering: block-bearing plan version COMMITTED before
+    the latest epm:plan-approved → GRANT; a fresh block-bearing version
+    committed AFTER the approval + re-post (the 2-command self-grant shape:
+    bare new-plan-version + re-post) → REFUSE naming both timestamps. The
+    GRANT arm sets the plan file's mtime to the FUTURE first, so a pass
+    proves clause 5 reads the blob's introduction time, NOT the mtime (the
+    round-1 fallback that let in-place edits fail open)."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(
+        repo, tw, commit=True, committer_date=_iso_utc(time.time() - 3600)
+    )
+    plans = repo / "tasks" / "proposed" / str(tid) / "plans"
+    v1 = plans / "v1.md"
+    future_epoch = time.time() + 3600
+    os.utime(v1, (future_epoch, future_epoch))  # mtime would REFUSE; blob leg must GRANT
+    tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert d.grant, d.reason
+
+    # Self-grant shape (models `task.py new-plan-version` + re-post): a fresh
+    # block-bearing v2 + symlink bump committed AFTER the approval, canonical
+    # subject and all — the CONTENT's introduction postdates the approval.
+    v2 = plans / "v2.md"
+    v2.write_text(f"# Plan v2\n\n{_V5_BLOCK}")
+    (plans / "plan.md").unlink()
+    (plans / "plan.md").symlink_to(v2.name)
+    _commit_task_plans(
+        repo, tid, message=f"task #{tid}: plan v2", committer_date=_iso_utc(time.time() + 3600)
+    )
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d2 = tw.check_authorized_stub(tid)
+    assert not d2.grant
+    assert "postdates" in d2.reason
+    assert "epm:plan-approved" in d2.reason
+    assert "plan_pending" in d2.reason  # the remedy: land it through the plan gate
+
+
+def test_authorized_stub_clause5_refuses_inplace_uncommitted_append(fake_repo):
+    """Round-2 blocker, route (1): appending the block to the ALREADY-APPROVED
+    plan version as an UNCOMMITTED working-tree edit REFUSES on dirty
+    porcelain (fail CLOSED). Round 1 GRANTed here — the exact-subject probe
+    resolved the ORIGINAL pre-approval 'plan v1' commit, and the mtime
+    fallback never fired."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(
+        repo,
+        tw,
+        plan_text="# Plan\n\n### 4. Design\n\nno stub block here\n",
+        commit=True,
+        committer_date=_iso_utc(time.time() - 3600),
+    )
+    tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
+    v1 = repo / "tasks" / "proposed" / str(tid) / "plans" / "v1.md"
+    # The one-command quiet self-grant: cat >> plans/v1.md
+    v1.write_text(v1.read_text(encoding="utf-8") + "\n" + _V5_BLOCK, encoding="utf-8")
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert not d.grant
+    assert "uncommitted" in d.reason
+    assert "new-plan-version" in d.reason  # the remedy names the canonical writer
+
+
+def test_authorized_stub_clause5_refuses_inplace_committed_noncanonical(fake_repo):
+    """Round-2 blocker, route (2): the same append COMMITTED under a
+    non-canonical message ('housekeeping sweep') REFUSES — the CURRENT
+    content's blob introduction postdates the approval regardless of the
+    commit subject. Round 1 GRANTed here: the subject-keyed probe matched
+    only the pre-approval 'plan v1' commit."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(
+        repo,
+        tw,
+        plan_text="# Plan\n\n### 4. Design\n\nno stub block here\n",
+        commit=True,
+        committer_date=_iso_utc(time.time() - 3600),
+    )
+    tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
+    v1 = repo / "tasks" / "proposed" / str(tid) / "plans" / "v1.md"
+    v1.write_text(v1.read_text(encoding="utf-8") + "\n" + _V5_BLOCK, encoding="utf-8")
+    _commit_task_plans(
+        repo, tid, message="housekeeping sweep", committer_date=_iso_utc(time.time() + 3600)
+    )
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert not d.grant
+    assert "postdates" in d.reason
+    assert "epm:plan-approved" in d.reason
+
+
+def test_authorized_stub_clause5_honest_2163_chain_still_grants(fake_repo):
+    """The honest #2163 chain still GRANTs post-fix: block-bearing plan
+    version committed → epm:plan-approved posted later → conforming re-post
+    (the real chain: persist 13:10:35Z → approval 13:11:16Z → re-post
+    13:12:16Z). A whole-dir STATUS MOVE after the approval (the measured
+    #2163 approved→running `git mv` — the commit the naive
+    `git log -1 -- <path>` false-refused on) must NOT flip the verdict: the
+    un-detected rename lists in --find-object output but postdates the
+    introduction, and min() keeps the introduction time."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(
+        repo, tw, commit=True, committer_date=_iso_utc(time.time() - 3600)
+    )
+    tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert d.grant, d.reason
+
+    # Status move AFTER the approval (the #2163 mv shape) — still GRANT.
+    tw.set_status(tid, "planning")
+    d2 = tw.check_authorized_stub(tid)
+    assert d2.grant, d2.reason
+
+
+def test_plan_persist_time_mtime_fallback_only_without_git(fake_repo, tmp_path_factory):
+    """The mtime fallback fires ONLY when repo-root git is unusable (the
+    no-git fixture case). With a USABLE git, an uncommitted plan file raises
+    PlanProvenanceError (fail CLOSED) instead of falling through to mtime —
+    the round-1 fall-through was the blocker's route (1)."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(repo, tw)  # plan deliberately uncommitted
+    v1 = repo / "tasks" / "proposed" / str(tid) / "plans" / "v1.md"
+    with pytest.raises(tw.PlanProvenanceError, match="uncommitted"):
+        tw._plan_persist_time(tid, v1)
+
+    # No git at the resolver root (a sibling of the pytest tmp root, NOT
+    # inside the fake repo) → the mtime leg is the only persist signal.
+    nogit = tmp_path_factory.mktemp("nogit2171")
+    f = nogit / "v1.md"
+    f.write_text("plan bytes")
+    past = time.time() - 7200
+    os.utime(f, (past, past))
+    real_root = tw.repo_root
+    tw.repo_root = lambda: nogit
+    try:
+        got = tw._plan_persist_time(tid, f)
+    finally:
+        tw.repo_root = real_root
+    assert abs(got.timestamp() - past) < 2
+
+
+def test_plan_persist_time_unfindable_blob_fails_closed(fake_repo):
+    """A clean-porcelain file whose blob appears in NO commit under
+    tasks/*/<tid>/plans/ raises PlanProvenanceError — the empty
+    --find-object listing is never a silent grant nor an mtime
+    fall-through (fail CLOSED; the reviewer's explicit-assert ask)."""
+    repo, tw = fake_repo
+    stray = repo / "stray-plan.md"
+    stray.write_text("committed OUTSIDE any task plans dir")
+    subprocess.run(["git", "add", "--", str(stray)], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "commit", "-q", "-m", "stray file", "--", str(stray)], cwd=repo, check=True
+    )
+    with pytest.raises(tw.PlanProvenanceError, match="no commit"):
+        tw._plan_persist_time(999999, stray)
+
+
+def test_authorized_stub_clause5_refuses_without_any_approval(fake_repo):
+    """No epm:plan-approved event at all → REFUSE naming the missing marker
+    (round-1 MF-C pin)."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(repo, tw)
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert not d.grant
+    assert "epm:plan-approved" in d.reason
+
+
+def test_check_authorized_stub_cli_end_to_end(fake_repo, capsys):
+    """Round-1 MF-B: execute the ACTUAL `task.py check-authorized-stub`
+    handler (the rc contract Step 6d.0 consumes) — an unconditional
+    `sys.exit(0)` stub or wrong plan-symlink resolution would leave all
+    pure-function tests green while the only layer the gate reads leaks
+    grants."""
+    repo, tw = fake_repo
+    task_cli = _import_task_cli()
+
+    # (c) no marker present → rc=1.
+    tid_bare = _make_authorized_stub_task(repo, tw)
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_check_authorized_stub(argparse.Namespace(number=tid_bare))
+    assert exc.value.code == 1
+    assert capsys.readouterr().out.startswith("REFUSE — ")
+
+    # (a) unauthorized-arm marker → rc=1 + a `REFUSE — ` line.
+    tid_refuse = _make_authorized_stub_task(repo, tw)
+    bad_note = (
+        _conforming_repost_note().replace(
+            "arms_stubbed=[upload-verify,confirm-b-gpu]",
+            "arms_stubbed=[upload-verify,confirm-b-gpu,extra-arm]",
+        )
+        + "- extra-arm: FALLBACK — stub not in the plan block\n"
+    )
+    tw.post_event(tid_refuse, "epm:plan-approved", by="autonomous-gate")
+    tw.post_event(tid_refuse, "epm:smoke-architecture-check", note=bad_note)
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_check_authorized_stub(argparse.Namespace(number=tid_refuse))
+    assert exc.value.code == 1
+    out = capsys.readouterr().out
+    assert out.startswith("REFUSE — ")
+    assert "extra-arm" in out
+
+    # (b) conforming happy path (clause-5 satisfied by a plan version
+    # COMMITTED before a LATER approval — the content-provenance leg) → rc=0.
+    tid_grant = _make_authorized_stub_task(
+        repo, tw, commit=True, committer_date=_iso_utc(time.time() - 3600)
+    )
+    tw.post_event(tid_grant, "epm:plan-approved", by="autonomous-gate")
+    tw.post_event(tid_grant, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_check_authorized_stub(argparse.Namespace(number=tid_grant))
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    assert out.startswith("GRANT arms_stubbed=")
+    assert "upload-verify" in out and "confirm-b-gpu" in out
+
+
+# ─── Arm-registry enumeration check (#2176; Step 6d.0 registry-derived set) ──
+#
+# Ground truth: the BYTE-VERBATIM #2163 `epm:smoke-architecture-check` v4 note
+# (tests/fixtures/issue2163_smoke_arch_v4_note.txt — the marker that shipped
+# the 10-of-13 hand-listed enumeration; sibling of #2171's v3 fixture) plus
+# the driver's 13-phase registry from the #2176 task body
+# (`sorted(PHASES)` of `scripts/issue2163_ctxread.py`, branch-resident).
+
+_V4_NOTE = (_AUTH_STUB_FIXTURES / "issue2163_smoke_arch_v4_note.txt").read_text(encoding="utf-8")
+
+#: sorted(PHASES) of the #2163 driver — 13 arms (task #2176 body ground truth).
+_REGISTRY_13 = sorted(
+    [
+        "upload-inputs",
+        "stage",
+        "census",
+        "fit-maps",
+        "read-ladder",
+        "carried",
+        "answer-matchedn",
+        "partials",
+        "confirm-b",
+        "confirm-b-gpu",
+        "upload-verify",
+        "harvest",
+        "figures",
+    ]
+)
+
+
+def _registry_line(members: list[str], n: int | None = None) -> str:
+    """A structured `arm-registry:` line for the given members list."""
+    return (
+        f"arm-registry: source=sorted(PHASES) file=scripts/issue2163_ctxread.py "
+        f"n={len(members) if n is None else n} members={','.join(members)}\n"
+    )
+
+
+def _v4_real_per_arm_rows() -> list[str]:
+    """The 10 REAL rows out of the verbatim v4 note (under its free-prose
+    `## Per-arm resolution` markdown heading — NOT the line-anchored key)."""
+    lines = _V4_NOTE.splitlines()
+    i = next(k for k, ln in enumerate(lines) if ln.startswith("## Per-arm resolution"))
+    rows: list[str] = []
+    for ln in lines[i + 1 :]:
+        if ln.startswith("- "):
+            rows.append(ln)
+        elif rows:
+            break
+    assert len(rows) == 10, rows
+    return rows
+
+
+def _registry_note(members: list[str], rows: list[str], n: int | None = None) -> str:
+    """A schema-conforming note: registry line + line-anchored per-arm rows."""
+    return (
+        "verdict: PASS_UNIFIED\n"
+        "import-resolution: rc=0 (`--import-check`)\n"
+        + _registry_line(members, n=n)
+        + "per-arm-resolution:\n"
+        + "\n".join(rows)
+        + "\n"
+    )
+
+
+def _rows_for(members: list[str]) -> list[str]:
+    return [f"- {m}: REAL" for m in members]
+
+
+def _write_tmp_driver(root: Path, members: list[str], *, dynamic: bool = False) -> Path:
+    """A tmp driver file at the registry line's `file=` path under `root`,
+    with a module-level `PHASES` — dict literal by default; `dynamic=True`
+    builds it via a comprehension (NOT statically extractable)."""
+    drv = root / "scripts" / "issue2163_ctxread.py"
+    drv.parent.mkdir(parents=True, exist_ok=True)
+    if dynamic:
+        drv.write_text("PHASES = {name: None for name in " + repr(members) + "}\n")
+    else:
+        drv.write_text("PHASES = {" + ", ".join(f'"{m}": None' for m in members) + "}\n")
+    return drv
+
+
+def test_parse_arm_registry_line_structured_round_trip():
+    """T1.1: source/file/n/members round-trip; backticks stripped per member
+    (the members token itself is `\\S+` — a space-free comma list, per the
+    plan-§4 D1 grammar)."""
+    tw = _tw()
+    reg = tw.parse_arm_registry_line(
+        "arm-registry: source=sorted(PHASES) file=scripts/x.py n=3 members=`a`,b,`c`\n"
+    )
+    assert reg is not None and not reg.na
+    assert reg.source == "sorted(PHASES)"
+    assert reg.file == "scripts/x.py"
+    assert reg.n == 3
+    assert reg.members == ("a", "b", "c")
+
+
+def test_arm_registry_na_form_ok_with_deferral_reason():
+    """T1.2: the N/A form parses na=True and the check returns ok=True with
+    the adjudication-deferral reason (substance is the reviewer arm's — the
+    N/A form names no file= for the recompute arm to read)."""
+    tw = _tw()
+    reg = tw.parse_arm_registry_line("arm-registry: N/A — no phase/arm registry\n")
+    assert reg is not None and reg.na
+    assert reg.na_reason == "no phase/arm registry"
+    note = (
+        "verdict: PASS_UNIFIED\nimport-resolution: rc=0\n"
+        "arm-registry: N/A — no phase/arm registry\n"
+        "per-arm-resolution: N/A — no registry or plan-named arms\n"
+    )
+    d = tw.smoke_arch_registry_check(note)
+    assert d.ok
+    assert "N/A — no phase/arm registry" in d.reason
+    assert "Step 6d.0 orchestrator + code-reviewer Step 0.55" in d.reason
+
+
+def test_arm_registry_refuse_line_absent_names_both_forms():
+    """T1.3: no `arm-registry:` line → REFUSE; the reason names BOTH accepted
+    forms + the derivation rule."""
+    tw = _tw()
+    d = tw.smoke_arch_registry_check(
+        "verdict: PASS_UNIFIED\nimport-resolution: rc=0\nper-arm-resolution:\n- a: REAL\n"
+    )
+    assert not d.ok
+    assert "source=<expr> file=<path> n=<int>" in d.reason
+    assert "N/A — <reason>" in d.reason
+    assert "sorted(PHASES)" in d.reason
+
+
+def test_arm_registry_refuse_malformed_line_caught():
+    """T1.3b: a PRESENT line matching neither form (the ValueError path) is
+    CAUGHT and clause 1 REFUSEs — a typo'd line cannot slip through as
+    absent-but-ok, and the runtime never crashes on a malformed marker."""
+    tw = _tw()
+    with pytest.raises(ValueError, match="malformed `arm-registry:` line"):
+        tw.parse_arm_registry_line("arm-registry: source=x n=oops\n")
+    d = tw.smoke_arch_registry_check(
+        "verdict: PASS_UNIFIED\narm-registry: source=x n=oops\nper-arm-resolution:\n- a: REAL\n"
+    )
+    assert not d.ok
+    assert "malformed `arm-registry:` line" in d.reason
+
+
+def test_arm_registry_refuse_count_self_inconsistent():
+    """T1.4: n != len(members) → REFUSE naming both numbers."""
+    tw = _tw()
+    d = tw.smoke_arch_registry_check(_registry_note(["a", "b"], _rows_for(["a", "b"]), n=5))
+    assert not d.ok
+    assert "n=5" in d.reason
+    assert "2 arm(s)" in d.reason
+
+
+def test_arm_registry_refuse_members_missing_from_per_arm():
+    """T1.5: members ⊄ per_arm → REFUSE; reason carries the mismatch label,
+    both counts, the sorted missing list, and source@file."""
+    tw = _tw()
+    d = tw.smoke_arch_registry_check(_registry_note(["a", "b", "c"], _rows_for(["b"])))
+    assert not d.ok
+    assert "registry-enumeration mismatch" in d.reason
+    assert "n_registry=3" in d.reason
+    assert "n_enumerated=1" in d.reason
+    assert d.missing == ("a", "c")
+    assert "sorted(PHASES) @ scripts/issue2163_ctxread.py" in d.reason
+
+
+def test_arm_registry_verbatim_2163_v4_all_three_marker_arms():
+    """T1.6 (the #1287 predicate-trace pin, all three marker-resident arms on
+    the REAL artifact): (a) as-posted → clause-1 REFUSE (no `arm-registry:`
+    line — 0 occurrences in the 5,830-byte note); (b) with a synthetic
+    13-member registry line appended → clause-4 REFUSE (rows sit under the
+    free-prose `## Per-arm resolution` heading, so per_arm == {} — the #2171
+    keyed-span consequence, INTENDED here: it forces the line-anchored key);
+    (c) with the registry line AND the 10 rows re-keyed under the anchored
+    key → clause-5 REFUSE naming exactly the three arms #2163 omitted."""
+    tw = _tw()
+    assert "arm-registry" not in _V4_NOTE
+    # (a) as-posted.
+    d = tw.smoke_arch_registry_check(_V4_NOTE)
+    assert not d.ok
+    assert "no line-anchored `arm-registry:` line" in d.reason
+    # (b) registry line appended; rows still free-prose.
+    d = tw.smoke_arch_registry_check(_V4_NOTE + "\n" + _registry_line(_REGISTRY_13))
+    assert not d.ok
+    assert "no `per-arm-resolution:` sub-block" in d.reason
+    # (c) rows re-keyed under the line-anchored key — the exact #2163 defect.
+    d = tw.smoke_arch_registry_check(_registry_note(_REGISTRY_13, _v4_real_per_arm_rows()))
+    assert not d.ok
+    assert d.missing == ("figures", "harvest", "upload-inputs")
+    assert "n_registry=13" in d.reason
+    assert "n_enumerated=10" in d.reason
+
+
+def test_arm_registry_extra_per_arm_rows_allowed():
+    """T1.7: per_arm rows beyond members are ALLOWED (plan-named non-registry
+    arms keep their rows; the plan-named quantifier is a lower bound)."""
+    tw = _tw()
+    d = tw.smoke_arch_registry_check(
+        _registry_note(["a", "b"], _rows_for(["a", "b", "plan-extra-arm"]))
+    )
+    assert d.ok, d.reason
+
+
+def test_arm_registry_line_not_swallowed_as_phantom_per_arm_row():
+    """T1.8: pins the one-token `_MARKER_TOP_KEY_RE` extension. An
+    `arm-registry: N/A — x` line placed AFTER `per-arm-resolution:` matches
+    `_PER_ARM_ROW_RE` (`<name>: N/A ...`), so WITHOUT the extension it would
+    be swallowed into per_arm as a phantom arm named 'arm-registry'."""
+    tw = _tw()
+    parsed = tw.parse_smoke_arch_marker(
+        "verdict: PASS_UNIFIED\nper-arm-resolution:\n- a: REAL\narm-registry: N/A — no registry\n"
+    )
+    assert "arm-registry" not in parsed.per_arm
+    assert parsed.per_arm == {"a": "REAL"}
+
+
+def test_check_smoke_arch_registry_cli_end_to_end(fake_repo, capsys):
+    """T1.9: execute the ACTUAL `task.py check-smoke-arch-registry` handler —
+    the rc contract Step 6d.0 consumes (conforming → rc 0 `OK — `; mismatch →
+    rc 1 `REFUSE — `; no marker → rc 1; one --repo-root invocation against a
+    tmp driver → rc 0 with the `driver-verified` label)."""
+    repo, tw = fake_repo
+    task_cli = _import_task_cli()
+
+    def _run(tid: int, repo_root=None) -> tuple[int, str]:
+        with pytest.raises(SystemExit) as exc:
+            task_cli.cmd_check_smoke_arch_registry(
+                argparse.Namespace(number=tid, repo_root=repo_root)
+            )
+        return exc.value.code, capsys.readouterr().out
+
+    # No marker → rc 1.
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="registry CLI fixture"))
+    code, out = _run(tid)
+    assert code == 1
+    assert out.startswith("REFUSE — no epm:smoke-architecture-check marker")
+
+    # Mismatch marker → rc 1 + `REFUSE — ` naming the missing arms.
+    tw.post_event(
+        tid,
+        "epm:smoke-architecture-check",
+        note=_registry_note(["a", "b", "c"], _rows_for(["a"])),
+    )
+    code, out = _run(tid)
+    assert code == 1
+    assert out.startswith("REFUSE — ")
+    assert "registry-enumeration mismatch" in out
+
+    # Conforming marker (marker-only — no repo root) → rc 0 + `OK — `.
+    tw.post_event(
+        tid,
+        "epm:smoke-architecture-check",
+        note=_registry_note(["a", "b", "c"], _rows_for(["a", "b", "c"])),
+    )
+    code, out = _run(tid)
+    assert code == 0
+    assert out.startswith("OK — ")
+    assert "marker-only" in out
+
+    # --repo-root against a tmp driver → rc 0 with the driver-verified label.
+    _write_tmp_driver(repo, _REGISTRY_13)
+    tw.post_event(
+        tid,
+        "epm:smoke-architecture-check",
+        note=_registry_note(_REGISTRY_13, _rows_for(_REGISTRY_13)),
+    )
+    code, out = _run(tid, repo_root=str(repo))
+    assert code == 0
+    assert out.startswith("OK — ")
+    assert "driver-verified" in out
+
+
+def test_arm_registry_driver_recompute_happy_path(tmp_path):
+    """T1.10: 13-key dict-literal driver + a matching 13-member marker +
+    repo_root → ok with the `driver-verified` label."""
+    tw = _tw()
+    _write_tmp_driver(tmp_path, _REGISTRY_13)
+    d = tw.smoke_arch_registry_check(
+        _registry_note(_REGISTRY_13, _rows_for(_REGISTRY_13)), repo_root=tmp_path
+    )
+    assert d.ok, d.reason
+    assert "driver-verified" in d.reason
+    assert "marker-only" not in d.reason
+
+
+def test_arm_registry_driver_recompute_catches_self_consistent_10_of_13(tmp_path):
+    """T1.11 (the Must-Fix 1 blind spot): a hand-listed 10-member marker with
+    10 MATCHING rows passes every self-consistency clause (marker-only ok);
+    the driver recompute against the 13-key registry REFUSES naming both
+    counts and the three missing arms."""
+    tw = _tw()
+    ten = [m for m in _REGISTRY_13 if m not in {"figures", "harvest", "upload-inputs"}]
+    note = _registry_note(ten, _rows_for(ten))
+    # Self-consistent → marker-only PASS (the v1 blind spot, kept visible).
+    d = tw.smoke_arch_registry_check(note)
+    assert d.ok and "marker-only" in d.reason
+    # Driver recompute → REFUSE.
+    _write_tmp_driver(tmp_path, _REGISTRY_13)
+    d = tw.smoke_arch_registry_check(note, repo_root=tmp_path)
+    assert not d.ok
+    assert "driver-registry mismatch" in d.reason
+    assert "n_members=10 n_driver=13" in d.reason
+    for arm in ("figures", "harvest", "upload-inputs"):
+        assert arm in d.reason
+    assert d.missing == ("figures", "harvest", "upload-inputs")
+
+
+def test_arm_registry_fallback_visible_unresolvable_and_unextractable(tmp_path):
+    """T1.12: the marker-only fallback is VISIBLE, never mistakable for
+    driver verification — (a) `file=` does not resolve under repo_root → ok
+    with the unresolved path in the reason; (b) a dynamically-built PHASES
+    (dict comprehension, not a literal) → ok with `not statically
+    extractable` + the symbol in the reason."""
+    tw = _tw()
+    note = _registry_note(["a", "b"], _rows_for(["a", "b"]))
+    # (a) nothing at scripts/issue2163_ctxread.py under this root.
+    d = tw.smoke_arch_registry_check(note, repo_root=tmp_path)
+    assert d.ok, d.reason
+    assert "marker-only" in d.reason
+    assert "file not found under repo-root: scripts/issue2163_ctxread.py" in d.reason
+    # (b) driver present but the registry is built dynamically.
+    _write_tmp_driver(tmp_path, ["a", "b"], dynamic=True)
+    d = tw.smoke_arch_registry_check(note, repo_root=tmp_path)
+    assert d.ok, d.reason
+    assert "marker-only" in d.reason
+    assert "not statically extractable: sorted(PHASES)" in d.reason
+
+
+def test_arm_registry_refuse_duplicate_members():
+    """T1.13: n=13 with 12 unique + 1 duplicated member (and 12 matching
+    rows) → clause-3b REFUSE naming the duplicate — a dup lets n match while
+    enumerating fewer distinct arms."""
+    tw = _tw()
+    twelve = _REGISTRY_13[:12]
+    padded = [*twelve, twelve[0]]  # 13 entries, one dup
+    d = tw.smoke_arch_registry_check(_registry_note(padded, _rows_for(twelve)))
+    assert not d.ok
+    assert "duplicate members" in d.reason
+    assert twelve[0] in d.reason

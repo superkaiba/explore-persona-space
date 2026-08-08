@@ -1,0 +1,27 @@
+{
+ "arm_id": "syc-conv-con-lr1e5-s42",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 1.828735704108965,
+  "q25": 1.5977357744531515,
+  "q75": 2.0808078516371085,
+  "mean": 1.8705314565927074,
+  "n": 1024
+ },
+ "delta_med_committed": 3.214293718412555,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.05433294277477646,
+ "push_all_rows": {
+  "median": 1.7697233955460892,
+  "q25": 1.5845051825159295,
+  "q75": 1.980841152700735,
+  "mean": 1.7960697235546437,
+  "n": 16400
+ }
+}

@@ -38,9 +38,9 @@ os.environ.setdefault("EPM_VERIFY_BODY_NO_HF", "1")
 # exported in the invoking shell would silently reorder every auto-route
 # test across test_router.py / test_issue_dispatch.py /
 # test_dispatch_issue_cli.py / test_router_acceptance.py. Dropping it at
-# import time makes the GCP-first STANDING DEFAULT the suite-wide
-# baseline; tests that exercise the override set it explicitly via
-# monkeypatch.setenv.
+# import time makes the STANDING DEFAULT (runpod-first as of #2054; the
+# module-level DEFAULT_AUTO_LANE_ORDER) the suite-wide baseline; tests
+# that exercise the override set it explicitly via monkeypatch.setenv.
 os.environ.pop("EPM_AUTO_LANE_ORDER", None)
 
 
@@ -333,6 +333,11 @@ _FLEET_MUTATING_PASS_NAMES = (
     # dir and can write real sidecar rows / state / pushes from a full-main()
     # unit test; its own tests stub the collector / push / path seams instead.
     "stash_rescue_audit_pass",
+    # #2015: escalate-only too, but it runs a REAL `git status` against the
+    # LIVE shared root and can write real sidecar rows / state / pushes from
+    # a full-main() unit test; its own tests stub the collector / push / path
+    # seams instead.
+    "root_unstaged_audit_pass",
     # #1564: flag-only too, but it sweeps the LIVE registry's completed set,
     # runs real gh/git probes, and can post REAL epm:progress markers on live
     # tasks + sidecar rows + pushes from a full-main() unit test.

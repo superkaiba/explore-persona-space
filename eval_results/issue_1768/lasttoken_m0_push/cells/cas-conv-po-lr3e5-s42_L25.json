@@ -1,0 +1,20 @@
+{
+ "arm_id": "cas-conv-po-lr3e5-s42",
+ "layer": 25,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.6484475537394931,
+ "m0_heldout_r2_committed": 0.6484475537394931,
+ "push_te": {
+  "median": 19.27081258002885,
+  "q25": 16.20440136546661,
+  "q75": 22.022538155395612,
+  "mean": 19.014997718133923,
+  "n": 1024
+ },
+ "delta_med_committed": 21.23976543352538,
+ "floor_p95_committed": 23.613134384155273,
+ "ctx_move_committed": 0.1856936571239337
+}

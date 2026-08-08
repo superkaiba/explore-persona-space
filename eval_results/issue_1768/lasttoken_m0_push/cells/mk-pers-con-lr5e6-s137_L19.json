@@ -1,0 +1,27 @@
+{
+ "arm_id": "mk-pers-con-lr5e6-s137",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_mk",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.6987315114536714,
+ "m0_heldout_r2_committed": 0.698731511453671,
+ "push_te": {
+  "median": 1.9460345369698122,
+  "q25": 1.6530527392027774,
+  "q75": 2.302988519355169,
+  "mean": 2.0339310370509898,
+  "n": 1024
+ },
+ "delta_med_committed": 3.888250793653457,
+ "floor_p95_committed": 7.012711048126221,
+ "ctx_move_committed": 0.04966314427389226,
+ "push_all_rows": {
+  "median": 1.783328858894662,
+  "q25": 1.5958139234157551,
+  "q75": 2.059881199726709,
+  "mean": 1.8777070609975115,
+  "n": 16400
+ }
+}

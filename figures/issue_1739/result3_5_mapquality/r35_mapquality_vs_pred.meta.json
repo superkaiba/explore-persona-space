@@ -1,0 +1,485 @@
+{
+  "commit": "5e7068cf+dirty",
+  "git_commit": "5e7068cf",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md",
+    "eval_results/issue_1739/evil_ood_full/dv_dataset/evil/labeling.json",
+    "eval_results/issue_1739/evil_ood_full/judge/labeling_scores.json",
+    "eval_results/issue_1739/evil_ood_full/judge_pilot/pilot_gate_report.json",
+    "eval_results/issue_1739/evil_ood_full/judge_pilot_2048/pilot_gate_report.json",
+    "eval_results/issue_1739/evil_ood_full/judge_pilot_2048/pilot_gate_report_waived.json",
+    "scripts/issue1739_evilood_dv_split.py",
+    "scripts/issue1739_evilood_judge_pilot.py",
+    "scripts/issue1739_evilood_refusal_rejudge.py",
+    "scripts/issue1739_evilood_store_merge.py",
+    "scripts/issue1739_recut_figs.py",
+    "src/explore_persona_space/eval/judge_dispatch.py"
+  ],
+  "created": "2026-08-06T15:10:17Z",
+  "figsize": [
+    13.5,
+    4.2
+  ],
+  "points": [
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.3145598884984355,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.06470666693570033,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.5018047325790291,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.8180783834780763,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.039497855427021555,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.25083424306392416,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.026202221616102972,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.22541778412988908,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.4619056681133169,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.03260158980324473,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.47389276906982736,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.8087549309983031,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.1449677927797055,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.21917514147982292,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.014751906278254845,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.2160053652469873,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.371906917160691,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.2398471924190651,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -1.8617455799976335,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.39861803859275446,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.03982793099481419,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.09223660209399395,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.4907822419851048,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.25833944340132775,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -1.044320037882803,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.7012257953462742,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.09540109045906309,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.07330078558659878,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.26369289844599053,
+      "Behavior prediction \u03c1 (mapped-answer projection)": -0.033518388618036826,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.08481030178543969,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.698968770527766,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.22858552944687238,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.46298969856968547,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.13156521554475908,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.17577133744895965,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.2937317030275186,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.12440503666990922,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.30245567380661664,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.6865362775030471,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.21217266210180097,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.4242996579578412,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.2738182130277801,
+      "Behavior prediction \u03c1 (mapped-answer projection)": 0.11130171685896308,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.3145598884984355,
+      "Fraction of real-answer \u03c1 recovered": 0.7826167484033768,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.5018047325790291,
+      "Fraction of real-answer \u03c1 recovered": 0.9705388487144347,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.039497855427021555,
+      "Fraction of real-answer \u03c1 recovered": 0.9717921005619135,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.026202221616102972,
+      "Fraction of real-answer \u03c1 recovered": 0.9954461522381647,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.4619056681133169,
+      "Fraction of real-answer \u03c1 recovered": 0.3943109947225398,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.47389276906982736,
+      "Fraction of real-answer \u03c1 recovered": 0.9594778391357538,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.1449677927797055,
+      "Fraction of real-answer \u03c1 recovered": 0.8491371374495759,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -0.014751906278254845,
+      "Fraction of real-answer \u03c1 recovered": 0.9538808596131625,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.371906917160691,
+      "Fraction of real-answer \u03c1 recovered": 0.9609636008086184,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -1.8617455799976335,
+      "Fraction of real-answer \u03c1 recovered": 0.5216843979646186,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.4907822419851048,
+      "Fraction of real-answer \u03c1 recovered": 1.0350540244310185,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": -1.044320037882803,
+      "Fraction of real-answer \u03c1 recovered": 0.9177170159532546,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.26369289844599053,
+      "Fraction of real-answer \u03c1 recovered": -0.2619219387571353,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.08481030178543969,
+      "Fraction of real-answer \u03c1 recovered": 0.9359990980116997,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.22858552944687238,
+      "Fraction of real-answer \u03c1 recovered": 0.8000272032559553,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.13156521554475908,
+      "Fraction of real-answer \u03c1 recovered": 0.6264307935524729,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.2937317030275186,
+      "Fraction of real-answer \u03c1 recovered": 0.9721352886934697,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.30245567380661664,
+      "Fraction of real-answer \u03c1 recovered": 0.9193505684237653,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.21217266210180097,
+      "Fraction of real-answer \u03c1 recovered": 0.7331724004813439,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "Reconstruction R\u00b2 (at used layer)": 0.2738182130277801,
+      "Fraction of real-answer \u03c1 recovered": 0.39666776066922144,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.5160599571734475,
+      "Fraction of real-answer \u03c1 recovered": 0.7826167484033768,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.325,
+      "Fraction of real-answer \u03c1 recovered": 0.9705388487144347,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.4393063583815029,
+      "Fraction of real-answer \u03c1 recovered": 0.9717921005619135,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.5683453237410072,
+      "Fraction of real-answer \u03c1 recovered": 0.9954461522381647,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.2114561027837259,
+      "Fraction of real-answer \u03c1 recovered": 0.3943109947225398,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.155,
+      "Fraction of real-answer \u03c1 recovered": 0.9594778391357538,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.2350674373795761,
+      "Fraction of real-answer \u03c1 recovered": 0.8491371374495759,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.302158273381295,
+      "Fraction of real-answer \u03c1 recovered": 0.9538808596131625,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.450920245398773,
+      "Fraction of real-answer \u03c1 recovered": 0.9609636008086184,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.065,
+      "Fraction of real-answer \u03c1 recovered": 0.5216843979646186,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.5398773006134969,
+      "Fraction of real-answer \u03c1 recovered": 1.0350540244310185,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.085,
+      "Fraction of real-answer \u03c1 recovered": 0.9177170159532546,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.7574992106094095,
+      "Fraction of real-answer \u03c1 recovered": -0.2619219387571353,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.28,
+      "Fraction of real-answer \u03c1 recovered": 0.9359990980116997,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.45660283511564287,
+      "Fraction of real-answer \u03c1 recovered": 0.8000272032559553,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.5961070559610706,
+      "Fraction of real-answer \u03c1 recovered": 0.6264307935524729,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.4603725923586991,
+      "Fraction of real-answer \u03c1 recovered": 0.9721352886934697,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.29,
+      "Fraction of real-answer \u03c1 recovered": 0.9193505684237653,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.30340711265854264,
+      "Fraction of real-answer \u03c1 recovered": 0.7331724004813439,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "kNN retrieval acc@1 (cosine)": 0.49635036496350365,
+      "Fraction of real-answer \u03c1 recovered": 0.39666776066922144,
+      "_kind": "scatter",
+      "_group": 61
+    }
+  ],
+  "n_series": 62,
+  "total_points": 62,
+  "text": {
+    "suptitle": "Map reconstruction quality vs behavior prediction (R2FAIR, context arm only; eval-distribution-matched cells)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Reconstruction R\u00b2 (at used layer)",
+        "ylabel": "Behavior prediction \u03c1 (mapped-answer projection)",
+        "legend_labels": [
+          "evil",
+          "sycophancy",
+          "hallucination",
+          "linear map",
+          "mlp map"
+        ],
+        "xticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "xlabel": "Reconstruction R\u00b2 (at used layer)",
+        "ylabel": "Fraction of real-answer \u03c1 recovered",
+        "xticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "xlabel": "kNN retrieval acc@1 (cosine)",
+        "ylabel": "Fraction of real-answer \u03c1 recovered",
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}

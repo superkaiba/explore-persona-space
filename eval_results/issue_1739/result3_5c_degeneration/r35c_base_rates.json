@@ -1,0 +1,127 @@
+{
+ "rows_by_behavior_rung": {
+  "evil|hhrt": 9975,
+  "evil|toxicchat": 3355,
+  "evil|train": 40000,
+  "hallucination|nqopen": 15835,
+  "hallucination|simpleqa": 20105,
+  "hallucination|train": 80000,
+  "sycophancy|aita": 6520,
+  "sycophancy|train": 80000
+ },
+ "max_new_tokens_values": {
+  "1024": 200000
+ },
+ "train_pooled_chunk_flag_rate": 0.001285,
+ "matched_rate_thresholds": {
+  "distinct4_ratio": 0.6953747041062798,
+  "gzip_ratio": 0.31257426155170076
+ },
+ "flag_agreement_train": {
+  "chunk_flag|flag_distinct4": {
+   "both": 82,
+   "only_a": 175,
+   "only_b": 174,
+   "neither": 199569,
+   "jaccard": 0.1902552204176334
+  },
+  "chunk_flag|flag_gzip": {
+   "both": 160,
+   "only_a": 97,
+   "only_b": 97,
+   "neither": 199646,
+   "jaccard": 0.4519774011299435
+  },
+  "chunk_flag|cap_hit": {
+   "both": 131,
+   "only_a": 126,
+   "only_b": 565,
+   "neither": 199178,
+   "jaccard": 0.15936739659367397
+  },
+  "flag_distinct4|flag_gzip": {
+   "both": 117,
+   "only_a": 139,
+   "only_b": 140,
+   "neither": 199604,
+   "jaccard": 0.29545454545454547
+  },
+  "flag_distinct4|cap_hit": {
+   "both": 70,
+   "only_a": 186,
+   "only_b": 626,
+   "neither": 199118,
+   "jaccard": 0.07936507936507936
+  },
+  "flag_gzip|cap_hit": {
+   "both": 158,
+   "only_a": 99,
+   "only_b": 538,
+   "neither": 199205,
+   "jaccard": 0.19874213836477989
+  }
+ },
+ "continuous_spearman_train": {
+  "chunk60_count|distinct4_ratio": -0.22331532069534143,
+  "chunk60_count|gzip_ratio": -0.23388236187550895,
+  "distinct4_ratio|gzip_ratio": 0.5700261588704252,
+  "chunk60_count|n_chars": 0.18169474826706744,
+  "gzip_ratio|n_chars": -0.9372714974673061
+ },
+ "per_behavior_train": {
+  "evil": {
+   "n_rollouts": 40000,
+   "n_contexts": 8000,
+   "rate_chunk_flag": 0.00565,
+   "rate_flag_distinct4": 0.005525,
+   "rate_flag_gzip": 0.006,
+   "rate_cap_hit": 0.012025,
+   "chunk60_p50_p95_p99": [
+    1.0,
+    1.0,
+    2.0
+   ],
+   "chunk60_median_among_capped": 2.0
+  },
+  "hallucination": {
+   "n_rollouts": 80000,
+   "n_contexts": 16000,
+   "rate_chunk_flag": 0.0002375,
+   "rate_flag_distinct4": 0.0003375,
+   "rate_flag_gzip": 0.0001625,
+   "rate_cap_hit": 8.75e-05,
+   "chunk60_p50_p95_p99": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "chunk60_median_among_capped": 8.0
+  },
+  "sycophancy": {
+   "n_rollouts": 80000,
+   "n_contexts": 16000,
+   "rate_chunk_flag": 0.00015,
+   "rate_flag_distinct4": 0.0001,
+   "rate_flag_gzip": 5e-05,
+   "rate_cap_hit": 0.0026,
+   "chunk60_p50_p95_p99": [
+    1.0,
+    1.0,
+    2.0
+   ],
+   "chunk60_median_among_capped": 1.0
+  }
+ },
+ "n_rollout_rows_total": 255790,
+ "n_duplicate_keys_dropped": 0,
+ "manifest_truncation_recorded": {
+  "labeling/evil/_manifest.json": 560,
+  "labeling/hallucination/_manifest.json": 11,
+  "labeling/sycophancy/_manifest.json": 216
+ },
+ "computed_cap_hits_train": {
+  "evil": 481,
+  "sycophancy": 208,
+  "hallucination": 7
+ }
+}

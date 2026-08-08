@@ -1,0 +1,9 @@
+{
+  "caption": "Left: GLOBAL null distribution of max_{j,cell} \u0394R\u00b2_j across 500 synchronized draws over 56 (stage-pair \u00d7 render \u00d7 corpus \u00d7 arm) delta cells; red line: true max_{j,cell} \u0394R\u00b2_j = 1.4578 (persisted per-cell values) \u2014 the primary headline test; grey dash-dot: pooled per-feature \u0394R\u00b2 p99.9 (bulk-tail scale, band-vs-ceiling read). Right: per-cell true max_j \u0394R\u00b2_j with the null argmax-feature diversity annotated.",
+  "commit_sha": "99c0867b9f4c06edd99470ba13b0ea6ba79f9c11",
+  "inputs": [
+    "data/issue_2061/hf_dl/issue2061_sae_predictability/analysis_tensors/null",
+    "data/issue_2061/hf_dl/issue2061_sae_predictability/analysis_tensors/per_feature_r2"
+  ],
+  "generator": "scripts/issue2061_figures.py"
+}
