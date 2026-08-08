@@ -7694,8 +7694,8 @@
     "1994": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1994",
-      "status": "running",
+      "path": "tasks/completed/1994",
+      "status": "completed",
       "title": "workflow-fix: phase-done lint test hangs at interpreter exit"
     },
     "1995": {
