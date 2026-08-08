@@ -9,6 +9,14 @@ origin_prompt: We've found a lot of persona info is stored at the context vector
   a more efficient way might be to cap (or patch) only at the context vector / prefix
   vector. Reproduce the capping experiment and compare position sets + patching variants.
 workflow: v1
+goal: Determine whether assistant-axis activation capping (and its query-preserving
+  patch generalization) applied ONLY at the context-vector position recovers the jailbreak-reduction
+  / persona-stabilization effect that Lu et al. (arXiv 2601.10387) get by capping
+  at every token, and whether prefix-only capping fails — via a position ladder (prefix-end
+  / context-end / all-prompt / all-tokens) x intervention type (cap / axis-component-replace
+  / full-replace) over a fixed mid-late layer band, on Qwen-2.5-7B (in-house axis)
+  with a Qwen-3-32B faithful anchor, scored on co-primary judged jailbreak-harm and
+  role-susceptibility rates.
 ---
 # Assistant-axis capping at the context vector vs all tokens
 
@@ -24,10 +32,8 @@ default assistant prefix/context vector at subsequent positions (while maintaini
 info)."
 
 ## Goal
-Determine whether activation capping — and its patching generalizations — applied **only at
-the context-vector position** recovers the persona-stabilization / jailbreak-reduction effect
-that Lu et al. (arXiv 2601.10387) obtain by capping **at every token**, and whether
-**prefix-only** capping fails.
+
+Determine whether assistant-axis activation capping (and its query-preserving patch generalization) applied ONLY at the context-vector position recovers the jailbreak-reduction / persona-stabilization effect that Lu et al. (arXiv 2601.10387) get by capping at every token, and whether prefix-only capping fails — via a position ladder (prefix-end / context-end / all-prompt / all-tokens) x intervention type (cap / axis-component-replace / full-replace) over a fixed mid-late layer band, on Qwen-2.5-7B (in-house axis) with a Qwen-3-32B faithful anchor, scored on co-primary judged jailbreak-harm and role-susceptibility rates.
 
 Formally: let `v` be the (unit, per-layer) Assistant Axis extracted as
 `mean(default-assistant activation) − mean(fully-role-playing role vectors)`. Capping updates a
