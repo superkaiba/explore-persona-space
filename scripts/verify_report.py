@@ -212,15 +212,29 @@ _SCHEMA_PATH = (
 
 
 def _word_match(needle: str, haystack: str) -> bool:
-    r"""Whether ``\b<needle>\b`` occurs in ``haystack``.
+    r"""Whether ``needle`` occurs in ``haystack``, not glued to a word character.
 
-    Callers lowercase both sides for case-insensitive matching. Word-boundary,
-    not bare substring, so a planned name that is only a fragment of a longer
-    word in the report (``eval`` inside ``evaluation``) does not count as a hit.
+    Callers lowercase both sides for case-insensitive matching. The point is to
+    reject a planned name that is only a FRAGMENT of a longer word in the report
+    (``eval`` inside ``evaluation``) while accepting a genuine occurrence.
+
+    Anchored with ``(?<!\w)`` / ``(?!\w)`` rather than ``\b`` (#2162). ``\b`` is
+    a boundary BETWEEN a word and a non-word char, so a trailing ``\b`` after a
+    needle that ENDS in punctuation asserts the next char IS a word char —
+    making any name ending in ``)`` structurally unmatchable: ``anchor
+    separation (ceiling minus floor)`` could only ever match as
+    ``...floor)x``, which no prose contains. #2162 (the first ``workflow: v2``
+    task, so the first report this check ever ran against) had 7 of 21 planned
+    condition / metric names ending in ``)``; all 7 reported "not found in
+    report text" while the report discussed each of them at length. The
+    lookarounds express the intended rule directly — the needle must not be
+    ADJACENT to a word character on either side — which is identical to ``\b``
+    wherever the needle starts and ends in a word char, and correct where it
+    does not.
     """
     if not needle:
         return False
-    return re.search(r"\b" + re.escape(needle) + r"\b", haystack) is not None
+    return re.search(r"(?<!\w)" + re.escape(needle) + r"(?!\w)", haystack) is not None
 
 
 @dataclass
