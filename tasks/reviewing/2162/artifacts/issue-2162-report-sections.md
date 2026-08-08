@@ -133,9 +133,9 @@
 
 **Methodology**
 
-- Per (type-cell × slot × arm): pairs failing the pre-registered anchor-separation exclusion (|ceiling − floor| < 0.5) are dropped; per surviving pair, F_beh is the pair mean over its K=5 coherent draws; the arm statistic is the mean over surviving pairs with a pair-clustered bootstrap 95% CI (B = 10,000, seed 21620).
+- Per (type-cell × slot × arm): pairs failing the pre-registered anchor-separation exclusion (|ceiling − floor| < 0.5) are dropped; per surviving pair, F_beh is the pair mean over its K=5 coherent draws; the arm statistic is the mean over surviving pairs with a pair-clustered bootstrap 95% CI (B = 10,000, seed 21620). A pair with no coherent draws in ANY arm is dropped from all three arms of that cell, so the three arms of a cell share one denominator (affects exactly one pair, `language_implied` at `pe`).
 - Three arms per type (steered / shuffled-donor null / cross-type-donor null), one panel per slot (`ce`, `pe`); post-exclusion n stated per type. Sources: `eval_results/issue_2162/f_metrics/{f_cells,null_shuffled_cells,null_crosstype_cells,anchors}.jsonl`.
-- `filler_swap` reports no F anywhere (no ceiling by construction); the two pre-declared degenerate prefix-end cells are excluded from aggregates.
+- `filler_swap` reports no F anywhere (no ceiling by construction); the two pre-declared degenerate prefix-end cells are excluded from the Holm families (they are still rendered as per-type bars, carrying a degeneracy flag).
 
 ### `per_type_f_beh_perpair`
 
