@@ -333,7 +333,12 @@ gates:
         impossible, the planner re-drafts with the canary section).
         PASS_UNIFIED and PASS_CANARY advance directly;
         PASS_AUTHORIZED_STUB advances only on a rc=0
-        'task.py check-authorized-stub' grant (#2171). Rationale: task #397 rounds 9/10/10' burned three
+        'task.py check-authorized-stub' grant (#2171). The gate ALSO
+        refuses any advancing verdict when the arm-registry enumeration
+        check fails — rc!=0 from
+        'task.py check-smoke-arch-registry <N> --repo-root <worktree>'
+        (#2176: the per-arm set is derived from the driver's own
+        registry, never hand-listed). Rationale: task #397 rounds 9/10/10' burned three
         full implementer rounds on subprocess-vs-in-process divergence
         the smoke phase silently satisfied; the gate forces the
         divergence to be explicit at plan time.
@@ -1591,7 +1596,7 @@ markers:
           same dispatcher and subprocess shape end-to-end, AND the
           cell-subset parameterization threads through EVERY phase the
           dispatcher executes (train, eval enumeration, anchor/analyze
-          tolerance), AND every planned arm's per-arm-resolution row
+          tolerance), AND every registry or plan-named arm's per-arm-resolution row
           reads REAL or N/A, AND the Axis 1 import-resolution leg passed
           on the REAL branch. A subset honored by the train loop only,
           with a downstream phase re-enumerating the full registered
@@ -1604,9 +1609,19 @@ markers:
           #1315 r4); the notes: line names the floor per sliced axis.
           The notes: MUST also carry an `import-resolution: <cmd>` line
           (Axis 1, experiment-implementer.md item 5) and a
-          `per-arm-resolution:` sub-block with one row per plan-named
-          arm (Axis 2); a `kind: infra` plan whose §4 names no arms
-          writes `per-arm-resolution: N/A — no plan-named arms`.
+          `per-arm-resolution:` sub-block with one row per arm in the
+          driver's own arm registry (stated on the line-anchored
+          `arm-registry:` line: `source=<expr> file=<path> n=<int>
+          members=<sorted-comma-list>`, or `arm-registry: N/A — <reason>`
+          when no registry exists) UNION every plan-named arm (Axis 2);
+          Step 6d.0 verifies mechanically via
+          `task.py check-smoke-arch-registry` (driver-recompute when
+          given `--repo-root`). A `kind: infra` plan whose §4 names no
+          arms writes the vacuous pair
+          `per-arm-resolution: N/A — no registry or plan-named arms` +
+          `arm-registry: N/A — no phase/arm registry` (old-form reasons
+          on already-posted markers stay accepted — the parser never
+          matches the reason text).
         `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge
           (e.g., smoke uses in-process train, sweep uses subprocess
           wrapper) AND the plan §4 Design section justified the
@@ -1616,7 +1631,7 @@ markers:
           FALLBACK row under PASS_CANARY is a marker-shape violation.
         `verdict: PASS_PARTIAL arms_stubbed=<comma-list>` — phase
           coverage holds AND the Axis 1 import-resolution leg passed
-          BUT ≥1 planned arm's per-arm-resolution row reads FALLBACK
+          BUT ≥1 registry or plan-named arm's per-arm-resolution row reads FALLBACK
           (a stub / bias-refit / early-return in place of the arm's
           production computation path). The `arms_stubbed` set MUST
           equal the names of every FALLBACK-rowed arm verbatim. SKILL.md

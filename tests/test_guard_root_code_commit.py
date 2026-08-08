@@ -1379,3 +1379,63 @@ def test_f8_single_dash_cluster_ending_in_arg_letter_allowed(
     single-dash CLUSTER ending in an arg-taking letter (`-qm x`) consumes its
     separate message word, so the artifact pathspec still scopes (#1949)."""
     _assert_allowed(_run("git commit -qm x -- tasks/t.md", foreign_repo, cert))
+
+
+# ---------------------------------------------------------------------------
+# #2013: every BLOCK path states the commit did NOT land (shared preamble).
+# ---------------------------------------------------------------------------
+_NOT_LANDED_NEEDLES = ("NOT LANDED", "committed, pushed, or landed")
+
+
+def _assert_blocked_with_not_landed_warning(r: subprocess.CompletedProcess[str]) -> None:
+    _assert_blocked(r)
+    for needle in _NOT_LANDED_NEEDLES:
+        assert needle in r.stderr, (needle, r.stderr)
+
+
+def test_every_block_site_emits_the_not_landed_warning() -> None:
+    """#2013: every `exit 2` block site emits the shared NOT-LANDED warning.
+
+    Count-equality rather than a proximity window, so the assertion survives
+    the heredoc growing and catches a future block site added without it.
+
+    KNOWN BLIND SPOT (disclosed deliberately): the site count matches only
+    STANDALONE `exit 2` lines. A future block written in a compound form
+    (`... || exit 2`) would not be counted, so it could ship without the
+    warning while this test stays green. The six sites that exist today are
+    all standalone; a compound block site added later needs this test
+    extended, not merely re-run.
+    """
+    src = SCRIPT.read_text().splitlines()
+    n_sites = sum(1 for ln in src if ln.strip() == "exit 2")
+    n_emits = sum(ln.count('"$NOT_LANDED_LINE"') + ln.count("${NOT_LANDED_LINE}") for ln in src)
+    assert n_sites >= 6, n_sites
+    assert n_emits == n_sites, (n_emits, n_sites)
+
+
+def test_not_landed_warning_reaches_stderr_on_uncertified_payload_block(
+    code_repo: Path, cert: Path
+) -> None:
+    """#2013 runtime, heredoc family (BLOCK_MSG): the uncertified-payload
+    block carries the NOT-LANDED warning (mirrors the invocation of
+    test_block_message_names_gate_remediation_and_override)."""
+    _assert_blocked_with_not_landed_warning(_run("git commit -m x", code_repo, cert))
+
+
+def test_not_landed_warning_reaches_stderr_on_blanket_add_block(
+    code_repo: Path, cert: Path
+) -> None:
+    """#2013 runtime, blanket-stage-chained family: mirrors the B13 `dash-A`
+    parametrize invocation."""
+    _assert_blocked_with_not_landed_warning(_run("git add -A && git commit -m x", code_repo, cert))
+
+
+def test_not_landed_warning_reaches_stderr_on_unprovable_cwd_block(
+    art_repo: Path, cert: Path
+) -> None:
+    """#2013 runtime, path-limited-add cwd-gate family: mirrors the
+    test_add_pathlimited_missing_cwd_blocks invocation (missing hook cwd)."""
+    _write(art_repo, "tasks/t.md", "note\n")
+    _assert_blocked_with_not_landed_warning(
+        _run("git add --all -- tasks/t.md && git commit -m x", art_repo, cert, cwd=_OMIT_CWD)
+    )
