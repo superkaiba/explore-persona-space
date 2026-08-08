@@ -9177,8 +9177,8 @@
     "2188": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2188",
-      "status": "running",
+      "path": "tasks/completed/2188",
+      "status": "completed",
       "title": "argcheck: a **kwargs splat escapes dest derivation at all three registration sites (add_argument / add_subparsers / set_defaults), producing a false-positive import-check failure"
     },
     "2189": {
